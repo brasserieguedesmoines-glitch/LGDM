@@ -68,6 +68,52 @@ label {
   letter-spacing: 0.5px;
 }
 
+/* Search select */
+.search-select {
+  position: relative;
+  width: 100%;
+}
+
+.search-select input[type="text"] {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 1rem;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;
+  color: var(--text);
+  transition: border-color 0.15s;
+}
+
+.search-select input[type="text"]:focus {
+  outline: none;
+  border-color: var(--amber);
+}
+
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  background: #fff;
+  border: 1.5px solid var(--amber);
+  border-radius: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 50;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+.search-option {
+  padding: 11px 14px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.search-option:last-child { border-bottom: none; }
+.search-option:hover, .search-option.selected { background: #fdf3e3; }
+.search-empty { color: var(--muted); cursor: default; }
+
 select, textarea, input[type="number"] {
   width: 100%;
   padding: 12px 14px;
@@ -95,7 +141,7 @@ textarea { resize: vertical; font-family: inherit; }
   display: grid;
   grid-template-columns: 1fr 90px auto;
   gap: 8px;
-  align-items: center;
+  align-items: start;
   padding: 10px 0;
   border-bottom: 1px solid var(--border);
 }

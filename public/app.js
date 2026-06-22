@@ -1,5 +1,81 @@
-const selectClient = document.getElementById('select-client');
+// ---- Composant SearchSelect ----
+// Crée un champ de recherche avec liste déroulante filtrée
+// options: [{ value, label }], onChange(value) appelé à la sélection
+function createSearchSelect(placeholder, options, onChange) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'search-select';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.placeholder = placeholder;
+  input.autocomplete = 'off';
+
+  const dropdown = document.createElement('div');
+  dropdown.className = 'search-dropdown';
+  dropdown.style.display = 'none';
+
+  let selectedValue = '';
+
+  function renderOptions(filter) {
+    const q = filter.toLowerCase();
+    const filtered = options.filter(o => o.label.toLowerCase().includes(q));
+    dropdown.innerHTML = '';
+    if (!filtered.length) {
+      const empty = document.createElement('div');
+      empty.className = 'search-option search-empty';
+      empty.textContent = 'Aucun résultat';
+      dropdown.appendChild(empty);
+    } else {
+      filtered.forEach(o => {
+        const item = document.createElement('div');
+        item.className = 'search-option';
+        item.textContent = o.label;
+        if (o.value === selectedValue) item.classList.add('selected');
+        item.addEventListener('mousedown', e => {
+          e.preventDefault();
+          selectedValue = o.value;
+          input.value = o.label;
+          dropdown.style.display = 'none';
+          onChange(o.value);
+        });
+        dropdown.appendChild(item);
+      });
+    }
+    dropdown.style.display = 'block';
+  }
+
+  input.addEventListener('focus', () => renderOptions(input.value));
+  input.addEventListener('input', () => {
+    selectedValue = '';
+    onChange('');
+    renderOptions(input.value);
+  });
+  input.addEventListener('blur', () => {
+    setTimeout(() => { dropdown.style.display = 'none'; }, 150);
+  });
+
+  wrapper.append(input, dropdown);
+  wrapper.getValue = () => selectedValue;
+  wrapper.setValue = (value, label) => {
+    selectedValue = value;
+    input.value = label ?? '';
+  };
+  wrapper.reset = () => {
+    selectedValue = '';
+    input.value = '';
+    dropdown.style.display = 'none';
+  };
+
+  return wrapper;
+}
+
+// ---- État global ----
+let catalogue = [];
+let clientSearchSelect = null;
+let currentIdClient = '';
+
 const btnDerniereCommande = document.getElementById('btn-derniere-commande');
+const sectionClient = document.getElementById('section-client');
 const sectionProduits = document.getElementById('section-produits');
 const lignesContainer = document.getElementById('lignes-container');
 const btnAjouterLigne = document.getElementById('btn-ajouter-ligne');
@@ -11,38 +87,27 @@ const modalOverlay = document.getElementById('modal-overlay');
 const modalDetail = document.getElementById('modal-detail');
 const btnNouvelleCommande = document.getElementById('btn-nouvelle-commande');
 
-// Catalogue des produits pour le client sélectionné
-// Format : [{ idProduit, idContenant, idLot, libelle, contenant, prixHT }]
-let catalogue = [];
-
 // ---- Chargement initial des clients ----
 async function chargerClients() {
   try {
     const clients = await apiFetch('/api/clients');
-    selectClient.innerHTML = '<option value="">— Choisir un client —</option>';
-    clients.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c.id;
-      opt.textContent = c.nom;
-      selectClient.appendChild(opt);
+    const options = clients.map(c => ({ value: String(c.id), label: c.nom }));
+
+    clientSearchSelect = createSearchSelect('Rechercher un client…', options, async (value) => {
+      currentIdClient = value;
+      if (!value) { masquerSections(); btnDerniereCommande.style.display = 'none'; return; }
+      await chargerTarifs(value);
+      btnDerniereCommande.style.display = 'block';
     });
+
+    sectionClient.insertBefore(clientSearchSelect, btnDerniereCommande);
   } catch (err) {
-    selectClient.innerHTML = '<option value="">Erreur de chargement</option>';
     setStatut('Impossible de charger les clients : ' + err.message, true);
   }
 }
 
-// ---- Changement de client ----
-selectClient.addEventListener('change', async () => {
-  const idClient = selectClient.value;
-  if (!idClient) { masquerSections(); return; }
-  await chargerTarifs(idClient);
-  btnDerniereCommande.style.display = 'block';
-});
-
 btnDerniereCommande.addEventListener('click', async () => {
-  const idClient = selectClient.value;
-  if (idClient) await preRemplirDerniereCommande(idClient);
+  if (currentIdClient) await preRemplirDerniereCommande(currentIdClient);
 });
 
 async function chargerTarifs(idClient) {
@@ -65,18 +130,17 @@ function reinitialiserLignes() {
   ajouterLigne();
 }
 
-function ajouterLigne() {
+function ajouterLigne(valeurInitiale = '', labelInitial = '') {
   const div = document.createElement('div');
   div.className = 'ligne-produit';
 
-  const sel = document.createElement('select');
-  sel.innerHTML = '<option value="">— Produit —</option>';
-  catalogue.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = JSON.stringify({ idProduit: p.idProduit, idContenant: p.idContenant, idLot: p.idLot ?? 1, prixHT: p.prixHT });
-    opt.textContent = `${p.libelle} ${p.contenant}`;
-    sel.appendChild(opt);
-  });
+  const prodOptions = catalogue.map(p => ({
+    value: JSON.stringify({ idProduit: p.idProduit, idContenant: p.idContenant, idLot: p.idLot ?? 1 }),
+    label: `${p.libelle} ${p.contenant}`,
+  }));
+
+  const prodSelect = createSearchSelect('Rechercher un produit…', prodOptions, () => {});
+  if (valeurInitiale) prodSelect.setValue(valeurInitiale, labelInitial);
 
   const inputQte = document.createElement('input');
   inputQte.type = 'number';
@@ -88,17 +152,16 @@ function ajouterLigne() {
   btnSuppr.className = 'btn-suppr';
   btnSuppr.textContent = '×';
   btnSuppr.title = 'Supprimer';
-
-  sel.addEventListener('change', () => {});
   btnSuppr.addEventListener('click', () => {
     if (lignesContainer.children.length > 1) div.remove();
   });
 
-  div.append(sel, inputQte, btnSuppr);
+  div.append(prodSelect, inputQte, btnSuppr);
+  div._prodSelect = prodSelect;
   lignesContainer.appendChild(div);
 }
 
-btnAjouterLigne.addEventListener('click', ajouterLigne);
+btnAjouterLigne.addEventListener('click', () => ajouterLigne());
 
 // ---- Pré-remplissage depuis la dernière commande ----
 async function preRemplirDerniereCommande(idClient) {
@@ -110,18 +173,18 @@ async function preRemplirDerniereCommande(idClient) {
 
     lignesContainer.innerHTML = '';
     lignes.forEach(l => {
-      ajouterLigne();
-      const div = lignesContainer.lastElementChild;
-      const sel = div.querySelector('select');
-      const inputQte = div.querySelector('input');
       const idProduit = l.idProduit ?? l.idArticle;
       const idContenant = l.idContenant;
-      const optMatch = [...sel.options].find(o => {
-        try { const d = JSON.parse(o.value); return d.idProduit === idProduit && d.idContenant === idContenant; } catch { return false; }
-      });
-      if (optMatch) sel.value = optMatch.value;
-      inputQte.value = l.quantite ?? l.qte ?? 1;
-      sel.dispatchEvent(new Event('change'));
+      const idLot = l.idLot ?? 1;
+      const prodData = catalogue.find(p => p.idProduit === idProduit && p.idContenant === idContenant);
+      const valeur = prodData
+        ? JSON.stringify({ idProduit: prodData.idProduit, idContenant: prodData.idContenant, idLot: prodData.idLot ?? 1 })
+        : '';
+      const label = prodData ? `${prodData.libelle} ${prodData.contenant}` : '';
+
+      ajouterLigne(valeur, label);
+      const div = lignesContainer.lastElementChild;
+      div.querySelector('input[type="number"]').value = l.quantite ?? l.qte ?? 1;
     });
     setStatut('');
   } catch (err) {
@@ -131,19 +194,17 @@ async function preRemplirDerniereCommande(idClient) {
 
 // ---- Soumission ----
 btnEnvoyer.addEventListener('click', async () => {
-  const idClient = selectClient.value;
-  if (!idClient) { setStatut('Veuillez choisir un client.', true); return; }
+  if (!currentIdClient) { setStatut('Veuillez choisir un client.', true); return; }
 
   const lignes = [];
   let erreur = false;
-  lignesContainer.querySelectorAll('.ligne-produit').forEach(div => {
-    const sel = div.querySelector('select');
-    const inputQte = div.querySelector('input');
-    const qte = parseInt(inputQte.value) || 0;
-    if (!sel.value && qte) { erreur = true; return; }
-    if (!sel.value) return;
+  [...lignesContainer.children].forEach(div => {
+    const val = div._prodSelect?.getValue();
+    const qte = parseInt(div.querySelector('input[type="number"]')?.value) || 0;
+    if (!val && qte) { erreur = true; return; }
+    if (!val) return;
     try {
-      const data = JSON.parse(sel.value);
+      const data = JSON.parse(val);
       if (qte > 0) lignes.push({ ...data, quantite: qte });
     } catch { erreur = true; }
   });
@@ -163,7 +224,7 @@ btnEnvoyer.addEventListener('click', async () => {
     const result = await apiFetch('/api/commande', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idClient: parseInt(idClient), lignes, commentaire }),
+      body: JSON.stringify({ idClient: parseInt(currentIdClient), lignes, commentaire }),
     });
     const ref = result.reference ?? result.idCommande ?? result.id ?? '';
     modalDetail.textContent = ref ? `Référence : ${ref}` : 'Commande enregistrée avec succès.';
@@ -178,8 +239,10 @@ btnEnvoyer.addEventListener('click', async () => {
 
 btnNouvelleCommande.addEventListener('click', () => {
   modalOverlay.style.display = 'none';
-  selectClient.value = '';
+  clientSearchSelect?.reset();
+  currentIdClient = '';
   masquerSections();
+  btnDerniereCommande.style.display = 'none';
   document.getElementById('note-livraison').value = '';
   setStatut('');
 });
