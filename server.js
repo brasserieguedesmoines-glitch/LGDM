@@ -120,5 +120,10 @@ function buildCommandePayload({ idClient, lignes, commentaire }) {
   };
 }
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Serveur démarré sur le port ${PORT}`));
+// En local : écoute sur un port. Sur Vercel : l'export suffit.
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`Serveur démarré sur le port ${PORT}`));
+}
+
+export default app;
