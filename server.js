@@ -124,6 +124,46 @@ app.get('/api/debug-swagger-def/:name', async (req, res) => {
   }
 });
 
+// --- Debug commande : teste la structure correcte ---
+app.get('/api/debug-commande/:idClient', async (req, res) => {
+  const idClient = parseInt(req.params.idClient);
+  const data = await getGrille();
+  const clientData = data.clients.find(c => c.modeleClient.idClient === idClient);
+  if (!clientData) return res.status(404).json({ error: 'Client non trouvé' });
+  const t = clientData.tarifs[0];
+
+  const payloads = [
+    {
+      label: 'client:{idClient} + elementsBouteilles',
+      body: {
+        client: { idClient },
+        commentaire: 'TEST',
+        elementsBouteilles: [{ produit: { idProduit: t.modeleProduit.idProduit }, contenant: { idContenant: t.modeleContenant.idContenant }, lot: { idLot: t.modeleLot.idLot }, quantite: 1 }],
+      },
+    },
+    {
+      label: 'client:{idClient} + elementsContenants',
+      body: {
+        client: { idClient },
+        commentaire: 'TEST',
+        elementsContenants: [{ produit: { idProduit: t.modeleProduit.idProduit }, contenant: { idContenant: t.modeleContenant.idContenant }, lot: { idLot: t.modeleLot.idLot }, quantite: 1 }],
+      },
+    },
+  ];
+
+  const results = [];
+  for (const p of payloads) {
+    try {
+      const r = await easybeerPost('/commande/enregistrer', p.body);
+      results.push({ label: p.label, ok: true, result: r });
+      break;
+    } catch (e) {
+      results.push({ label: p.label, ok: false, error: e.message, detail: e.detail });
+    }
+  }
+  res.json({ tarif: t, results });
+});
+
 // --- Clients ---
 // Source : grille tarifaire → data.clients[].modeleClient
 app.get('/api/clients', async (req, res) => {
