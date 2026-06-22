@@ -113,6 +113,17 @@ app.get('/api/debug-prix/:idContenant/:idProduit/:idLot', async (req, res) => {
   }
 });
 
+// --- Debug Swagger endpoint ---
+app.get('/api/debug-swagger-commande', async (req, res) => {
+  try {
+    const swagger = await easybeerGet('/v2/api-docs');
+    const path = swagger.paths['/commande/enregistrer'];
+    res.json(path ?? { error: 'endpoint non trouvé dans swagger' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- Clients ---
 // Source : grille tarifaire → data.clients[].modeleClient
 app.get('/api/clients', async (req, res) => {
