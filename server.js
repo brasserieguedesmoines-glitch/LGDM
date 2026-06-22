@@ -44,16 +44,56 @@ async function easybeerPost(path, body) {
   return res.json();
 }
 
-// Cache grille tarifaire (chargée une fois, valide 1h)
+// Cache grille tarifaire (1h)
 let cache = null;
 let cacheExpiry = 0;
-
 async function getGrille() {
   if (!cache || Date.now() > cacheExpiry) {
     cache = await easybeerGet('/parametres/grille-tarifaire/matrice/client');
     cacheExpiry = Date.now() + 60 * 60 * 1000;
   }
   return cache;
+}
+
+// Cache types client (1h) → map typeClient libelle → objet complet
+let typesClientCache = null;
+let typesClientExpiry = 0;
+async function getTypesClient() {
+  if (!typesClientCache || Date.now() > typesClientExpiry) {
+    const list = await easybeerGet('/parametres/client/type');
+    typesClientCache = list; // tableau [{idClientType, libelle, ...}]
+    typesClientExpiry = Date.now() + 60 * 60 * 1000;
+  }
+  return typesClientCache;
+}
+
+// Cache grilleTarifaire par client (depuis derniere-commande ou prix)
+const grilleTarifaireParClient = new Map();
+
+async function getGrilleTarifaireClient(idClient, tarif0) {
+  if (grilleTarifaireParClient.has(idClient)) return grilleTarifaireParClient.get(idClient);
+  // Essai 1 : derniere commande
+  try {
+    const cmd = await easybeerGet(`/commande/derniere-commande/${idClient}`);
+    if (cmd?.grilleTarifaire?.idClientType) {
+      grilleTarifaireParClient.set(idClient, cmd.grilleTarifaire);
+      return cmd.grilleTarifaire;
+    }
+  } catch {}
+  // Essai 2 : prix du premier produit → typeClient → idClientType
+  try {
+    const tarifs = await easybeerGet(`/parametres/grille-tarifaire/${tarif0.modeleContenant.idContenant}/${tarif0.modeleProduit.idProduit}/${tarif0.modeleLot.idLot}`);
+    const typeClientLibelle = Array.isArray(tarifs) ? (tarifs.find(t => t.idClient === idClient) ?? tarifs[0])?.typeClient : null;
+    if (typeClientLibelle) {
+      const types = await getTypesClient();
+      const tc = types.find(t => t.libelle === typeClientLibelle);
+      if (tc) {
+        grilleTarifaireParClient.set(idClient, tc);
+        return tc;
+      }
+    }
+  } catch {}
+  return null;
 }
 
 // --- Debug tarifs bruts ---
@@ -338,6 +378,27 @@ app.get('/api/debug-commande/:idClient', async (req, res) => {
   res.json({ ligne, results });
 });
 
+// --- Debug : teste POST sur un endpoint EasyBeer ---
+app.get('/api/debug-post-clients', async (req, res) => {
+  const bodies = [
+    {},
+    { actif: true },
+    { page: 0, taille: 10 },
+    { filtre: '' },
+  ];
+  const results = [];
+  for (const body of bodies) {
+    try {
+      const r = await easybeerPost('/parametres/client/liste', body);
+      results.push({ body, ok: true, count: Array.isArray(r) ? r.length : '?', sample: Array.isArray(r) ? r[0] : r });
+      break;
+    } catch (e) {
+      results.push({ body, ok: false, error: e.message });
+    }
+  }
+  res.json(results);
+});
+
 // --- Création de commande ---
 app.post('/api/commande', async (req, res) => {
   try {
@@ -345,17 +406,23 @@ app.post('/api/commande', async (req, res) => {
     if (!idClient || !Array.isArray(lignes) || lignes.length === 0) {
       return res.status(400).json({ error: 'idClient et lignes sont requis' });
     }
+    // Récupère la grille tarifaire du client
+    const data = await getGrille();
+    const clientData = data.clients.find(c => c.modeleClient.idClient === idClient);
+    const tarif0 = clientData?.tarifs?.[0];
+    const grilleTarifaire = tarif0 ? await getGrilleTarifaireClient(idClient, tarif0) : null;
+
     const payload = {
-      idClient,
+      client: { idClient },
+      grilleTarifaire: grilleTarifaire ?? undefined,
       commentaire: commentaire ?? '',
-      lignesCommande: lignes.map(l => ({
-        idProduit: l.idProduit,
-        idContenant: l.idContenant,
-        idLot: l.idLot ?? 1,
+      elementsBouteilles: lignes.map(l => ({
+        produit: { idProduit: l.idProduit },
+        contenant: { idContenant: l.idContenant },
+        lot: { idLot: l.idLot ?? 1 },
         quantite: l.quantite,
       })),
     };
-    console.log('POST /api/commande payload:', JSON.stringify(payload));
     const result = await easybeerPost('/commande/enregistrer', payload);
     res.json(result);
   } catch (err) {
