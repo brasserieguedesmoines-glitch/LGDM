@@ -1,10 +1,13 @@
 import 'dotenv/config';
 import express from 'express';
 import fetch from 'node-fetch';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(join(__dirname, 'public')));
 
 const BASE_URL = process.env.EASYBEER_BASE_URL || 'https://api.easybeer.fr';
 const AUTH = Buffer.from(
