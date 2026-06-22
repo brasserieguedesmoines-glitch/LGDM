@@ -88,6 +88,31 @@ app.get('/api/debug-tarifs/:idClient', async (req, res) => {
   }
 });
 
+// --- Debug prix ---
+app.get('/api/debug-prix/:idContenant/:idProduit/:idLot', async (req, res) => {
+  try {
+    const { idContenant, idProduit, idLot } = req.params;
+    // Essaie plusieurs variantes d'endpoint
+    const candidates = [
+      `/parametres/grille-tarifaire/${idContenant}/${idProduit}/${idLot}`,
+      `/parametres/grille-tarifaire/${idProduit}/${idContenant}/${idLot}`,
+      `/parametres/grille-tarifaire/prix/${idContenant}/${idProduit}/${idLot}`,
+      `/parametres/grille-tarifaire/prix/${idProduit}/${idContenant}/${idLot}`,
+    ];
+    const results = {};
+    for (const path of candidates) {
+      try {
+        results[path] = await easybeerGet(path);
+      } catch (e) {
+        results[path] = { error: e.message };
+      }
+    }
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- Clients ---
 // Source : grille tarifaire → data.clients[].modeleClient
 app.get('/api/clients', async (req, res) => {
