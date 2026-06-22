@@ -63,20 +63,25 @@ app.get('/api/debug-tarifs/:idClient', async (req, res) => {
     const data = await getGrille();
     const clientData = data.clients.find(c => c.modeleClient.idClient === idClient);
     if (!clientData) return res.status(404).json({ error: 'Client non trouvé' });
-    // Retourne les 2 premiers tarifs + 1 exemple de prix
     const tarif0 = clientData.tarifs[0];
-    let prixExample = null;
-    if (tarif0) {
-      try {
-        prixExample = await easybeerGet(
-          `/parametres/grille-tarifaire/${tarif0.modeleContenant.idContenant}/${tarif0.modeleProduit.idProduit}/${tarif0.modeleLot.idLot}`
-        );
-      } catch (e) { prixExample = { error: e.message }; }
-    }
+    const tarif1 = clientData.tarifs[1];
+    // Cherche un conditionnement correspondant
+    const cond0 = tarif0 ? data.conditionnements.find(c =>
+      c.produit.idProduit === tarif0.modeleProduit.idProduit &&
+      c.contenant.idContenant === tarif0.modeleContenant.idContenant &&
+      c.lot.idLot === tarif0.modeleLot.idLot
+    ) : null;
+    // Clés des conditionnements disponibles (5 premiers)
+    const condKeys = data.conditionnements.slice(0, 5).map(c =>
+      `${c.produit.idProduit}-${c.contenant.idContenant}-${c.lot.idLot}`
+    );
     res.json({
       nbTarifs: clientData.tarifs.length,
+      nbConditionnements: data.conditionnements.length,
       tarif0,
-      prixExample,
+      tarif1,
+      cond0,
+      condKeys,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
