@@ -48,29 +48,26 @@ async function easybeerPost(path, body) {
 app.get('/api/debug', async (req, res) => {
   const results = [];
 
-  // 1. Profil utilisateur courant (pour récupérer l'idUtilisateur)
+  // 1. Liste clients/prospects de l'utilisateur API (id=33668)
   try {
-    const r = await fetch(`${BASE_URL}/utilisateur/profil`, { headers: easybeerHeaders() });
+    const r = await fetch(`${BASE_URL}/parametres/client-prospect/liste/33668`, { headers: easybeerHeaders() });
     const body = await r.text();
-    results.push({ path: 'GET /utilisateur/profil', status: r.status, preview: body.slice(0, 400) });
-  } catch (e) { results.push({ path: 'GET /utilisateur/profil', status: 'error', preview: e.message }); }
+    results.push({ path: 'GET /parametres/client-prospect/liste/33668', status: r.status, preview: body.slice(0, 600) });
+  } catch (e) { results.push({ path: 'GET client-prospect/liste', status: 'error', preview: e.message }); }
 
-  // 2. POST liste clients paginée (corps minimal)
+  // 2. Prix spécifique produit Blonde d'Occitanie (idContenant=12, idProduit=22337, idLot=1)
   try {
-    const r = await fetch(`${BASE_URL}/parametres/client/liste`, {
-      method: 'POST', headers: easybeerHeaders(), body: JSON.stringify({ page: 0, taille: 20 }),
-    });
+    const r = await fetch(`${BASE_URL}/parametres/grille-tarifaire/12/22337/1`, { headers: easybeerHeaders() });
     const body = await r.text();
-    results.push({ path: 'POST /parametres/client/liste', status: r.status, preview: body.slice(0, 500) });
-  } catch (e) { results.push({ path: 'POST /parametres/client/liste', status: 'error', preview: e.message }); }
+    results.push({ path: 'GET /parametres/grille-tarifaire/12/22337/1', status: r.status, preview: body.slice(0, 600) });
+  } catch (e) { results.push({ path: 'GET grille-tarifaire spécifique', status: 'error', preview: e.message }); }
 
-  // 3. Grille tarifaire complète (1er élément avec prix)
+  // 3. Grille tarifaire matrice — tous les champs du 1er élément
   try {
     const r = await fetch(`${BASE_URL}/parametres/grille-tarifaire/matrice/client`, { headers: easybeerHeaders() });
     const data = await r.json();
-    const premier = data?.conditionnements?.[0];
-    results.push({ path: 'GET /parametres/grille-tarifaire/matrice/client', status: r.status, premierElement: premier });
-  } catch (e) { results.push({ path: 'GET grille-tarifaire', status: 'error', preview: e.message }); }
+    results.push({ path: 'GET grille-tarifaire/matrice/client', status: r.status, keys: Object.keys(data), nbConditionnements: data?.conditionnements?.length, tousLesChampsElement0: JSON.stringify(data?.conditionnements?.[0]) });
+  } catch (e) { results.push({ path: 'GET grille-tarifaire/matrice/client', status: 'error', preview: e.message }); }
 
   res.json(results);
 });
