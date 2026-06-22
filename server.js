@@ -188,19 +188,29 @@ app.get('/api/debug-commande/:idClient', async (req, res) => {
     if (grilleTarifaireExistante?.idClientType) idClientType = grilleTarifaireExistante.idClientType;
   } catch {}
 
-  // Si idClientType trouvé, reteste avec
-  if (idClientType) {
+  // Utilise la grilleTarifaire complète de la dernière commande
+  const grilleTarifaire = grilleTarifaireExistante ?? { idClientType };
+
+  // Teste différentes structures d'éléments
+  const elemTest = [
+    { label: 'produit+contenant+lot objets', elem: { produit: { idProduit: t.modeleProduit.idProduit }, contenant: { idContenant: t.modeleContenant.idContenant }, lot: { idLot: t.modeleLot.idLot }, quantite: 1 } },
+    { label: 'idProduit+idContenant+idLot plats', elem: { idProduit: t.modeleProduit.idProduit, idContenant: t.modeleContenant.idContenant, idLot: t.modeleLot.idLot, quantite: 1 } },
+    { label: 'produit+contenant+lot+quantiteCarton', elem: { produit: { idProduit: t.modeleProduit.idProduit }, contenant: { idContenant: t.modeleContenant.idContenant }, lot: { idLot: t.modeleLot.idLot }, quantite: 1, quantiteCarton: 0 } },
+  ];
+
+  for (const e of elemTest) {
     try {
       const r = await easybeerPost('/commande/enregistrer', {
-        client: { idClient }, grilleTarifaire: { idClientType }, commentaire: 'TEST', elementsBouteilles: [ligne],
+        client: { idClient }, grilleTarifaire, commentaire: 'TEST', elementsBouteilles: [e.elem],
       });
-      results.push({ label: 'grilleTarifaire depuis derniere commande', ok: true, result: r });
-    } catch (e) {
-      results.push({ label: 'grilleTarifaire depuis derniere commande', ok: false, error: e.message, detail: e.detail });
+      results.push({ label: e.label, ok: true, result: r });
+      break;
+    } catch (ex) {
+      results.push({ label: e.label, ok: false, error: ex.message, detail: ex.detail });
     }
   }
 
-  res.json({ typeClient, idClientType, grilleTarifaireExistante, results });
+  res.json({ typeClient, idClientType, results });
 });
 
 // --- Clients ---
