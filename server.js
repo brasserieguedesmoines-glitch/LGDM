@@ -167,8 +167,12 @@ app.get('/api/debug-commande/:idClient', async (req, res) => {
       results.push({ label: p.label, ok: false, error: e.message, detail: e.detail });
     }
   }
-  const typesClientDebug = (data.typesClient ?? []).slice(0, 5);
-  res.json({ tarif: t, typeClient, idClientType, typesClientDebug, results });
+  // Tente de récupérer le client complet pour trouver idClientType
+  let clientComplet = null;
+  try { clientComplet = await easybeerGet(`/parametres/client/${idClient}`); } catch {}
+  try { if (!clientComplet) clientComplet = await easybeerGet(`/parametres/client-prospect/${idClient}`); } catch {}
+
+  res.json({ tarif: t, typeClient, idClientType, clientComplet, results });
 });
 
 // --- Clients ---
