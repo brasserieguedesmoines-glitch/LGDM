@@ -70,27 +70,22 @@ async function getTypesClient() {
 // Cache grilleTarifaire par client (depuis derniere-commande ou prix)
 const grilleTarifaireParClient = new Map();
 
-async function getGrilleTarifaireClient(idClient, tarif0) {
+async function getGrilleTarifaireClient(idClient) {
   if (grilleTarifaireParClient.has(idClient)) return grilleTarifaireParClient.get(idClient);
-  // Essai 1 : derniere commande
+  // Récupère le type client depuis detail/{idClient}
+  try {
+    const detail = await easybeerGet(`/parametres/client/detail/${idClient}`);
+    if (detail?.type?.idClientType) {
+      grilleTarifaireParClient.set(idClient, detail.type);
+      return detail.type;
+    }
+  } catch {}
+  // Fallback : dernière commande
   try {
     const cmd = await easybeerGet(`/commande/derniere-commande/${idClient}`);
     if (cmd?.grilleTarifaire?.idClientType) {
       grilleTarifaireParClient.set(idClient, cmd.grilleTarifaire);
       return cmd.grilleTarifaire;
-    }
-  } catch {}
-  // Essai 2 : prix du premier produit → typeClient → idClientType
-  try {
-    const tarifs = await easybeerGet(`/parametres/grille-tarifaire/${tarif0.modeleContenant.idContenant}/${tarif0.modeleProduit.idProduit}/${tarif0.modeleLot.idLot}`);
-    const typeClientLibelle = Array.isArray(tarifs) ? (tarifs.find(t => t.idClient === idClient) ?? tarifs[0])?.typeClient : null;
-    if (typeClientLibelle) {
-      const types = await getTypesClient();
-      const tc = types.find(t => t.libelle === typeClientLibelle);
-      if (tc) {
-        grilleTarifaireParClient.set(idClient, tc);
-        return tc;
-      }
     }
   } catch {}
   return null;
@@ -418,11 +413,7 @@ app.post('/api/commande', async (req, res) => {
     if (!idClient || !Array.isArray(lignes) || lignes.length === 0) {
       return res.status(400).json({ error: 'idClient et lignes sont requis' });
     }
-    // Récupère la grille tarifaire du client
-    const data = await getGrille();
-    const clientData = data.clients.find(c => c.modeleClient.idClient === idClient);
-    const tarif0 = clientData?.tarifs?.[0];
-    const grilleTarifaire = tarif0 ? await getGrilleTarifaireClient(idClient, tarif0) : null;
+    const grilleTarifaire = await getGrilleTarifaireClient(idClient);
 
     const payload = {
       client: { idClient },
