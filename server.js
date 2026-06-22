@@ -378,6 +378,17 @@ app.get('/api/debug-commande/:idClient', async (req, res) => {
   res.json({ ligne, results });
 });
 
+// --- Debug Swagger path complet ---
+app.get('/api/debug-swagger-path', async (req, res) => {
+  try {
+    const swagger = await easybeerGet('/v2/api-docs');
+    const path = req.query.path;
+    res.json(swagger.paths[path] ?? { error: 'path non trouvé' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- Debug : teste POST sur un endpoint EasyBeer ---
 app.get('/api/debug-post-clients', async (req, res) => {
   const bodies = [
