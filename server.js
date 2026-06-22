@@ -139,28 +139,7 @@ app.get('/api/tarifs/:idClient', async (req, res) => {
       }
     }
 
-    // Récupération des prix par lots de 5 pour éviter le rate limit EasyBeer (10 req/s)
-    const avecPrix = [];
-    for (let i = 0; i < produits.length; i += 5) {
-      const lot = produits.slice(i, i + 5);
-      const resultats = await Promise.all(lot.map(async p => {
-        try {
-          const tarifs = await easybeerGet(
-            `/parametres/grille-tarifaire/${p.idContenant}/${p.idProduit}/${p.idLot}`
-          );
-          const ligneClient = Array.isArray(tarifs)
-            ? (tarifs.find(t => t.idClient === idClient) ?? tarifs[0])
-            : null;
-          return { ...p, prixHT: ligneClient?.prixHT ?? null, typeClient: ligneClient?.typeClient ?? null };
-        } catch {
-          return { ...p, prixHT: null };
-        }
-      }));
-      avecPrix.push(...resultats);
-      if (i + 5 < produits.length) await new Promise(r => setTimeout(r, 600));
-    }
-
-    res.json(avecPrix);
+    res.json(produits);
   } catch (err) {
     console.error('GET /api/tarifs', err.message);
     res.status(err.status ?? 502).json({ error: err.message });
