@@ -139,6 +139,19 @@ app.get('/api/debug-swagger-search/:keyword', async (req, res) => {
   }
 });
 
+// --- Debug : teste un endpoint GET ---
+app.get('/api/debug-get', async (req, res) => {
+  try {
+    const path = req.query.path;
+    if (!path) return res.status(400).json({ error: 'path requis' });
+    const data = await easybeerGet(path);
+    const preview = Array.isArray(data) ? { count: data.length, sample: data.slice(0, 3) } : data;
+    res.json(preview);
+  } catch (err) {
+    res.status(err.status ?? 500).json({ error: err.message });
+  }
+});
+
 // --- Debug Swagger definitions ---
 app.get('/api/debug-swagger-def/:name', async (req, res) => {
   try {
