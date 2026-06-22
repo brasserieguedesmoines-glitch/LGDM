@@ -182,6 +182,31 @@ app.get('/api/derniere-commande/:idClient', async (req, res) => {
   }
 });
 
+// --- Debug commande : teste différentes structures de payload ---
+app.post('/api/debug-commande', async (req, res) => {
+  const { idClient, lignes } = req.body;
+  const ligne0 = (lignes ?? [])[0];
+  if (!ligne0) return res.status(400).json({ error: 'lignes vides' });
+
+  // Essai 1 : payload actuel
+  const payloads = [
+    { idClient, commentaire: '', lignesCommande: [{ idProduit: ligne0.idProduit, idContenant: ligne0.idContenant, idLot: ligne0.idLot ?? 1, quantite: 1 }] },
+    { idClient, commentaire: '', lignes: [{ idProduit: ligne0.idProduit, idContenant: ligne0.idContenant, idLot: ligne0.idLot ?? 1, quantite: 1 }] },
+    { client: { idClient }, commentaire: '', lignesCommande: [{ idProduit: ligne0.idProduit, idContenant: ligne0.idContenant, idLot: ligne0.idLot ?? 1, quantite: 1 }] },
+  ];
+
+  const results = [];
+  for (const p of payloads) {
+    try {
+      const r = await easybeerPost('/commande/enregistrer', p);
+      results.push({ payload: p, result: r });
+    } catch (e) {
+      results.push({ payload: p, error: e.message, detail: e.detail });
+    }
+  }
+  res.json(results);
+});
+
 // --- Création de commande ---
 app.post('/api/commande', async (req, res) => {
   try {
@@ -199,6 +224,7 @@ app.post('/api/commande', async (req, res) => {
         quantite: l.quantite,
       })),
     };
+    console.log('POST /api/commande payload:', JSON.stringify(payload));
     const result = await easybeerPost('/commande/enregistrer', payload);
     res.json(result);
   } catch (err) {
