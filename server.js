@@ -56,6 +56,33 @@ async function getGrille() {
   return cache;
 }
 
+// --- Debug tarifs bruts ---
+app.get('/api/debug-tarifs/:idClient', async (req, res) => {
+  try {
+    const idClient = parseInt(req.params.idClient);
+    const data = await getGrille();
+    const clientData = data.clients.find(c => c.modeleClient.idClient === idClient);
+    if (!clientData) return res.status(404).json({ error: 'Client non trouvé' });
+    // Retourne les 2 premiers tarifs + 1 exemple de prix
+    const tarif0 = clientData.tarifs[0];
+    let prixExample = null;
+    if (tarif0) {
+      try {
+        prixExample = await easybeerGet(
+          `/parametres/grille-tarifaire/${tarif0.modeleContenant.idContenant}/${tarif0.modeleProduit.idProduit}/${tarif0.modeleLot.idLot}`
+        );
+      } catch (e) { prixExample = { error: e.message }; }
+    }
+    res.json({
+      nbTarifs: clientData.tarifs.length,
+      tarif0,
+      prixExample,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- Clients ---
 // Source : grille tarifaire → data.clients[].modeleClient
 app.get('/api/clients', async (req, res) => {
