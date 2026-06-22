@@ -182,29 +182,33 @@ app.get('/api/derniere-commande/:idClient', async (req, res) => {
   }
 });
 
-// --- Debug commande : teste différentes structures de payload ---
-app.post('/api/debug-commande', async (req, res) => {
-  const { idClient, lignes } = req.body;
-  const ligne0 = (lignes ?? [])[0];
-  if (!ligne0) return res.status(400).json({ error: 'lignes vides' });
+// --- Debug commande : teste différentes structures (GET, ouvrir dans le navigateur) ---
+app.get('/api/debug-commande/:idClient', async (req, res) => {
+  const idClient = parseInt(req.params.idClient);
+  // Récupère le premier produit du client
+  const data = await getGrille();
+  const clientData = data.clients.find(c => c.modeleClient.idClient === idClient);
+  if (!clientData) return res.status(404).json({ error: 'Client non trouvé' });
+  const t = clientData.tarifs[0];
+  const ligne = { idProduit: t.modeleProduit.idProduit, idContenant: t.modeleContenant.idContenant, idLot: t.modeleLot.idLot ?? 1, quantite: 1 };
 
-  // Essai 1 : payload actuel
   const payloads = [
-    { idClient, commentaire: '', lignesCommande: [{ idProduit: ligne0.idProduit, idContenant: ligne0.idContenant, idLot: ligne0.idLot ?? 1, quantite: 1 }] },
-    { idClient, commentaire: '', lignes: [{ idProduit: ligne0.idProduit, idContenant: ligne0.idContenant, idLot: ligne0.idLot ?? 1, quantite: 1 }] },
-    { client: { idClient }, commentaire: '', lignesCommande: [{ idProduit: ligne0.idProduit, idContenant: ligne0.idContenant, idLot: ligne0.idLot ?? 1, quantite: 1 }] },
+    { label: 'idClient + lignesCommande', body: { idClient, commentaire: 'TEST', lignesCommande: [ligne] } },
+    { label: 'idClient + lignes',         body: { idClient, commentaire: 'TEST', lignes: [ligne] } },
+    { label: 'idClientLivraison',         body: { idClientLivraison: idClient, commentaire: 'TEST', lignesCommande: [ligne] } },
   ];
 
   const results = [];
   for (const p of payloads) {
     try {
-      const r = await easybeerPost('/commande/enregistrer', p);
-      results.push({ payload: p, result: r });
+      const r = await easybeerPost('/commande/enregistrer', p.body);
+      results.push({ label: p.label, ok: true, result: r });
+      break; // arrête au premier succès
     } catch (e) {
-      results.push({ payload: p, error: e.message, detail: e.detail });
+      results.push({ label: p.label, ok: false, error: e.message, detail: e.detail });
     }
   }
-  res.json(results);
+  res.json({ ligne, results });
 });
 
 // --- Création de commande ---
