@@ -46,30 +46,18 @@ async function easybeerPost(path, body) {
 
 // --- Debug ---
 app.get('/api/debug', async (req, res) => {
-  const results = [];
-
-  // 1. Liste clients/prospects de l'utilisateur API (id=33668)
-  try {
-    const r = await fetch(`${BASE_URL}/parametres/client-prospect/liste/33668`, { headers: easybeerHeaders() });
-    const body = await r.text();
-    results.push({ path: 'GET /parametres/client-prospect/liste/33668', status: r.status, preview: body.slice(0, 600) });
-  } catch (e) { results.push({ path: 'GET client-prospect/liste', status: 'error', preview: e.message }); }
-
-  // 2. Prix spécifique produit Blonde d'Occitanie (idContenant=12, idProduit=22337, idLot=1)
-  try {
-    const r = await fetch(`${BASE_URL}/parametres/grille-tarifaire/12/22337/1`, { headers: easybeerHeaders() });
-    const body = await r.text();
-    results.push({ path: 'GET /parametres/grille-tarifaire/12/22337/1', status: r.status, preview: body.slice(0, 600) });
-  } catch (e) { results.push({ path: 'GET grille-tarifaire spécifique', status: 'error', preview: e.message }); }
-
-  // 3. Grille tarifaire matrice — tous les champs du 1er élément
   try {
     const r = await fetch(`${BASE_URL}/parametres/grille-tarifaire/matrice/client`, { headers: easybeerHeaders() });
     const data = await r.json();
-    results.push({ path: 'GET grille-tarifaire/matrice/client', status: r.status, keys: Object.keys(data), nbConditionnements: data?.conditionnements?.length, tousLesChampsElement0: JSON.stringify(data?.conditionnements?.[0]) });
-  } catch (e) { results.push({ path: 'GET grille-tarifaire/matrice/client', status: 'error', preview: e.message }); }
-
-  res.json(results);
+    res.json({
+      typesClient: data.typesClient,
+      clients_3premiers: data.clients?.slice(0, 3),
+      nb_clients: data.clients?.length,
+      nb_conditionnements: data.conditionnements?.length,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // --- Clients ---
