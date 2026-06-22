@@ -109,14 +109,6 @@ textarea { resize: vertical; font-family: inherit; }
   padding: 12px 8px;
 }
 
-.ligne-prix {
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-align: right;
-  white-space: nowrap;
-  min-width: 70px;
-}
-
 .btn-suppr {
   background: none;
   border: none;
@@ -131,25 +123,6 @@ textarea { resize: vertical; font-family: inherit; }
 }
 
 .btn-suppr:hover { opacity: 1; }
-
-/* Récap */
-#recap-table {
-  display: none; /* affiché seulement si lignes valides */
-}
-
-.total-line {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 12px;
-  border-top: 2px solid var(--dark);
-  font-size: 1.1rem;
-}
-
-.total-line strong {
-  font-size: 1.4rem;
-  color: var(--dark);
-}
 
 /* Boutons */
 button {

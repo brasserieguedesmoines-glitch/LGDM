@@ -3,8 +3,6 @@ const btnDerniereCommande = document.getElementById('btn-derniere-commande');
 const sectionProduits = document.getElementById('section-produits');
 const lignesContainer = document.getElementById('lignes-container');
 const btnAjouterLigne = document.getElementById('btn-ajouter-ligne');
-const sectionRecap = document.getElementById('section-recap');
-const totalHtEl = document.getElementById('total-ht');
 const sectionNote = document.getElementById('section-note');
 const sectionEnvoi = document.getElementById('section-envoi');
 const btnEnvoyer = document.getElementById('btn-envoyer');
@@ -86,51 +84,21 @@ function ajouterLigne() {
   inputQte.value = 1;
   inputQte.placeholder = 'Qté';
 
-  const spanPrix = document.createElement('span');
-  spanPrix.className = 'ligne-prix';
-  spanPrix.textContent = '—';
-
   const btnSuppr = document.createElement('button');
   btnSuppr.className = 'btn-suppr';
   btnSuppr.textContent = '×';
   btnSuppr.title = 'Supprimer';
 
-  const mettreAJourPrix = () => {
-    try {
-      const data = sel.value ? JSON.parse(sel.value) : null;
-      const prix = data?.prixHT ?? 0;
-      const qte = parseInt(inputQte.value) || 0;
-      spanPrix.textContent = prix && qte ? `${(prix * qte).toFixed(2)} €` : '—';
-    } catch { spanPrix.textContent = '—'; }
-    calculerTotal();
-  };
-
-  sel.addEventListener('change', mettreAJourPrix);
-  inputQte.addEventListener('input', mettreAJourPrix);
+  sel.addEventListener('change', () => {});
   btnSuppr.addEventListener('click', () => {
-    if (lignesContainer.children.length > 1) { div.remove(); calculerTotal(); }
+    if (lignesContainer.children.length > 1) div.remove();
   });
 
-  div.append(sel, inputQte, spanPrix, btnSuppr);
+  div.append(sel, inputQte, btnSuppr);
   lignesContainer.appendChild(div);
 }
 
 btnAjouterLigne.addEventListener('click', ajouterLigne);
-
-function calculerTotal() {
-  let total = 0;
-  lignesContainer.querySelectorAll('.ligne-produit').forEach(div => {
-    const sel = div.querySelector('select');
-    const inputQte = div.querySelector('input');
-    try {
-      const data = sel.value ? JSON.parse(sel.value) : null;
-      const prix = data?.prixHT ?? 0;
-      const qte = parseInt(inputQte.value) || 0;
-      if (prix && qte) total += prix * qte;
-    } catch { /* ligne incomplète */ }
-  });
-  totalHtEl.textContent = total.toFixed(2).replace('.', ',') + ' €';
-}
 
 // ---- Pré-remplissage depuis la dernière commande ----
 async function preRemplirDerniereCommande(idClient) {
@@ -226,14 +194,12 @@ async function apiFetch(url, options = {}) {
 
 function afficherSections() {
   sectionProduits.style.display = 'flex';
-  sectionRecap.style.display = 'flex';
   sectionNote.style.display = 'flex';
   sectionEnvoi.style.display = 'flex';
 }
 
 function masquerSections() {
   sectionProduits.style.display = 'none';
-  sectionRecap.style.display = 'none';
   sectionNote.style.display = 'none';
   sectionEnvoi.style.display = 'none';
 }
