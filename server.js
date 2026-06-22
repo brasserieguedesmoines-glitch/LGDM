@@ -406,6 +406,36 @@ app.get('/api/debug-post-clients', async (req, res) => {
   res.json(results);
 });
 
+// --- Debug : affiche le payload commande sans l'envoyer ---
+app.get('/api/debug-payload/:idClient', async (req, res) => {
+  try {
+    const idClient = parseInt(req.params.idClient);
+    const grilleTarifaire = await getGrilleTarifaireClient(idClient);
+    const data = await getGrille();
+    const clientData = data.clients.find(c => c.modeleClient.idClient === idClient);
+    const t = clientData?.tarifs?.[0];
+    const lignes = t ? [{ idProduit: t.modeleProduit.idProduit, idContenant: t.modeleContenant.idContenant, idLot: t.modeleLot.idLot ?? 1, quantite: 1 }] : [];
+    const grilleTarifairePayload = grilleTarifaire?.idClientType ? { idClientType: grilleTarifaire.idClientType } : undefined;
+    const payload = {
+      client: { idClient },
+      grilleTarifaire: grilleTarifairePayload,
+      commentaire: 'TEST',
+      elementsBouteilles: lignes.map(l => ({
+        produit: { idProduit: l.idProduit },
+        contenant: { idContenant: l.idContenant },
+        lot: { idLot: l.idLot },
+        quantite: l.quantite,
+      })),
+    };
+    // Tente aussi d'envoyer pour voir l'erreur exacte
+    let result = null, error = null;
+    try { result = await easybeerPost('/commande/enregistrer', payload); } catch (e) { error = { message: e.message, detail: e.detail }; }
+    res.json({ payload, result, error });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- Création de commande ---
 app.post('/api/commande', async (req, res) => {
   try {
@@ -415,9 +445,13 @@ app.post('/api/commande', async (req, res) => {
     }
     const grilleTarifaire = await getGrilleTarifaireClient(idClient);
 
+    const grilleTarifairePayload = grilleTarifaire?.idClientType
+      ? { idClientType: grilleTarifaire.idClientType }
+      : undefined;
+
     const payload = {
       client: { idClient },
-      grilleTarifaire: grilleTarifaire ?? undefined,
+      grilleTarifaire: grilleTarifairePayload,
       commentaire: commentaire ?? '',
       elementsBouteilles: lignes.map(l => ({
         produit: { idProduit: l.idProduit },
