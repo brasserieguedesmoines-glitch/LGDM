@@ -9,7 +9,7 @@ const app = express();
 app.use(express.json());
 app.use(express.static(join(__dirname, 'public')));
 
-const BASE_URL = process.env.EASYBEER_BASE_URL || 'https://api.easybeer.fr';
+const BASE_URL = 'https://api.easybeer.fr';
 const AUTH = Buffer.from(
   `${process.env.EASYBEER_API_USER}:${process.env.EASYBEER_API_PASSWORD}`
 ).toString('base64');
