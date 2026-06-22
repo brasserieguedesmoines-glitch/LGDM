@@ -392,11 +392,11 @@ app.get('/api/debug-swagger-path', async (req, res) => {
 // --- Debug : liste clients paginée ---
 app.get('/api/debug-post-clients', async (req, res) => {
   try {
-    const qs = '?colonneTri=nom&nombreParPage=200&numeroPage=0';
+    const qs = '?colonneTri=nom&nombreParPage=500&numeroPage=0';
     const res2 = await fetch(`${BASE_URL}/parametres/client/liste${qs}`, {
       method: 'POST',
       headers: easybeerHeaders(),
-      body: JSON.stringify({}),
+      body: JSON.stringify({ supprime: false }),
     });
     const data = await res2.json();
     const clients = data?.liste ?? data?.contenu ?? data?.elements ?? data;
