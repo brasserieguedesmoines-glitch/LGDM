@@ -164,7 +164,24 @@ app.get('/api/tarifs/:idClient', async (req, res) => {
       }
     }
 
-    res.json(produits);
+    // Récupération des prix en séquentiel (120ms entre chaque pour rester sous 10 req/s)
+    const avecPrix = [];
+    for (const p of produits) {
+      try {
+        const tarifs = await easybeerGet(
+          `/parametres/grille-tarifaire/${p.idContenant}/${p.idProduit}/${p.idLot}`
+        );
+        const ligneClient = Array.isArray(tarifs)
+          ? (tarifs.find(t => t.idClient === idClient) ?? tarifs[0])
+          : null;
+        avecPrix.push({ ...p, prixHT: ligneClient?.prixHT ?? null, typeClient: ligneClient?.typeClient ?? null });
+      } catch {
+        avecPrix.push({ ...p, prixHT: null });
+      }
+      await new Promise(r => setTimeout(r, 120));
+    }
+
+    res.json(avecPrix);
   } catch (err) {
     console.error('GET /api/tarifs', err.message);
     res.status(err.status ?? 502).json({ error: err.message });
