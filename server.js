@@ -46,21 +46,32 @@ async function easybeerPost(path, body) {
 
 // --- Debug ---
 app.get('/api/debug', async (req, res) => {
-  const candidats = [
-    '/parametres/brasserie-cliente/liste',
-    '/parametres/client/tournee/edition/1090',
-    '/parametres/client/tournee/edition/1089',
-    '/parametres/grille-tarifaire/matrice/client',
-  ];
-  const results = await Promise.all(candidats.map(async path => {
-    try {
-      const r = await fetch(`${BASE_URL}${path}`, { headers: easybeerHeaders() });
-      const body = await r.text();
-      return { path, status: r.status, preview: body.slice(0, 500) };
-    } catch (e) {
-      return { path, status: 'error', preview: e.message };
-    }
-  }));
+  const results = [];
+
+  // 1. Profil utilisateur courant (pour récupérer l'idUtilisateur)
+  try {
+    const r = await fetch(`${BASE_URL}/utilisateur/profil`, { headers: easybeerHeaders() });
+    const body = await r.text();
+    results.push({ path: 'GET /utilisateur/profil', status: r.status, preview: body.slice(0, 400) });
+  } catch (e) { results.push({ path: 'GET /utilisateur/profil', status: 'error', preview: e.message }); }
+
+  // 2. POST liste clients paginée (corps minimal)
+  try {
+    const r = await fetch(`${BASE_URL}/parametres/client/liste`, {
+      method: 'POST', headers: easybeerHeaders(), body: JSON.stringify({ page: 0, taille: 20 }),
+    });
+    const body = await r.text();
+    results.push({ path: 'POST /parametres/client/liste', status: r.status, preview: body.slice(0, 500) });
+  } catch (e) { results.push({ path: 'POST /parametres/client/liste', status: 'error', preview: e.message }); }
+
+  // 3. Grille tarifaire complète (1er élément avec prix)
+  try {
+    const r = await fetch(`${BASE_URL}/parametres/grille-tarifaire/matrice/client`, { headers: easybeerHeaders() });
+    const data = await r.json();
+    const premier = data?.conditionnements?.[0];
+    results.push({ path: 'GET /parametres/grille-tarifaire/matrice/client', status: r.status, premierElement: premier });
+  } catch (e) { results.push({ path: 'GET grille-tarifaire', status: 'error', preview: e.message }); }
+
   res.json(results);
 });
 
