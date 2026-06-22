@@ -113,6 +113,18 @@ app.get('/api/debug-prix/:idContenant/:idProduit/:idLot', async (req, res) => {
   }
 });
 
+// --- Debug : liste les endpoints Swagger contenant un mot-clé ---
+app.get('/api/debug-swagger-search/:keyword', async (req, res) => {
+  try {
+    const swagger = await easybeerGet('/v2/api-docs');
+    const kw = req.params.keyword.toLowerCase();
+    const paths = Object.keys(swagger.paths).filter(p => p.toLowerCase().includes(kw));
+    res.json(paths);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- Debug Swagger definitions ---
 app.get('/api/debug-swagger-def/:name', async (req, res) => {
   try {
