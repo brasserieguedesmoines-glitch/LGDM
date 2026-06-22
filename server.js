@@ -41,6 +41,30 @@ async function easybeerPost(path, body) {
   return res.json();
 }
 
+// --- Diagnostic (temporaire) ---
+app.get('/api/debug', async (req, res) => {
+  const candidats = [
+    '/partenaire/liste',
+    '/partenaire/list',
+    '/partenaire',
+    '/referentiel/client/liste',
+    '/referentiel/clients',
+    '/referentiel/partenaire/liste',
+    '/client/liste',
+    '/clients',
+  ];
+  const results = await Promise.all(candidats.map(async path => {
+    try {
+      const r = await fetch(`${BASE_URL}${path}`, { headers: easybeerHeaders() });
+      const body = await r.text();
+      return { path, status: r.status, preview: body.slice(0, 200) };
+    } catch (e) {
+      return { path, status: 'error', preview: e.message };
+    }
+  }));
+  res.json(results);
+});
+
 // --- Clients ---
 // TODO : confirmer l'endpoint exact dans Swagger (controleur-partenaire ou controleur-referentiel)
 // Candidats à tester dans l'ordre :
