@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>LGDM — Prise de commande</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Prise de commande</h1>
+  </header>
+
+  <main>
+    <!-- Étape 1 : Sélection client -->
+    <section id="section-client">
+      <label for="select-client">Client</label>
+      <select id="select-client">
+        <option value="">Chargement des clients…</option>
+      </select>
+      <button id="btn-derniere-commande" class="secondary" style="display:none">
+        Recharger la dernière commande
+      </button>
+    </section>
+
+    <!-- Étape 2 : Lignes de produit -->
+    <section id="section-produits" style="display:none">
+      <h2>Produits</h2>
+      <div id="lignes-container"></div>
+      <button id="btn-ajouter-ligne" class="secondary">+ Ajouter un produit</button>
+    </section>
+
+    <!-- Récapitulatif -->
+    <section id="section-recap" style="display:none">
+      <div id="recap-table"></div>
+      <div class="total-line">
+        <span>Total HT</span>
+        <strong id="total-ht">0,00 €</strong>
+      </div>
+    </section>
+
+    <!-- Note de livraison -->
+    <section id="section-note" style="display:none">
+      <label for="note-livraison">Note de livraison</label>
+      <textarea id="note-livraison" rows="3" placeholder="Horaire, accès, instructions particulières…"></textarea>
+    </section>
+
+    <!-- Envoi -->
+    <section id="section-envoi" style="display:none">
+      <button id="btn-envoyer" class="primary">Envoyer la commande</button>
+      <p id="msg-statut"></p>
+    </section>
+  </main>
+
+  <!-- Modal de confirmation -->
+  <div id="modal-overlay" style="display:none">
+    <div id="modal">
+      <h2>Commande envoyée ✓</h2>
+      <p id="modal-detail"></p>
+      <button id="btn-nouvelle-commande" class="primary">Nouvelle commande</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
