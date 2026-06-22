@@ -41,28 +41,23 @@ async function easybeerPost(path, body) {
   return res.json();
 }
 
-// --- Diagnostic (temporaire) ---
+// --- Diagnostic : récupère la spec Swagger pour trouver les vrais endpoints ---
 app.get('/api/debug', async (req, res) => {
-  const candidats = [
-    '/partenaire/liste',
-    '/partenaire/list',
-    '/partenaire',
-    '/referentiel/client/liste',
-    '/referentiel/clients',
-    '/referentiel/partenaire/liste',
-    '/client/liste',
-    '/clients',
-  ];
-  const results = await Promise.all(candidats.map(async path => {
+  const specUrls = ['/v2/api-docs', '/swagger.json', '/api-docs', '/v3/api-docs', '/openapi.json'];
+  for (const url of specUrls) {
     try {
-      const r = await fetch(`${BASE_URL}${path}`, { headers: easybeerHeaders() });
-      const body = await r.text();
-      return { path, status: r.status, preview: body.slice(0, 200) };
-    } catch (e) {
-      return { path, status: 'error', preview: e.message };
-    }
-  }));
-  res.json(results);
+      const r = await fetch(`${BASE_URL}${url}`, { headers: easybeerHeaders() });
+      if (r.ok) {
+        const spec = await r.json();
+        // Extrait uniquement les paths GET pour ne pas surcharger la réponse
+        const paths = Object.entries(spec.paths || {})
+          .filter(([, methods]) => methods.get)
+          .map(([path, methods]) => ({ path, summary: methods.get.summary || methods.get.operationId || '' }));
+        return res.json({ specUrl: url, totalPaths: Object.keys(spec.paths || {}).length, getPaths: paths });
+      }
+    } catch (e) { /* essai suivant */ }
+  }
+  res.status(404).json({ error: 'Spec Swagger non trouvée', essais: specUrls });
 });
 
 // --- Clients ---
