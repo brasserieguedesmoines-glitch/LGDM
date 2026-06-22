@@ -56,34 +56,6 @@ async function getGrille() {
   return cache;
 }
 
-// Cache des prix par client (valide 1h)
-const prixCache = new Map();
-
-async function getPrixClient(idClient, produits) {
-  const now = Date.now();
-  const cached = prixCache.get(idClient);
-  if (cached && now < cached.expiry) return cached.data;
-
-  const avecPrix = [];
-  for (const p of produits) {
-    try {
-      const tarifs = await easybeerGet(
-        `/parametres/grille-tarifaire/${p.idContenant}/${p.idProduit}/${p.idLot}`
-      );
-      const ligneClient = Array.isArray(tarifs)
-        ? (tarifs.find(t => t.idClient === idClient) ?? tarifs[0])
-        : null;
-      avecPrix.push({ ...p, prixHT: ligneClient?.prixHT ?? null, typeClient: ligneClient?.typeClient ?? null });
-    } catch {
-      avecPrix.push({ ...p, prixHT: null });
-    }
-    await new Promise(r => setTimeout(r, 120));
-  }
-
-  prixCache.set(idClient, { data: avecPrix, expiry: now + 60 * 60 * 1000 });
-  return avecPrix;
-}
-
 // --- Debug tarifs bruts ---
 app.get('/api/debug-tarifs/:idClient', async (req, res) => {
   try {
@@ -192,7 +164,7 @@ app.get('/api/tarifs/:idClient', async (req, res) => {
       }
     }
 
-    res.json(await getPrixClient(idClient, produits));
+    res.json(produits);
   } catch (err) {
     console.error('GET /api/tarifs', err.message);
     res.status(err.status ?? 502).json({ error: err.message });
@@ -225,7 +197,6 @@ app.post('/api/commande', async (req, res) => {
         idContenant: l.idContenant,
         idLot: l.idLot ?? 1,
         quantite: l.quantite,
-        prixUnitaire: l.prixHT,
       })),
     };
     const result = await easybeerPost('/commande/enregistrer', payload);
