@@ -167,12 +167,28 @@ app.get('/api/debug-commande/:idClient', async (req, res) => {
       results.push({ label: p.label, ok: false, error: e.message, detail: e.detail });
     }
   }
-  // Tente de récupérer le client complet pour trouver idClientType
-  let clientComplet = null;
-  try { clientComplet = await easybeerGet(`/parametres/client/${idClient}`); } catch {}
-  try { if (!clientComplet) clientComplet = await easybeerGet(`/parametres/client-prospect/${idClient}`); } catch {}
+  // Cherche idClientType dans la dernière commande du client
+  let derniereCommande = null;
+  let grilleTarifaireExistante = null;
+  try {
+    derniereCommande = await easybeerGet(`/commande/derniere-commande/${idClient}`);
+    grilleTarifaireExistante = derniereCommande?.grilleTarifaire ?? null;
+    if (grilleTarifaireExistante?.idClientType) idClientType = grilleTarifaireExistante.idClientType;
+  } catch {}
 
-  res.json({ tarif: t, typeClient, idClientType, clientComplet, results });
+  // Si idClientType trouvé, reteste avec
+  if (idClientType) {
+    try {
+      const r = await easybeerPost('/commande/enregistrer', {
+        client: { idClient }, grilleTarifaire: { idClientType }, commentaire: 'TEST', elementsBouteilles: [ligne],
+      });
+      results.push({ label: 'grilleTarifaire depuis derniere commande', ok: true, result: r });
+    } catch (e) {
+      results.push({ label: 'grilleTarifaire depuis derniere commande', ok: false, error: e.message, detail: e.detail });
+    }
+  }
+
+  res.json({ typeClient, idClientType, grilleTarifaireExistante, results });
 });
 
 // --- Clients ---
