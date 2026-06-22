@@ -64,7 +64,7 @@ app.get('/api/clients', async (req, res) => {
     const clients = data.clients
       .filter(c => c.modeleClient.actif && !c.modeleClient.supprime)
       .map(c => ({ id: c.modeleClient.idClient, nom: c.modeleClient.nom }))
-      .sort((a, b) => a.nom.localeCompare('fr', b.nom));
+      .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
     res.json(clients);
   } catch (err) {
     console.error('GET /api/clients', err.message);
