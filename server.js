@@ -47,16 +47,16 @@ async function easybeerPost(path, body) {
 // --- Debug ---
 app.get('/api/debug', async (req, res) => {
   const candidats = [
-    '/parametres/client/tournee',
+    '/parametres/brasserie-cliente/liste',
+    '/parametres/client/tournee/edition/1090',
+    '/parametres/client/tournee/edition/1089',
     '/parametres/grille-tarifaire/matrice/client',
-    '/stock/bouteilles',
-    '/stock/futs',
   ];
   const results = await Promise.all(candidats.map(async path => {
     try {
       const r = await fetch(`${BASE_URL}${path}`, { headers: easybeerHeaders() });
       const body = await r.text();
-      return { path, status: r.status, preview: body.slice(0, 300) };
+      return { path, status: r.status, preview: body.slice(0, 500) };
     } catch (e) {
       return { path, status: 'error', preview: e.message };
     }
