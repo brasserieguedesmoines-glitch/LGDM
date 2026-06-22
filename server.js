@@ -113,6 +113,20 @@ app.get('/api/debug-prix/:idContenant/:idProduit/:idLot', async (req, res) => {
   }
 });
 
+// --- Debug dernière commande complète ---
+app.get('/api/debug-derniere-commande/:idClient', async (req, res) => {
+  try {
+    const cmd = await easybeerGet(`/commande/derniere-commande/${req.params.idClient}`);
+    res.json({
+      grilleTarifaire: cmd.grilleTarifaire,
+      elementsBouteilles: (cmd.elementsBouteilles ?? []).slice(0, 2),
+      elementsContenants: (cmd.elementsContenants ?? []).slice(0, 2),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- Debug : liste les endpoints Swagger contenant un mot-clé ---
 app.get('/api/debug-swagger-search/:keyword', async (req, res) => {
   try {
