@@ -391,24 +391,21 @@ app.get('/api/debug-swagger-path', async (req, res) => {
 
 // --- Debug : liste clients paginée ---
 app.get('/api/debug-post-clients', async (req, res) => {
-  const colonnes = ['NOM', 'nom', 'nomClient', 'NOM_CLIENT', 'RAISON_SOCIALE', 'id', 'ID'];
+  const candidates = [
+    { method: 'GET', path: '/parametres/client/tournee' },
+    { method: 'GET', path: '/indicateur/classement-clients?dateDebut=2020-01-01&dateFin=2030-01-01' },
+    { method: 'GET', path: '/parametres/grille-tarifaire/autre/matrice/client' },
+    { method: 'GET', path: '/parametres/brasserie-cliente/liste' },
+  ];
   const results = [];
-  for (const col of colonnes) {
+  for (const c of candidates) {
     try {
-      const qs = `?colonneTri=${col}&nombreParPage=10&numeroPage=0`;
-      const r = await fetch(`${BASE_URL}/parametres/client/liste${qs}`, {
-        method: 'POST', headers: easybeerHeaders(), body: JSON.stringify({ supprime: false }),
-      });
+      const r = await fetch(`${BASE_URL}${c.path}`, { method: c.method, headers: easybeerHeaders() });
       const d = await r.json();
-      if (r.ok) {
-        const clients = d?.liste ?? d?.contenu ?? d?.elements ?? d;
-        results.push({ col, status: r.status, ok: true, count: Array.isArray(clients) ? clients.length : '?', sample: Array.isArray(clients) ? clients[0] : d });
-        break;
-      } else {
-        results.push({ col, status: r.status, error: d?.message ?? JSON.stringify(d).slice(0, 100) });
-      }
+      const arr = Array.isArray(d) ? d : (d?.liste ?? d?.clients ?? d?.contenu ?? null);
+      results.push({ path: c.path, status: r.status, count: arr ? arr.length : '?', sample: arr ? arr[0] : d });
     } catch (e) {
-      results.push({ col, error: e.message });
+      results.push({ path: c.path, error: e.message });
     }
   }
   res.json(results);
