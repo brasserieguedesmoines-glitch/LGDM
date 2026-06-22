@@ -389,25 +389,21 @@ app.get('/api/debug-swagger-path', async (req, res) => {
   }
 });
 
-// --- Debug : teste POST sur un endpoint EasyBeer ---
+// --- Debug : liste clients paginée ---
 app.get('/api/debug-post-clients', async (req, res) => {
-  const bodies = [
-    {},
-    { actif: true },
-    { page: 0, taille: 10 },
-    { filtre: '' },
-  ];
-  const results = [];
-  for (const body of bodies) {
-    try {
-      const r = await easybeerPost('/parametres/client/liste', body);
-      results.push({ body, ok: true, count: Array.isArray(r) ? r.length : '?', sample: Array.isArray(r) ? r[0] : r });
-      break;
-    } catch (e) {
-      results.push({ body, ok: false, error: e.message });
-    }
+  try {
+    const qs = '?colonneTri=nom&nombreParPage=200&numeroPage=0';
+    const res2 = await fetch(`${BASE_URL}/parametres/client/liste${qs}`, {
+      method: 'POST',
+      headers: easybeerHeaders(),
+      body: JSON.stringify({}),
+    });
+    const data = await res2.json();
+    const clients = data?.liste ?? data?.contenu ?? data?.elements ?? data;
+    res.json({ status: res2.status, count: Array.isArray(clients) ? clients.length : '?', sample: Array.isArray(clients) ? clients.slice(0, 2) : data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-  res.json(results);
 });
 
 // --- Création de commande ---
