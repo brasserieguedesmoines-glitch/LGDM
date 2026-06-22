@@ -113,12 +113,12 @@ app.get('/api/debug-prix/:idContenant/:idProduit/:idLot', async (req, res) => {
   }
 });
 
-// --- Debug Swagger endpoint ---
-app.get('/api/debug-swagger-commande', async (req, res) => {
+// --- Debug Swagger definitions ---
+app.get('/api/debug-swagger-def/:name', async (req, res) => {
   try {
     const swagger = await easybeerGet('/v2/api-docs');
-    const path = swagger.paths['/commande/enregistrer'];
-    res.json(path ?? { error: 'endpoint non trouvé dans swagger' });
+    const def = swagger.definitions[req.params.name];
+    res.json(def ?? { error: 'définition non trouvée', available: Object.keys(swagger.definitions).filter(k => k.toLowerCase().includes('commande')) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
