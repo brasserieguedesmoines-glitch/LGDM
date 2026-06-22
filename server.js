@@ -132,22 +132,27 @@ app.get('/api/debug-commande/:idClient', async (req, res) => {
   if (!clientData) return res.status(404).json({ error: 'Client non trouvé' });
   const t = clientData.tarifs[0];
 
+  // Récupère le typeClient depuis l'endpoint de prix
+  let typeClient = null;
+  try {
+    const tarifs = await easybeerGet(`/parametres/grille-tarifaire/${t.modeleContenant.idContenant}/${t.modeleProduit.idProduit}/${t.modeleLot.idLot}`);
+    const ligne = Array.isArray(tarifs) ? (tarifs.find(x => x.idClient === idClient) ?? tarifs[0]) : null;
+    typeClient = ligne?.typeClient ?? null;
+  } catch {}
+
+  const ligne = { produit: { idProduit: t.modeleProduit.idProduit }, contenant: { idContenant: t.modeleContenant.idContenant }, lot: { idLot: t.modeleLot.idLot }, quantite: 1 };
   const payloads = [
     {
-      label: 'client:{idClient} + elementsBouteilles',
-      body: {
-        client: { idClient },
-        commentaire: 'TEST',
-        elementsBouteilles: [{ produit: { idProduit: t.modeleProduit.idProduit }, contenant: { idContenant: t.modeleContenant.idContenant }, lot: { idLot: t.modeleLot.idLot }, quantite: 1 }],
-      },
+      label: 'elementsBouteilles + grilleTarifaire typeClient',
+      body: { client: { idClient }, grilleTarifaire: { typeClient }, commentaire: 'TEST', elementsBouteilles: [ligne] },
     },
     {
-      label: 'client:{idClient} + elementsContenants',
-      body: {
-        client: { idClient },
-        commentaire: 'TEST',
-        elementsContenants: [{ produit: { idProduit: t.modeleProduit.idProduit }, contenant: { idContenant: t.modeleContenant.idContenant }, lot: { idLot: t.modeleLot.idLot }, quantite: 1 }],
-      },
+      label: 'elementsBouteilles + grilleTarifaire typeClient string',
+      body: { client: { idClient }, grilleTarifaire: typeClient, commentaire: 'TEST', elementsBouteilles: [ligne] },
+    },
+    {
+      label: 'elementsContenants + grilleTarifaire typeClient',
+      body: { client: { idClient }, grilleTarifaire: { typeClient }, commentaire: 'TEST', elementsContenants: [ligne] },
     },
   ];
 
@@ -161,7 +166,7 @@ app.get('/api/debug-commande/:idClient', async (req, res) => {
       results.push({ label: p.label, ok: false, error: e.message, detail: e.detail });
     }
   }
-  res.json({ tarif: t, results });
+  res.json({ tarif: t, typeClient, results });
 });
 
 // --- Clients ---
