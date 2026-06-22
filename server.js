@@ -391,19 +391,27 @@ app.get('/api/debug-swagger-path', async (req, res) => {
 
 // --- Debug : liste clients paginée ---
 app.get('/api/debug-post-clients', async (req, res) => {
-  try {
-    const qs = '?colonneTri=nom&nombreParPage=500&numeroPage=0';
-    const res2 = await fetch(`${BASE_URL}/parametres/client/liste${qs}`, {
-      method: 'POST',
-      headers: easybeerHeaders(),
-      body: JSON.stringify({ supprime: false }),
-    });
-    const data = await res2.json();
-    const clients = data?.liste ?? data?.contenu ?? data?.elements ?? data;
-    res.json({ status: res2.status, count: Array.isArray(clients) ? clients.length : '?', sample: Array.isArray(clients) ? clients.slice(0, 2) : data });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  const colonnes = ['NOM', 'nom', 'nomClient', 'NOM_CLIENT', 'RAISON_SOCIALE', 'id', 'ID'];
+  const results = [];
+  for (const col of colonnes) {
+    try {
+      const qs = `?colonneTri=${col}&nombreParPage=10&numeroPage=0`;
+      const r = await fetch(`${BASE_URL}/parametres/client/liste${qs}`, {
+        method: 'POST', headers: easybeerHeaders(), body: JSON.stringify({ supprime: false }),
+      });
+      const d = await r.json();
+      if (r.ok) {
+        const clients = d?.liste ?? d?.contenu ?? d?.elements ?? d;
+        results.push({ col, status: r.status, ok: true, count: Array.isArray(clients) ? clients.length : '?', sample: Array.isArray(clients) ? clients[0] : d });
+        break;
+      } else {
+        results.push({ col, status: r.status, error: d?.message ?? JSON.stringify(d).slice(0, 100) });
+      }
+    } catch (e) {
+      results.push({ col, error: e.message });
+    }
   }
+  res.json(results);
 });
 
 // --- Création de commande ---
