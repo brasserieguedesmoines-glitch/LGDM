@@ -44,45 +44,89 @@ async function easybeerPost(path, body) {
   return res.json();
 }
 
-// --- Debug ---
-app.get('/api/debug', async (req, res) => {
-  try {
-    const r = await fetch(`${BASE_URL}/parametres/grille-tarifaire/matrice/client`, { headers: easybeerHeaders() });
-    const data = await r.json();
-    res.json({
-      typesClient: data.typesClient,
-      clients_3premiers: data.clients?.slice(0, 3),
-      nb_clients: data.clients?.length,
-      nb_conditionnements: data.conditionnements?.length,
-    });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
+// Cache grille tarifaire (chargée une fois, valide 1h)
+let cache = null;
+let cacheExpiry = 0;
+
+async function getGrille() {
+  if (!cache || Date.now() > cacheExpiry) {
+    cache = await easybeerGet('/parametres/grille-tarifaire/matrice/client');
+    cacheExpiry = Date.now() + 60 * 60 * 1000;
   }
-});
+  return cache;
+}
 
 // --- Clients ---
-// GET /parametres/client/tournee → listeTourneeClient
+// Source : grille tarifaire → data.clients[].modeleClient
 app.get('/api/clients', async (req, res) => {
   try {
-    const data = await easybeerGet('/parametres/client/tournee');
-    const liste = Array.isArray(data) ? data : (data.content ?? data.liste ?? data);
-    res.json(liste);
+    const data = await getGrille();
+    const clients = data.clients
+      .filter(c => c.modeleClient.actif && !c.modeleClient.supprime)
+      .map(c => ({ id: c.modeleClient.idClient, nom: c.modeleClient.nom }))
+      .sort((a, b) => a.nom.localeCompare('fr', b.nom));
+    res.json(clients);
   } catch (err) {
     console.error('GET /api/clients', err.message);
-    res.status(err.status ?? 502).json({ error: err.message, detail: err.detail });
+    res.status(err.status ?? 502).json({ error: err.message });
   }
 });
 
-// --- Produits disponibles avec tarifs par client ---
-// GET /parametres/grille-tarifaire/matrice/client?idClient=X
+// --- Produits + prix pour un client ---
+// Source : grille tarifaire → client.tarifs × conditionnements
+// Prix : GET /parametres/grille-tarifaire/{idContenant}/{idProduit}/{idLot}
 app.get('/api/tarifs/:idClient', async (req, res) => {
   try {
-    const data = await easybeerGet(`/parametres/grille-tarifaire/matrice/client?idClient=${req.params.idClient}`);
-    const liste = Array.isArray(data) ? data : (data.content ?? data.lignes ?? data.tarifs ?? data);
-    res.json(liste);
+    const idClient = parseInt(req.params.idClient);
+    const data = await getGrille();
+
+    // Map des conditionnements : "idProduit-idContenant-idLot" → infos
+    const condMap = {};
+    for (const c of data.conditionnements) {
+      const key = `${c.produit.idProduit}-${c.contenant.idContenant}-${c.lot.idLot}`;
+      condMap[key] = {
+        idProduit: c.produit.idProduit,
+        libelle: c.produit.nom,
+        contenant: c.contenant.libelleAvecContenance ?? c.contenant.nom,
+        idContenant: c.contenant.idContenant,
+        idLot: c.lot.idLot,
+      };
+    }
+
+    // Produits du client (dédupliqués)
+    const clientData = data.clients.find(c => c.modeleClient.idClient === idClient);
+    if (!clientData) return res.status(404).json({ error: 'Client non trouvé' });
+
+    const seen = new Set();
+    const produits = [];
+    for (const t of clientData.tarifs) {
+      const key = `${t.modeleProduit.idProduit}-${t.modeleContenant.idContenant}-${t.modeleLot.idLot}`;
+      if (!seen.has(key) && condMap[key]) {
+        seen.add(key);
+        produits.push(condMap[key]);
+      }
+    }
+
+    // Récupération des prix en parallèle
+    const avecPrix = await Promise.all(produits.map(async p => {
+      try {
+        const tarifs = await easybeerGet(
+          `/parametres/grille-tarifaire/${p.idContenant}/${p.idProduit}/${p.idLot}`
+        );
+        // On prend le prix du client direct (idClient) ou à défaut le premier tarif disponible
+        const ligneClient = Array.isArray(tarifs)
+          ? (tarifs.find(t => t.idClient === idClient) ?? tarifs[0])
+          : null;
+        return { ...p, prixHT: ligneClient?.prixHT ?? null, typeClient: ligneClient?.typeClient ?? null };
+      } catch {
+        return { ...p, prixHT: null };
+      }
+    }));
+
+    res.json(avecPrix);
   } catch (err) {
     console.error('GET /api/tarifs', err.message);
-    res.status(err.status ?? 502).json({ error: err.message, detail: err.detail });
+    res.status(err.status ?? 502).json({ error: err.message });
   }
 });
 
@@ -93,7 +137,7 @@ app.get('/api/derniere-commande/:idClient', async (req, res) => {
     res.json(data);
   } catch (err) {
     console.error('GET /api/derniere-commande', err.message);
-    res.status(err.status ?? 502).json({ error: err.message, detail: err.detail });
+    res.status(err.status ?? 502).json({ error: err.message });
   }
 });
 
@@ -104,7 +148,17 @@ app.post('/api/commande', async (req, res) => {
     if (!idClient || !Array.isArray(lignes) || lignes.length === 0) {
       return res.status(400).json({ error: 'idClient et lignes sont requis' });
     }
-    const payload = buildCommandePayload({ idClient, lignes, commentaire });
+    const payload = {
+      idClient,
+      commentaire: commentaire ?? '',
+      lignesCommande: lignes.map(l => ({
+        idProduit: l.idProduit,
+        idContenant: l.idContenant,
+        idLot: l.idLot ?? 1,
+        quantite: l.quantite,
+        prixUnitaire: l.prixHT,
+      })),
+    };
     const result = await easybeerPost('/commande/enregistrer', payload);
     res.json(result);
   } catch (err) {
@@ -112,18 +166,6 @@ app.post('/api/commande', async (req, res) => {
     res.status(err.status ?? 502).json({ error: err.message, detail: err.detail });
   }
 });
-
-function buildCommandePayload({ idClient, lignes, commentaire }) {
-  return {
-    idClient,
-    commentaire: commentaire ?? '',
-    lignesCommande: lignes.map(l => ({
-      idProduit: l.idProduit,
-      quantite: l.quantite,
-      prixUnitaire: l.prixUnitaire,
-    })),
-  };
-}
 
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 3000;

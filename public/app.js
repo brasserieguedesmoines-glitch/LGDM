@@ -1,8 +1,3 @@
-// ============================================================
-// LGDM — Formulaire de commande terrain
-// Connexion à l'API EasyBeer via le proxy Express (server.js)
-// ============================================================
-
 const selectClient = document.getElementById('select-client');
 const btnDerniereCommande = document.getElementById('btn-derniere-commande');
 const sectionProduits = document.getElementById('section-produits');
@@ -18,8 +13,8 @@ const modalOverlay = document.getElementById('modal-overlay');
 const modalDetail = document.getElementById('modal-detail');
 const btnNouvelleCommande = document.getElementById('btn-nouvelle-commande');
 
-// Catalogue des produits/tarifs pour le client sélectionné
-// Format : [{ idProduit, libelle, prixUnitaireHT, unite }]
+// Catalogue des produits pour le client sélectionné
+// Format : [{ idProduit, idContenant, idLot, libelle, contenant, prixHT }]
 let catalogue = [];
 
 // ---- Chargement initial des clients ----
@@ -29,25 +24,20 @@ async function chargerClients() {
     selectClient.innerHTML = '<option value="">— Choisir un client —</option>';
     clients.forEach(c => {
       const opt = document.createElement('option');
-      // TODO : ajuster les noms de champs selon la vraie réponse API
-      // Champs probables : idClient / id, raisonSociale / nom / libelle
-      opt.value = c.idClient ?? c.id ?? c.idPartenaire;
-      opt.textContent = c.raisonSociale ?? c.nom ?? c.libelle ?? `Client #${opt.value}`;
+      opt.value = c.id;
+      opt.textContent = c.nom;
       selectClient.appendChild(opt);
     });
   } catch (err) {
     selectClient.innerHTML = '<option value="">Erreur de chargement</option>';
-    afficherErreur('Impossible de charger les clients : ' + err.message);
+    setStatut('Impossible de charger les clients : ' + err.message, true);
   }
 }
 
 // ---- Changement de client ----
 selectClient.addEventListener('change', async () => {
   const idClient = selectClient.value;
-  if (!idClient) {
-    masquerSections();
-    return;
-  }
+  if (!idClient) { masquerSections(); return; }
   await chargerTarifs(idClient);
   btnDerniereCommande.style.display = 'block';
 });
@@ -58,23 +48,16 @@ btnDerniereCommande.addEventListener('click', async () => {
 });
 
 async function chargerTarifs(idClient) {
-  setStatut('Chargement des tarifs…');
+  setStatut('Chargement des produits…');
+  btnDerniereCommande.style.display = 'none';
+  masquerSections();
   try {
     catalogue = await apiFetch(`/api/tarifs/${idClient}`);
-    // TODO : normaliser selon le vrai schéma API
-    // Champs probables : idProduit/id, libelle/nom, prixUnitaireHT/prix, unite
-    catalogue = catalogue.map(p => ({
-      idProduit: p.idProduit ?? p.id ?? p.idArticle,
-      libelle: p.libelle ?? p.nom ?? p.designation,
-      prixUnitaireHT: p.prixUnitaireHT ?? p.prix ?? p.prixHT ?? 0,
-      unite: p.unite ?? p.uniteVente ?? 'u',
-    }));
     setStatut('');
     reinitialiserLignes();
     afficherSections();
   } catch (err) {
-    setStatut('Erreur chargement tarifs : ' + err.message, true);
-    masquerSections();
+    setStatut('Erreur chargement produits : ' + err.message, true);
   }
 }
 
@@ -85,18 +68,15 @@ function reinitialiserLignes() {
 }
 
 function ajouterLigne() {
-  const idx = lignesContainer.children.length;
   const div = document.createElement('div');
   div.className = 'ligne-produit';
-  div.dataset.idx = idx;
 
   const sel = document.createElement('select');
   sel.innerHTML = '<option value="">— Produit —</option>';
   catalogue.forEach(p => {
     const opt = document.createElement('option');
-    opt.value = p.idProduit;
-    opt.textContent = `${p.libelle} (${p.prixUnitaireHT.toFixed(2)} €/${p.unite})`;
-    opt.dataset.prix = p.prixUnitaireHT;
+    opt.value = JSON.stringify({ idProduit: p.idProduit, idContenant: p.idContenant, idLot: p.idLot ?? 1, prixHT: p.prixHT });
+    opt.textContent = `${p.libelle} ${p.contenant}`;
     sel.appendChild(opt);
   });
 
@@ -113,24 +93,22 @@ function ajouterLigne() {
   const btnSuppr = document.createElement('button');
   btnSuppr.className = 'btn-suppr';
   btnSuppr.textContent = '×';
-  btnSuppr.title = 'Supprimer cette ligne';
+  btnSuppr.title = 'Supprimer';
 
   const mettreAJourPrix = () => {
-    const opt = sel.options[sel.selectedIndex];
-    const prix = parseFloat(opt?.dataset.prix ?? 0);
-    const qte = parseInt(inputQte.value) || 0;
-    spanPrix.textContent = prix && qte ? `${(prix * qte).toFixed(2)} €` : '—';
+    try {
+      const data = sel.value ? JSON.parse(sel.value) : null;
+      const prix = data?.prixHT ?? 0;
+      const qte = parseInt(inputQte.value) || 0;
+      spanPrix.textContent = prix && qte ? `${(prix * qte).toFixed(2)} €` : '—';
+    } catch { spanPrix.textContent = '—'; }
     calculerTotal();
   };
 
   sel.addEventListener('change', mettreAJourPrix);
   inputQte.addEventListener('input', mettreAJourPrix);
-
   btnSuppr.addEventListener('click', () => {
-    if (lignesContainer.children.length > 1) {
-      div.remove();
-      calculerTotal();
-    }
+    if (lignesContainer.children.length > 1) { div.remove(); calculerTotal(); }
   });
 
   div.append(sel, inputQte, spanPrix, btnSuppr);
@@ -144,10 +122,12 @@ function calculerTotal() {
   lignesContainer.querySelectorAll('.ligne-produit').forEach(div => {
     const sel = div.querySelector('select');
     const inputQte = div.querySelector('input');
-    const opt = sel.options[sel.selectedIndex];
-    const prix = parseFloat(opt?.dataset.prix ?? 0);
-    const qte = parseInt(inputQte.value) || 0;
-    if (prix && qte) total += prix * qte;
+    try {
+      const data = sel.value ? JSON.parse(sel.value) : null;
+      const prix = data?.prixHT ?? 0;
+      const qte = parseInt(inputQte.value) || 0;
+      if (prix && qte) total += prix * qte;
+    } catch { /* ligne incomplète */ }
   });
   totalHtEl.textContent = total.toFixed(2).replace('.', ',') + ' €';
 }
@@ -157,8 +137,6 @@ async function preRemplirDerniereCommande(idClient) {
   setStatut('Chargement de la dernière commande…');
   try {
     const commande = await apiFetch(`/api/derniere-commande/${idClient}`);
-    // TODO : ajuster selon le vrai schéma retourné
-    // Champs attendus dans chaque ligne : idProduit, quantite
     const lignes = commande.lignesCommande ?? commande.lignes ?? [];
     if (!lignes.length) { setStatut('Aucune commande précédente trouvée.'); return; }
 
@@ -169,7 +147,10 @@ async function preRemplirDerniereCommande(idClient) {
       const sel = div.querySelector('select');
       const inputQte = div.querySelector('input');
       const idProduit = l.idProduit ?? l.idArticle;
-      const optMatch = [...sel.options].find(o => o.value == idProduit);
+      const idContenant = l.idContenant;
+      const optMatch = [...sel.options].find(o => {
+        try { const d = JSON.parse(o.value); return d.idProduit === idProduit && d.idContenant === idContenant; } catch { return false; }
+      });
       if (optMatch) sel.value = optMatch.value;
       inputQte.value = l.quantite ?? l.qte ?? 1;
       sel.dispatchEvent(new Event('change'));
@@ -186,23 +167,21 @@ btnEnvoyer.addEventListener('click', async () => {
   if (!idClient) { setStatut('Veuillez choisir un client.', true); return; }
 
   const lignes = [];
-  let valide = true;
+  let erreur = false;
   lignesContainer.querySelectorAll('.ligne-produit').forEach(div => {
     const sel = div.querySelector('select');
     const inputQte = div.querySelector('input');
-    const opt = sel.options[sel.selectedIndex];
-    const idProduit = sel.value;
     const qte = parseInt(inputQte.value) || 0;
-    const prix = parseFloat(opt?.dataset.prix ?? 0);
-    if (idProduit && qte > 0) {
-      lignes.push({ idProduit: parseInt(idProduit), quantite: qte, prixUnitaire: prix });
-    } else if (idProduit || qte) {
-      valide = false;
-    }
+    if (!sel.value && qte) { erreur = true; return; }
+    if (!sel.value) return;
+    try {
+      const data = JSON.parse(sel.value);
+      if (qte > 0) lignes.push({ ...data, quantite: qte });
+    } catch { erreur = true; }
   });
 
-  if (!valide || lignes.length === 0) {
-    setStatut('Veuillez compléter toutes les lignes ou en supprimer les vides.', true);
+  if (erreur || lignes.length === 0) {
+    setStatut('Veuillez compléter toutes les lignes ou supprimer les lignes vides.', true);
     return;
   }
 
@@ -257,7 +236,6 @@ function masquerSections() {
   sectionRecap.style.display = 'none';
   sectionNote.style.display = 'none';
   sectionEnvoi.style.display = 'none';
-  btnDerniereCommande.style.display = 'none';
 }
 
 function setStatut(msg, isError = false) {
@@ -265,9 +243,4 @@ function setStatut(msg, isError = false) {
   msgStatut.className = isError ? 'error' : '';
 }
 
-function afficherErreur(msg) {
-  setStatut(msg, true);
-}
-
-// ---- Init ----
 chargerClients();
