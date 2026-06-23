@@ -464,7 +464,7 @@ app.post('/api/commande', async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('POST /api/commande', err.message, err.detail);
-    res.status(err.status ?? 502).json({ error: err.message, detail: err.detail });
+    res.status(err.status ?? 502).json({ error: err.message, detail: err.detail, payloadEnvoye: payload });
   }
 });
 
