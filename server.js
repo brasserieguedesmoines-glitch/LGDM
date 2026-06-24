@@ -406,7 +406,56 @@ app.get('/api/debug-post-clients', async (req, res) => {
   res.json(results);
 });
 
-// --- Debug : affiche le payload commande sans l'envoyer ---
+// --- Debug : teste toutes les grilles tarifaires pour récupérer + de clients ---
+app.get('/api/debug-toutes-grilles', async (req, res) => {
+  try {
+    // 1. Récupère les types de client (= les grilles disponibles)
+    const types = await getTypesClient();
+    const results = [];
+
+    // 2. Pour chaque type, essaie /parametres/grille-tarifaire/matrice/client avec ce type
+    for (const t of types.slice(0, 10)) {
+      const candidates = [
+        `/parametres/grille-tarifaire/matrice/client?idClientType=${t.idClientType}`,
+        `/parametres/grille-tarifaire/${t.idClientType}/matrice/client`,
+      ];
+      for (const path of candidates) {
+        try {
+          const r = await fetch(`${BASE_URL}${path}`, { headers: easybeerHeaders() });
+          const d = await r.json();
+          const clients = d?.clients ?? d;
+          const count = Array.isArray(clients) ? clients.length : (clients?.length ?? '?');
+          results.push({ idClientType: t.idClientType, libelle: t.libelle, path, status: r.status, nbClients: count });
+          break;
+        } catch (e) {
+          results.push({ idClientType: t.idClientType, path, error: e.message });
+        }
+      }
+    }
+    // 3. Essaie aussi les endpoints client directs
+    const directCandidates = [
+      '/parametres/client/actif',
+      '/parametres/client/liste?page=0&taille=200',
+      '/parametres/client/recherche?nom=',
+      '/commande/client/liste',
+    ];
+    for (const path of directCandidates) {
+      try {
+        const r = await fetch(`${BASE_URL}${path}`, { headers: easybeerHeaders() });
+        const d = await r.json();
+        const arr = Array.isArray(d) ? d : (d?.liste ?? d?.clients ?? d?.contenu ?? d?.content ?? null);
+        results.push({ path, status: r.status, count: arr ? arr.length : '?', sample: arr ? arr[0] : d });
+      } catch (e) {
+        results.push({ path, error: e.message });
+      }
+    }
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 app.get('/api/debug-payload/:idClient', async (req, res) => {
   try {
     const idClient = parseInt(req.params.idClient);
