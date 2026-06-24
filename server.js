@@ -383,6 +383,42 @@ app.get('/api/debug-commande/:idClient', async (req, res) => {
   res.json({ ligne, results });
 });
 
+// --- Debug : teste plusieurs variantes de payload pour /commande/enregistrer ---
+app.get('/api/debug-variants/:idClient', async (req, res) => {
+  try {
+    const idClient = parseInt(req.params.idClient);
+    const idClientType = 10320;
+    const elem = { idProduit: 22337, idContenant: 12, idLot: 1 };
+    const base = { client: { idClient }, grilleTarifaire: { idClientType }, commentaire: '' };
+
+    const variants = [
+      { label: 'sans lot',                 elementsBouteilles: [{ produit: { idProduit: elem.idProduit }, contenant: { idContenant: elem.idContenant }, quantite: 1 }] },
+      { label: 'lot null',                 elementsBouteilles: [{ produit: { idProduit: elem.idProduit }, contenant: { idContenant: elem.idContenant }, lot: null, quantite: 1 }] },
+      { label: 'avec dateCommande',        elementsBouteilles: [{ produit: { idProduit: elem.idProduit }, contenant: { idContenant: elem.idContenant }, lot: { idLot: 1 }, quantite: 1 }], dateCommande: new Date().toISOString().slice(0,10) },
+      { label: 'elementsContenants vide',  elementsBouteilles: [{ produit: { idProduit: elem.idProduit }, contenant: { idContenant: elem.idContenant }, lot: { idLot: 1 }, quantite: 1 }], elementsContenants: [] },
+      { label: 'sans grilleTarifaire',     elementsBouteilles: [{ produit: { idProduit: elem.idProduit }, contenant: { idContenant: elem.idContenant }, lot: { idLot: 1 }, quantite: 1 }], grilleTarifaire: undefined },
+    ];
+
+    const results = [];
+    for (const { label, grilleTarifaire: gt, ...rest } of variants) {
+      await new Promise(r => setTimeout(r, 200));
+      const payload = { ...base, ...rest };
+      if (gt === undefined) delete payload.grilleTarifaire;
+      else if (gt !== undefined) payload.grilleTarifaire = gt;
+      try {
+        const r = await easybeerPost('/commande/enregistrer', payload);
+        results.push({ label, ok: true, result: r, payload });
+        break;
+      } catch (e) {
+        results.push({ label, ok: false, error: e.message, payload });
+      }
+    }
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- Debug Swagger path complet ---
 app.get('/api/debug-swagger-path', async (req, res) => {
   try {
