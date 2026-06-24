@@ -387,33 +387,36 @@ app.get('/api/debug-commande/:idClient', async (req, res) => {
 app.get('/api/debug-variants/:idClient', async (req, res) => {
   try {
     const idClient = parseInt(req.params.idClient);
-    const idClientType = 10320;
-    const elem = { idProduit: 22337, idContenant: 12, idLot: 1 };
-    const base = { client: { idClient }, grilleTarifaire: { idClientType }, commentaire: '' };
+    const detail = await easybeerGet(`/parametres/client/detail/${idClient}`);
+    const idClientType = detail?.type?.idClientType;
+    if (!idClientType) return res.json({ error: 'Pas de type client', detail });
+
+    const produits = await getProduitsClient(idClient);
+    const p = produits[0];
+    if (!p) return res.json({ error: 'Aucun produit', idClientType });
+
+    const grille = { idClientType };
+    const e1 = { produit: { idProduit: p.idProduit }, contenant: { idContenant: p.idContenant }, lot: { idLot: p.idLot }, quantite: 1 };
+    const e2 = { produit: { idProduit: p.idProduit }, contenant: { idContenant: p.idContenant }, quantite: 1 };
 
     const variants = [
-      { label: 'sans lot',                 elementsBouteilles: [{ produit: { idProduit: elem.idProduit }, contenant: { idContenant: elem.idContenant }, quantite: 1 }] },
-      { label: 'lot null',                 elementsBouteilles: [{ produit: { idProduit: elem.idProduit }, contenant: { idContenant: elem.idContenant }, lot: null, quantite: 1 }] },
-      { label: 'avec dateCommande',        elementsBouteilles: [{ produit: { idProduit: elem.idProduit }, contenant: { idContenant: elem.idContenant }, lot: { idLot: 1 }, quantite: 1 }], dateCommande: new Date().toISOString().slice(0,10) },
-      { label: 'elementsContenants vide',  elementsBouteilles: [{ produit: { idProduit: elem.idProduit }, contenant: { idContenant: elem.idContenant }, lot: { idLot: 1 }, quantite: 1 }], elementsContenants: [] },
-      { label: 'sans grilleTarifaire',     elementsBouteilles: [{ produit: { idProduit: elem.idProduit }, contenant: { idContenant: elem.idContenant }, lot: { idLot: 1 }, quantite: 1 }], grilleTarifaire: undefined },
+      { label: 'standard',       payload: { client: { idClient }, grilleTarifaire: grille, commentaire: '', elementsBouteilles: [e1] } },
+      { label: 'sans lot',       payload: { client: { idClient }, grilleTarifaire: grille, commentaire: '', elementsBouteilles: [e2] } },
+      { label: 'avec date',      payload: { client: { idClient }, grilleTarifaire: grille, commentaire: '', dateCommande: new Date().toISOString().slice(0,10), elementsBouteilles: [e1] } },
     ];
 
     const results = [];
-    for (const { label, grilleTarifaire: gt, ...rest } of variants) {
+    for (const v of variants) {
       await new Promise(r => setTimeout(r, 200));
-      const payload = { ...base, ...rest };
-      if (gt === undefined) delete payload.grilleTarifaire;
-      else if (gt !== undefined) payload.grilleTarifaire = gt;
       try {
-        const r = await easybeerPost('/commande/enregistrer', payload);
-        results.push({ label, ok: true, result: r, payload });
+        const r = await easybeerPost('/commande/enregistrer', v.payload);
+        results.push({ label: v.label, ok: true, result: r });
         break;
       } catch (e) {
-        results.push({ label, ok: false, error: e.message, payload });
+        results.push({ label: v.label, ok: false, error: e.message });
       }
     }
-    res.json(results);
+    res.json({ idClientType, firstProduit: p, results });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
