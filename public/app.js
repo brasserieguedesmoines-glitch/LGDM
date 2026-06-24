@@ -73,6 +73,7 @@ function createSearchSelect(placeholder, options, onChange) {
 let catalogue = [];
 let clientSearchSelect = null;
 let currentIdClient = '';
+let currentIdClientType = null;
 
 const btnDerniereCommande = document.getElementById('btn-derniere-commande');
 const sectionClient = document.getElementById('section-client');
@@ -92,10 +93,13 @@ const btnNouvelleCommande = document.getElementById('btn-nouvelle-commande');
 async function chargerClients() {
   try {
     const clients = await apiFetch('/api/clients');
+    const clientTypeIndex = {};
+    clients.forEach(c => { clientTypeIndex[String(c.id)] = c.idClientType; });
     const options = clients.map(c => ({ value: String(c.id), label: c.nom }));
 
     clientSearchSelect = createSearchSelect('Rechercher un client…', options, async (value) => {
       currentIdClient = value;
+      currentIdClientType = clientTypeIndex[value] ?? null;
       if (!value) { masquerSections(); btnDerniereCommande.style.display = 'none'; return; }
       await chargerTarifs(value);
       btnDerniereCommande.style.display = 'block';
@@ -227,7 +231,7 @@ btnEnvoyer.addEventListener('click', async () => {
     const result = await apiFetch('/api/commande', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idClient: parseInt(currentIdClient), lignes, commentaire }),
+      body: JSON.stringify({ idClient: parseInt(currentIdClient), idClientType: currentIdClientType, lignes, commentaire }),
     });
     const ref = result.reference ?? result.idCommande ?? result.id ?? '';
     modalDetail.textContent = ref ? `Référence : ${ref}` : 'Commande enregistrée avec succès.';
@@ -244,6 +248,7 @@ btnNouvelleCommande.addEventListener('click', () => {
   modalOverlay.style.display = 'none';
   clientSearchSelect?.reset();
   currentIdClient = '';
+  currentIdClientType = null;
   masquerSections();
   btnDerniereCommande.style.display = 'none';
   document.getElementById('note-livraison').value = '';

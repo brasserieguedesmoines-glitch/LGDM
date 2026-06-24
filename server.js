@@ -321,7 +321,9 @@ app.get('/api/debug-commande/:idClient', async (req, res) => {
 // --- Clients ---
 app.get('/api/clients', async (req, res) => {
   try {
-    res.json(await getAllClients());
+    // Inclut idClientType pour que le frontend puisse l'envoyer avec la commande
+    const clients = await getAllClients();
+    res.json(clients.map(c => ({ ...c, idClientType: clientTypeMap.get(c.id) })));
   } catch (err) {
     console.error('GET /api/clients', err.message);
     res.status(err.status ?? 502).json({ error: err.message });
@@ -520,13 +522,10 @@ app.get('/api/debug-payload/:idClient', async (req, res) => {
 app.post('/api/commande', async (req, res) => {
   const payload = {};
   try {
-    const { idClient, lignes, commentaire } = req.body;
+    const { idClient, idClientType, lignes, commentaire } = req.body;
     if (!idClient || !Array.isArray(lignes) || lignes.length === 0) {
       return res.status(400).json({ error: 'idClient et lignes sont requis' });
     }
-    await getAllClients(); // assure le peuplement de clientTypeMap
-    const idClientType = clientTypeMap.get(idClient);
-
     Object.assign(payload, {
       client: { idClient },
       grilleTarifaire: idClientType ? { idClientType } : undefined,
