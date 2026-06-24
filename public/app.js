@@ -83,6 +83,7 @@ const sectionNote = document.getElementById('section-note');
 const sectionEnvoi = document.getElementById('section-envoi');
 const btnEnvoyer = document.getElementById('btn-envoyer');
 const msgStatut = document.getElementById('msg-statut');
+const msgStatutClient = document.getElementById('msg-statut-client');
 const modalOverlay = document.getElementById('modal-overlay');
 const modalDetail = document.getElementById('modal-detail');
 const btnNouvelleCommande = document.getElementById('btn-nouvelle-commande');
@@ -111,16 +112,18 @@ btnDerniereCommande.addEventListener('click', async () => {
 });
 
 async function chargerTarifs(idClient) {
-  setStatut('Chargement des produits…');
+  msgStatutClient.textContent = 'Chargement des produits…';
+  msgStatutClient.className = '';
   btnDerniereCommande.style.display = 'none';
   masquerSections();
   try {
     catalogue = await apiFetch(`/api/tarifs/${idClient}`);
-    setStatut('');
+    msgStatutClient.textContent = '';
     reinitialiserLignes();
     afficherSections();
   } catch (err) {
-    setStatut('Erreur chargement produits : ' + err.message, true);
+    msgStatutClient.textContent = 'Erreur chargement produits : ' + err.message;
+    msgStatutClient.className = 'error';
   }
 }
 

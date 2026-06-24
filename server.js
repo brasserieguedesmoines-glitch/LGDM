@@ -77,7 +77,8 @@ async function getAllClients() {
   const types = await getTypesClient();
   const allClients = new Map(); // idClient → { id, nom }
   clientTypeMap.clear();
-  await Promise.all(types.map(async t => {
+  // Chargement séquentiel pour éviter le rate limit EasyBeer (10 req/s)
+  for (const t of types) {
     try {
       const data = await getGrilleByType(t.idClientType);
       for (const c of (data.clients ?? [])) {
@@ -88,7 +89,8 @@ async function getAllClients() {
         }
       }
     } catch {}
-  }));
+    await new Promise(r => setTimeout(r, 120));
+  }
   allClientsCache = [...allClients.values()].sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
   allClientsCacheExpiry = Date.now() + 60 * 60 * 1000;
   return allClientsCache;
