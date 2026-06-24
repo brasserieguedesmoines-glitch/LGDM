@@ -44,51 +44,92 @@ async function easybeerPost(path, body) {
   return res.json();
 }
 
-// Cache grille tarifaire (1h)
-let cache = null;
-let cacheExpiry = 0;
-async function getGrille() {
-  if (!cache || Date.now() > cacheExpiry) {
-    cache = await easybeerGet('/parametres/grille-tarifaire/matrice/client');
-    cacheExpiry = Date.now() + 60 * 60 * 1000;
-  }
-  return cache;
+// Cache toutes les grilles par idClientType (1h)
+const grillesCache = new Map(); // idClientType → { data, expiry }
+
+async function getGrilleByType(idClientType) {
+  const cached = grillesCache.get(idClientType);
+  if (cached && Date.now() < cached.expiry) return cached.data;
+  const data = await easybeerGet(`/parametres/grille-tarifaire/matrice/client?idClientType=${idClientType}`);
+  grillesCache.set(idClientType, { data, expiry: Date.now() + 60 * 60 * 1000 });
+  return data;
 }
 
-// Cache types client (1h) → map typeClient libelle → objet complet
+// Cache types client (1h)
 let typesClientCache = null;
 let typesClientExpiry = 0;
 async function getTypesClient() {
   if (!typesClientCache || Date.now() > typesClientExpiry) {
-    const list = await easybeerGet('/parametres/client/type');
-    typesClientCache = list; // tableau [{idClientType, libelle, ...}]
+    typesClientCache = await easybeerGet('/parametres/client/type');
     typesClientExpiry = Date.now() + 60 * 60 * 1000;
   }
   return typesClientCache;
 }
 
-// Cache grilleTarifaire par client (depuis derniere-commande ou prix)
-const grilleTarifaireParClient = new Map();
+// Map clientId → idClientType (peuplé au chargement des clients)
+const clientTypeMap = new Map();
 
-async function getGrilleTarifaireClient(idClient) {
-  if (grilleTarifaireParClient.has(idClient)) return grilleTarifaireParClient.get(idClient);
-  // Récupère le type client depuis detail/{idClient}
-  try {
-    const detail = await easybeerGet(`/parametres/client/detail/${idClient}`);
-    if (detail?.type?.idClientType) {
-      grilleTarifaireParClient.set(idClient, detail.type);
-      return detail.type;
+// Charge toutes les grilles et retourne { clients fusionnés, grilles par type }
+let allClientsCache = null;
+let allClientsCacheExpiry = 0;
+async function getAllClients() {
+  if (allClientsCache && Date.now() < allClientsCacheExpiry) return allClientsCache;
+  const types = await getTypesClient();
+  const allClients = new Map(); // idClient → { id, nom }
+  clientTypeMap.clear();
+  await Promise.all(types.map(async t => {
+    try {
+      const data = await getGrilleByType(t.idClientType);
+      for (const c of (data.clients ?? [])) {
+        const id = c.modeleClient.idClient;
+        if (!c.modeleClient.supprime && !allClients.has(id)) {
+          allClients.set(id, { id, nom: c.modeleClient.nom });
+          clientTypeMap.set(id, t.idClientType);
+        }
+      }
+    } catch {}
+  }));
+  allClientsCache = [...allClients.values()].sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
+  allClientsCacheExpiry = Date.now() + 60 * 60 * 1000;
+  return allClientsCache;
+}
+
+// Retourne les produits d'un client depuis sa grille tarifaire
+async function getProduitsClient(idClient) {
+  const idClientType = clientTypeMap.get(idClient);
+  if (!idClientType) {
+    // clientTypeMap pas encore peuplé, recharge
+    await getAllClients();
+  }
+  const type = clientTypeMap.get(idClient);
+  if (!type) throw Object.assign(new Error('Client non trouvé'), { status: 404 });
+  const data = await getGrilleByType(type);
+
+  const condMap = {};
+  for (const c of data.conditionnements) {
+    const key = `${c.produit.idProduit}-${c.contenant.idContenant}-${c.lot.idLot}`;
+    condMap[key] = {
+      idProduit: c.produit.idProduit,
+      libelle: c.produit.nom,
+      contenant: c.contenant.libelleAvecContenance ?? c.contenant.nom,
+      idContenant: c.contenant.idContenant,
+      idLot: c.lot.idLot,
+    };
+  }
+
+  const clientData = data.clients.find(c => c.modeleClient.idClient === idClient);
+  if (!clientData) throw Object.assign(new Error('Client non trouvé dans la grille'), { status: 404 });
+
+  const seen = new Set();
+  const produits = [];
+  for (const t of clientData.tarifs) {
+    const key = `${t.modeleProduit.idProduit}-${t.modeleContenant.idContenant}-${t.modeleLot.idLot}`;
+    if (!seen.has(key) && condMap[key]) {
+      seen.add(key);
+      produits.push(condMap[key]);
     }
-  } catch {}
-  // Fallback : dernière commande
-  try {
-    const cmd = await easybeerGet(`/commande/derniere-commande/${idClient}`);
-    if (cmd?.grilleTarifaire?.idClientType) {
-      grilleTarifaireParClient.set(idClient, cmd.grilleTarifaire);
-      return cmd.grilleTarifaire;
-    }
-  } catch {}
-  return null;
+  }
+  return produits;
 }
 
 // --- Debug tarifs bruts ---
@@ -276,57 +317,19 @@ app.get('/api/debug-commande/:idClient', async (req, res) => {
 });
 
 // --- Clients ---
-// Source : grille tarifaire → data.clients[].modeleClient
 app.get('/api/clients', async (req, res) => {
   try {
-    const data = await getGrille();
-    const clients = data.clients
-      .filter(c => !c.modeleClient.supprime)
-      .map(c => ({ id: c.modeleClient.idClient, nom: c.modeleClient.nom }))
-      .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
-    res.json(clients);
+    res.json(await getAllClients());
   } catch (err) {
     console.error('GET /api/clients', err.message);
     res.status(err.status ?? 502).json({ error: err.message });
   }
 });
 
-// --- Produits + prix pour un client ---
-// Source : grille tarifaire → client.tarifs × conditionnements
-// Prix : GET /parametres/grille-tarifaire/{idContenant}/{idProduit}/{idLot}
 app.get('/api/tarifs/:idClient', async (req, res) => {
   try {
     const idClient = parseInt(req.params.idClient);
-    const data = await getGrille();
-
-    // Map des conditionnements : "idProduit-idContenant-idLot" → infos
-    const condMap = {};
-    for (const c of data.conditionnements) {
-      const key = `${c.produit.idProduit}-${c.contenant.idContenant}-${c.lot.idLot}`;
-      condMap[key] = {
-        idProduit: c.produit.idProduit,
-        libelle: c.produit.nom,
-        contenant: c.contenant.libelleAvecContenance ?? c.contenant.nom,
-        idContenant: c.contenant.idContenant,
-        idLot: c.lot.idLot,
-      };
-    }
-
-    // Produits du client (dédupliqués)
-    const clientData = data.clients.find(c => c.modeleClient.idClient === idClient);
-    if (!clientData) return res.status(404).json({ error: 'Client non trouvé' });
-
-    const seen = new Set();
-    const produits = [];
-    for (const t of clientData.tarifs) {
-      const key = `${t.modeleProduit.idProduit}-${t.modeleContenant.idContenant}-${t.modeleLot.idLot}`;
-      if (!seen.has(key) && condMap[key]) {
-        seen.add(key);
-        produits.push(condMap[key]);
-      }
-    }
-
-    res.json(produits);
+    res.json(await getProduitsClient(idClient));
   } catch (err) {
     console.error('GET /api/tarifs', err.message);
     res.status(err.status ?? 502).json({ error: err.message });
@@ -459,15 +462,14 @@ app.get('/api/debug-toutes-grilles', async (req, res) => {
 app.get('/api/debug-payload/:idClient', async (req, res) => {
   try {
     const idClient = parseInt(req.params.idClient);
-    const grilleTarifaire = await getGrilleTarifaireClient(idClient);
-    const data = await getGrille();
-    const clientData = data.clients.find(c => c.modeleClient.idClient === idClient);
-    const t = clientData?.tarifs?.[0];
-    const lignes = t ? [{ idProduit: t.modeleProduit.idProduit, idContenant: t.modeleContenant.idContenant, idLot: t.modeleLot.idLot ?? 1, quantite: 1 }] : [];
-    const grilleTarifairePayload = grilleTarifaire?.idClientType ? { idClientType: grilleTarifaire.idClientType } : undefined;
+    await getAllClients(); // assure le peuplement de clientTypeMap
+    const idClientType = clientTypeMap.get(idClient);
+    const produits = idClientType ? await getProduitsClient(idClient) : [];
+    const p = produits[0];
+    const lignes = p ? [{ idProduit: p.idProduit, idContenant: p.idContenant, idLot: p.idLot, quantite: 1 }] : [];
     const payload = {
       client: { idClient },
-      grilleTarifaire: grilleTarifairePayload,
+      grilleTarifaire: idClientType ? { idClientType } : undefined,
       commentaire: 'TEST',
       elementsBouteilles: lignes.map(l => ({
         produit: { idProduit: l.idProduit },
@@ -476,10 +478,9 @@ app.get('/api/debug-payload/:idClient', async (req, res) => {
         quantite: l.quantite,
       })),
     };
-    // Tente aussi d'envoyer pour voir l'erreur exacte
     let result = null, error = null;
     try { result = await easybeerPost('/commande/enregistrer', payload); } catch (e) { error = { message: e.message, detail: e.detail }; }
-    res.json({ payload, result, error });
+    res.json({ idClientType, payload, result, error });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -487,20 +488,18 @@ app.get('/api/debug-payload/:idClient', async (req, res) => {
 
 // --- Création de commande ---
 app.post('/api/commande', async (req, res) => {
+  const payload = {};
   try {
     const { idClient, lignes, commentaire } = req.body;
     if (!idClient || !Array.isArray(lignes) || lignes.length === 0) {
       return res.status(400).json({ error: 'idClient et lignes sont requis' });
     }
-    const grilleTarifaire = await getGrilleTarifaireClient(idClient);
+    await getAllClients(); // assure le peuplement de clientTypeMap
+    const idClientType = clientTypeMap.get(idClient);
 
-    const grilleTarifairePayload = grilleTarifaire?.idClientType
-      ? { idClientType: grilleTarifaire.idClientType }
-      : undefined;
-
-    const payload = {
+    Object.assign(payload, {
       client: { idClient },
-      grilleTarifaire: grilleTarifairePayload,
+      grilleTarifaire: idClientType ? { idClientType } : undefined,
       commentaire: commentaire ?? '',
       elementsBouteilles: lignes.map(l => ({
         produit: { idProduit: l.idProduit },
@@ -508,7 +507,7 @@ app.post('/api/commande', async (req, res) => {
         lot: { idLot: l.idLot ?? 1 },
         quantite: l.quantite,
       })),
-    };
+    });
     const result = await easybeerPost('/commande/enregistrer', payload);
     res.json(result);
   } catch (err) {
