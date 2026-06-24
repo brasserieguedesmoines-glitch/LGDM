@@ -98,12 +98,15 @@ async function getAllClients() {
 
 // Retourne les produits d'un client depuis sa grille tarifaire
 async function getProduitsClient(idClient) {
-  const idClientType = clientTypeMap.get(idClient);
-  if (!idClientType) {
-    // clientTypeMap pas encore peuplé, recharge
-    await getAllClients();
+  let type = clientTypeMap.get(idClient);
+  if (!type) {
+    // Fallback léger : 1 appel API au lieu de 10 (getAllClients)
+    try {
+      const detail = await easybeerGet(`/parametres/client/detail/${idClient}`);
+      type = detail?.type?.idClientType;
+      if (type) clientTypeMap.set(idClient, type);
+    } catch {}
   }
-  const type = clientTypeMap.get(idClient);
   if (!type) throw Object.assign(new Error('Client non trouvé'), { status: 404 });
   const data = await getGrilleByType(type);
 
@@ -517,25 +520,21 @@ app.get('/api/debug-rejouer/:idClient', async (req, res) => {
 app.get('/api/debug-payload/:idClient', async (req, res) => {
   try {
     const idClient = parseInt(req.params.idClient);
-    await getAllClients(); // assure le peuplement de clientTypeMap
-    const idClientType = clientTypeMap.get(idClient);
-    const produits = idClientType ? await getProduitsClient(idClient) : [];
+    // Vérifie le vrai type via detail (1 appel léger)
+    const detail = await easybeerGet(`/parametres/client/detail/${idClient}`);
+    const idClientType = detail?.type?.idClientType;
+    const produits = await getProduitsClient(idClient);
     const p = produits[0];
-    const lignes = p ? [{ idProduit: p.idProduit, idContenant: p.idContenant, idLot: p.idLot, quantite: 1 }] : [];
+    if (!p) return res.json({ error: 'Aucun produit trouvé', typeClient: detail?.type });
     const payload = {
       client: { idClient },
       grilleTarifaire: idClientType ? { idClientType } : undefined,
       commentaire: 'TEST',
-      elementsBouteilles: lignes.map(l => ({
-        produit: { idProduit: l.idProduit },
-        contenant: { idContenant: l.idContenant },
-        lot: { idLot: l.idLot },
-        quantite: l.quantite,
-      })),
+      elementsBouteilles: [{ produit: { idProduit: p.idProduit }, contenant: { idContenant: p.idContenant }, lot: { idLot: p.idLot }, quantite: 1 }],
     };
     let result = null, error = null;
     try { result = await easybeerPost('/commande/enregistrer', payload); } catch (e) { error = { message: e.message, detail: e.detail }; }
-    res.json({ idClientType, payload, result, error });
+    res.json({ idClientType, typeClient: detail?.type, firstProduit: p, payload, result, error });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
