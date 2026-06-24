@@ -461,6 +461,34 @@ app.get('/api/debug-toutes-grilles', async (req, res) => {
 });
 
 
+// Rejoue la dernière commande d'un client pour tester le format exact
+app.get('/api/debug-rejouer/:idClient', async (req, res) => {
+  try {
+    const idClient = parseInt(req.params.idClient);
+    await getAllClients();
+    const idClientType = clientTypeMap.get(idClient);
+    const cmd = await easybeerGet(`/commande/derniere-commande/${idClient}`);
+    const elems = cmd.elementsBouteilles ?? [];
+    if (!elems.length) return res.json({ error: 'Aucune commande précédente', cmd });
+    const payload = {
+      client: { idClient },
+      grilleTarifaire: idClientType ? { idClientType } : (cmd.grilleTarifaire ? { idClientType: cmd.grilleTarifaire.idClientType } : undefined),
+      commentaire: 'TEST REJOUER',
+      elementsBouteilles: elems.slice(0, 1).map(e => ({
+        produit: { idProduit: e.produit?.idProduit ?? e.idProduit },
+        contenant: { idContenant: e.contenant?.idContenant ?? e.idContenant },
+        lot: { idLot: e.lot?.idLot ?? e.idLot ?? 1 },
+        quantite: 1,
+      })),
+    };
+    let result = null, error = null;
+    try { result = await easybeerPost('/commande/enregistrer', payload); } catch (e) { error = { message: e.message, detail: e.detail }; }
+    res.json({ idClientType, grilleTarifaireCmd: cmd.grilleTarifaire, elemSample: elems[0], payload, result, error });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/debug-payload/:idClient', async (req, res) => {
   try {
     const idClient = parseInt(req.params.idClient);
