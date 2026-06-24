@@ -463,29 +463,52 @@ app.get('/api/debug-toutes-grilles', async (req, res) => {
 });
 
 
-// Rejoue la dernière commande d'un client pour tester le format exact
+// Rejoue la dernière commande d'un client et teste plusieurs variantes
 app.get('/api/debug-rejouer/:idClient', async (req, res) => {
   try {
     const idClient = parseInt(req.params.idClient);
-    await getAllClients();
-    const idClientType = clientTypeMap.get(idClient);
-    const cmd = await easybeerGet(`/commande/derniere-commande/${idClient}`);
-    const elems = cmd.elementsBouteilles ?? [];
-    if (!elems.length) return res.json({ error: 'Aucune commande précédente', cmd });
-    const payload = {
+    const idClientType = parseInt(req.query.ict ?? '10320');
+
+    // 1. Récupère la dernière commande pour voir la structure réelle
+    let derniereCmd = null;
+    let elemSample = null;
+    try {
+      derniereCmd = await easybeerGet(`/commande/derniere-commande/${idClient}`);
+      elemSample = (derniereCmd.elementsBouteilles ?? [])[0] ?? null;
+    } catch (e) {
+      derniereCmd = { error: e.message };
+    }
+
+    if (!elemSample) {
+      return res.json({ info: 'Pas de dernière commande', derniereCmd });
+    }
+
+    // 2. Teste différentes structures avec le premier élément de la vraie dernière commande
+    const base = {
       client: { idClient },
-      grilleTarifaire: idClientType ? { idClientType } : (cmd.grilleTarifaire ? { idClientType: cmd.grilleTarifaire.idClientType } : undefined),
-      commentaire: 'TEST REJOUER',
-      elementsBouteilles: elems.slice(0, 1).map(e => ({
-        produit: { idProduit: e.produit?.idProduit ?? e.idProduit },
-        contenant: { idContenant: e.contenant?.idContenant ?? e.idContenant },
-        lot: { idLot: e.lot?.idLot ?? e.idLot ?? 1 },
-        quantite: 1,
-      })),
+      grilleTarifaire: { idClientType },
+      commentaire: 'TEST DEBUG',
     };
-    let result = null, error = null;
-    try { result = await easybeerPost('/commande/enregistrer', payload); } catch (e) { error = { message: e.message, detail: e.detail }; }
-    res.json({ idClientType, grilleTarifaireCmd: cmd.grilleTarifaire, elemSample: elems[0], payload, result, error });
+    const elem = elemSample;
+    const variants = [
+      { label: 'structure objets', elementsBouteilles: [{ produit: { idProduit: elem.produit?.idProduit }, contenant: { idContenant: elem.contenant?.idContenant }, lot: { idLot: elem.lot?.idLot }, quantite: 1 }] },
+      { label: 'sans lot',         elementsBouteilles: [{ produit: { idProduit: elem.produit?.idProduit }, contenant: { idContenant: elem.contenant?.idContenant }, quantite: 1 }] },
+      { label: 'copie exacte',     elementsBouteilles: [{ ...elem, quantite: 1 }] },
+    ];
+
+    const results = [];
+    for (const v of variants) {
+      await new Promise(r => setTimeout(r, 150));
+      try {
+        const r = await easybeerPost('/commande/enregistrer', { ...base, ...v });
+        results.push({ label: v.label, ok: true, result: r });
+        break;
+      } catch (e) {
+        results.push({ label: v.label, ok: false, error: e.message });
+      }
+    }
+
+    res.json({ idClientType, elemSample, grilleTarifaireCmd: derniereCmd.grilleTarifaire, results });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
