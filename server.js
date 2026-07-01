@@ -138,6 +138,17 @@ async function getProduitsClient(idClient) {
   return produits;
 }
 
+// --- Debug conditionnement brut (pour trouver idStockBouteille) ---
+app.get('/api/debug-cond-raw/:idClientType', async (req, res) => {
+  try {
+    const data = await getGrilleByType(parseInt(req.params.idClientType));
+    const sample = data.conditionnements?.slice(0, 2) ?? [];
+    res.json({ nbConditionnements: data.conditionnements?.length, sample });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- Debug tarifs bruts ---
 app.get('/api/debug-tarifs/:idClient', async (req, res) => {
   try {
