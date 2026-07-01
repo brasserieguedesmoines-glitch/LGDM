@@ -149,6 +149,29 @@ app.get('/api/debug-cond-raw/:idClientType', async (req, res) => {
   }
 });
 
+// --- Debug : cherche idStockBouteille via différents endpoints ---
+app.get('/api/debug-stock-bouteille/:idProduit/:idContenant', async (req, res) => {
+  const { idProduit, idContenant } = req.params;
+  const candidates = [
+    `/parametres/stock-bouteille/liste`,
+    `/parametres/stock-bouteille?idProduit=${idProduit}&idContenant=${idContenant}`,
+    `/parametres/stock-bouteille/par-produit/${idProduit}`,
+    `/parametres/stock-bouteille/${idProduit}/${idContenant}`,
+    `/stock/bouteille/liste`,
+  ];
+  const results = {};
+  for (const path of candidates) {
+    try {
+      const d = await easybeerGet(path);
+      const arr = Array.isArray(d) ? d : (d?.liste ?? d?.content ?? d?.contenu ?? null);
+      results[path] = arr ? { count: arr.length, sample: arr[0] } : d;
+    } catch (e) {
+      results[path] = { error: e.message };
+    }
+  }
+  res.json(results);
+});
+
 // --- Debug tarifs bruts ---
 app.get('/api/debug-tarifs/:idClient', async (req, res) => {
   try {
