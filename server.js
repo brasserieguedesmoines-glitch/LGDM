@@ -44,24 +44,23 @@ async function easybeerPost(path, body) {
   return res.json();
 }
 
-// Cache idStockBouteille par idProduit (1h)
-const stockBouteilleCache = new Map(); // idProduit → { idStockBouteille, expiry }
+// Cache idStockBouteille : idProduit-idContenant → idStockBouteille (1h)
+let stockBouteilleIndex = null;
+let stockBouteilleIndexExpiry = 0;
 
-async function getIdStockBouteille(idProduit, idContenant) {
-  const cacheKey = `${idProduit}-${idContenant}`;
-  const cached = stockBouteilleCache.get(cacheKey);
-  if (cached && Date.now() < cached.expiry) return cached.idStockBouteille;
-  try {
-    const data = await easybeerGet(`/stock/bouteilles/${idProduit}`);
-    const arr = Array.isArray(data) ? data : (data?.liste ?? data?.contenu ?? [data]);
-    const match = arr.find(s => s.idContenant === idContenant || s.contenant?.idContenant === idContenant)
-      ?? arr[0];
-    const idStockBouteille = match?.idStockBouteille ?? match?.id ?? null;
-    stockBouteilleCache.set(cacheKey, { idStockBouteille, expiry: Date.now() + 60 * 60 * 1000 });
-    return idStockBouteille;
-  } catch {
-    return null;
+async function getStockBouteilleIndex() {
+  if (stockBouteilleIndex && Date.now() < stockBouteilleIndexExpiry) return stockBouteilleIndex;
+  const data = await easybeerGet('/stock/produits/autocomplete?query=a');
+  const arr = Array.isArray(data) ? data : (data?.liste ?? data?.contenu ?? []);
+  const index = new Map();
+  for (const s of arr) {
+    if (s.idStockBouteille && s.idProduit && s.idContenant) {
+      index.set(`${s.idProduit}-${s.idContenant}-${s.idLot ?? 1}`, s.idStockBouteille);
+    }
   }
+  stockBouteilleIndex = index;
+  stockBouteilleIndexExpiry = Date.now() + 60 * 60 * 1000;
+  return index;
 }
 
 // Cache toutes les grilles par idClientType (1h)
@@ -156,22 +155,15 @@ async function getProduitsClient(idClient) {
     }
   }
 
-  // Enrichit chaque produit avec idStockBouteille depuis /stock/bouteilles/{idProduit}
-  const uniqueProduits = [...new Set(produits.map(p => p.idProduit))];
-  await Promise.all(uniqueProduits.map(async idProduit => {
-    try {
-      const data = await easybeerGet(`/stock/bouteilles/${idProduit}`);
-      const arr = Array.isArray(data) ? data : (data?.liste ?? data?.contenu ?? [data]);
-      for (const p of produits.filter(p => p.idProduit === idProduit)) {
-        const match = arr.find(s =>
-          (s.idContenant ?? s.contenant?.idContenant) === p.idContenant
-        ) ?? arr[0];
-        if (p.idStockBouteille == null) {
-          p.idStockBouteille = match?.idStockBouteille ?? match?.id ?? null;
-        }
+  // Enrichit chaque produit avec idStockBouteille depuis l'index autocomplete
+  try {
+    const index = await getStockBouteilleIndex();
+    for (const p of produits) {
+      if (p.idStockBouteille == null) {
+        p.idStockBouteille = index.get(`${p.idProduit}-${p.idContenant}-${p.idLot ?? 1}`) ?? null;
       }
-    } catch {}
-  }));
+    }
+  } catch {}
 
   return produits;
 }
