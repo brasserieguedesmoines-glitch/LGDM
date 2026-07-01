@@ -44,6 +44,26 @@ async function easybeerPost(path, body) {
   return res.json();
 }
 
+// Cache idStockBouteille par idProduit (1h)
+const stockBouteilleCache = new Map(); // idProduit → { idStockBouteille, expiry }
+
+async function getIdStockBouteille(idProduit, idContenant) {
+  const cacheKey = `${idProduit}-${idContenant}`;
+  const cached = stockBouteilleCache.get(cacheKey);
+  if (cached && Date.now() < cached.expiry) return cached.idStockBouteille;
+  try {
+    const data = await easybeerGet(`/stock/bouteilles/${idProduit}`);
+    const arr = Array.isArray(data) ? data : (data?.liste ?? data?.contenu ?? [data]);
+    const match = arr.find(s => s.idContenant === idContenant || s.contenant?.idContenant === idContenant)
+      ?? arr[0];
+    const idStockBouteille = match?.idStockBouteille ?? match?.id ?? null;
+    stockBouteilleCache.set(cacheKey, { idStockBouteille, expiry: Date.now() + 60 * 60 * 1000 });
+    return idStockBouteille;
+  } catch {
+    return null;
+  }
+}
+
 // Cache toutes les grilles par idClientType (1h)
 const grillesCache = new Map(); // idClientType → { data, expiry }
 
@@ -119,7 +139,7 @@ async function getProduitsClient(idClient) {
       contenant: c.contenant.libelleAvecContenance ?? c.contenant.nom,
       idContenant: c.contenant.idContenant,
       idLot: c.lot.idLot,
-      idStockBouteille: c.stockBouteille?.idStockBouteille ?? c.idStockBouteille ?? null,
+      idStockBouteille: c.stockBouteille?.idStockBouteille ?? c.idStockBouteille ?? null, // enrichi après
     };
   }
 
@@ -135,6 +155,24 @@ async function getProduitsClient(idClient) {
       produits.push(condMap[key]);
     }
   }
+
+  // Enrichit chaque produit avec idStockBouteille depuis /stock/bouteilles/{idProduit}
+  const uniqueProduits = [...new Set(produits.map(p => p.idProduit))];
+  await Promise.all(uniqueProduits.map(async idProduit => {
+    try {
+      const data = await easybeerGet(`/stock/bouteilles/${idProduit}`);
+      const arr = Array.isArray(data) ? data : (data?.liste ?? data?.contenu ?? [data]);
+      for (const p of produits.filter(p => p.idProduit === idProduit)) {
+        const match = arr.find(s =>
+          (s.idContenant ?? s.contenant?.idContenant) === p.idContenant
+        ) ?? arr[0];
+        if (p.idStockBouteille == null) {
+          p.idStockBouteille = match?.idStockBouteille ?? match?.id ?? null;
+        }
+      }
+    } catch {}
+  }));
+
   return produits;
 }
 
