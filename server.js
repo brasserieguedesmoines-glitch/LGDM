@@ -197,6 +197,31 @@ app.get('/api/debug-stock-raw/:idProduit', async (req, res) => {
   }
 });
 
+// --- Debug : trouve idStockBouteille via différentes approches ---
+app.get('/api/debug-find-stock/:idClient', async (req, res) => {
+  const idClient = parseInt(req.params.idClient);
+  const results = {};
+  const candidates = [
+    '/stock/bouteilles',
+    '/stock/produits',
+    '/stock/produits/catalogue',
+    '/stock/produits/autocomplete?query=blonde',
+    `/stock/produit/correspondant/22337`,
+    `/stock/bouteilles/contenants-disponibles`,
+    `/commande/commande-en-cours/${idClient}`,
+  ];
+  for (const path of candidates) {
+    try {
+      const d = await easybeerGet(path);
+      const arr = Array.isArray(d) ? d : (d?.liste ?? d?.content ?? d?.contenu ?? null);
+      results[path] = arr ? { count: arr.length, sample: arr[0] } : d;
+    } catch (e) {
+      results[path] = { error: e.message };
+    }
+  }
+  res.json(results);
+});
+
 // --- Debug : cherche idStockBouteille via différents endpoints ---
 app.get('/api/debug-stock-bouteille/:idProduit/:idContenant', async (req, res) => {
   const { idProduit, idContenant } = req.params;
