@@ -142,7 +142,7 @@ function ajouterLigne(valeurInitiale = '', labelInitial = '') {
   div.className = 'ligne-produit';
 
   const prodOptions = catalogue.map(p => ({
-    value: JSON.stringify({ idProduit: p.idProduit, idContenant: p.idContenant, idLot: p.idLot ?? 1 }),
+    value: JSON.stringify({ idProduit: p.idProduit, idContenant: p.idContenant, idLot: p.idLot ?? 1, idStockBouteille: p.idStockBouteille }),
     label: `${p.libelle} ${p.contenant}`,
   }));
 
@@ -185,7 +185,7 @@ async function preRemplirDerniereCommande(idClient) {
       const idLot = l.idLot ?? 1;
       const prodData = catalogue.find(p => p.idProduit === idProduit && p.idContenant === idContenant);
       const valeur = prodData
-        ? JSON.stringify({ idProduit: prodData.idProduit, idContenant: prodData.idContenant, idLot: prodData.idLot ?? 1 })
+        ? JSON.stringify({ idProduit: prodData.idProduit, idContenant: prodData.idContenant, idLot: prodData.idLot ?? 1, idStockBouteille: prodData.idStockBouteille })
         : '';
       const label = prodData ? `${prodData.libelle} ${prodData.contenant}` : '';
 
@@ -233,7 +233,7 @@ btnEnvoyer.addEventListener('click', async () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ idClient: parseInt(currentIdClient), idClientType: currentIdClientType, lignes, commentaire }),
     });
-    const ref = result.reference ?? result.idCommande ?? result.id ?? '';
+    const ref = result.map?.numero ?? result.map?.id ?? result.reference ?? result.idCommande ?? result.id ?? '';
     modalDetail.textContent = ref ? `Référence : ${ref}` : 'Commande enregistrée avec succès.';
     modalOverlay.style.display = 'flex';
   } catch (err) {

@@ -119,6 +119,7 @@ async function getProduitsClient(idClient) {
       contenant: c.contenant.libelleAvecContenance ?? c.contenant.nom,
       idContenant: c.contenant.idContenant,
       idLot: c.lot.idLot,
+      idStockBouteille: c.stockBouteille?.idStockBouteille ?? c.idStockBouteille ?? null,
     };
   }
 
@@ -592,9 +593,7 @@ app.post('/api/commande', async (req, res) => {
       grilleTarifaire: idClientType ? { idClientType } : undefined,
       commentaire: commentaire ?? '',
       elementsBouteilles: lignes.map(l => ({
-        produit: { idProduit: l.idProduit },
-        contenant: { idContenant: l.idContenant },
-        lot: { idLot: l.idLot ?? 1 },
+        stockBouteille: { idStockBouteille: l.idStockBouteille },
         quantite: l.quantite,
       })),
     });
