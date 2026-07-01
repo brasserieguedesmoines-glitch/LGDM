@@ -187,6 +187,16 @@ app.get('/api/debug-cond-raw/:idClientType', async (req, res) => {
   }
 });
 
+// --- Debug : raw /stock/bouteilles/{idProduit} ---
+app.get('/api/debug-stock-raw/:idProduit', async (req, res) => {
+  try {
+    const data = await easybeerGet(`/stock/bouteilles/${req.params.idProduit}`);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message, detail: err.detail });
+  }
+});
+
 // --- Debug : cherche idStockBouteille via différents endpoints ---
 app.get('/api/debug-stock-bouteille/:idProduit/:idContenant', async (req, res) => {
   const { idProduit, idContenant } = req.params;
@@ -669,6 +679,7 @@ app.post('/api/commande', async (req, res) => {
         quantite: l.quantite,
       })),
     });
+    console.log('POST /api/commande payload:', JSON.stringify(payload));
     const result = await easybeerPost('/commande/enregistrer', payload);
     res.json(result);
   } catch (err) {
