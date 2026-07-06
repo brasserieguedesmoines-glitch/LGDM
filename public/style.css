@@ -27,7 +27,20 @@ header {
   display: flex;
   align-items: center;
   gap: 12px;
+  justify-content: space-between;
 }
+
+.btn-pdf {
+  font-size: 0.8rem;
+  color: #fff;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 6px;
+  padding: 6px 12px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn-pdf:hover { background: rgba(255,255,255,0.25); }
 
 header h1 {
   font-size: 1.25rem;

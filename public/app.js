@@ -212,7 +212,8 @@ btnEnvoyer.addEventListener('click', async () => {
     if (!val) return;
     try {
       const data = JSON.parse(val);
-      if (qte > 0) lignes.push({ ...data, quantite: qte });
+      const label = div._prodSelect?.querySelector('input')?.value ?? '';
+      if (qte > 0) lignes.push({ ...data, quantite: qte, libelle: label.split(' ').slice(0,-1).join(' '), contenant: label.split(' ').slice(-1)[0] });
     } catch { erreur = true; }
   });
 
@@ -231,7 +232,7 @@ btnEnvoyer.addEventListener('click', async () => {
     const result = await apiFetch('/api/commande', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idClient: parseInt(currentIdClient), idClientType: currentIdClientType, lignes, commentaire }),
+      body: JSON.stringify({ idClient: parseInt(currentIdClient), idClientType: currentIdClientType, nomClient: clientSearchSelect?.querySelector('input')?.value ?? '', lignes, commentaire }),
     });
     const ref = result.map?.numero ?? result.map?.id ?? result.reference ?? result.idCommande ?? result.id ?? '';
     modalDetail.textContent = ref ? `Référence : ${ref}` : 'Commande enregistrée avec succès.';

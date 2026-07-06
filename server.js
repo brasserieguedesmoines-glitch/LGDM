@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import fetch from 'node-fetch';
+import PDFDocument from 'pdfkit';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -679,30 +680,111 @@ app.get('/api/debug-payload/:idClient', async (req, res) => {
   }
 });
 
+// Stockage en mémoire des commandes passées (reset au redémarrage)
+const historiqueCommandes = [];
+
 // --- Création de commande ---
 app.post('/api/commande', async (req, res) => {
   const payload = {};
   try {
-    const { idClient, idClientType, lignes, commentaire } = req.body;
+    const { idClient, idClientType, nomClient, lignes, commentaire } = req.body;
     if (!idClient || !Array.isArray(lignes) || lignes.length === 0) {
       return res.status(400).json({ error: 'idClient et lignes sont requis' });
     }
+
+    // Récupère la grille tarifaire complète pour avoir tous les champs requis
+    let grilleTarifaire = idClientType ? { idClientType } : undefined;
+    try {
+      const grilleData = await getGrilleByType(idClientType);
+      grilleTarifaire = {
+        idClientType,
+        libelle: grilleData?.libelle ?? grilleData?.typeClient?.libelle ?? undefined,
+        droitSuspendu: grilleData?.droitSuspendu ?? false,
+        horsUE: grilleData?.horsUE ?? false,
+      };
+    } catch {}
+
     Object.assign(payload, {
-      client: { idClient },
-      grilleTarifaire: idClientType ? { idClientType } : undefined,
+      client: { type: {}, idClient },
+      grilleTarifaire,
       commentaire: commentaire ?? '',
+      adresseLivraison: {},
+      droitSuspendu: false,
+      echangeHorsUE: false,
+      elementsContenants: [],
+      elementsFuts: [],
+      elementsLocations: [],
+      elementsAutres: [],
+      elementsSaisieLibre: [],
       elementsBouteilles: lignes.map(l => ({
         stockBouteille: { idStockBouteille: l.idStockBouteille },
         quantite: l.quantite,
       })),
+      fraisLivraisonHT: 0,
+      remiseTotale: 0,
+      participationTotale: 0,
+      totalConsigne: 0,
+      tags: [],
     });
     console.log('POST /api/commande payload:', JSON.stringify(payload));
     const result = await easybeerPost('/commande/enregistrer', payload);
+
+    // Sauvegarde dans l'historique local
+    historiqueCommandes.push({
+      date: new Date().toISOString(),
+      idClient,
+      nomClient: nomClient ?? `Client ${idClient}`,
+      commentaire: commentaire ?? '',
+      lignes,
+      reference: result.map?.numero ?? result.map?.id ?? '',
+    });
+
     res.json(result);
   } catch (err) {
     console.error('POST /api/commande', err.message, err.detail);
     res.status(err.status ?? 502).json({ error: err.message, detail: err.detail, payloadEnvoye: payload });
   }
+});
+
+// --- Export PDF récapitulatif des commandes ---
+app.get('/api/commandes-pdf', (req, res) => {
+  const doc = new PDFDocument({ margin: 40, size: 'A4' });
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'attachment; filename="commandes.pdf"');
+  doc.pipe(res);
+
+  // En-tête
+  doc.fontSize(18).font('Helvetica-Bold').text('Récapitulatif des commandes', { align: 'center' });
+  doc.fontSize(10).font('Helvetica').text(`Généré le ${new Date().toLocaleString('fr-FR')}`, { align: 'center' });
+  doc.moveDown(1.5);
+
+  if (historiqueCommandes.length === 0) {
+    doc.fontSize(12).text('Aucune commande enregistrée.', { align: 'center' });
+    doc.end();
+    return;
+  }
+
+  for (const cmd of historiqueCommandes) {
+    const dateStr = new Date(cmd.date).toLocaleString('fr-FR');
+    doc.fontSize(12).font('Helvetica-Bold').text(`${cmd.nomClient}`, { continued: true });
+    doc.font('Helvetica').fontSize(10).text(`  —  ${dateStr}`);
+    if (cmd.reference) doc.fontSize(10).text(`Référence : ${cmd.reference}`);
+    if (cmd.commentaire) doc.fontSize(10).text(`Note : ${cmd.commentaire}`);
+
+    for (const l of cmd.lignes) {
+      const label = l.libelle ? `${l.libelle} ${l.contenant ?? ''}`.trim() : `Produit #${l.idProduit}`;
+      doc.fontSize(10).text(`  • ${label} — qté : ${l.quantite}`);
+    }
+    doc.moveDown(0.8);
+
+    // Trait de séparation
+    if (historiqueCommandes.indexOf(cmd) < historiqueCommandes.length - 1) {
+      doc.moveTo(40, doc.y).lineTo(555, doc.y).strokeColor('#cccccc').stroke();
+      doc.moveDown(0.5);
+    }
+  }
+
+  doc.end();
 });
 
 if (process.env.NODE_ENV !== 'production') {
