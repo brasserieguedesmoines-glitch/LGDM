@@ -162,9 +162,11 @@ async function getProduitsClient(idClient) {
   try {
     const index = await getStockBouteilleIndex();
     for (const p of produits) {
+      const stock = index.get(`${p.idProduit}-${p.idContenant}-${p.idLot ?? 1}`);
       if (p.idStockBouteille == null) {
-        p.idStockBouteille = index.get(`${p.idProduit}-${p.idContenant}-${p.idLot ?? 1}`)?.idStockBouteille ?? null;
+        p.idStockBouteille = stock?.idStockBouteille ?? null;
       }
+      p.gtin = stock?.gtin ?? null;
     }
   } catch {}
 
@@ -891,7 +893,8 @@ app.get('/api/commandes-pdf', (req, res) => {
 
     for (const l of cmd.lignes) {
       const label = l.libelle ? `${l.libelle} ${l.contenant ?? ''}`.trim() : `Produit #${l.idProduit}`;
-      doc.fontSize(10).text(`  • ${label} — qté : ${l.quantite}`);
+      const gencode = l.gtin ? `  [${l.gtin}]` : '';
+      doc.fontSize(10).text(`  • ${label} — qté : ${l.quantite}${gencode}`);
     }
     doc.moveDown(0.8);
 

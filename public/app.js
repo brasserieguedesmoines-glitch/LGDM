@@ -142,7 +142,7 @@ function ajouterLigne(valeurInitiale = '', labelInitial = '') {
   div.className = 'ligne-produit';
 
   const prodOptions = catalogue.map(p => ({
-    value: JSON.stringify({ idProduit: p.idProduit, idContenant: p.idContenant, idLot: p.idLot ?? 1, idStockBouteille: p.idStockBouteille }),
+    value: JSON.stringify({ idProduit: p.idProduit, idContenant: p.idContenant, idLot: p.idLot ?? 1, idStockBouteille: p.idStockBouteille, gtin: p.gtin }),
     label: `${p.libelle} ${p.contenant}`,
   }));
 
