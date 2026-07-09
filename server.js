@@ -56,7 +56,9 @@ async function getStockBouteilleIndex() {
   const index = new Map();
   for (const s of arr) {
     if (s.idStockBouteille && s.idProduit && s.idContenant) {
-      index.set(`${s.idProduit}-${s.idContenant}-${s.idLot ?? 1}`, s.idStockBouteille);
+      const key = `${s.idProduit}-${s.idContenant}-${s.idLot ?? 1}`;
+      // Garde la première occurrence (entrepôt principal) et l'objet stock complet
+      if (!index.has(key)) index.set(key, s);
     }
   }
   stockBouteilleIndex = index;
@@ -161,7 +163,7 @@ async function getProduitsClient(idClient) {
     const index = await getStockBouteilleIndex();
     for (const p of produits) {
       if (p.idStockBouteille == null) {
-        p.idStockBouteille = index.get(`${p.idProduit}-${p.idContenant}-${p.idLot ?? 1}`) ?? null;
+        p.idStockBouteille = index.get(`${p.idProduit}-${p.idContenant}-${p.idLot ?? 1}`)?.idStockBouteille ?? null;
       }
     }
   } catch {}
@@ -716,9 +718,23 @@ app.post('/api/commande', async (req, res) => {
       elementsLocations: [],
       elementsAutres: [],
       elementsSaisieLibre: [],
-      elementsBouteilles: lignes.map(l => ({
-        stockBouteille: { idStockBouteille: l.idStockBouteille },
-        quantite: l.quantite,
+      elementsBouteilles: await Promise.all(lignes.map(async l => {
+        // Récupère l'objet stock complet pour reproduire le payload de l'app EasyBeer
+        let stock = null;
+        try {
+          const index = await getStockBouteilleIndex();
+          stock = index.get(`${l.idProduit}-${l.idContenant}-${l.idLot ?? 1}`) ?? null;
+        } catch {}
+        const idStockBouteille = stock?.idStockBouteille ?? l.idStockBouteille;
+        return {
+          tauxTVA: stock?.tauxTVA ?? undefined,
+          stockProduit: stock ?? undefined,
+          stockBouteille: { idStockBouteille },
+          valeurRemise: 0,
+          participation: 0,
+          participationUnitaire: 0,
+          quantite: l.quantite,
+        };
       })),
       fraisLivraisonHT: 0,
       remiseTotale: 0,
