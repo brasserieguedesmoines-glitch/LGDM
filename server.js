@@ -907,6 +907,34 @@ app.get('/api/debug-liste/:etat', async (req, res) => {
   }
 });
 
+// Debug : teste plusieurs variantes de filtre/tri pour la liste des commandes
+app.get('/api/debug-liste-variants', async (req, res) => {
+  const filtreComplet = {
+    etats: [], etatsPaiement: [], tags: [], typesLivraison: [], typesPaiement: [],
+    idsClientsTournees: [], idsClientsTypes: [], idsCommerciaux: [], idsContenants: [],
+    idsPointsRetrait: [], idsProduits: [], recherche: '', inclureArchive: false,
+  };
+  const variants = [
+    { label: 'tri=dateCreation filtre vide', q: 'colonneTri=dateCreation', body: {} },
+    { label: 'tri=dateCreation filtre complet', q: 'colonneTri=dateCreation', body: filtreComplet },
+    { label: 'tri=numero filtre complet', q: 'colonneTri=numero', body: filtreComplet },
+    { label: 'tri=DATE_CREATION filtre complet', q: 'colonneTri=DATE_CREATION', body: filtreComplet },
+    { label: 'tri vide filtre complet', q: 'colonneTri=', body: filtreComplet },
+  ];
+  const results = [];
+  for (const v of variants) {
+    try {
+      const data = await easybeerPost(`/commande/liste/TOUTES?${v.q}&nombreParPage=2&numeroPage=0`, v.body);
+      results.push({ label: v.label, ok: true, keys: Object.keys(data ?? {}), sample: JSON.stringify(data).slice(0, 300) });
+      break;
+    } catch (e) {
+      results.push({ label: v.label, ok: false, error: e.message.slice(0, 200) });
+    }
+    await new Promise(r => setTimeout(r, 150));
+  }
+  res.json(results);
+});
+
 // --- Création de commande ---
 app.post('/api/commande', async (req, res) => {
   const payload = {};
