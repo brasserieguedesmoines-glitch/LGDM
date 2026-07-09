@@ -907,6 +907,22 @@ app.get('/api/debug-liste/:etat', async (req, res) => {
   }
 });
 
+// Debug : historique de commande d'un client (POST avec periode)
+app.get('/api/debug-historique/:idClient', async (req, res) => {
+  try {
+    const fin = new Date();
+    const debut = new Date(fin.getTime() - 365 * 24 * 60 * 60 * 1000);
+    const data = await easybeerPost(
+      `/parametres/client/historique-commande/${req.params.idClient}`,
+      { dateDebut: debut.toISOString(), dateFin: fin.toISOString() }
+    );
+    const str = JSON.stringify(data);
+    res.json({ keys: Object.keys(data ?? {}), taille: str.length, extrait: str.slice(0, 2000) });
+  } catch (err) {
+    res.status(500).json({ error: err.message, detail: err.detail?.slice?.(0, 300) });
+  }
+});
+
 // Debug : teste plusieurs variantes de filtre/tri pour la liste des commandes
 app.get('/api/debug-liste-variants', async (req, res) => {
   const filtreComplet = {
