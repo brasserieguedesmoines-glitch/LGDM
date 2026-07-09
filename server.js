@@ -771,17 +771,48 @@ app.post('/api/commande', async (req, res) => {
       return res.status(400).json({ error: 'idClient et lignes sont requis' });
     }
 
-    // Récupère la grille tarifaire complète pour avoir tous les champs requis
-    let grilleTarifaire = idClientType ? { idClientType } : undefined;
-    try {
-      const grilleData = await getGrilleByType(idClientType);
-      grilleTarifaire = {
-        idClientType,
-        libelle: grilleData?.libelle ?? grilleData?.typeClient?.libelle ?? undefined,
-        droitSuspendu: grilleData?.droitSuspendu ?? false,
-        horsUE: grilleData?.horsUE ?? false,
-      };
-    } catch {}
+    // Grille tarifaire complète (objet type client entier, comme l'app EasyBeer)
+    const typesClient = await getTypesClient();
+    const grilleTarifaire = typesClient.find(t => t.idClientType === idClientType) ?? { idClientType };
+
+    const index = await getStockBouteilleIndex();
+
+    // Construit chaque élément avec stock complet + prix réel du client
+    const elementsBouteilles = [];
+    let totalHT = 0;
+    let tva = 0;
+    let tauxTVARef = grilleTarifaire.tauxTVA;
+    for (const l of lignes) {
+      const stock = index.get(`${l.idProduit}-${l.idContenant}-${l.idLot ?? 1}`) ?? null;
+      const idStockBouteille = stock?.idStockBouteille ?? l.idStockBouteille;
+      if (!idStockBouteille) {
+        throw Object.assign(new Error(`Stock introuvable pour le produit ${l.idProduit}`), { status: 400 });
+      }
+      let prixHT = 0;
+      try {
+        const prixData = await easybeerGet(`/parametres/prix/${idStockBouteille}/${idClientType}/${idClient}`);
+        prixHT = prixData?.prixHT ?? 0;
+      } catch {}
+      const prixTotalHT = Math.round(prixHT * l.quantite * 100) / 100;
+      const taux = (stock?.tauxTVA?.taux ?? 20) / 100;
+      totalHT += prixTotalHT;
+      tva += prixTotalHT * taux;
+      if (stock?.tauxTVA) tauxTVARef = stock.tauxTVA;
+
+      elementsBouteilles.push({
+        tauxTVA: stock?.tauxTVA ?? undefined,
+        stockProduit: stock ?? undefined,
+        stockBouteille: { idStockBouteille },
+        valeurRemise: 0,
+        participation: 0,
+        participationUnitaire: 0,
+        prixLotHT: prixHT,
+        prixTotalHT,
+        quantite: l.quantite,
+      });
+    }
+    totalHT = Math.round(totalHT * 100) / 100;
+    tva = Math.round(tva * 100) / 100;
 
     Object.assign(payload, {
       client: { type: {}, idClient },
@@ -790,33 +821,24 @@ app.post('/api/commande', async (req, res) => {
       adresseLivraison: {},
       droitSuspendu: false,
       echangeHorsUE: false,
+      deductionsAvoirs: [],
+      listeTropPercus: [],
       elementsContenants: [],
       elementsFuts: [],
       elementsLocations: [],
       elementsAutres: [],
+      elementsMatieresPremieres: [],
       elementsSaisieLibre: [],
-      elementsBouteilles: await Promise.all(lignes.map(async l => {
-        // Récupère l'objet stock complet pour reproduire le payload de l'app EasyBeer
-        let stock = null;
-        try {
-          const index = await getStockBouteilleIndex();
-          stock = index.get(`${l.idProduit}-${l.idContenant}-${l.idLot ?? 1}`) ?? null;
-        } catch {}
-        const idStockBouteille = stock?.idStockBouteille ?? l.idStockBouteille;
-        return {
-          tauxTVA: stock?.tauxTVA ?? undefined,
-          stockProduit: stock ?? undefined,
-          stockBouteille: { idStockBouteille },
-          valeurRemise: 0,
-          participation: 0,
-          participationUnitaire: 0,
-          quantite: l.quantite,
-        };
-      })),
+      elementsBouteilles,
       fraisLivraisonHT: 0,
+      tauxTVAFraisLivraison: tauxTVARef,
       remiseTotale: 0,
       participationTotale: 0,
       totalConsigne: 0,
+      poids: 0,
+      totalHT,
+      tva,
+      total: Math.round((totalHT + tva) * 100) / 100,
       tags: [],
     });
     console.log('POST /api/commande payload:', JSON.stringify(payload));
