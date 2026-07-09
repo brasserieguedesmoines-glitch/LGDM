@@ -192,6 +192,83 @@ app.get('/api/debug-stock-raw/:idProduit', async (req, res) => {
   }
 });
 
+// --- Debug : structure brute d'un tarif client (pour trouver le champ prix) ---
+app.get('/api/debug-tarif-sample/:idClient', async (req, res) => {
+  try {
+    const idClient = parseInt(req.params.idClient);
+    const type = clientTypeMap.get(idClient) ?? (await easybeerGet(`/parametres/client/detail/${idClient}`))?.type?.idClientType;
+    const data = await getGrilleByType(type);
+    const clientData = data.clients.find(c => c.modeleClient.idClient === idClient);
+    const typesClient = await getTypesClient();
+    const typeObj = typesClient.find(t => t.idClientType === type);
+    res.json({ typeObj, tarifs: clientData?.tarifs?.slice(0, 2) ?? [] });
+  } catch (err) {
+    res.status(500).json({ error: err.message, detail: err.detail });
+  }
+});
+
+// --- Debug : envoie une commande test avec payload complet façon app EasyBeer ---
+app.get('/api/debug-send-full/:idClient', async (req, res) => {
+  try {
+    const idClient = parseInt(req.params.idClient);
+    const idClientType = parseInt(req.query.ict ?? '10319');
+    const prixLotHT = parseFloat(req.query.prix ?? '1.5');
+    const index = await getStockBouteilleIndex();
+    const stock = index.get('22337-12-1');
+    const typesClient = await getTypesClient();
+    const typeObj = typesClient.find(t => t.idClientType === idClientType) ?? { idClientType };
+
+    const tauxTVA = stock?.tauxTVA;
+    const taux = (tauxTVA?.taux ?? 20) / 100;
+    const totalHT = prixLotHT;
+    const tva = Math.round(totalHT * taux * 100) / 100;
+
+    const payload = {
+      client: { type: {}, idClient },
+      grilleTarifaire: typeObj,
+      commentaire: 'TEST DEBUG FULL',
+      adresseLivraison: {},
+      droitSuspendu: false,
+      echangeHorsUE: false,
+      deductionsAvoirs: [],
+      listeTropPercus: [],
+      elementsContenants: [],
+      elementsFuts: [],
+      elementsLocations: [],
+      elementsAutres: [],
+      elementsMatieresPremieres: [],
+      elementsSaisieLibre: [],
+      elementsBouteilles: [{
+        tauxTVA,
+        stockProduit: stock,
+        stockBouteille: { idStockBouteille: stock?.idStockBouteille },
+        valeurRemise: 0,
+        participation: 0,
+        participationUnitaire: 0,
+        prixLotHT,
+        prixTotalHT: totalHT,
+        quantite: 1,
+      }],
+      fraisLivraisonHT: 0,
+      tauxTVAFraisLivraison: tauxTVA,
+      remiseTotale: 0,
+      participationTotale: 0,
+      totalConsigne: 0,
+      poids: 0,
+      totalHT,
+      tva,
+      total: Math.round((totalHT + tva) * 100) / 100,
+      tags: [],
+    };
+    let result = null, error = null;
+    try { result = await easybeerPost('/commande/enregistrer', payload); }
+    catch (e) { error = { message: e.message, detail: e.detail }; }
+    res.json({ result, error, payload });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- Debug : trouve idStockBouteille via différentes approches ---
 app.get('/api/debug-find-stock/:idClient', async (req, res) => {
   const idClient = parseInt(req.params.idClient);
