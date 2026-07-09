@@ -820,6 +820,7 @@ app.post('/api/commande', async (req, res) => {
       commentaire: commentaire ?? '',
       // Note visible sur le bon de livraison (indications pour le livreur)
       informationLivraison: commentaire ?? '',
+      commentaireClient: commentaire ?? '',
       adresseLivraison: {},
       droitSuspendu: false,
       echangeHorsUE: false,
