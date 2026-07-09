@@ -818,6 +818,8 @@ app.post('/api/commande', async (req, res) => {
       client: { type: {}, idClient },
       grilleTarifaire,
       commentaire: commentaire ?? '',
+      // Note visible sur le bon de livraison (indications pour le livreur)
+      informationLivraison: commentaire ?? '',
       adresseLivraison: {},
       droitSuspendu: false,
       echangeHorsUE: false,
