@@ -764,6 +764,149 @@ app.get('/api/debug-payload/:idClient', async (req, res) => {
 // Stockage en mémoire des commandes passées (reset au redémarrage)
 const historiqueCommandes = [];
 
+// ---- Module Relances : analyse des habitudes clients ----
+
+// Récupère toutes les commandes d'un état donné (paginé)
+async function fetchCommandesEtat(etat, maxPages = 20) {
+  const commandes = [];
+  for (let page = 0; page < maxPages; page++) {
+    const data = await easybeerPost(
+      `/commande/liste/${etat}?colonneTri=dateCreation&nombreParPage=100&numeroPage=${page}`,
+      {}
+    );
+    const liste = data?.liste ?? data?.contenu ?? data?.content ?? (Array.isArray(data) ? data : []);
+    commandes.push(...liste);
+    const total = data?.nombreTotal ?? data?.totalElements ?? null;
+    if (!liste.length || (total != null && commandes.length >= total)) break;
+    await new Promise(r => setTimeout(r, 120)); // rate limit EasyBeer
+  }
+  return commandes;
+}
+
+// Cache de l'analyse (30 min)
+let relancesCache = null;
+let relancesCacheExpiry = 0;
+
+async function analyserClients() {
+  if (relancesCache && Date.now() < relancesCacheExpiry) return relancesCache;
+
+  // États pertinents pour l'historique (commandes réelles, pas devis/annulées)
+  const etats = ['LIVREE', 'FACTUREE', 'ARCHIVEE', 'EN_COURS', 'VALIDEE'];
+  const toutes = [];
+  for (const etat of etats) {
+    try {
+      const cmds = await fetchCommandesEtat(etat);
+      toutes.push(...cmds);
+    } catch (e) {
+      console.error(`fetchCommandes ${etat}:`, e.message);
+    }
+  }
+
+  // Groupe par client
+  const parClient = new Map();
+  for (const c of toutes) {
+    const idClient = c.client?.idClient ?? c.idClient;
+    if (!idClient) continue;
+    if (!parClient.has(idClient)) {
+      parClient.set(idClient, { nom: c.client?.nom ?? `Client ${idClient}`, commandes: [] });
+    }
+    parClient.get(idClient).commandes.push({
+      date: c.dateLivraisonReelle ?? c.dateCreation,
+      totalHT: c.totalHT ?? 0,
+      nombreElements: c.nombreElements ?? 0,
+      synthese: c.syntheseConditionnement ?? '',
+    });
+  }
+
+  const maintenant = Date.now();
+  const JOUR = 24 * 60 * 60 * 1000;
+  const clients = [];
+
+  for (const [idClient, info] of parClient) {
+    const cmds = info.commandes.filter(c => c.date).sort((a, b) => a.date - b.date);
+    if (!cmds.length) continue;
+
+    const derniere = cmds[cmds.length - 1];
+    const dateDerniere = derniere.date;
+
+    // Fréquence moyenne entre commandes (nécessite >= 2 commandes)
+    let freqMoyenne = null;
+    if (cmds.length >= 2) {
+      const intervalles = [];
+      for (let i = 1; i < cmds.length; i++) intervalles.push(cmds[i].date - cmds[i - 1].date);
+      freqMoyenne = Math.round(intervalles.reduce((a, b) => a + b, 0) / intervalles.length / JOUR);
+    }
+
+    const volumeMoyen = Math.round(cmds.reduce((a, c) => a + c.nombreElements, 0) / cmds.length);
+    const montantMoyen = Math.round(cmds.reduce((a, c) => a + c.totalHT, 0) / cmds.length * 100) / 100;
+
+    // Produits les plus fréquents (depuis la synthèse de conditionnement)
+    const produitsCount = {};
+    for (const c of cmds) {
+      for (const part of String(c.synthese).split(/[,;]/)) {
+        const p = part.trim().replace(/^\d+\s*[x×]?\s*/i, '');
+        if (p) produitsCount[p] = (produitsCount[p] ?? 0) + 1;
+      }
+    }
+    const produitsHabituels = Object.entries(produitsCount)
+      .sort((a, b) => b[1] - a[1]).slice(0, 3).map(([p]) => p);
+
+    // Estimation prochaine commande + priorité
+    let dateProchaine = null;
+    let joursEcart = null; // >0 = retard, <0 = avance
+    let priorite = 'pas_prioritaire';
+    if (freqMoyenne != null && freqMoyenne > 0) {
+      dateProchaine = dateDerniere + freqMoyenne * JOUR;
+      joursEcart = Math.round((maintenant - dateProchaine) / JOUR);
+      if (joursEcart > 0) priorite = 'urgent';
+      else if (joursEcart >= -7) priorite = 'cette_semaine';
+      else if (joursEcart >= -14) priorite = 'a_surveiller';
+    }
+
+    clients.push({
+      idClient,
+      nom: info.nom,
+      nbCommandes: cmds.length,
+      dateDerniereCommande: new Date(dateDerniere).toISOString().slice(0, 10),
+      frequenceMoyenneJours: freqMoyenne,
+      dateProchaineEstimee: dateProchaine ? new Date(dateProchaine).toISOString().slice(0, 10) : null,
+      joursRetard: joursEcart,
+      volumeMoyen,
+      montantMoyenHT: montantMoyen,
+      produitsHabituels,
+      priorite,
+    });
+  }
+
+  // Tri : urgent d'abord, puis par retard décroissant
+  const ordre = { urgent: 0, cette_semaine: 1, a_surveiller: 2, pas_prioritaire: 3 };
+  clients.sort((a, b) => (ordre[a.priorite] - ordre[b.priorite]) || ((b.joursRetard ?? -999) - (a.joursRetard ?? -999)));
+
+  relancesCache = { generePour: new Date().toISOString(), nbCommandesAnalysees: toutes.length, clients };
+  relancesCacheExpiry = Date.now() + 30 * 60 * 1000;
+  return relancesCache;
+}
+
+// --- API Relances ---
+app.get('/api/relances', async (req, res) => {
+  try {
+    res.json(await analyserClients());
+  } catch (err) {
+    console.error('GET /api/relances', err.message, err.detail);
+    res.status(err.status ?? 502).json({ error: err.message, detail: err.detail });
+  }
+});
+
+// Debug : une page brute de la liste des commandes
+app.get('/api/debug-liste/:etat', async (req, res) => {
+  try {
+    const data = await easybeerPost(`/commande/liste/${req.params.etat}?colonneTri=dateCreation&nombreParPage=5&numeroPage=0`, {});
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message, detail: err.detail });
+  }
+});
+
 // --- Création de commande ---
 app.post('/api/commande', async (req, res) => {
   const payload = {};

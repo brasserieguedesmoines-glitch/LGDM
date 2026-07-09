@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LGDM — Clients à relancer</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .table-wrap { overflow-x: auto; background: var(--card); border-radius: var(--radius); padding: 8px; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+    th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    th { font-weight: 600; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; }
+    td.produits { white-space: normal; max-width: 260px; font-size: 0.8rem; color: var(--muted); }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; color: #fff; }
+    .badge.urgent { background: #c0392b; }
+    .badge.cette_semaine { background: #e8a020; }
+    .badge.a_surveiller { background: #2980b9; }
+    .badge.pas_prioritaire { background: #95a5a6; }
+    .retard { color: #c0392b; font-weight: 600; }
+    .avance { color: #27ae60; }
+    #filtres { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
+    #filtres button { border: 1px solid var(--border); background: var(--card); border-radius: 20px; padding: 6px 14px; cursor: pointer; font-size: 0.8rem; }
+    #filtres button.actif { background: var(--dark); color: #fff; border-color: var(--dark); }
+    #meta { color: var(--muted); font-size: 0.8rem; margin: 8px 0; }
+    .btn-retour { font-size: 0.8rem; color: #fff; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 6px 12px; text-decoration: none; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Clients à relancer</h1>
+    <a href="/" class="btn-retour">← Prise de commande</a>
+  </header>
+
+  <main style="max-width: 1100px;">
+    <p id="meta">Chargement de l'analyse…</p>
+    <div id="filtres" style="display:none">
+      <button data-f="tous" class="actif">Tous</button>
+      <button data-f="urgent">🔴 Urgent</button>
+      <button data-f="cette_semaine">🟠 Cette semaine</button>
+      <button data-f="a_surveiller">🔵 À surveiller</button>
+      <button data-f="pas_prioritaire">⚪ Pas prioritaire</button>
+    </div>
+    <div class="table-wrap" style="display:none" id="wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Priorité</th>
+            <th>Client</th>
+            <th>Dernière commande</th>
+            <th>Fréquence moy.</th>
+            <th>Prochaine estimée</th>
+            <th>Écart</th>
+            <th>Vol. moyen</th>
+            <th>Montant moy. HT</th>
+            <th>Produits habituels</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    const LABELS = { urgent: 'Urgent', cette_semaine: 'Cette semaine', a_surveiller: 'À surveiller', pas_prioritaire: 'Pas prioritaire' };
+    let clients = [];
+
+    function fmtDate(d) {
+      if (!d) return '—';
+      const [y, m, day] = d.split('-');
+      return `${day}/${m}/${y}`;
+    }
+
+    function render(filtre) {
+      const tbody = document.getElementById('tbody');
+      tbody.innerHTML = '';
+      const list = filtre === 'tous' ? clients : clients.filter(c => c.priorite === filtre);
+      for (const c of list) {
+        const tr = document.createElement('tr');
+        let ecart = '—';
+        if (c.joursRetard != null) {
+          ecart = c.joursRetard > 0
+            ? `<span class="retard">+${c.joursRetard} j de retard</span>`
+            : `<span class="avance">dans ${-c.joursRetard} j</span>`;
+        }
+        tr.innerHTML = `
+          <td><span class="badge ${c.priorite}">${LABELS[c.priorite]}</span></td>
+          <td><strong>${c.nom}</strong><br><small>${c.nbCommandes} commandes</small></td>
+          <td>${fmtDate(c.dateDerniereCommande)}</td>
+          <td>${c.frequenceMoyenneJours != null ? c.frequenceMoyenneJours + ' j' : '—'}</td>
+          <td>${fmtDate(c.dateProchaineEstimee)}</td>
+          <td>${ecart}</td>
+          <td>${c.volumeMoyen || '—'}</td>
+          <td>${c.montantMoyenHT ? c.montantMoyenHT.toFixed(2) + ' €' : '—'}</td>
+          <td class="produits">${(c.produitsHabituels ?? []).join(', ') || '—'}</td>`;
+        tbody.appendChild(tr);
+      }
+      document.getElementById('meta').textContent =
+        `${list.length} client(s) affiché(s) — analyse générée le ${new Date(window._genere).toLocaleString('fr-FR')}`;
+    }
+
+    document.getElementById('filtres').addEventListener('click', e => {
+      const btn = e.target.closest('button[data-f]');
+      if (!btn) return;
+      document.querySelectorAll('#filtres button').forEach(b => b.classList.remove('actif'));
+      btn.classList.add('actif');
+      render(btn.dataset.f);
+    });
+
+    fetch('/api/relances')
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) throw new Error(data.error);
+        clients = data.clients ?? [];
+        window._genere = data.generePour;
+        document.getElementById('filtres').style.display = 'flex';
+        document.getElementById('wrap').style.display = 'block';
+        render('tous');
+      })
+      .catch(err => {
+        document.getElementById('meta').textContent = 'Erreur : ' + err.message;
+      });
+  </script>
+</body>
+</html>
