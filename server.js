@@ -767,12 +767,23 @@ const historiqueCommandes = [];
 // ---- Module Relances : analyse des habitudes clients ----
 
 // Récupère toutes les commandes d'un état donné (paginé)
+// Filtre exact envoyé par l'app EasyBeer sur la liste des commandes
+const FILTRE_COMMANDES = {
+  etats: [], etatsPaiement: [], typesPaiement: [], typesLivraison: [],
+  idsClientsTypes: [], idsClientsTournees: [], idsCommerciaux: [],
+  idsContenants: [], idsPointsRetrait: [], idsProduits: [],
+  contientSaisieLibre: false, inclureArchive: false,
+  locationFut: false, locationMateriel: false, sansLocationMateriel: false,
+  recherche: '', relancePaiement: false, retardPaiement: false,
+  resteAPayer: null, total: null,
+};
+
 async function fetchCommandesEtat(etat = 'toutes', maxPages = 20) {
   const commandes = [];
   for (let page = 1; page <= maxPages; page++) {
     const data = await easybeerPost(
       `/commande/liste/${etat}?numeroPage=${page}&nombreParPage=100&colonneTri=-numero`,
-      {}
+      FILTRE_COMMANDES
     );
     const liste = data?.liste ?? data?.contenu ?? data?.content ?? (Array.isArray(data) ? data : []);
     commandes.push(...liste);
@@ -898,7 +909,7 @@ app.get('/api/relances', async (req, res) => {
 // Debug : une page brute de la liste des commandes
 app.get('/api/debug-liste/:etat', async (req, res) => {
   try {
-    const data = await easybeerPost(`/commande/liste/${req.params.etat}?numeroPage=1&nombreParPage=3&colonneTri=-numero`, {});
+    const data = await easybeerPost(`/commande/liste/${req.params.etat}?numeroPage=1&nombreParPage=3&colonneTri=-numero`, FILTRE_COMMANDES);
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message, detail: err.detail });
