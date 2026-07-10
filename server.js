@@ -767,18 +767,18 @@ const historiqueCommandes = [];
 // ---- Module Relances : analyse des habitudes clients ----
 
 // Récupère toutes les commandes d'un état donné (paginé)
-async function fetchCommandesEtat(etat, maxPages = 20) {
+async function fetchCommandesEtat(etat = 'toutes', maxPages = 20) {
   const commandes = [];
-  for (let page = 0; page < maxPages; page++) {
+  for (let page = 1; page <= maxPages; page++) {
     const data = await easybeerPost(
-      `/commande/liste/${etat}?colonneTri=dateCreation&nombreParPage=100&numeroPage=${page}`,
+      `/commande/liste/${etat}?numeroPage=${page}&nombreParPage=100&colonneTri=-numero`,
       {}
     );
     const liste = data?.liste ?? data?.contenu ?? data?.content ?? (Array.isArray(data) ? data : []);
     commandes.push(...liste);
     const total = data?.nombreTotal ?? data?.totalElements ?? null;
     if (!liste.length || (total != null && commandes.length >= total)) break;
-    await new Promise(r => setTimeout(r, 120)); // rate limit EasyBeer
+    await new Promise(r => setTimeout(r, 150)); // rate limit EasyBeer
   }
   return commandes;
 }
@@ -790,17 +790,15 @@ let relancesCacheExpiry = 0;
 async function analyserClients() {
   if (relancesCache && Date.now() < relancesCacheExpiry) return relancesCache;
 
-  // États pertinents pour l'historique (commandes réelles, pas devis/annulées)
-  const etats = ['LIVREE', 'FACTUREE', 'ARCHIVEE', 'EN_COURS', 'VALIDEE'];
-  const toutes = [];
-  for (const etat of etats) {
-    try {
-      const cmds = await fetchCommandesEtat(etat);
-      toutes.push(...cmds);
-    } catch (e) {
-      console.error(`fetchCommandes ${etat}:`, e.message);
-    }
+  // Toutes les commandes (l'app EasyBeer utilise l'état "toutes")
+  let toutes = [];
+  try {
+    toutes = await fetchCommandesEtat('toutes');
+  } catch (e) {
+    console.error('fetchCommandes toutes:', e.message);
   }
+  // Exclut devis et annulées de l'analyse
+  toutes = toutes.filter(c => !c.estDevis && !c.estAnnulee);
 
   // Groupe par client
   const parClient = new Map();
@@ -900,7 +898,7 @@ app.get('/api/relances', async (req, res) => {
 // Debug : une page brute de la liste des commandes
 app.get('/api/debug-liste/:etat', async (req, res) => {
   try {
-    const data = await easybeerPost(`/commande/liste/${req.params.etat}?colonneTri=dateCreation&nombreParPage=5&numeroPage=0`, {});
+    const data = await easybeerPost(`/commande/liste/${req.params.etat}?numeroPage=1&nombreParPage=3&colonneTri=-numero`, {});
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message, detail: err.detail });
