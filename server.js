@@ -891,6 +891,21 @@ async function analyserClients() {
   const ordre = { urgent: 0, cette_semaine: 1, a_surveiller: 2, pas_prioritaire: 3 };
   clients.sort((a, b) => (ordre[a.priorite] - ordre[b.priorite]) || ((b.joursRetard ?? -999) - (a.joursRetard ?? -999)));
 
+  // Enrichit les clients prioritaires avec produits/volume de leur dernière commande
+  // (la vue liste ne contient pas ces détails)
+  const prioritaires = clients.filter(c => c.priorite !== 'pas_prioritaire').slice(0, 40);
+  for (const c of prioritaires) {
+    try {
+      const cmd = await easybeerGet(`/commande/derniere-commande/${c.idClient}`);
+      const elements = cmd.elementsBouteilles ?? [];
+      c.volumeMoyen = elements.reduce((a, e) => a + (e.quantite ?? 0), 0);
+      c.produitsHabituels = [...new Set(elements.map(e =>
+        e.stockProduit?.libelle ?? e.produit?.libelle ?? ''
+      ).filter(Boolean))].slice(0, 4);
+      await new Promise(r => setTimeout(r, 130));
+    } catch {}
+  }
+
   relancesCache = { generePour: new Date().toISOString(), nbCommandesAnalysees: toutes.length, clients };
   relancesCacheExpiry = Date.now() + 30 * 60 * 1000;
   return relancesCache;
