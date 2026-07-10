@@ -761,6 +761,23 @@ app.get('/api/debug-payload/:idClient', async (req, res) => {
   }
 });
 
+// Vendredi de la semaine en cours à minuit (heure de Paris), en millisecondes epoch.
+// Si on est samedi ou dimanche, prend le vendredi de la semaine suivante.
+function prochainVendredi() {
+  const now = new Date();
+  // Date du jour en heure de Paris
+  const parisStr = now.toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' }); // YYYY-MM-DD
+  const [y, m, d] = parisStr.split('-').map(Number);
+  const jour = new Date(Date.UTC(y, m - 1, d)).getUTCDay(); // 0=dim … 5=ven 6=sam
+  const delta = jour <= 5 ? 5 - jour : 6; // sam (6) → +6 = vendredi suivant
+  const vendredi = new Date(Date.UTC(y, m - 1, d + delta));
+  // Minuit heure de Paris : détermine l'offset Paris à cette date (heure d'été/hiver)
+  const offsetTest = new Date(vendredi.getTime());
+  const parisHour = parseInt(offsetTest.toLocaleString('en-US', { timeZone: 'Europe/Paris', hour: 'numeric', hour12: false }));
+  const offsetH = (parisHour - offsetTest.getUTCHours() + 24) % 24; // 1 ou 2
+  return vendredi.getTime() - offsetH * 60 * 60 * 1000;
+}
+
 // Stockage en mémoire des commandes passées (reset au redémarrage)
 const historiqueCommandes = [];
 
@@ -1034,6 +1051,10 @@ app.post('/api/commande', async (req, res) => {
       // Note visible sur le bon de livraison (indications pour le livreur)
       informationLivraison: commentaire ?? '',
       commentaireClient: commentaire ?? '',
+      // Livraison par nos soins, le vendredi de la semaine en cours
+      typeLivraison: { code: 'SELF', libelle: 'Livraison par nos soins' },
+      dateLivraisonPrevue: prochainVendredi(),
+      dateLivraisonPrevueFormulaire: prochainVendredi(),
       adresseLivraison: {},
       droitSuspendu: false,
       echangeHorsUE: false,
