@@ -23,11 +23,21 @@ function easybeerHeaders() {
   };
 }
 
+function erreurEasyBeer(status, text) {
+  if (String(text).includes('banned') || String(text).includes('requests per second')) {
+    return Object.assign(
+      new Error('API EasyBeer temporairement saturée. Réessayez dans 5 minutes.'),
+      { status: 503, detail: text }
+    );
+  }
+  return Object.assign(new Error(`EasyBeer ${status}`), { status, detail: text });
+}
+
 async function easybeerGet(path) {
   const res = await fetch(`${BASE_URL}${path}`, { headers: easybeerHeaders() });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw Object.assign(new Error(`EasyBeer ${res.status}`), { status: res.status, detail: text });
+    throw erreurEasyBeer(res.status, text);
   }
   return res.json();
 }
@@ -40,7 +50,9 @@ async function easybeerPost(path, body) {
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw Object.assign(new Error(`EasyBeer ${res.status}: ${text}`), { status: res.status, detail: text });
+    const err = erreurEasyBeer(res.status, text);
+    if (err.status !== 503) err.message = `EasyBeer ${res.status}: ${text}`;
+    throw err;
   }
   return res.json();
 }
@@ -508,6 +520,8 @@ app.get('/api/clients', async (req, res) => {
   try {
     // Inclut idClientType pour que le frontend puisse l'envoyer avec la commande
     const clients = await getAllClients();
+    // Cache CDN Vercel : évite de refaire ~10 appels EasyBeer à chaque visite
+    res.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
     res.json(clients.map(c => ({ ...c, idClientType: clientTypeMap.get(c.id) })));
   } catch (err) {
     console.error('GET /api/clients', err.message);
@@ -518,7 +532,9 @@ app.get('/api/clients', async (req, res) => {
 app.get('/api/tarifs/:idClient', async (req, res) => {
   try {
     const idClient = parseInt(req.params.idClient);
-    res.json(await getProduitsClient(idClient));
+    const produits = await getProduitsClient(idClient);
+    res.set('Cache-Control', 'public, s-maxage=1800, stale-while-revalidate=86400');
+    res.json(produits);
   } catch (err) {
     console.error('GET /api/tarifs', err.message);
     res.status(err.status ?? 502).json({ error: err.message });
@@ -931,7 +947,9 @@ async function analyserClients() {
 // --- API Relances ---
 app.get('/api/relances', async (req, res) => {
   try {
-    res.json(await analyserClients());
+    const data = await analyserClients();
+    res.set('Cache-Control', 'public, s-maxage=1800, stale-while-revalidate=86400');
+    res.json(data);
   } catch (err) {
     console.error('GET /api/relances', err.message, err.detail);
     res.status(err.status ?? 502).json({ error: err.message, detail: err.detail });
