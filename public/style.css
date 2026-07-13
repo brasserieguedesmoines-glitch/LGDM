@@ -103,6 +103,17 @@ label {
   border-color: var(--amber);
 }
 
+#select-adresse {
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: #fff;
+  color: var(--text);
+}
+
 .search-dropdown {
   position: absolute;
   top: calc(100% + 4px);

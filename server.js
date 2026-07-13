@@ -541,6 +541,24 @@ app.get('/api/tarifs/:idClient', async (req, res) => {
   }
 });
 
+// --- Adresses de livraison d'un client ---
+app.get('/api/adresses/:idClient', async (req, res) => {
+  try {
+    const detail = await easybeerGet(`/parametres/client/detail/${req.params.idClient}`);
+    res.set('Cache-Control', 'public, s-maxage=1800, stale-while-revalidate=86400');
+    res.json({
+      principale: detail?.adresse?.complete ?? '',
+      livraison: (detail?.listeAdresseLivraison ?? []).map(a => ({
+        id: a.id,
+        complete: a.complete,
+        ligne1: a.ligne1, ligne2: a.ligne2, ligne3: a.ligne3, ligne4: a.ligne4,
+      })),
+    });
+  } catch (err) {
+    res.status(err.status ?? 502).json({ error: err.message });
+  }
+});
+
 // --- Dernière commande client ---
 app.get('/api/derniere-commande/:idClient', async (req, res) => {
   try {
@@ -1014,7 +1032,7 @@ app.get('/api/debug-liste-variants', async (req, res) => {
 app.post('/api/commande', async (req, res) => {
   const payload = {};
   try {
-    const { idClient, idClientType, nomClient, lignes, commentaire } = req.body;
+    const { idClient, idClientType, nomClient, lignes, commentaire, adresseLivraison } = req.body;
     if (!idClient || !Array.isArray(lignes) || lignes.length === 0) {
       return res.status(400).json({ error: 'idClient et lignes sont requis' });
     }
@@ -1073,7 +1091,7 @@ app.post('/api/commande', async (req, res) => {
       typeLivraison: { code: 'SELF', libelle: 'Livraison par nos soins' },
       dateLivraisonPrevue: prochainVendredi(),
       dateLivraisonPrevueFormulaire: prochainVendredi(),
-      adresseLivraison: {},
+      adresseLivraison: adresseLivraison ?? {},
       droitSuspendu: false,
       echangeHorsUE: false,
       deductionsAvoirs: [],

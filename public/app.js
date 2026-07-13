@@ -74,6 +74,8 @@ let catalogue = [];
 let clientSearchSelect = null;
 let currentIdClient = '';
 let currentIdClientType = null;
+let adressesLivraison = [];
+let selectAdresse = null;
 
 const btnDerniereCommande = document.getElementById('btn-derniere-commande');
 const sectionClient = document.getElementById('section-client');
@@ -128,6 +130,28 @@ btnDerniereCommande.addEventListener('click', async () => {
   if (currentIdClient) await preRemplirDerniereCommande(currentIdClient);
 });
 
+// Affiche un sélecteur d'adresse si le client a plusieurs adresses de livraison
+async function chargerAdresses(idClient) {
+  selectAdresse?.remove();
+  selectAdresse = null;
+  adressesLivraison = [];
+  try {
+    const data = await apiFetch(`/api/adresses/${idClient}`);
+    adressesLivraison = data.livraison ?? [];
+    if (adressesLivraison.length >= 2) {
+      selectAdresse = document.createElement('select');
+      selectAdresse.id = 'select-adresse';
+      adressesLivraison.forEach((a, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = '📍 ' + (a.complete || [a.ligne1, a.ligne2, a.ligne3, a.ligne4].filter(Boolean).join(', '));
+        selectAdresse.appendChild(opt);
+      });
+      sectionClient.appendChild(selectAdresse);
+    }
+  } catch {}
+}
+
 async function chargerTarifs(idClient) {
   msgStatutClient.textContent = 'Chargement des produits…';
   msgStatutClient.className = '';
@@ -138,6 +162,7 @@ async function chargerTarifs(idClient) {
     msgStatutClient.textContent = '';
     reinitialiserLignes();
     afficherSections();
+    chargerAdresses(idClient); // en arrière-plan, n'est bloquant pour rien
   } catch (err) {
     msgStatutClient.textContent = 'Erreur chargement produits : ' + err.message;
     msgStatutClient.className = 'error';
@@ -245,7 +270,13 @@ btnEnvoyer.addEventListener('click', async () => {
     const result = await apiFetch('/api/commande', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idClient: parseInt(currentIdClient), idClientType: currentIdClientType, nomClient: clientSearchSelect?.querySelector('input')?.value ?? '', lignes, commentaire }),
+      body: JSON.stringify({
+        idClient: parseInt(currentIdClient),
+        idClientType: currentIdClientType,
+        nomClient: clientSearchSelect?.querySelector('input')?.value ?? '',
+        lignes, commentaire,
+        adresseLivraison: selectAdresse ? adressesLivraison[parseInt(selectAdresse.value)] : undefined,
+      }),
     });
     const ref = result.map?.numero ?? result.map?.id ?? result.reference ?? result.idCommande ?? result.id ?? '';
     modalDetail.textContent = ref ? `Référence : ${ref}` : 'Commande enregistrée avec succès.';
@@ -266,6 +297,9 @@ btnNouvelleCommande.addEventListener('click', () => {
   masquerSections();
   btnDerniereCommande.style.display = 'none';
   document.getElementById('note-livraison').value = '';
+  selectAdresse?.remove();
+  selectAdresse = null;
+  adressesLivraison = [];
   setStatut('');
 });
 
