@@ -859,8 +859,13 @@ async function analyserClients() {
   } catch (e) {
     console.error('fetchCommandes toutes:', e.message);
   }
-  // Exclut devis et annulées de l'analyse
-  toutes = toutes.filter(c => !c.estDevis && !c.estAnnulee);
+  // Exclut devis, annulées et clients particuliers de l'analyse
+  const typesParticuliers = await getIdsTypesParticuliers();
+  toutes = toutes.filter(c =>
+    !c.estDevis && !c.estAnnulee &&
+    !estParticulierParNom(c.client?.nom) &&
+    !typesParticuliers.has(clientTypeMap.get(c.client?.idClient))
+  );
 
   // Groupe par client
   const parClient = new Map();
@@ -987,6 +992,23 @@ async function getInfosClient(idClient) {
   }
 }
 
+// Détecte les clients particuliers (exclus du pilotage et des relances)
+let idsTypesParticuliers = null;
+async function getIdsTypesParticuliers() {
+  if (idsTypesParticuliers) return idsTypesParticuliers;
+  try {
+    const types = await getTypesClient();
+    idsTypesParticuliers = new Set(
+      types.filter(t => (t.libelle ?? '').toLowerCase().includes('particulier')).map(t => t.idClientType)
+    );
+  } catch { idsTypesParticuliers = new Set(); }
+  return idsTypesParticuliers;
+}
+
+function estParticulierParNom(nom) {
+  return (nom ?? '').toLowerCase().includes('particulier');
+}
+
 function haversineKm(a, b) {
   const R = 6371, rad = x => x * Math.PI / 180;
   const dLat = rad(b.lat - a.lat), dLng = rad(b.lng - a.lng);
@@ -1012,10 +1034,15 @@ async function construirePilotage() {
     }
   } catch {}
 
-  // Toutes les commandes
+  // Toutes les commandes (pros uniquement, les particuliers sont exclus)
   let toutes = [];
   try { toutes = await fetchCommandesEtat('toutes'); } catch (e) { console.error('pilotage liste:', e.message); }
-  const valides = toutes.filter(c => !c.estDevis && !c.estAnnulee);
+  const typesParticuliers = await getIdsTypesParticuliers();
+  const valides = toutes.filter(c =>
+    !c.estDevis && !c.estAnnulee &&
+    !estParticulierParNom(c.client?.nom) &&
+    !typesParticuliers.has(clientTypeMap.get(c.client?.idClient))
+  );
 
   // Commandes à venir : livraison prévue >= aujourd'hui, ou pas encore livrées/facturées
   const aVenir = valides.filter(c =>
