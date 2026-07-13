@@ -37,7 +37,7 @@ function erreurEasyBeer(status, text) {
 // (limite EasyBeer : 10 req/s, ban de 5 min en cas de dépassement)
 let dernierAppel = Promise.resolve();
 function throttle() {
-  const attente = dernierAppel.then(() => new Promise(r => setTimeout(r, 220)));
+  const attente = dernierAppel.then(() => new Promise(r => setTimeout(r, 300)));
   dernierAppel = attente;
   return attente;
 }
@@ -862,6 +862,15 @@ let relancesCacheExpiry = 0;
 
 async function analyserClients() {
   if (relancesCache && Date.now() < relancesCacheExpiry) return relancesCache;
+  try {
+    return await analyserClientsInterne();
+  } catch (err) {
+    if (relancesCache) return relancesCache; // sert la version périmée plutôt qu'une erreur
+    throw err;
+  }
+}
+
+async function analyserClientsInterne() {
 
   // Toutes les commandes (l'app EasyBeer utilise l'état "toutes")
   let toutes = [];
@@ -1032,6 +1041,15 @@ let pilotageCacheExpiry = 0;
 
 async function construirePilotage() {
   if (pilotageCache && Date.now() < pilotageCacheExpiry) return pilotageCache;
+  try {
+    return await construirePilotageInterne();
+  } catch (err) {
+    if (pilotageCache) return pilotageCache;
+    throw err;
+  }
+}
+
+async function construirePilotageInterne() {
 
   const JOUR = 24 * 60 * 60 * 1000;
   const debutAujourdhui = new Date(new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' })).getTime();
