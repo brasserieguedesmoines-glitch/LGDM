@@ -106,6 +106,19 @@ async function chargerClients() {
     });
 
     sectionClient.insertBefore(clientSearchSelect, btnDerniereCommande);
+
+    // Pré-sélection depuis l'URL (?client=ID) — utilisé par la liste de relances
+    const preId = new URLSearchParams(location.search).get('client');
+    if (preId) {
+      const c = clients.find(c => String(c.id) === preId);
+      if (c) {
+        clientSearchSelect.setValue(String(c.id), c.nom);
+        currentIdClient = String(c.id);
+        currentIdClientType = c.idClientType ?? null;
+        await chargerTarifs(currentIdClient);
+        btnDerniereCommande.style.display = 'block';
+      }
+    }
   } catch (err) {
     setStatut('Impossible de charger les clients : ' + err.message, true);
   }
