@@ -188,25 +188,25 @@ async function preRemplirDerniereCommande(idClient) {
   setStatut('Chargement de la dernière commande…');
   try {
     const commande = await apiFetch(`/api/derniere-commande/${idClient}`);
-    const lignes = commande.lignesCommande ?? commande.lignes ?? [];
-    if (!lignes.length) { setStatut('Aucune commande précédente trouvée.'); return; }
+    const elements = commande.elementsBouteilles ?? [];
+    if (!elements.length) { setStatut('Aucune commande précédente trouvée.'); return; }
 
     lignesContainer.innerHTML = '';
-    lignes.forEach(l => {
-      const idProduit = l.idProduit ?? l.idArticle;
-      const idContenant = l.idContenant;
-      const idLot = l.idLot ?? 1;
+    let introuvables = 0;
+    elements.forEach(e => {
+      const idProduit = e.stockProduit?.idProduit;
+      const idContenant = e.stockProduit?.idContenant;
       const prodData = catalogue.find(p => p.idProduit === idProduit && p.idContenant === idContenant);
-      const valeur = prodData
-        ? JSON.stringify({ idProduit: prodData.idProduit, idContenant: prodData.idContenant, idLot: prodData.idLot ?? 1, idStockBouteille: prodData.idStockBouteille })
-        : '';
-      const label = prodData ? `${prodData.libelle} ${prodData.contenant}` : '';
+      if (!prodData) { introuvables++; return; }
+      const valeur = JSON.stringify({ idProduit: prodData.idProduit, idContenant: prodData.idContenant, idLot: prodData.idLot ?? 1, idStockBouteille: prodData.idStockBouteille, gtin: prodData.gtin });
+      const label = `${prodData.libelle} ${prodData.contenant}`;
 
       ajouterLigne(valeur, label);
       const div = lignesContainer.lastElementChild;
-      div.querySelector('input[type="number"]').value = l.quantite ?? l.qte ?? 1;
+      div.querySelector('input[type="number"]').value = e.quantite ?? 1;
     });
-    setStatut('');
+    if (!lignesContainer.children.length) ajouterLigne();
+    setStatut(introuvables ? `${introuvables} produit(s) de la dernière commande absent(s) du tarif actuel.` : '');
   } catch (err) {
     setStatut('Impossible de charger la dernière commande.', true);
   }
