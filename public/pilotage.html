@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LGDM — Pilotage</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    main { max-width: 1200px; }
+    .tabs { display: flex; gap: 6px; margin: 14px 0; flex-wrap: wrap; }
+    .tabs button { border: 1px solid var(--border); background: var(--card); border-radius: 20px; padding: 8px 16px; cursor: pointer; font-size: 0.85rem; }
+    .tabs button.actif { background: var(--dark); color: #fff; border-color: var(--dark); }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .kpi { background: var(--card); border-radius: var(--radius); padding: 14px; text-align: center; }
+    .kpi .val { font-size: 1.6rem; font-weight: 700; color: var(--dark); }
+    .kpi .lbl { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+    .kpi .ico { font-size: 1.2rem; }
+    h2.section { font-size: 1rem; margin: 18px 0 8px; }
+    .alerte { background: #fff7ec; border-left: 4px solid var(--amber); padding: 10px 12px; border-radius: 6px; margin-bottom: 6px; font-size: 0.85rem; }
+    .alerte.incomplete { border-color: #c0392b; background: #fdf0ee; }
+    #map { height: 65vh; border-radius: var(--radius); }
+    .filtres-carte { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
+    .filtres-carte button { border: 1px solid var(--border); background: var(--card); border-radius: 16px; padding: 5px 12px; cursor: pointer; font-size: 0.8rem; }
+    .filtres-carte button.actif { background: var(--amber); color: #fff; border-color: var(--amber); }
+    .filtres-carte input[type="date"] { padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.8rem; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .cal-head { font-size: 0.7rem; color: var(--muted); text-align: center; padding: 4px 0; text-transform: uppercase; }
+    .cal-jour { background: var(--card); border-radius: 8px; min-height: 74px; padding: 6px; font-size: 0.75rem; }
+    .cal-jour.vide { background: transparent; }
+    .cal-jour.aujourdhui { outline: 2px solid var(--amber); }
+    .cal-jour .n { color: var(--muted); font-size: 0.7rem; }
+    .cal-badge { background: var(--amber); color: #fff; border-radius: 8px; padding: 1px 7px; font-size: 0.72rem; display: inline-block; margin-top: 4px; }
+    .cal-badge.confirme { background: #27ae60; }
+    .cal-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .cal-nav button { border: 1px solid var(--border); background: var(--card); border-radius: 8px; padding: 4px 12px; cursor: pointer; }
+    .tournee { background: var(--card); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; font-size: 0.85rem; }
+    .tournee .head { font-weight: 700; margin-bottom: 4px; }
+    .tournee .meta { color: var(--muted); font-size: 0.78rem; margin-bottom: 4px; }
+    .chart-box { background: var(--card); border-radius: var(--radius); padding: 14px; margin-bottom: 14px; }
+    .chart-box h3 { font-size: 0.85rem; margin-bottom: 8px; color: var(--muted); }
+    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+    .table-liste { width: 100%; border-collapse: collapse; font-size: 0.8rem; background: var(--card); border-radius: var(--radius); overflow: hidden; }
+    .table-liste th, .table-liste td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+    .table-liste th { font-size: 0.7rem; text-transform: uppercase; color: var(--muted); }
+    .vue { display: none; }
+    .vue.active { display: block; }
+    #meta-pilotage { color: var(--muted); font-size: 0.78rem; margin: 6px 0; }
+    .btn-retour { font-size: 0.8rem; color: #fff; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 6px 12px; text-decoration: none; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📊 Pilotage</h1>
+    <a href="/" class="btn-retour">← Prise de commande</a>
+  </header>
+
+  <main>
+    <p id="meta-pilotage">Chargement du tableau de bord… (peut prendre ~30 s la première fois)</p>
+
+    <div class="tabs" style="display:none" id="tabs">
+      <button data-vue="overview" class="actif">Vue d'ensemble</button>
+      <button data-vue="carte">🗺️ Carte</button>
+      <button data-vue="calendrier">📅 Calendrier</button>
+      <button data-vue="tournees">🚚 Tournées</button>
+      <button data-vue="stats">📈 Statistiques</button>
+      <button data-vue="liste">📋 Liste</button>
+    </div>
+
+    <!-- Vue d'ensemble -->
+    <div class="vue active" id="vue-overview">
+      <h2 class="section">Commandes & clients</h2>
+      <div class="kpi-grid" id="kpi-commandes"></div>
+      <h2 class="section">Tracker logistique (livraisons à venir)</h2>
+      <div class="kpi-grid" id="kpi-logistique"></div>
+      <h2 class="section">Alertes</h2>
+      <div id="alertes"></div>
+    </div>
+
+    <!-- Carte -->
+    <div class="vue" id="vue-carte">
+      <div class="filtres-carte" id="filtres-carte">
+        <button data-p="tout" class="actif">Tout</button>
+        <button data-p="auj">Aujourd'hui</button>
+        <button data-p="demain">Demain</button>
+        <button data-p="semaine">Cette semaine</button>
+        <span>du <input type="date" id="p-debut"> au <input type="date" id="p-fin"></span>
+      </div>
+      <div id="map"></div>
+    </div>
+
+    <!-- Calendrier -->
+    <div class="vue" id="vue-calendrier">
+      <div class="cal-nav">
+        <button id="cal-prev">←</button>
+        <strong id="cal-titre"></strong>
+        <button id="cal-next">→</button>
+        <span style="font-size:0.75rem;color:var(--muted)">🟠 en attente · 🟢 confirmée</span>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+
+    <!-- Tournées -->
+    <div class="vue" id="vue-tournees">
+      <div id="tournees-liste"></div>
+    </div>
+
+    <!-- Stats -->
+    <div class="vue" id="vue-stats">
+      <div class="charts-grid">
+        <div class="chart-box"><h3>Commandes par semaine</h3><canvas id="ch-semaines"></canvas></div>
+        <div class="chart-box"><h3>Répartition des formats (à livrer)</h3><canvas id="ch-formats"></canvas></div>
+        <div class="chart-box"><h3>Top clients (CA HT cumulé)</h3><canvas id="ch-clients"></canvas></div>
+        <div class="chart-box"><h3>Top produits (quantités à livrer)</h3><canvas id="ch-produits"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Liste -->
+    <div class="vue" id="vue-liste">
+      <div style="overflow-x:auto">
+        <table class="table-liste">
+          <thead><tr><th>N°</th><th>Client</th><th>Livraison</th><th>État</th><th>Litres</th><th>33cL</th><th>75cL</th><th>Fûts</th><th>Total HT</th></tr></thead>
+          <tbody id="liste-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script>
+    let D = null, map = null, markersLayer = null, calMois = new Date();
+
+    const fmtD = t => t ? new Date(t).toLocaleDateString('fr-FR') : '—';
+
+    fetch('/api/pilotage').then(r => r.json()).then(data => {
+      if (data.error) throw new Error(data.error);
+      D = data;
+      document.getElementById('meta-pilotage').textContent =
+        'Généré le ' + new Date(D.genere).toLocaleString('fr-FR') + ' — ' + D.livraisons.length + ' livraisons à venir analysées';
+      document.getElementById('tabs').style.display = 'flex';
+      renderOverview(); renderCalendrier(); renderTournees(); renderListe();
+    }).catch(e => document.getElementById('meta-pilotage').textContent = 'Erreur : ' + e.message);
+
+    // Onglets
+    document.getElementById('tabs').addEventListener('click', e => {
+      const btn = e.target.closest('button[data-vue]'); if (!btn) return;
+      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('actif'));
+      btn.classList.add('actif');
+      document.querySelectorAll('.vue').forEach(v => v.classList.remove('active'));
+      document.getElementById('vue-' + btn.dataset.vue).classList.add('active');
+      if (btn.dataset.vue === 'carte') initCarte();
+      if (btn.dataset.vue === 'stats') renderStats();
+    });
+
+    function kpiCard(ico, val, lbl) {
+      return `<div class="kpi"><div class="ico">${ico}</div><div class="val">${val}</div><div class="lbl">${lbl}</div></div>`;
+    }
+
+    function renderOverview() {
+      const k = D.kpi, v = D.volumes;
+      document.getElementById('kpi-commandes').innerHTML =
+        kpiCard('📦', k.commandesAVenir, 'Commandes à venir') +
+        kpiCard('📅', k.commandesAujourdhui, "Aujourd'hui") +
+        kpiCard('🗓️', k.commandesSemaine, 'Cette semaine') +
+        kpiCard('📆', k.commandesMois, 'Ce mois') +
+        kpiCard('👥', k.clientsAujourdhui, "Clients à livrer aujourd'hui") +
+        kpiCard('👥', k.clientsSemaine, 'Clients cette semaine') +
+        kpiCard('🤝', k.clientsActifs, 'Clients actifs (6 mois)') +
+        kpiCard('💶', k.caPrevisionnelHT + ' €', 'CA prévisionnel HT');
+      document.getElementById('kpi-logistique').innerHTML =
+        kpiCard('🚚', k.commandesAVenir, 'Livraisons prévues') +
+        kpiCard('📍', k.pointsLivraison, 'Points de livraison') +
+        kpiCard('🍺', v.bouteilles, 'Bouteilles au total') +
+        kpiCard('🟠', v.b33, 'Bouteilles 33 cL') +
+        kpiCard('⚫', v.b75, 'Bouteilles 75 cL') +
+        kpiCard('🛢', v.futs, 'Fûts') +
+        kpiCard('💧', v.litres + ' L', 'Litres à livrer') +
+        kpiCard('📦', v.colis, 'Lignes / colis');
+      document.getElementById('alertes').innerHTML = D.alertes.length
+        ? D.alertes.map(a => `<div class="alerte ${a.type}">${a.type === 'incomplete' ? '⚠️' : a.type === 'volume' ? '📈' : a.type === 'tournee_chargee' ? '🚚' : '📍'} ${a.message}</div>`).join('')
+        : '<p style="color:var(--muted);font-size:0.85rem">Aucune alerte 👌</p>';
+    }
+
+    // ---- Carte ----
+    function filtrerLivraisons(p) {
+      const auj = new Date(); auj.setHours(0,0,0,0);
+      const j = n => auj.getTime() + n * 86400000;
+      let ls = D.livraisons.filter(l => l.lat && l.lng);
+      if (p === 'auj') ls = ls.filter(l => l.dateLivraison >= j(0) && l.dateLivraison < j(1));
+      if (p === 'demain') ls = ls.filter(l => l.dateLivraison >= j(1) && l.dateLivraison < j(2));
+      if (p === 'semaine') ls = ls.filter(l => l.dateLivraison >= j(0) && l.dateLivraison < j(7));
+      if (p === 'custom') {
+        const d1 = document.getElementById('p-debut').valueAsNumber;
+        const d2 = document.getElementById('p-fin').valueAsNumber;
+        if (d1) ls = ls.filter(l => l.dateLivraison >= d1);
+        if (d2) ls = ls.filter(l => l.dateLivraison <= d2 + 86400000);
+      }
+      return ls;
+    }
+
+    function majMarqueurs(p) {
+      markersLayer.clearLayers();
+      const ls = filtrerLivraisons(p);
+      const bounds = [];
+      for (const l of ls) {
+        const prods = l.produits.map(x => `• ${x.libelle} × ${x.quantite}`).join('<br>') || '—';
+        L.marker([l.lat, l.lng]).addTo(markersLayer).bindPopup(
+          `<strong>${l.client.nom}</strong><br>${l.adresse}<br>` +
+          `📅 ${fmtD(l.dateLivraison)} — ${l.etat}<br>` +
+          `${prods}<br>💧 ${l.litres} L` +
+          (l.contact ? `<br>📞 ${l.contact}` : '')
+        );
+        bounds.push([l.lat, l.lng]);
+      }
+      if (bounds.length) map.fitBounds(bounds, { padding: [30, 30] });
+    }
+
+    function initCarte() {
+      if (map) { setTimeout(() => map.invalidateSize(), 100); return; }
+      map = L.map('map').setView([43.65, 1.43], 10);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+      markersLayer = L.layerGroup().addTo(map);
+      majMarqueurs('tout');
+      document.getElementById('filtres-carte').addEventListener('click', e => {
+        const b = e.target.closest('button[data-p]'); if (!b) return;
+        document.querySelectorAll('#filtres-carte button').forEach(x => x.classList.remove('actif'));
+        b.classList.add('actif');
+        majMarqueurs(b.dataset.p);
+      });
+      ['p-debut', 'p-fin'].forEach(id => document.getElementById(id).addEventListener('change', () => {
+        document.querySelectorAll('#filtres-carte button').forEach(x => x.classList.remove('actif'));
+        majMarqueurs('custom');
+      }));
+    }
+
+    // ---- Calendrier ----
+    function renderCalendrier() {
+      const y = calMois.getFullYear(), m = calMois.getMonth();
+      document.getElementById('cal-titre').textContent = calMois.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+      const grid = document.getElementById('cal-grid');
+      grid.innerHTML = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'].map(j => `<div class="cal-head">${j}</div>`).join('');
+      const premier = new Date(y, m, 1);
+      const decal = (premier.getDay() + 6) % 7;
+      const nbJours = new Date(y, m + 1, 0).getDate();
+      const aujStr = new Date().toDateString();
+      for (let i = 0; i < decal; i++) grid.innerHTML += '<div class="cal-jour vide"></div>';
+      for (let d = 1; d <= nbJours; d++) {
+        const date = new Date(y, m, d);
+        const dayLs = D.livraisons.filter(l => l.dateLivraison && new Date(l.dateLivraison).toDateString() === date.toDateString());
+        const conf = dayLs.filter(l => l.confirmee).length;
+        const att = dayLs.length - conf;
+        grid.innerHTML += `<div class="cal-jour ${date.toDateString() === aujStr ? 'aujourdhui' : ''}">
+          <div class="n">${d}</div>
+          ${att ? `<span class="cal-badge">${att}</span>` : ''}
+          ${conf ? `<span class="cal-badge confirme">${conf}</span>` : ''}
+          ${dayLs.length ? `<div style="margin-top:3px">${dayLs.slice(0,3).map(l => l.client.nom.slice(0,14)).join('<br>')}${dayLs.length > 3 ? '<br>…' : ''}</div>` : ''}
+        </div>`;
+      }
+    }
+    document.getElementById('cal-prev').addEventListener('click', () => { calMois.setMonth(calMois.getMonth() - 1); renderCalendrier(); });
+    document.getElementById('cal-next').addEventListener('click', () => { calMois.setMonth(calMois.getMonth() + 1); renderCalendrier(); });
+
+    // ---- Tournées ----
+    function renderTournees() {
+      const el = document.getElementById('tournees-liste');
+      el.innerHTML = D.tournees.length ? D.tournees.map(t => `
+        <div class="tournee">
+          <div class="head">🚚 ${new Date(t.jour).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} — ${t.nbLivraisons} livraison(s)</div>
+          <div class="meta">≈ ${t.kmEstimes} km · ≈ ${Math.floor(t.dureeEstimeeMin / 60)}h${String(t.dureeEstimeeMin % 60).padStart(2,'0')} · 💧 ${t.litres} L</div>
+          <div>${t.clients.join(' → ')}</div>
+        </div>`).join('')
+        : '<p style="color:var(--muted)">Aucune tournée à suggérer (livraisons sans coordonnées ou sans date).</p>';
+    }
+
+    // ---- Stats ----
+    let chartsFaits = false;
+    function renderStats() {
+      if (chartsFaits) return; chartsFaits = true;
+      const or = '#e8a020', dk = '#1a1a2e', gr = '#95a5a6', bl = '#2980b9', vt = '#27ae60';
+      new Chart(document.getElementById('ch-semaines'), {
+        type: 'bar',
+        data: { labels: D.stats.commandesParSemaine.map(x => x.semaine.slice(5)), datasets: [{ label: 'Commandes', data: D.stats.commandesParSemaine.map(x => x.nb), backgroundColor: or }] },
+        options: { plugins: { legend: { display: false } } }
+      });
+      const v = D.volumes;
+      new Chart(document.getElementById('ch-formats'), {
+        type: 'doughnut',
+        data: { labels: ['33 cL', '75 cL', 'Fûts'], datasets: [{ data: [v.b33, v.b75, v.futs], backgroundColor: [or, dk, bl] }] },
+      });
+      new Chart(document.getElementById('ch-clients'), {
+        type: 'bar',
+        data: { labels: D.stats.topClients.map(x => x.nom.slice(0, 18)), datasets: [{ label: '€ HT', data: D.stats.topClients.map(x => x.caHT), backgroundColor: vt }] },
+        options: { indexAxis: 'y', plugins: { legend: { display: false } } }
+      });
+      new Chart(document.getElementById('ch-produits'), {
+        type: 'bar',
+        data: { labels: D.stats.topProduits.map(x => x.libelle.split(' - ')[1] ?? x.libelle.slice(0, 18)), datasets: [{ label: 'Qté', data: D.stats.topProduits.map(x => x.qte), backgroundColor: bl }] },
+        options: { indexAxis: 'y', plugins: { legend: { display: false } } }
+      });
+    }
+
+    // ---- Liste ----
+    function renderListe() {
+      document.getElementById('liste-tbody').innerHTML = D.livraisons
+        .slice().sort((a, b) => (a.dateLivraison ?? 9e15) - (b.dateLivraison ?? 9e15))
+        .map(l => `<tr><td>${l.numero}</td><td>${l.client.nom}</td><td>${fmtD(l.dateLivraison)}</td><td>${l.etat}</td><td>${l.litres}</td><td>${l.b33}</td><td>${l.b75}</td><td>${l.futs}</td><td>${l.totalHT.toFixed(2)} €</td></tr>`).join('');
+    }
+  </script>
+</body>
+</html>

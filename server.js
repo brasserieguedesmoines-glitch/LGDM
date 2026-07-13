@@ -962,6 +962,235 @@ async function analyserClients() {
   return relancesCache;
 }
 
+// ---- Module Pilotage : tableau de bord logistique ----
+
+// Cache coordonnées clients (idClient → {lat, lng, adresse, contact})
+const coordsClientCache = new Map();
+
+async function getInfosClient(idClient) {
+  const cached = coordsClientCache.get(idClient);
+  if (cached && Date.now() < cached.expiry) return cached;
+  try {
+    const d = await easybeerGet(`/parametres/client/detail/${idClient}`);
+    const contact = (d?.contacts ?? [])[0];
+    const info = {
+      lat: d?.adresse?.latitude ?? null,
+      lng: d?.adresse?.longitude ?? null,
+      adresse: d?.adresse?.complete ?? '',
+      contact: contact ? [contact.nom, contact.telephone ?? contact.portable, contact.email].filter(Boolean).join(' — ') : '',
+      expiry: Date.now() + 60 * 60 * 1000,
+    };
+    coordsClientCache.set(idClient, info);
+    return info;
+  } catch {
+    return { lat: null, lng: null, adresse: '', contact: '' };
+  }
+}
+
+function haversineKm(a, b) {
+  const R = 6371, rad = x => x * Math.PI / 180;
+  const dLat = rad(b.lat - a.lat), dLng = rad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+let pilotageCache = null;
+let pilotageCacheExpiry = 0;
+
+async function construirePilotage() {
+  if (pilotageCache && Date.now() < pilotageCacheExpiry) return pilotageCache;
+
+  const JOUR = 24 * 60 * 60 * 1000;
+  const debutAujourdhui = new Date(new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' })).getTime();
+
+  // Contenants : contenance en litres + type fût
+  const contenantMap = new Map();
+  try {
+    const contenants = await easybeerGet('/stock/bouteilles/contenants-disponibles');
+    for (const c of (Array.isArray(contenants) ? contenants : [])) {
+      contenantMap.set(c.idContenant, { contenance: c.contenance ?? 0, estFut: !!(c.estFut || c.estFutRecyclable), libelle: c.libelleAvecContenance ?? c.libelle });
+    }
+  } catch {}
+
+  // Toutes les commandes
+  let toutes = [];
+  try { toutes = await fetchCommandesEtat('toutes'); } catch (e) { console.error('pilotage liste:', e.message); }
+  const valides = toutes.filter(c => !c.estDevis && !c.estAnnulee);
+
+  // Commandes à venir : livraison prévue >= aujourd'hui, ou pas encore livrées/facturées
+  const aVenir = valides.filter(c =>
+    (c.dateLivraisonPrevue && c.dateLivraisonPrevue >= debutAujourdhui) ||
+    (!c.dateLivraisonPrevue && !c.estLivree && !c.estFacturee && !c.estArchivee)
+  );
+
+  // Enrichit les commandes à venir : produits + coordonnées client (max 40)
+  const livraisons = [];
+  for (const c of aVenir.slice(0, 40)) {
+    const idClient = c.client?.idClient;
+    let produits = [];
+    let litres = 0, b33 = 0, b75 = 0, futs = 0, bouteilles = 0;
+    try {
+      const det = await easybeerGet(`/commande/detail/${c.idCommande}`);
+      const elements = [...(det.elementsBouteilles ?? []), ...(det.elementsFuts ?? [])];
+      for (const e of elements) {
+        const idCont = e.stockProduit?.idContenant;
+        const cont = contenantMap.get(idCont) ?? { contenance: 0, estFut: false };
+        const q = e.quantite ?? 0;
+        const vol = cont.contenance * q;
+        litres += vol;
+        if (cont.estFut) futs += q;
+        else {
+          bouteilles += q;
+          if (Math.abs(cont.contenance - 0.33) < 0.01) b33 += q;
+          else if (Math.abs(cont.contenance - 0.75) < 0.01) b75 += q;
+        }
+        produits.push({
+          libelle: e.stockProduit?.libelle ?? e.designation ?? '',
+          quantite: q,
+          contenance: cont.contenance,
+          estFut: cont.estFut,
+        });
+      }
+      await new Promise(r => setTimeout(r, 130));
+    } catch {}
+    const infos = idClient ? await getInfosClient(idClient) : {};
+    livraisons.push({
+      idCommande: c.idCommande,
+      numero: c.numero,
+      client: { id: idClient, nom: c.client?.nom ?? '' },
+      dateLivraison: c.dateLivraisonPrevue ?? null,
+      etat: c.etat?.libelle ?? '',
+      confirmee: !!(c.estValidee || c.estEnPreparation || c.estPrete || c.estEnLivraison),
+      totalHT: c.totalHT ?? 0,
+      lat: infos.lat, lng: infos.lng, adresse: infos.adresse, contact: infos.contact,
+      produits, litres: Math.round(litres * 100) / 100, b33, b75, futs, bouteilles,
+    });
+    await new Promise(r => setTimeout(r, 130));
+  }
+
+  // KPI
+  const finSemaine = debutAujourdhui + (7 - new Date(debutAujourdhui).getDay() || 7) * JOUR;
+  const dansJours = n => debutAujourdhui + n * JOUR;
+  const moisCourant = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' }).slice(0, 7);
+  const estCeMois = t => t && new Date(t).toISOString().slice(0, 7) === moisCourant;
+
+  const cmdAujourdhui = livraisons.filter(l => l.dateLivraison && l.dateLivraison >= debutAujourdhui && l.dateLivraison < dansJours(1));
+  const cmdSemaine = livraisons.filter(l => l.dateLivraison && l.dateLivraison >= debutAujourdhui && l.dateLivraison < finSemaine);
+  const cmdMois = livraisons.filter(l => estCeMois(l.dateLivraison));
+
+  const totVol = arr => arr.reduce((a, l) => ({ litres: a.litres + l.litres, b33: a.b33 + l.b33, b75: a.b75 + l.b75, futs: a.futs + l.futs, bouteilles: a.bouteilles + l.bouteilles }), { litres: 0, b33: 0, b75: 0, futs: 0, bouteilles: 0 });
+  const volumesTotal = totVol(livraisons);
+
+  // Clients actifs = ayant commandé dans les 6 derniers mois
+  const ilYA6Mois = debutAujourdhui - 182 * JOUR;
+  const clientsActifs = new Set(valides.filter(c => (c.dateCreation ?? 0) >= ilYA6Mois).map(c => c.client?.idClient)).size;
+
+  // Tournées suggérées : regroupement glouton par proximité (< 8 km), par jour
+  const tournees = [];
+  const parJour = new Map();
+  for (const l of livraisons.filter(l => l.lat && l.lng && l.dateLivraison)) {
+    const j = new Date(l.dateLivraison).toISOString().slice(0, 10);
+    if (!parJour.has(j)) parJour.set(j, []);
+    parJour.get(j).push(l);
+  }
+  for (const [jour, pts] of parJour) {
+    const restants = [...pts];
+    while (restants.length) {
+      const groupe = [restants.shift()];
+      for (let i = restants.length - 1; i >= 0; i--) {
+        if (groupe.some(g => haversineKm(g, restants[i]) < 8)) groupe.push(...restants.splice(i, 1));
+      }
+      let km = 0;
+      for (let i = 1; i < groupe.length; i++) km += haversineKm(groupe[i - 1], groupe[i]);
+      km = Math.round(km * 10) / 10;
+      tournees.push({
+        jour,
+        nbLivraisons: groupe.length,
+        clients: groupe.map(g => g.client.nom),
+        kmEstimes: km,
+        dureeEstimeeMin: Math.round(km / 40 * 60 + groupe.length * 15),
+        litres: Math.round(groupe.reduce((a, g) => a + g.litres, 0)),
+      });
+    }
+  }
+  tournees.sort((a, b) => a.jour.localeCompare(b.jour));
+
+  // Alertes
+  const alertes = [];
+  for (const t of tournees) {
+    if (t.nbLivraisons > 8) alertes.push({ type: 'tournee_chargee', message: `Tournée très chargée le ${t.jour} : ${t.nbLivraisons} livraisons` });
+    if (t.nbLivraisons >= 3) alertes.push({ type: 'zone', message: `${t.nbLivraisons} livraisons dans la même zone le ${t.jour} (${t.kmEstimes} km) — tournée recommandée` });
+  }
+  for (const l of livraisons) {
+    if (!l.produits.length) alertes.push({ type: 'incomplete', message: `Commande n°${l.numero} (${l.client.nom}) sans produits détectés` });
+  }
+  const litresParJour = [...parJour.entries()].map(([j, pts]) => ({ j, litres: pts.reduce((a, p) => a + p.litres, 0) }));
+  const moyLitres = litresParJour.reduce((a, x) => a + x.litres, 0) / (litresParJour.length || 1);
+  for (const x of litresParJour) {
+    if (moyLitres > 0 && x.litres > 2 * moyLitres) alertes.push({ type: 'volume', message: `Volume inhabituel le ${x.j} : ${Math.round(x.litres)} L (moyenne ${Math.round(moyLitres)} L)` });
+  }
+
+  // Statistiques historiques
+  const parSemaine = new Map();
+  for (const c of valides) {
+    if (!c.dateCreation) continue;
+    const d = new Date(c.dateCreation);
+    const lundi = new Date(d); lundi.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    const key = lundi.toISOString().slice(0, 10);
+    parSemaine.set(key, (parSemaine.get(key) ?? 0) + 1);
+  }
+  const commandesParSemaine = [...parSemaine.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(-12)
+    .map(([semaine, nb]) => ({ semaine, nb }));
+
+  const caParClient = new Map();
+  for (const c of valides) {
+    const nom = c.client?.nom;
+    if (nom) caParClient.set(nom, (caParClient.get(nom) ?? 0) + (c.totalHT ?? 0));
+  }
+  const topClients = [...caParClient.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8)
+    .map(([nom, ca]) => ({ nom, caHT: Math.round(ca) }));
+
+  const qteParProduit = new Map();
+  for (const l of livraisons) for (const p of l.produits) {
+    qteParProduit.set(p.libelle, (qteParProduit.get(p.libelle) ?? 0) + p.quantite);
+  }
+  const topProduits = [...qteParProduit.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8)
+    .map(([libelle, qte]) => ({ libelle, qte }));
+
+  pilotageCache = {
+    genere: new Date().toISOString(),
+    kpi: {
+      commandesAVenir: aVenir.length,
+      commandesAujourdhui: cmdAujourdhui.length,
+      commandesSemaine: cmdSemaine.length,
+      commandesMois: cmdMois.length,
+      clientsAujourdhui: new Set(cmdAujourdhui.map(l => l.client.id)).size,
+      clientsSemaine: new Set(cmdSemaine.map(l => l.client.id)).size,
+      clientsActifs,
+      pointsLivraison: livraisons.filter(l => l.lat).length,
+      caPrevisionnelHT: Math.round(livraisons.reduce((a, l) => a + l.totalHT, 0)),
+    },
+    volumes: { ...volumesTotal, litres: Math.round(volumesTotal.litres), colis: livraisons.reduce((a, l) => a + l.produits.length, 0) },
+    livraisons,
+    tournees,
+    alertes,
+    stats: { commandesParSemaine, topClients, topProduits },
+  };
+  pilotageCacheExpiry = Date.now() + 30 * 60 * 1000;
+  return pilotageCache;
+}
+
+app.get('/api/pilotage', async (req, res) => {
+  try {
+    const data = await construirePilotage();
+    res.set('Cache-Control', 'public, s-maxage=1800, stale-while-revalidate=86400');
+    res.json(data);
+  } catch (err) {
+    console.error('GET /api/pilotage', err.message);
+    res.status(err.status ?? 502).json({ error: err.message });
+  }
+});
+
 // --- API Relances ---
 app.get('/api/relances', async (req, res) => {
   try {
