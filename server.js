@@ -33,7 +33,17 @@ function erreurEasyBeer(status, text) {
   return Object.assign(new Error(`EasyBeer ${status}`), { status, detail: text });
 }
 
+// File d'attente globale : espace toutes les requêtes EasyBeer d'au moins 220 ms
+// (limite EasyBeer : 10 req/s, ban de 5 min en cas de dépassement)
+let dernierAppel = Promise.resolve();
+function throttle() {
+  const attente = dernierAppel.then(() => new Promise(r => setTimeout(r, 220)));
+  dernierAppel = attente;
+  return attente;
+}
+
 async function easybeerGet(path) {
+  await throttle();
   const res = await fetch(`${BASE_URL}${path}`, { headers: easybeerHeaders() });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
@@ -43,6 +53,7 @@ async function easybeerGet(path) {
 }
 
 async function easybeerPost(path, body) {
+  await throttle();
   const res = await fetch(`${BASE_URL}${path}`, {
     method: 'POST',
     headers: easybeerHeaders(),
