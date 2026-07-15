@@ -37,7 +37,7 @@ function erreurEasyBeer(status, text) {
 // (limite EasyBeer : 10 req/s, ban de 5 min en cas de dépassement)
 let dernierAppel = Promise.resolve();
 function throttle() {
-  const attente = dernierAppel.then(() => new Promise(r => setTimeout(r, 300)));
+  const attente = dernierAppel.then(() => new Promise(r => setTimeout(r, 500)));
   dernierAppel = attente;
   return attente;
 }
@@ -823,6 +823,46 @@ function prochainVendredi() {
   return vendredi.getTime() - offsetH * 60 * 60 * 1000;
 }
 
+// ---- Endpoints cache CDN : les données de référence passent par le cache Vercel
+// pour économiser les appels EasyBeer (une seule origine remplit le cache pour tous)
+app.get('/api/cache/types-client', async (req, res) => {
+  try {
+    const types = await getTypesClient();
+    res.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+    res.json(types);
+  } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
+});
+
+app.get('/api/cache/stock-index', async (req, res) => {
+  try {
+    const index = await getStockBouteilleIndex();
+    res.set('Cache-Control', 'public, s-maxage=1800, stale-while-revalidate=86400');
+    res.json(Object.fromEntries(index));
+  } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
+});
+
+app.get('/api/cache/prix/:idStock/:ict/:idClient', async (req, res) => {
+  try {
+    const { idStock, ict, idClient } = req.params;
+    const data = await easybeerGet(`/parametres/prix/${idStock}/${ict}/${idClient}`);
+    res.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+    res.json(data);
+  } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
+});
+
+// Appel interne via le CDN Vercel (HIT = zéro requête EasyBeer)
+function urlInterne(req, chemin) {
+  const host = req.get('host');
+  const proto = host?.startsWith('localhost') ? 'http' : 'https';
+  return `${proto}://${host}${chemin}`;
+}
+async function fetchInterne(req, chemin) {
+  const r = await fetch(urlInterne(req, chemin));
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(data.error ?? `HTTP ${r.status}`), { status: r.status });
+  return data;
+}
+
 // Stockage en mémoire des commandes passées (reset au redémarrage)
 const historiqueCommandes = [];
 
@@ -1322,11 +1362,12 @@ app.post('/api/commande', async (req, res) => {
       return res.status(400).json({ error: 'idClient et lignes sont requis' });
     }
 
-    // Grille tarifaire complète (objet type client entier, comme l'app EasyBeer)
-    const typesClient = await getTypesClient();
+    // Grille tarifaire complète — via le cache CDN (zéro appel EasyBeer si HIT)
+    const typesClient = await fetchInterne(req, '/api/cache/types-client');
     const grilleTarifaire = typesClient.find(t => t.idClientType === idClientType) ?? { idClientType };
 
-    const index = await getStockBouteilleIndex();
+    const indexObj = await fetchInterne(req, '/api/cache/stock-index');
+    const index = new Map(Object.entries(indexObj));
 
     // Construit chaque élément avec stock complet + prix réel du client
     const elementsBouteilles = [];
@@ -1341,7 +1382,7 @@ app.post('/api/commande', async (req, res) => {
       }
       let prixHT = 0;
       try {
-        const prixData = await easybeerGet(`/parametres/prix/${idStockBouteille}/${idClientType}/${idClient}`);
+        const prixData = await fetchInterne(req, `/api/cache/prix/${idStockBouteille}/${idClientType}/${idClient}`);
         prixHT = prixData?.prixHT ?? 0;
       } catch {}
       const prixTotalHT = Math.round(prixHT * l.quantite * 100) / 100;
