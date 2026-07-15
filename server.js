@@ -37,7 +37,7 @@ function erreurEasyBeer(status, text) {
 // (limite EasyBeer : 10 req/s, ban de 5 min en cas de dépassement)
 let dernierAppel = Promise.resolve();
 function throttle() {
-  const attente = dernierAppel.then(() => new Promise(r => setTimeout(r, 500)));
+  const attente = dernierAppel.then(() => new Promise(r => setTimeout(r, 1200)));
   dernierAppel = attente;
   return attente;
 }
@@ -1131,8 +1131,11 @@ async function construirePilotageInterne() {
   const livraisons = [];
   let echecsDetail = 0;
   const erreursDetail = [];
-  for (const c of aVenir.slice(0, 60)) {
-    const idClient = c.client?.idClient;
+  const selection = aVenir.slice(0, 60);
+
+  // Passe 1 : le contenu des commandes (bouteilles) — prioritaire
+  const volumesParCommande = new Map();
+  for (const c of selection) {
     let volInfo = detailCommandeCache.get(c.idCommande);
     if (!volInfo) {
       for (let essai = 0; essai < 2 && !volInfo; essai++) {
@@ -1158,12 +1161,18 @@ async function construirePilotageInterne() {
           detailCommandeCache.set(c.idCommande, volInfo);
         } catch (e) {
           if (erreursDetail.length < 5) erreursDetail.push({ idCommande: c.idCommande, essai, message: e.message?.slice(0, 200) });
-          if (essai === 0) await new Promise(r => setTimeout(r, 1500));
+          if (essai === 0) await new Promise(r => setTimeout(r, 5000));
         }
       }
       if (!volInfo) { echecsDetail++; volInfo = { produits: [], litres: 0, b33: 0, b75: 0, futs: 0, bouteilles: 0 }; }
     }
-    const { produits, litres, b33, b75, futs, bouteilles } = volInfo;
+    volumesParCommande.set(c.idCommande, volInfo);
+  }
+
+  // Passe 2 : coordonnées et contact des clients (pour la carte)
+  for (const c of selection) {
+    const idClient = c.client?.idClient;
+    const { produits, litres, b33, b75, futs, bouteilles } = volumesParCommande.get(c.idCommande);
     const infos = idClient ? await getInfosClient(idClient) : {};
     livraisons.push({
       idCommande: c.idCommande,
