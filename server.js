@@ -1093,6 +1093,10 @@ async function construirePilotageInterne() {
 
   const JOUR = 24 * 60 * 60 * 1000;
   const debutAujourdhui = new Date(new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' })).getTime();
+  // Lundi de la semaine en cours (la semaine s'entend du lundi au dimanche)
+  const jourSem = (new Date(debutAujourdhui).getUTCDay() + 6) % 7; // 0=lundi
+  const debutSemaine = debutAujourdhui - jourSem * JOUR;
+  const finSemaineLundi = debutSemaine + 7 * JOUR;
 
   // Contenants : contenance en litres + type fût
   const contenantMap = new Map();
@@ -1113,15 +1117,16 @@ async function construirePilotageInterne() {
     !typesParticuliers.has(clientTypeMap.get(c.client?.idClient))
   );
 
-  // Commandes à venir : livraison prévue >= aujourd'hui, ou pas encore livrées/facturées
+  // Commandes concernées : livraison prévue depuis le lundi de cette semaine
+  // (inclut les livraisons déjà passées de la semaine), ou sans date et non soldées
   const aVenir = valides.filter(c =>
-    (c.dateLivraisonPrevue && c.dateLivraisonPrevue >= debutAujourdhui) ||
+    (c.dateLivraisonPrevue && c.dateLivraisonPrevue >= debutSemaine) ||
     (!c.dateLivraisonPrevue && !c.estLivree && !c.estFacturee && !c.estArchivee)
   );
 
-  // Enrichit les commandes à venir : produits + coordonnées client (max 40)
+  // Enrichit les commandes : produits + coordonnées client (max 60)
   const livraisons = [];
-  for (const c of aVenir.slice(0, 40)) {
+  for (const c of aVenir.slice(0, 60)) {
     const idClient = c.client?.idClient;
     let produits = [];
     let litres = 0, b33 = 0, b75 = 0, futs = 0, bouteilles = 0;
@@ -1164,15 +1169,15 @@ async function construirePilotageInterne() {
     await new Promise(r => setTimeout(r, 130));
   }
 
-  // KPI
-  const finSemaine = debutAujourdhui + (7 - new Date(debutAujourdhui).getDay() || 7) * JOUR;
+  // KPI — la semaine va du lundi au dimanche
   const dansJours = n => debutAujourdhui + n * JOUR;
   const moisCourant = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' }).slice(0, 7);
   const estCeMois = t => t && new Date(t).toISOString().slice(0, 7) === moisCourant;
 
   const cmdAujourdhui = livraisons.filter(l => l.dateLivraison && l.dateLivraison >= debutAujourdhui && l.dateLivraison < dansJours(1));
-  const cmdSemaine = livraisons.filter(l => l.dateLivraison && l.dateLivraison >= debutAujourdhui && l.dateLivraison < finSemaine);
+  const cmdSemaine = livraisons.filter(l => l.dateLivraison && l.dateLivraison >= debutSemaine && l.dateLivraison < finSemaineLundi);
   const cmdMois = livraisons.filter(l => estCeMois(l.dateLivraison));
+  const cmdAVenir = livraisons.filter(l => !l.dateLivraison || l.dateLivraison >= debutAujourdhui);
 
   const totVol = arr => arr.reduce((a, l) => ({ litres: a.litres + l.litres, b33: a.b33 + l.b33, b75: a.b75 + l.b75, futs: a.futs + l.futs, bouteilles: a.bouteilles + l.bouteilles }), { litres: 0, b33: 0, b75: 0, futs: 0, bouteilles: 0 });
   const volumesTotal = totVol(livraisons);
@@ -1256,7 +1261,7 @@ async function construirePilotageInterne() {
   pilotageCache = {
     genere: new Date().toISOString(),
     kpi: {
-      commandesAVenir: aVenir.length,
+      commandesAVenir: cmdAVenir.length,
       commandesAujourdhui: cmdAujourdhui.length,
       commandesSemaine: cmdSemaine.length,
       commandesMois: cmdMois.length,
