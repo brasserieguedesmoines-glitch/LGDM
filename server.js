@@ -1130,6 +1130,7 @@ async function construirePilotageInterne() {
   // Enrichit les commandes : produits + coordonnées client (max 60)
   const livraisons = [];
   let echecsDetail = 0;
+  const erreursDetail = [];
   for (const c of aVenir.slice(0, 60)) {
     const idClient = c.client?.idClient;
     let volInfo = detailCommandeCache.get(c.idCommande);
@@ -1155,7 +1156,8 @@ async function construirePilotageInterne() {
           }
           volInfo = { produits, litres, b33, b75, futs, bouteilles };
           detailCommandeCache.set(c.idCommande, volInfo);
-        } catch {
+        } catch (e) {
+          if (erreursDetail.length < 5) erreursDetail.push({ idCommande: c.idCommande, essai, message: e.message?.slice(0, 200) });
           if (essai === 0) await new Promise(r => setTimeout(r, 1500));
         }
       }
@@ -1268,6 +1270,7 @@ async function construirePilotageInterne() {
   pilotageCache = {
     genere: new Date().toISOString(),
     incomplet: echecsDetail > 0,
+    erreursDetail,
     kpi: {
       commandesAVenir: cmdAVenir.length,
       commandesAujourdhui: cmdAujourdhui.length,
