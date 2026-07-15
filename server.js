@@ -1086,6 +1086,7 @@ async function construirePilotage() {
   try {
     return await construirePilotageInterne();
   } catch (err) {
+    console.error('pilotage:', err.message);
     if (pilotageCache) return pilotageCache;
     throw err;
   }
@@ -1110,8 +1111,8 @@ async function construirePilotageInterne() {
   } catch {}
 
   // Toutes les commandes (pros uniquement, les particuliers sont exclus)
-  let toutes = [];
-  try { toutes = await fetchCommandesEtat('toutes'); } catch (e) { console.error('pilotage liste:', e.message); }
+  // En cas d'échec on lève l'erreur : le cache périmé sera servi à la place
+  const toutes = await fetchCommandesEtat('toutes');
   const typesParticuliers = await getIdsTypesParticuliers();
   const valides = toutes.filter(c =>
     !c.estDevis && !c.estAnnulee &&
