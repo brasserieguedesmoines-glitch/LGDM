@@ -1078,6 +1078,8 @@ function haversineKm(a, b) {
 
 let pilotageCache = null;
 let pilotageCacheExpiry = 0;
+// Contenu des commandes (change rarement) : cache 1h par idCommande
+const detailCommandeCache = new Map();
 
 async function construirePilotage() {
   if (pilotageCache && Date.now() < pilotageCacheExpiry) return pilotageCache;
@@ -1126,34 +1128,39 @@ async function construirePilotageInterne() {
 
   // Enrichit les commandes : produits + coordonnées client (max 60)
   const livraisons = [];
+  let echecsDetail = 0;
   for (const c of aVenir.slice(0, 60)) {
     const idClient = c.client?.idClient;
-    let produits = [];
-    let litres = 0, b33 = 0, b75 = 0, futs = 0, bouteilles = 0;
-    try {
-      const det = await easybeerGet(`/commande/detail/${c.idCommande}`);
-      const elements = [...(det.elementsBouteilles ?? []), ...(det.elementsFuts ?? [])];
-      for (const e of elements) {
-        const idCont = e.stockProduit?.idContenant;
-        const cont = contenantMap.get(idCont) ?? { contenance: 0, estFut: false };
-        const q = e.quantite ?? 0;
-        const vol = cont.contenance * q;
-        litres += vol;
-        if (cont.estFut) futs += q;
-        else {
-          bouteilles += q;
-          if (Math.abs(cont.contenance - 0.33) < 0.01) b33 += q;
-          else if (Math.abs(cont.contenance - 0.75) < 0.01) b75 += q;
+    let volInfo = detailCommandeCache.get(c.idCommande);
+    if (!volInfo) {
+      for (let essai = 0; essai < 2 && !volInfo; essai++) {
+        try {
+          const det = await easybeerGet(`/commande/detail/${c.idCommande}`);
+          const elements = [...(det.elementsBouteilles ?? []), ...(det.elementsFuts ?? [])];
+          const produits = [];
+          let litres = 0, b33 = 0, b75 = 0, futs = 0, bouteilles = 0;
+          for (const e of elements) {
+            const idCont = e.stockProduit?.idContenant;
+            const cont = contenantMap.get(idCont) ?? { contenance: 0, estFut: false };
+            const q = e.quantite ?? 0;
+            litres += cont.contenance * q;
+            if (cont.estFut) futs += q;
+            else {
+              bouteilles += q;
+              if (Math.abs(cont.contenance - 0.33) < 0.01) b33 += q;
+              else if (Math.abs(cont.contenance - 0.75) < 0.01) b75 += q;
+            }
+            produits.push({ libelle: e.stockProduit?.libelle ?? e.designation ?? '', quantite: q, contenance: cont.contenance, estFut: cont.estFut });
+          }
+          volInfo = { produits, litres, b33, b75, futs, bouteilles };
+          detailCommandeCache.set(c.idCommande, volInfo);
+        } catch {
+          if (essai === 0) await new Promise(r => setTimeout(r, 1500));
         }
-        produits.push({
-          libelle: e.stockProduit?.libelle ?? e.designation ?? '',
-          quantite: q,
-          contenance: cont.contenance,
-          estFut: cont.estFut,
-        });
       }
-      await new Promise(r => setTimeout(r, 130));
-    } catch {}
+      if (!volInfo) { echecsDetail++; volInfo = { produits: [], litres: 0, b33: 0, b75: 0, futs: 0, bouteilles: 0 }; }
+    }
+    const { produits, litres, b33, b75, futs, bouteilles } = volInfo;
     const infos = idClient ? await getInfosClient(idClient) : {};
     livraisons.push({
       idCommande: c.idCommande,
@@ -1166,7 +1173,6 @@ async function construirePilotageInterne() {
       lat: infos.lat, lng: infos.lng, adresse: infos.adresse, contact: infos.contact,
       produits, litres: Math.round(litres * 100) / 100, b33, b75, futs, bouteilles,
     });
-    await new Promise(r => setTimeout(r, 130));
   }
 
   // KPI — la semaine va du lundi au dimanche
@@ -1260,6 +1266,7 @@ async function construirePilotageInterne() {
 
   pilotageCache = {
     genere: new Date().toISOString(),
+    incomplet: echecsDetail > 0,
     kpi: {
       commandesAVenir: cmdAVenir.length,
       commandesAujourdhui: cmdAujourdhui.length,
@@ -1277,14 +1284,18 @@ async function construirePilotageInterne() {
     alertes,
     stats: { commandesParSemaine, topClients, topProduits },
   };
-  pilotageCacheExpiry = Date.now() + 30 * 60 * 1000;
+  // Si des détails ont échoué (saturation EasyBeer), cache court pour retenter vite
+  pilotageCacheExpiry = Date.now() + (echecsDetail > 0 ? 3 : 30) * 60 * 1000;
   return pilotageCache;
 }
 
 app.get('/api/pilotage', async (req, res) => {
   try {
     const data = await construirePilotage();
-    res.set('Cache-Control', 'public, s-maxage=1800, stale-while-revalidate=86400');
+    // Cache CDN court si des données sont incomplètes, pour retenter rapidement
+    res.set('Cache-Control', data.incomplet
+      ? 'public, s-maxage=180, stale-while-revalidate=3600'
+      : 'public, s-maxage=1800, stale-while-revalidate=86400');
     res.json(data);
   } catch (err) {
     console.error('GET /api/pilotage', err.message);
