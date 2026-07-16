@@ -850,6 +850,35 @@ app.get('/api/cache/prix/:idStock/:ict/:idClient', async (req, res) => {
   } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
 });
 
+// Détail d'une commande (lignes produits résumées) — cache CDN 6h
+app.get('/api/cache/detail/:idCommande', async (req, res) => {
+  try {
+    const det = await easybeerGet(`/commande/detail/${req.params.idCommande}`);
+    const elements = [...(det.elementsBouteilles ?? []), ...(det.elementsFuts ?? [])].map(e => ({
+      idContenant: e.stockProduit?.idContenant ?? null,
+      quantite: e.quantite ?? 0,
+      libelle: e.stockProduit?.libelle ?? e.designation ?? '',
+    }));
+    res.set('Cache-Control', 'public, s-maxage=21600, stale-while-revalidate=86400');
+    res.json({ elements });
+  } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
+});
+
+// Coordonnées + contact d'un client — cache CDN 24h
+app.get('/api/cache/client-infos/:idClient', async (req, res) => {
+  try {
+    const d = await easybeerGet(`/parametres/client/detail/${req.params.idClient}`);
+    const contact = (d?.contacts ?? [])[0];
+    res.set('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800');
+    res.json({
+      lat: d?.adresse?.latitude ?? null,
+      lng: d?.adresse?.longitude ?? null,
+      adresse: d?.adresse?.complete ?? '',
+      contact: contact ? [contact.nom, contact.telephone ?? contact.portable, contact.email].filter(Boolean).join(' — ') : '',
+    });
+  } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
+});
+
 // Appel interne via le CDN Vercel (HIT = zéro requête EasyBeer)
 function urlInterne(req, chemin) {
   const host = req.get('host');
@@ -1081,10 +1110,10 @@ let pilotageCacheExpiry = 0;
 // Contenu des commandes (change rarement) : cache 1h par idCommande
 const detailCommandeCache = new Map();
 
-async function construirePilotage() {
+async function construirePilotage(req) {
   if (pilotageCache && Date.now() < pilotageCacheExpiry) return pilotageCache;
   try {
-    return await construirePilotageInterne();
+    return await construirePilotageInterne(req);
   } catch (err) {
     console.error('pilotage:', err.message);
     if (pilotageCache) return pilotageCache;
@@ -1092,7 +1121,7 @@ async function construirePilotage() {
   }
 }
 
-async function construirePilotageInterne() {
+async function construirePilotageInterne(req) {
 
   const JOUR = 24 * 60 * 60 * 1000;
   const debutAujourdhui = new Date(new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' })).getTime();
@@ -1144,23 +1173,20 @@ async function construirePilotageInterne() {
       return aSem - bSem || (b.dateLivraisonPrevue ?? 0) - (a.dateLivraisonPrevue ?? 0);
     })
     .slice(0, 120);
-  let budgetDetail = 35;
 
-  // Passe 1 : le contenu des commandes (bouteilles) — prioritaire
+  // Passe 1 : le contenu des commandes (bouteilles) — via le cache CDN
+  // (persistant entre les instances : HIT = zéro appel EasyBeer)
   const volumesParCommande = new Map();
   for (const c of selection) {
     let volInfo = detailCommandeCache.get(c.idCommande);
-    if (!volInfo && budgetDetail > 0) {
-      budgetDetail--;
+    if (!volInfo) {
       for (let essai = 0; essai < 2 && !volInfo; essai++) {
         try {
-          const det = await easybeerGet(`/commande/detail/${c.idCommande}`);
-          const elements = [...(det.elementsBouteilles ?? []), ...(det.elementsFuts ?? [])];
+          const { elements } = await fetchInterne(req, `/api/cache/detail/${c.idCommande}`);
           const produits = [];
           let litres = 0, b33 = 0, b75 = 0, futs = 0, bouteilles = 0;
           for (const e of elements) {
-            const idCont = e.stockProduit?.idContenant;
-            const cont = contenantMap.get(idCont) ?? { contenance: 0, estFut: false };
+            const cont = contenantMap.get(e.idContenant) ?? { contenance: 0, estFut: false };
             const q = e.quantite ?? 0;
             litres += cont.contenance * q;
             if (cont.estFut) futs += q;
@@ -1169,7 +1195,7 @@ async function construirePilotageInterne() {
               if (Math.abs(cont.contenance - 0.33) < 0.01) b33 += q;
               else if (Math.abs(cont.contenance - 0.75) < 0.01) b75 += q;
             }
-            produits.push({ libelle: e.stockProduit?.libelle ?? e.designation ?? '', quantite: q, contenance: cont.contenance, estFut: cont.estFut });
+            produits.push({ libelle: e.libelle, quantite: q, contenance: cont.contenance, estFut: cont.estFut });
           }
           volInfo = { produits, litres, b33, b75, futs, bouteilles };
           detailCommandeCache.set(c.idCommande, volInfo);
@@ -1183,13 +1209,16 @@ async function construirePilotageInterne() {
     volumesParCommande.set(c.idCommande, volInfo);
   }
 
-  // Passe 2 : coordonnées et contact des clients (uniquement livraisons futures,
-  // la carte n'affiche pas le passé)
+  // Passe 2 : coordonnées et contact des clients — via le cache CDN
+  // (uniquement livraisons futures, la carte n'affiche pas le passé)
   for (const c of selection) {
     const idClient = c.client?.idClient;
     const { produits, litres, b33, b75, futs, bouteilles } = volumesParCommande.get(c.idCommande);
     const future = !c.dateLivraisonPrevue || c.dateLivraisonPrevue >= debutAujourdhui;
-    const infos = (idClient && future) ? await getInfosClient(idClient) : (coordsClientCache.get(idClient) ?? {});
+    let infos = {};
+    if (idClient && future) {
+      try { infos = await fetchInterne(req, `/api/cache/client-infos/${idClient}`); } catch {}
+    }
     livraisons.push({
       idCommande: c.idCommande,
       numero: c.numero,
@@ -1320,7 +1349,7 @@ async function construirePilotageInterne() {
 
 app.get('/api/pilotage', async (req, res) => {
   try {
-    const data = await construirePilotage();
+    const data = await construirePilotage(req);
     // Cache CDN court si des données sont incomplètes, pour retenter rapidement
     res.set('Cache-Control', data.incomplet
       ? 'public, s-maxage=180, stale-while-revalidate=3600'
