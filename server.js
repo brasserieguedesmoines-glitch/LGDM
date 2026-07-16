@@ -1100,6 +1100,10 @@ async function construirePilotageInterne() {
   const jourSem = (new Date(debutAujourdhui).getUTCDay() + 6) % 7; // 0=lundi
   const debutSemaine = debutAujourdhui - jourSem * JOUR;
   const finSemaineLundi = debutSemaine + 7 * JOUR;
+  // 1er du mois en cours (pour l'avancement mensuel, livraisons passées incluses)
+  const dateParis = new Date(debutAujourdhui);
+  const debutMois = Date.UTC(dateParis.getUTCFullYear(), dateParis.getUTCMonth(), 1);
+  const debutPeriode = Math.min(debutSemaine, debutMois);
 
   // Contenants : contenance en litres + type fût
   const contenantMap = new Map();
@@ -1120,24 +1124,34 @@ async function construirePilotageInterne() {
     !typesParticuliers.has(clientTypeMap.get(c.client?.idClient))
   );
 
-  // Commandes concernées : livraison prévue depuis le lundi de cette semaine
-  // (inclut les livraisons déjà passées de la semaine), ou sans date et non soldées
+  // Commandes concernées : livraison prévue depuis le début du mois (livraisons
+  // passées incluses pour l'avancement), ou sans date et non soldées
   const aVenir = valides.filter(c =>
-    (c.dateLivraisonPrevue && c.dateLivraisonPrevue >= debutSemaine) ||
+    (c.dateLivraisonPrevue && c.dateLivraisonPrevue >= debutPeriode) ||
     (!c.dateLivraisonPrevue && !c.estLivree && !c.estFacturee && !c.estArchivee)
   );
 
-  // Enrichit les commandes : produits + coordonnées client (max 60)
+  // Enrichit les commandes : produits + coordonnées client.
+  // Priorité aux commandes de la semaine puis au reste ; budget de nouveaux
+  // appels détail limité par exécution (le cache se remplit progressivement)
   const livraisons = [];
   let echecsDetail = 0;
   const erreursDetail = [];
-  const selection = aVenir.slice(0, 60);
+  const selection = aVenir
+    .sort((a, b) => {
+      const aSem = a.dateLivraisonPrevue >= debutSemaine ? 0 : 1;
+      const bSem = b.dateLivraisonPrevue >= debutSemaine ? 0 : 1;
+      return aSem - bSem || (b.dateLivraisonPrevue ?? 0) - (a.dateLivraisonPrevue ?? 0);
+    })
+    .slice(0, 120);
+  let budgetDetail = 35;
 
   // Passe 1 : le contenu des commandes (bouteilles) — prioritaire
   const volumesParCommande = new Map();
   for (const c of selection) {
     let volInfo = detailCommandeCache.get(c.idCommande);
-    if (!volInfo) {
+    if (!volInfo && budgetDetail > 0) {
+      budgetDetail--;
       for (let essai = 0; essai < 2 && !volInfo; essai++) {
         try {
           const det = await easybeerGet(`/commande/detail/${c.idCommande}`);
@@ -1164,16 +1178,18 @@ async function construirePilotageInterne() {
           if (essai === 0) await new Promise(r => setTimeout(r, 5000));
         }
       }
-      if (!volInfo) { echecsDetail++; volInfo = { produits: [], litres: 0, b33: 0, b75: 0, futs: 0, bouteilles: 0 }; }
     }
+    if (!volInfo) { echecsDetail++; volInfo = { produits: [], litres: 0, b33: 0, b75: 0, futs: 0, bouteilles: 0 }; }
     volumesParCommande.set(c.idCommande, volInfo);
   }
 
-  // Passe 2 : coordonnées et contact des clients (pour la carte)
+  // Passe 2 : coordonnées et contact des clients (uniquement livraisons futures,
+  // la carte n'affiche pas le passé)
   for (const c of selection) {
     const idClient = c.client?.idClient;
     const { produits, litres, b33, b75, futs, bouteilles } = volumesParCommande.get(c.idCommande);
-    const infos = idClient ? await getInfosClient(idClient) : {};
+    const future = !c.dateLivraisonPrevue || c.dateLivraisonPrevue >= debutAujourdhui;
+    const infos = (idClient && future) ? await getInfosClient(idClient) : (coordsClientCache.get(idClient) ?? {});
     livraisons.push({
       idCommande: c.idCommande,
       numero: c.numero,
