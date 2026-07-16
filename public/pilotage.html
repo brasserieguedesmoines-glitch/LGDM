@@ -11,11 +11,19 @@
     .tabs { display: flex; gap: 6px; margin: 14px 0; flex-wrap: wrap; }
     .tabs button { border: 1px solid var(--border); background: var(--card); border-radius: 20px; padding: 8px 16px; cursor: pointer; font-size: 0.85rem; }
     .tabs button.actif { background: var(--dark); color: #fff; border-color: var(--dark); }
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
-    .kpi { background: var(--card); border-radius: var(--radius); padding: 14px; text-align: center; }
+    .kpi-grid { display: flex; gap: 10px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+    .kpi { background: var(--card); border-radius: var(--radius); padding: 14px; text-align: center; flex: 1 0 130px; min-width: 130px; }
     .kpi .val { font-size: 1.6rem; font-weight: 700; color: var(--dark); }
     .kpi .lbl { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
     .kpi .ico { font-size: 1.2rem; }
+    .kpi.hero { background: var(--dark); flex: 1 0 170px; }
+    .kpi.hero .val { color: #fff; font-size: 2rem; }
+    .kpi.hero .lbl { color: rgba(255,255,255,0.75); }
+    .kpi.hero.amber { background: var(--amber); }
+    .kpi.hero.amber .val { color: #fff; }
+    .kpi.hero.amber .lbl { color: rgba(255,255,255,0.85); }
+    .hero-grid { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .hero-grid .kpi { padding: 20px 14px; }
     h2.section { font-size: 1rem; margin: 18px 0 8px; }
     .alerte { background: #fff7ec; border-left: 4px solid var(--amber); padding: 10px 12px; border-radius: 6px; margin-bottom: 6px; font-size: 0.85rem; }
     .alerte.incomplete { border-color: #c0392b; background: #fdf0ee; }
@@ -69,6 +77,8 @@
 
     <!-- Vue d'ensemble -->
     <div class="vue active" id="vue-overview">
+      <h2 class="section">En ce moment</h2>
+      <div class="hero-grid" id="kpi-hero"></div>
       <h2 class="section">Commandes & clients</h2>
       <div class="kpi-grid" id="kpi-commandes"></div>
       <h2 class="section">Tracker logistique (livraisons à venir)</h2>
@@ -157,17 +167,23 @@
       return `<div class="kpi"><div class="ico">${ico}</div><div class="val">${val}</div><div class="lbl">${lbl}</div></div>`;
     }
 
+    function heroCard(ico, val, lbl, amber) {
+      return `<div class="kpi hero ${amber ? 'amber' : ''}"><div class="ico">${ico}</div><div class="val">${val}</div><div class="lbl">${lbl}</div></div>`;
+    }
+
     function renderOverview() {
       const k = D.kpi, v = D.volumes;
+      // Mise en avant : semaine et mois en cours
+      document.getElementById('kpi-hero').innerHTML =
+        heroCard('🗓️', k.commandesSemaine, 'Commandes cette semaine', true) +
+        heroCard('👥', k.clientsSemaine, 'Clients à livrer cette semaine', true) +
+        heroCard('📆', k.commandesMois, 'Commandes ce mois', false) +
+        heroCard('💶', k.caPrevisionnelHT + ' €', 'CA prévisionnel HT', false);
       document.getElementById('kpi-commandes').innerHTML =
         kpiCard('📦', k.commandesAVenir, 'Commandes à venir') +
         kpiCard('📅', k.commandesAujourdhui, "Aujourd'hui") +
-        kpiCard('🗓️', k.commandesSemaine, 'Cette semaine') +
-        kpiCard('📆', k.commandesMois, 'Ce mois') +
-        kpiCard('👥', k.clientsAujourdhui, "Clients à livrer aujourd'hui") +
-        kpiCard('👥', k.clientsSemaine, 'Clients cette semaine') +
-        kpiCard('🤝', k.clientsActifs, 'Clients actifs (6 mois)') +
-        kpiCard('💶', k.caPrevisionnelHT + ' €', 'CA prévisionnel HT');
+        kpiCard('👥', k.clientsAujourdhui, "Clients aujourd'hui") +
+        kpiCard('🤝', k.clientsActifs, 'Clients actifs (6 mois)');
       document.getElementById('kpi-logistique').innerHTML =
         kpiCard('🚚', k.commandesAVenir, 'Livraisons prévues') +
         kpiCard('📍', k.pointsLivraison, 'Points de livraison') +
