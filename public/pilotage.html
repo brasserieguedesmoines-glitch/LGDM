@@ -201,9 +201,10 @@
       const semaine = D.livraisons.filter(l => l.dateLivraison && l.dateLivraison >= lundi && l.dateLivraison < finSem);
       const mois = D.livraisons.filter(l => l.dateLivraison && new Date(l.dateLivraison).toISOString().slice(0, 7) === moisStr);
 
+      const futures = D.livraisons.filter(l => !l.dateLivraison || l.dateLivraison >= auj.getTime());
       ligneStats('kpi-semaine', agreger(semaine));
       ligneStats('kpi-mois', agreger(mois));
-      ligneStats('kpi-logistique', agreger(D.livraisons));
+      ligneStats('kpi-logistique', agreger(futures));
       document.getElementById('alertes').innerHTML = D.alertes.length
         ? D.alertes.map(a => `<div class="alerte ${a.type}">${a.type === 'incomplete' ? '⚠️' : a.type === 'volume' ? '📈' : a.type === 'tournee_chargee' ? '🚚' : '📍'} ${a.message}</div>`).join('')
         : '<p style="color:var(--muted);font-size:0.85rem">Aucune alerte 👌</p>';
