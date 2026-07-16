@@ -77,11 +77,11 @@
 
     <!-- Vue d'ensemble -->
     <div class="vue active" id="vue-overview">
-      <h2 class="section">En ce moment</h2>
-      <div class="hero-grid" id="kpi-hero"></div>
-      <h2 class="section">Commandes & clients</h2>
-      <div class="kpi-grid" id="kpi-commandes"></div>
-      <h2 class="section">Tracker logistique (livraisons à venir)</h2>
+      <h2 class="section">🗓️ Semaine en cours</h2>
+      <div class="kpi-grid" id="kpi-semaine"></div>
+      <h2 class="section">📆 Mois en cours</h2>
+      <div class="kpi-grid" id="kpi-mois"></div>
+      <h2 class="section">Ensemble des livraisons à venir</h2>
       <div class="kpi-grid" id="kpi-logistique"></div>
       <h2 class="section">Alertes</h2>
       <div id="alertes"></div>
@@ -167,32 +167,43 @@
       return `<div class="kpi"><div class="ico">${ico}</div><div class="val">${val}</div><div class="lbl">${lbl}</div></div>`;
     }
 
-    function heroCard(ico, val, lbl, amber) {
-      return `<div class="kpi hero ${amber ? 'amber' : ''}"><div class="ico">${ico}</div><div class="val">${val}</div><div class="lbl">${lbl}</div></div>`;
+    // Agrège les livraisons d'une période : commandes, clients, volumes, CA
+    function agreger(livraisons) {
+      const a = { commandes: livraisons.length, clients: new Set(livraisons.map(l => l.client.id)).size,
+        bouteilles: 0, b33: 0, b75: 0, futs: 0, litres: 0, caHT: 0 };
+      for (const l of livraisons) {
+        a.bouteilles += l.bouteilles; a.b33 += l.b33; a.b75 += l.b75;
+        a.futs += l.futs; a.litres += l.litres; a.caHT += l.totalHT;
+      }
+      a.litres = Math.round(a.litres); a.caHT = Math.round(a.caHT);
+      return a;
+    }
+
+    function ligneStats(elId, a) {
+      document.getElementById(elId).innerHTML =
+        kpiCard('🚚', a.commandes, 'Livraisons') +
+        kpiCard('👥', a.clients, 'Clients') +
+        kpiCard('🍺', a.bouteilles, 'Bouteilles') +
+        kpiCard('🟠', a.b33, '33 cL') +
+        kpiCard('⚫', a.b75, '75 cL') +
+        kpiCard('🛢', a.futs, 'Fûts') +
+        kpiCard('💧', a.litres + ' L', 'Litres') +
+        kpiCard('💶', a.caHT + ' €', 'CA HT');
     }
 
     function renderOverview() {
-      const k = D.kpi, v = D.volumes;
-      // Mise en avant : semaine et mois en cours
-      document.getElementById('kpi-hero').innerHTML =
-        heroCard('🗓️', k.commandesSemaine, 'Commandes cette semaine', true) +
-        heroCard('👥', k.clientsSemaine, 'Clients à livrer cette semaine', true) +
-        heroCard('📆', k.commandesMois, 'Commandes ce mois', false) +
-        heroCard('💶', k.caPrevisionnelHT + ' €', 'CA prévisionnel HT', false);
-      document.getElementById('kpi-commandes').innerHTML =
-        kpiCard('📦', k.commandesAVenir, 'Commandes à venir') +
-        kpiCard('📅', k.commandesAujourdhui, "Aujourd'hui") +
-        kpiCard('👥', k.clientsAujourdhui, "Clients aujourd'hui") +
-        kpiCard('🤝', k.clientsActifs, 'Clients actifs (6 mois)');
-      document.getElementById('kpi-logistique').innerHTML =
-        kpiCard('🚚', k.commandesAVenir, 'Livraisons prévues') +
-        kpiCard('📍', k.pointsLivraison, 'Points de livraison') +
-        kpiCard('🍺', v.bouteilles, 'Bouteilles au total') +
-        kpiCard('🟠', v.b33, 'Bouteilles 33 cL') +
-        kpiCard('⚫', v.b75, 'Bouteilles 75 cL') +
-        kpiCard('🛢', v.futs, 'Fûts') +
-        kpiCard('💧', v.litres + ' L', 'Litres à livrer') +
-        kpiCard('📦', v.colis, 'Lignes / colis');
+      const k = D.kpi;
+      const auj = new Date(); auj.setHours(0, 0, 0, 0);
+      const lundi = auj.getTime() - ((auj.getDay() + 6) % 7) * 86400000;
+      const finSem = lundi + 7 * 86400000;
+      const moisStr = auj.toISOString().slice(0, 7);
+
+      const semaine = D.livraisons.filter(l => l.dateLivraison && l.dateLivraison >= lundi && l.dateLivraison < finSem);
+      const mois = D.livraisons.filter(l => l.dateLivraison && new Date(l.dateLivraison).toISOString().slice(0, 7) === moisStr);
+
+      ligneStats('kpi-semaine', agreger(semaine));
+      ligneStats('kpi-mois', agreger(mois));
+      ligneStats('kpi-logistique', agreger(D.livraisons));
       document.getElementById('alertes').innerHTML = D.alertes.length
         ? D.alertes.map(a => `<div class="alerte ${a.type}">${a.type === 'incomplete' ? '⚠️' : a.type === 'volume' ? '📈' : a.type === 'tournee_chargee' ? '🚚' : '📍'} ${a.message}</div>`).join('')
         : '<p style="color:var(--muted);font-size:0.85rem">Aucune alerte 👌</p>';
