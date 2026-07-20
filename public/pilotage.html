@@ -127,6 +127,11 @@
 
     <!-- Liste -->
     <div class="vue" id="vue-liste">
+      <div class="filtres-carte" id="filtres-liste">
+        <button data-f="tous" class="actif">Toutes</button>
+        <button data-f="alivrer">🚚 À livrer</button>
+        <button data-f="livrees">✅ Livrées</button>
+      </div>
       <div style="overflow-x:auto">
         <table class="table-liste">
           <thead><tr><th>N°</th><th>Client</th><th>Livraison</th><th>État</th><th>Litres</th><th>33cL</th><th>75cL</th><th>Fûts</th><th>Total HT</th></tr></thead>
@@ -329,11 +334,21 @@
     }
 
     // ---- Liste ----
-    function renderListe() {
-      document.getElementById('liste-tbody').innerHTML = D.livraisons
-        .slice().sort((a, b) => (a.dateLivraison ?? 9e15) - (b.dateLivraison ?? 9e15))
+    function renderListe(filtre = 'tous') {
+      const estLivree = l => (l.etat || '').toLowerCase().includes('livrée') || (l.etat || '').toLowerCase().includes('factur');
+      let ls = D.livraisons.slice();
+      if (filtre === 'livrees') ls = ls.filter(estLivree);
+      if (filtre === 'alivrer') ls = ls.filter(l => !estLivree(l));
+      document.getElementById('liste-tbody').innerHTML = ls
+        .sort((a, b) => (a.dateLivraison ?? 9e15) - (b.dateLivraison ?? 9e15))
         .map(l => `<tr><td>${l.numero}</td><td>${l.client.nom}</td><td>${fmtD(l.dateLivraison)}</td><td>${l.etat}</td><td>${l.litres}</td><td>${l.b33}</td><td>${l.b75}</td><td>${l.futs}</td><td>${l.totalHT.toFixed(2)} €</td></tr>`).join('');
     }
+    document.getElementById('filtres-liste').addEventListener('click', e => {
+      const b = e.target.closest('button[data-f]'); if (!b) return;
+      document.querySelectorAll('#filtres-liste button').forEach(x => x.classList.remove('actif'));
+      b.classList.add('actif');
+      renderListe(b.dataset.f);
+    });
   </script>
 </body>
 </html>
