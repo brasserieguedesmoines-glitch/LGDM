@@ -1464,15 +1464,11 @@ app.get('/api/debug-liste-variants', async (req, res) => {
   res.json(results);
 });
 
-// --- Création de commande ---
-app.post('/api/commande', async (req, res) => {
-  const payload = {};
-  try {
-    const { idClient, idClientType, nomClient, lignes, commentaire, adresseLivraison } = req.body;
-    if (!idClient || !Array.isArray(lignes) || lignes.length === 0) {
-      return res.status(400).json({ error: 'idClient et lignes sont requis' });
-    }
-
+// Construit le payload ModeleCommande attendu par EasyBeer
+async function construirePayloadCommande(req, body, natureOperations) {
+  {
+    const { idClient, idClientType, lignes, commentaire, adresseLivraison } = body;
+    const payload = {};
     // Grille tarifaire complète — via le cache CDN (zéro appel EasyBeer si HIT)
     const typesClient = await fetchInterne(req, '/api/cache/types-client');
     const grilleTarifaire = typesClient.find(t => t.idClientType === idClientType) ?? { idClientType };
@@ -1529,7 +1525,7 @@ app.post('/api/commande', async (req, res) => {
       dateLivraisonPrevue: prochainVendredi(),
       dateLivraisonPrevueFormulaire: prochainVendredi(),
       adresseLivraison: adresseLivraison ?? {},
-      natureOperations: 'LIVRAISONS_BIENS',
+      natureOperations: natureOperations ?? { code: 'LIVRAISONS_BIENS', libelle: 'Livraisons de biens' },
       droitSuspendu: false,
       echangeHorsUE: false,
       deductionsAvoirs: [],
@@ -1552,6 +1548,19 @@ app.post('/api/commande', async (req, res) => {
       total: Math.round((totalHT + tva) * 100) / 100,
       tags: [],
     });
+    return payload;
+  }
+}
+
+// --- Création de commande ---
+app.post('/api/commande', async (req, res) => {
+  let payload = {};
+  try {
+    const { idClient, nomClient, lignes, commentaire } = req.body;
+    if (!idClient || !Array.isArray(req.body.lignes) || req.body.lignes.length === 0) {
+      return res.status(400).json({ error: 'idClient et lignes sont requis' });
+    }
+    payload = await construirePayloadCommande(req, req.body);
     console.log('POST /api/commande payload:', JSON.stringify(payload));
     const result = await easybeerPost('/commande/enregistrer', payload);
 
@@ -1569,6 +1578,44 @@ app.post('/api/commande', async (req, res) => {
   } catch (err) {
     console.error('POST /api/commande', err.message, err.detail);
     res.status(err.status ?? 502).json({ error: err.message, detail: err.detail, payloadEnvoye: payload });
+  }
+});
+
+// --- Debug : teste plusieurs formes de natureOperations sur le payload réel ---
+app.get('/api/debug-nature-test/:idClient', async (req, res) => {
+  try {
+    const idClient = parseInt(req.params.idClient);
+    const clients = await fetchInterne(req, '/api/clients');
+    const idClientType = clients.find(c => c.id === idClient)?.idClientType ?? null;
+    const produits = await fetchInterne(req, `/api/tarifs/${idClient}`);
+    const p = produits[0];
+    if (!p) return res.json({ error: 'aucun produit pour ce client' });
+    const body = {
+      idClient, idClientType,
+      lignes: [{ idProduit: p.idProduit, idContenant: p.idContenant, idLot: p.idLot ?? 1, idStockBouteille: p.idStockBouteille, quantite: 1 }],
+      commentaire: 'TEST AUTOMATIQUE — à supprimer',
+    };
+    const variantes = [
+      { label: 'objet code+libelle', valeur: { code: 'LIVRAISONS_BIENS', libelle: 'Livraisons de biens' } },
+      { label: 'objet code seul',    valeur: { code: 'LIVRAISONS_BIENS' } },
+      { label: 'chaine',             valeur: 'LIVRAISONS_BIENS' },
+      { label: 'absent',             valeur: null },
+    ];
+    const results = [];
+    for (const v of variantes) {
+      const payload = await construirePayloadCommande(req, body, v.valeur);
+      if (v.valeur === null) delete payload.natureOperations;
+      try {
+        const r = await easybeerPost('/commande/enregistrer', payload);
+        results.push({ ...v, ok: true, result: r });
+        break; // commande créée : on s'arrête
+      } catch (e) {
+        results.push({ ...v, ok: false, message: e.message, detail: e.detail });
+      }
+    }
+    res.json({ idClient, idClientType, produit: p.libelle, results });
+  } catch (err) {
+    res.status(500).json({ error: err.message, detail: err.detail });
   }
 });
 
