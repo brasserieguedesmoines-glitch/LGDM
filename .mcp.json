@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "scrapegraph": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@ScrapeGraphAI/scrapegraph-mcp",
+        "--config",
+        "{\"scrapegraphApiKey\":\"${SCRAPEGRAPH_API_KEY}\"}"
+      ]
+    }
+  }
+}
