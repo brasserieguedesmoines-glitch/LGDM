@@ -632,6 +632,21 @@ app.get('/api/debug-nature', async (req, res) => {
   }
 });
 
+// --- Debug : forme exacte de natureOperations (Swagger + commande réelle) ---
+app.get('/api/debug-nature2/:idClient', async (req, res) => {
+  const out = {};
+  try {
+    const swagger = await easybeerGet('/v2/api-docs');
+    out.ModeleNatureOperations = swagger.definitions?.ModeleNatureOperations ?? null;
+  } catch (e) { out.swaggerError = e.message; }
+  try {
+    const cmd = await easybeerGet(`/commande/derniere-commande/${req.params.idClient}`);
+    out.natureOperationsReelle = cmd.natureOperations ?? null;
+    out.clesCommande = Object.keys(cmd);
+  } catch (e) { out.commandeError = e.message; }
+  res.json(out);
+});
+
 // --- Debug : teste plusieurs variantes de payload pour /commande/enregistrer ---
 app.get('/api/debug-variants/:idClient', async (req, res) => {
   try {
