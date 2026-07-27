@@ -610,6 +610,28 @@ app.get('/api/debug-commande/:idClient', async (req, res) => {
   res.json({ ligne, results });
 });
 
+// --- Debug : cherche le champ natureOperation dans le Swagger ---
+app.get('/api/debug-nature', async (req, res) => {
+  try {
+    const swagger = await easybeerGet('/v2/api-docs');
+    const def = swagger.definitions?.ModeleCommande ?? swagger.definitions?.Commande ?? {};
+    const enregistrer = swagger.paths?.['/commande/enregistrer'];
+    // Cherche tous les champs contenant "nature" dans toutes les définitions
+    const natureFields = {};
+    for (const [name, def2] of Object.entries(swagger.definitions ?? {})) {
+      const props = def2.properties ?? {};
+      for (const [k, v] of Object.entries(props)) {
+        if (k.toLowerCase().includes('nature') || (v.description ?? '').toLowerCase().includes('nature')) {
+          natureFields[`${name}.${k}`] = v;
+        }
+      }
+    }
+    res.json({ ModeleCommande: def, enregistrer, natureFields });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- Debug : teste plusieurs variantes de payload pour /commande/enregistrer ---
 app.get('/api/debug-variants/:idClient', async (req, res) => {
   try {
