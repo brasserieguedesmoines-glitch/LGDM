@@ -1514,6 +1514,7 @@ app.post('/api/commande', async (req, res) => {
       dateLivraisonPrevue: prochainVendredi(),
       dateLivraisonPrevueFormulaire: prochainVendredi(),
       adresseLivraison: adresseLivraison ?? {},
+      natureOperations: 'LIVRAISONS_BIENS',
       droitSuspendu: false,
       echangeHorsUE: false,
       deductionsAvoirs: [],
