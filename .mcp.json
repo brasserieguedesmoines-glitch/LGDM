@@ -1,15 +1,15 @@
 {
   "mcpServers": {
     "scrapegraph": {
-      "command": "npx",
+      "command": "uvx",
       "args": [
-        "-y",
-        "@smithery/cli@latest",
-        "run",
-        "@ScrapeGraphAI/scrapegraph-mcp",
-        "--config",
-        "{\"scrapegraphApiKey\":\"${SCRAPEGRAPH_API_KEY}\"}"
-      ]
+        "--from",
+        "git+https://github.com/ScrapeGraphAI/scrapegraph-mcp",
+        "scrapegraph-mcp"
+      ],
+      "env": {
+        "SGAI_API_KEY": "${SGAI_API_KEY}"
+      }
     }
   }
 }
