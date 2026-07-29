@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LGDM — Clients à relancer</title>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'dark';</script>
   <link rel="stylesheet" href="style.css">
   <style>
     .table-wrap { overflow-x: auto; background: var(--card); border-radius: var(--radius); padding: 8px; }
@@ -22,16 +23,28 @@
     .avance { color: #27ae60; }
     #filtres { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
     #filtres button { border: 1px solid var(--border); background: var(--card); border-radius: 20px; padding: 6px 14px; cursor: pointer; font-size: 0.8rem; }
-    #filtres button.actif { background: var(--dark); color: #fff; border-color: var(--dark); }
+    #filtres button.actif { background: var(--amber); color: #14120f; border-color: var(--amber); }
     #meta { color: var(--muted); font-size: 0.8rem; margin: 8px 0; }
-    .btn-retour { font-size: 0.8rem; color: #fff; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 6px 12px; text-decoration: none; white-space: nowrap; }
   </style>
 </head>
 <body>
   <header>
-    <h1>Clients à relancer</h1>
-    <a href="/" class="btn-retour">← Prise de commande</a>
+    <div class="brand">
+      <img src="logo.png" alt="Le Gué des Moines">
+      <h1>Clients à relancer<small>Le Gué des Moines</small></h1>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <a href="/" class="btn-retour">← Commande</a>
+      <button class="btn-theme" id="btn-theme" title="Basculer clair/sombre">☀️</button>
+    </div>
   </header>
+  <script>
+    document.getElementById('btn-theme').addEventListener('click', () => {
+      const t = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+      localStorage.setItem('lgdm-theme', t);
+      document.documentElement.dataset.theme = t;
+    });
+  </script>
 
   <main style="max-width: 1100px;">
     <p id="meta">Chargement de l'analyse…</p>

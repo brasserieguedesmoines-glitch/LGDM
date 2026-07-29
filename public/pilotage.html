@@ -4,19 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LGDM — Pilotage</title>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'dark';</script>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
     main { max-width: 1200px; }
     .tabs { display: flex; gap: 6px; margin: 14px 0; flex-wrap: wrap; }
     .tabs button { border: 1px solid var(--border); background: var(--card); border-radius: 20px; padding: 8px 16px; cursor: pointer; font-size: 0.85rem; }
-    .tabs button.actif { background: var(--dark); color: #fff; border-color: var(--dark); }
+    .tabs button.actif { background: var(--amber); color: #14120f; border-color: var(--amber); }
+    .tabs button:hover:not(.actif) { border-color: var(--amber); }
     .kpi-grid { display: flex; gap: 10px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
-    .kpi { background: var(--card); border-radius: var(--radius); padding: 14px; text-align: center; flex: 1 0 130px; min-width: 130px; }
+    .kpi { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; flex: 1 0 130px; min-width: 130px; transition: border-color 0.2s, transform 0.15s; }
+    .kpi:hover { border-color: var(--pill-border); transform: translateY(-1px); }
     .kpi .val { font-size: 1.6rem; font-weight: 700; color: var(--dark); }
     .kpi .lbl { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
     .kpi .ico { font-size: 1.2rem; }
-    .kpi.hero { background: var(--dark); flex: 1 0 170px; }
+    .kpi.hero { background: var(--header-bg); flex: 1 0 170px; }
     .kpi.hero .val { color: #fff; font-size: 2rem; }
     .kpi.hero .lbl { color: rgba(255,255,255,0.75); }
     .kpi.hero.amber { background: var(--amber); }
@@ -25,12 +28,13 @@
     .hero-grid { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
     .hero-grid .kpi { padding: 20px 14px; }
     h2.section { font-size: 1rem; margin: 18px 0 8px; }
-    .alerte { background: #fff7ec; border-left: 4px solid var(--amber); padding: 10px 12px; border-radius: 6px; margin-bottom: 6px; font-size: 0.85rem; }
-    .alerte.incomplete { border-color: #c0392b; background: #fdf0ee; }
+    .alerte { background: var(--tint-amber); border-left: 4px solid var(--amber); padding: 10px 12px; border-radius: 6px; margin-bottom: 6px; font-size: 0.85rem; }
+    .alerte.incomplete { border-color: var(--danger); background: var(--tint-danger); }
     #map { height: 65vh; border-radius: var(--radius); }
     .filtres-carte { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
     .filtres-carte button { border: 1px solid var(--border); background: var(--card); border-radius: 16px; padding: 5px 12px; cursor: pointer; font-size: 0.8rem; }
-    .filtres-carte button.actif { background: var(--amber); color: #fff; border-color: var(--amber); }
+    .filtres-carte button.actif { background: var(--amber); color: #14120f; border-color: var(--amber); }
+    .filtres-carte button:hover:not(.actif) { border-color: var(--amber); }
     .filtres-carte input[type="date"] { padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.8rem; }
     .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
     .cal-head { font-size: 0.7rem; color: var(--muted); text-align: center; padding: 4px 0; text-transform: uppercase; }
@@ -38,17 +42,19 @@
     .cal-jour.vide { background: transparent; }
     .cal-jour.aujourdhui { outline: 2px solid var(--amber); }
     .cal-jour .n { color: var(--muted); font-size: 0.7rem; }
-    .cal-badge { background: var(--amber); color: #fff; border-radius: 8px; padding: 1px 7px; font-size: 0.72rem; display: inline-block; margin-top: 4px; }
-    .cal-badge.confirme { background: #27ae60; }
+    .cal-badge { background: var(--amber); color: #14120f; border-radius: 8px; padding: 1px 7px; font-size: 0.72rem; display: inline-block; margin-top: 4px; }
+    .cal-badge.confirme { background: var(--ok); color: #14120f; }
     .cal-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
     .cal-nav button { border: 1px solid var(--border); background: var(--card); border-radius: 8px; padding: 4px 12px; cursor: pointer; }
     .tournee { background: var(--card); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; font-size: 0.85rem; }
     .tournee .head { font-weight: 700; margin-bottom: 4px; }
     .tournee .meta { color: var(--muted); font-size: 0.78rem; margin-bottom: 4px; }
-    .chart-box { background: var(--card); border-radius: var(--radius); padding: 14px; margin-bottom: 14px; }
+    .chart-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 14px; }
     .chart-box h3 { font-size: 0.85rem; margin-bottom: 8px; color: var(--muted); }
     .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
     .table-liste { width: 100%; border-collapse: collapse; font-size: 0.8rem; background: var(--card); border-radius: var(--radius); overflow: hidden; }
+    .table-liste tbody tr { transition: background 0.12s; }
+    .table-liste tbody tr:hover { background: var(--tint-amber); }
     .table-liste th, .table-liste td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; }
     .table-liste th { font-size: 0.7rem; text-transform: uppercase; color: var(--muted); }
     .chart-wrap { position: relative; height: 260px; }
@@ -60,16 +66,28 @@
     #tbl-clients td { white-space: nowrap; }
     #tbl-clients td:first-child { white-space: normal; min-width: 160px; }
     .vue { display: none; }
-    .vue.active { display: block; }
+    .vue.active { display: block; animation: apparait 0.25s ease; }
     #meta-pilotage { color: var(--muted); font-size: 0.78rem; margin: 6px 0; }
-    .btn-retour { font-size: 0.8rem; color: #fff; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 6px 12px; text-decoration: none; white-space: nowrap; }
-  </style>
+    </style>
 </head>
 <body>
   <header>
-    <h1>📊 Pilotage</h1>
-    <a href="/" class="btn-retour">← Prise de commande</a>
+    <div class="brand">
+      <img src="logo.png" alt="Le Gué des Moines">
+      <h1>Pilotage<small>Le Gué des Moines</small></h1>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <a href="/" class="btn-retour">← Commande</a>
+      <button class="btn-theme" id="btn-theme" title="Basculer clair/sombre">☀️</button>
+    </div>
   </header>
+  <script>
+    document.getElementById('btn-theme').addEventListener('click', () => {
+      const t = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+      localStorage.setItem('lgdm-theme', t);
+      location.reload(); // recharge pour redessiner les graphiques aux couleurs du thème
+    });
+  </script>
 
   <main>
     <p id="meta-pilotage">Chargement du tableau de bord… (peut prendre ~30 s la première fois)</p>
@@ -258,6 +276,8 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script>
     let D = null, map = null, markersLayer = null, calMois = new Date();
+    // Couleurs pilotées par le thème (variables CSS)
+    const CSSV = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
     const fmtD = t => t ? new Date(t).toLocaleDateString('fr-FR') : '—';
 
@@ -423,7 +443,10 @@
     let chartsFaits = false;
     function renderStats() {
       if (chartsFaits) return; chartsFaits = true;
-      const or = '#e8a020', dk = '#1a1a2e', gr = '#95a5a6', bl = '#2980b9', vt = '#27ae60';
+      Chart.defaults.color = CSSV('--muted');
+      Chart.defaults.borderColor = CSSV('--grid');
+      Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+      const or = CSSV('--s1'), dk = CSSV('--s2'), gr = CSSV('--s6'), bl = CSSV('--s3'), vt = CSSV('--s4');
       new Chart(document.getElementById('ch-semaines'), {
         type: 'bar',
         data: { labels: D.stats.commandesParSemaine.map(x => x.semaine.slice(5)), datasets: [{ label: 'Commandes', data: D.stats.commandesParSemaine.map(x => x.nb), backgroundColor: or }] },
@@ -448,7 +471,7 @@
 
     // ---- Canaux : couleurs et surcharge manuelle (stockée dans le navigateur) ----
     const CANAUX = ['CHR', 'GMS', 'Distributeurs', 'Cavistes', 'Associations', 'Autres pros', 'Non catégorisé'];
-    const COUL_CANAL = { CHR: '#e8a020', GMS: '#1a1a2e', Distributeurs: '#2980b9', Cavistes: '#8e44ad', Associations: '#27ae60', 'Autres pros': '#95a5a6', 'Non catégorisé': '#d5d8dc' };
+    const COUL_CANAL = { get CHR() { return CSSV('--s1'); }, get GMS() { return CSSV('--s2'); }, get Distributeurs() { return CSSV('--s3'); }, get Cavistes() { return CSSV('--s5'); }, get Associations() { return CSSV('--s4'); }, get 'Autres pros'() { return CSSV('--s6'); }, get 'Non catégorisé'() { return CSSV('--muted'); } };
     const OVR_KEY = 'lgdm-canaux';
     let canalOvr = {};
     try { canalOvr = JSON.parse(localStorage.getItem(OVR_KEY) ?? '{}'); } catch {}
@@ -526,7 +549,7 @@
     // ---- KPI avec évolution ----
     function kpiEvo(ico, val, lbl, evolution) {
       const fl = evolution === null || evolution === undefined ? ''
-        : `<div style="font-size:0.75rem;font-weight:700;color:${evolution >= 0 ? '#27ae60' : '#c0392b'}">${evolution >= 0 ? '▲ +' : '▼ '}${evolution} %</div>`;
+        : `<div style="font-size:0.75rem;font-weight:700;color:${evolution >= 0 ? 'var(--ok)' : 'var(--danger)'}">${evolution >= 0 ? '▲ +' : '▼ '}${evolution} %</div>`;
       return `<div class="kpi"><div class="ico">${ico}</div><div class="val">${val}</div>${fl}<div class="lbl">${lbl}</div></div>`;
     }
     const deltaPct = (a, b) => b > 0 ? Math.round((a - b) / b * 1000) / 10 : null;
@@ -639,9 +662,9 @@
         data: {
           labels: ts.map((t, i) => new Date(t.jour).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · T' + (ts.filter(x => x.jour === t.jour).indexOf(t) + 1)),
           datasets: [
-            { type: 'bar', label: 'CA HT', data: ts.map(t => t.caHT ?? 0), backgroundColor: '#e8a020', yAxisID: 'y' },
-            { type: 'bar', label: 'Litres', data: ts.map(t => t.litres), backgroundColor: '#2980b9', yAxisID: 'y2' },
-            { type: 'line', label: 'Arrêts', data: ts.map(t => t.nbLivraisons), borderColor: '#1a1a2e', pointRadius: 3, yAxisID: 'y3' },
+            { type: 'bar', label: 'CA HT', data: ts.map(t => t.caHT ?? 0), backgroundColor: CSSV('--s1'), yAxisID: 'y' },
+            { type: 'bar', label: 'Litres', data: ts.map(t => t.litres), backgroundColor: CSSV('--s3'), yAxisID: 'y2' },
+            { type: 'line', label: 'Arrêts', data: ts.map(t => t.nbLivraisons), borderColor: CSSV('--s2'), pointRadius: 3, yAxisID: 'y3' },
           ],
         },
         options: {
@@ -682,7 +705,7 @@
       const nonCat = (D.stats.clients ?? []).filter(c => canalOf(c) === 'Non catégorisé').length;
       fc.innerHTML = '<button data-c="tous" class="actif">Tous canaux</button>' +
         CANAUX.map(c => `<button data-c="${c}">${c}</button>`).join('') +
-        (nonCat ? `<span style="font-size:0.75rem;color:#c0392b">⚠️ ${nonCat} client(s) non catégorisé(s) — corrigez le canal dans le tableau ci-dessous</span>` : '');
+        (nonCat ? `<span style="font-size:0.75rem;color:var(--danger)">⚠️ ${nonCat} client(s) non catégorisé(s) — corrigez le canal dans le tableau ci-dessous</span>` : '');
       fc.addEventListener('click', e => {
         const b = e.target.closest('button[data-c]'); if (!b) return;
         fc.querySelectorAll('button').forEach(x => x.classList.remove('actif'));
@@ -746,7 +769,7 @@
         type: 'line',
         data: {
           labels: mois.map(m => m.slice(2).split('-').reverse().join('/')),
-          datasets: [{ label: 'CA HT', data: serie, borderColor: '#27ae60', backgroundColor: 'rgba(39,174,96,0.12)', fill: true, tension: 0.3, pointRadius: 2 }],
+          datasets: [{ label: 'CA HT', data: serie, borderColor: CSSV('--s4'), backgroundColor: 'rgba(46,204,113,0.12)', fill: true, tension: 0.3, pointRadius: 2 }],
         },
         options: {
           maintainAspectRatio: false,
@@ -762,7 +785,7 @@
         type: 'bar',
         data: {
           labels: top.map(c => c.nom.length > 24 ? c.nom.slice(0, 24) + '…' : c.nom),
-          datasets: [{ data: top.map(c => c.ca), backgroundColor: '#27ae60' }],
+          datasets: [{ data: top.map(c => c.ca), backgroundColor: CSSV('--s4') }],
         },
         options: {
           indexAxis: 'y', maintainAspectRatio: false,
@@ -783,8 +806,8 @@
         data: {
           labels: p.map((c, i) => String(i + 1)),
           datasets: [
-            { type: 'bar', label: 'CA HT', data: p.map(c => c.ca), backgroundColor: '#1a1a2e', yAxisID: 'y' },
-            { type: 'line', label: '% cumulé', data: cumulPct, borderColor: '#e8a020', pointRadius: 2, tension: 0.3, yAxisID: 'y2' },
+            { type: 'bar', label: 'CA HT', data: p.map(c => c.ca), backgroundColor: CSSV('--s2'), yAxisID: 'y' },
+            { type: 'line', label: '% cumulé', data: cumulPct, borderColor: CSSV('--s1'), pointRadius: 2, tension: 0.3, yAxisID: 'y2' },
           ],
         },
         options: {
@@ -819,14 +842,14 @@
 
       const totalP = clientsPeriode().reduce((a, c) => a + c.ca, 0);
       const badge = st => ({
-        actif:   '<span style="color:#27ae60">🟢 Actif</span>',
-        risque:  '<span style="color:#e8a020">🟠 À relancer</span>',
-        inactif: '<span style="color:#c0392b">🔴 Inactif</span>',
+        actif:   '<span style="color:var(--ok)">🟢 Actif</span>',
+        risque:  '<span style="color:var(--amber)">🟠 À relancer</span>',
+        inactif: '<span style="color:var(--danger)">🔴 Inactif</span>',
       }[st] ?? '—');
       const evo = e => e === null || e === undefined ? '—'
-        : `<span style="color:${e >= 0 ? '#27ae60' : '#c0392b'}">${e >= 0 ? '▲ +' : '▼ '}${e} %</span>`;
+        : `<span style="color:${e >= 0 ? 'var(--ok)' : 'var(--danger)'}">${e >= 0 ? '▲ +' : '▼ '}${e} %</span>`;
 
-      const selCanal = c => `<select data-idc="${c.id ?? ''}" class="sel-canal" style="font-size:0.75rem;padding:2px 4px;border:1px solid var(--border);border-radius:6px;background:${canalOvr[c.id] ? '#fff7ec' : 'transparent'}">` +
+      const selCanal = c => `<select data-idc="${c.id ?? ''}" class="sel-canal" style="font-size:0.75rem;padding:2px 4px;border:1px solid var(--border);border-radius:6px;background:${canalOvr[c.id] ? 'var(--tint-amber)' : 'transparent'}">` +
         CANAUX.map(x => `<option${x === c.canal ? ' selected' : ''}>${x}</option>`).join('') + '</select>';
       document.getElementById('tbody-clients').innerHTML = liste.map(c => `
         <tr>

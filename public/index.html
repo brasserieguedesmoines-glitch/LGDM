@@ -4,17 +4,29 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>LGDM — Prise de commande</title>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'dark';</script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
-    <h1>Prise de commande</h1>
-    <div style="display:flex;gap:8px">
+    <div class="brand">
+      <img src="logo.png" alt="Le Gué des Moines">
+      <h1>Prise de commande<small>Le Gué des Moines</small></h1>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
       <a href="/pilotage.html" class="btn-pdf">📊 Pilotage</a>
       <a href="/relances.html" class="btn-pdf">📋 Relances</a>
-      <a href="/api/commandes-pdf" target="_blank" id="btn-pdf" class="btn-pdf">📄 Export PDF</a>
+      <a href="/api/commandes-pdf" target="_blank" id="btn-pdf" class="btn-pdf">📄 PDF</a>
+      <button class="btn-theme" id="btn-theme" title="Basculer clair/sombre">☀️</button>
     </div>
   </header>
+  <script>
+    document.getElementById('btn-theme').addEventListener('click', () => {
+      const t = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+      localStorage.setItem('lgdm-theme', t);
+      document.documentElement.dataset.theme = t;
+    });
+  </script>
 
   <main>
     <!-- Étape 1 : Sélection client -->
