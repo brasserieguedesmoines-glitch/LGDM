@@ -51,6 +51,11 @@
     .table-liste { width: 100%; border-collapse: collapse; font-size: 0.8rem; background: var(--card); border-radius: var(--radius); overflow: hidden; }
     .table-liste th, .table-liste td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; }
     .table-liste th { font-size: 0.7rem; text-transform: uppercase; color: var(--muted); }
+    #tbl-clients thead th[data-tri] { cursor: pointer; user-select: none; white-space: nowrap; }
+    #tbl-clients thead th[data-tri]:hover { color: var(--dark); }
+    #tbl-clients thead th { position: sticky; top: 0; background: var(--card); z-index: 1; }
+    #tbl-clients td { white-space: nowrap; }
+    #tbl-clients td:first-child { white-space: normal; min-width: 160px; }
     .vue { display: none; }
     .vue.active { display: block; }
     #meta-pilotage { color: var(--muted); font-size: 0.78rem; margin: 6px 0; }
@@ -120,8 +125,64 @@
       <div class="charts-grid">
         <div class="chart-box"><h3>Commandes par semaine</h3><canvas id="ch-semaines"></canvas></div>
         <div class="chart-box"><h3>Répartition des formats (à livrer)</h3><canvas id="ch-formats"></canvas></div>
-        <div class="chart-box"><h3>Top clients (CA HT cumulé)</h3><canvas id="ch-clients"></canvas></div>
         <div class="chart-box"><h3>Top produits (quantités à livrer)</h3><canvas id="ch-produits"></canvas></div>
+      </div>
+
+      <h2 class="section">👥 Analyse clients</h2>
+
+      <div class="filtres-carte" id="filtres-clients">
+        <button data-per="12" class="actif">12 derniers mois</button>
+        <button data-per="24">24 derniers mois</button>
+        <button data-per="tout">Depuis toujours</button>
+      </div>
+
+      <div class="kpi-grid" id="kpi-clients"></div>
+
+      <div class="chart-box">
+        <h3>Évolution du CA HT par mois</h3>
+        <canvas id="ch-ca-mois" height="90"></canvas>
+      </div>
+
+      <div class="charts-grid">
+        <div class="chart-box">
+          <h3>Top 15 clients (CA HT cumulé)</h3>
+          <canvas id="ch-clients" height="330"></canvas>
+        </div>
+        <div class="chart-box">
+          <h3>Concentration du CA (Pareto)</h3>
+          <canvas id="ch-pareto" height="330"></canvas>
+          <p id="pareto-note" style="font-size:0.75rem;color:var(--muted);margin-top:8px"></p>
+        </div>
+      </div>
+
+      <div class="chart-box">
+        <h3>Détail par client</h3>
+        <div class="filtres-carte">
+          <input type="search" id="rech-client" placeholder="Rechercher un client…"
+                 style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:0.82rem;flex:1 0 180px">
+          <button data-st="tous" class="actif st-filtre">Tous</button>
+          <button data-st="actif" class="st-filtre">🟢 Actifs</button>
+          <button data-st="risque" class="st-filtre">🟠 À relancer</button>
+          <button data-st="inactif" class="st-filtre">🔴 Inactifs</button>
+        </div>
+        <div style="overflow-x:auto;max-height:60vh">
+          <table class="table-liste" id="tbl-clients">
+            <thead><tr>
+              <th data-tri="nom">Client</th>
+              <th data-tri="caHT">CA HT ▾</th>
+              <th data-tri="partCA">% du CA</th>
+              <th data-tri="nbCommandes">Cmd</th>
+              <th data-tri="panierMoyen">Panier moyen</th>
+              <th data-tri="frequenceJours">Fréquence</th>
+              <th data-tri="derniere">Dernière cmd</th>
+              <th data-tri="evolution">Évolution</th>
+              <th data-tri="statut">Statut</th>
+              <th></th>
+            </tr></thead>
+            <tbody id="tbody-clients"></tbody>
+          </table>
+        </div>
+        <p id="clients-resume" style="font-size:0.75rem;color:var(--muted);margin-top:8px"></p>
       </div>
     </div>
 
@@ -321,17 +382,189 @@
         type: 'doughnut',
         data: { labels: ['33 cL', '75 cL', 'Fûts'], datasets: [{ data: [v.b33, v.b75, v.futs], backgroundColor: [or, dk, bl] }] },
       });
-      new Chart(document.getElementById('ch-clients'), {
-        type: 'bar',
-        data: { labels: D.stats.topClients.map(x => x.nom.slice(0, 18)), datasets: [{ label: '€ HT', data: D.stats.topClients.map(x => x.caHT), backgroundColor: vt }] },
-        options: { indexAxis: 'y', plugins: { legend: { display: false } } }
-      });
       new Chart(document.getElementById('ch-produits'), {
         type: 'bar',
         data: { labels: D.stats.topProduits.map(x => x.libelle.split(' - ')[1] ?? x.libelle.slice(0, 18)), datasets: [{ label: 'Qté', data: D.stats.topProduits.map(x => x.qte), backgroundColor: bl }] },
         options: { indexAxis: 'y', plugins: { legend: { display: false } } }
       });
+      renderClients();
     }
+
+    // ---- Analyse clients ----
+    let periodeClients = '12', triClients = { col: 'caHT', desc: true }, statutClients = 'tous';
+    let chCaMois = null, chTopClients = null, chPareto = null;
+
+    const eur = n => (n ?? 0).toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' €';
+
+    // Liste des clés de mois retenues selon la période sélectionnée
+    function moisPeriode() {
+      const tous = (D.stats.caParMois ?? []).map(x => x.mois);
+      if (periodeClients === '12') return tous.slice(-12);
+      return tous;
+    }
+
+    // Recalcule le CA de chaque client sur la période choisie
+    function clientsPeriode() {
+      const src = D.stats.clients ?? [];
+      if (periodeClients === 'tout') {
+        return src.map(c => ({ ...c, ca: c.caHT })).filter(c => c.ca > 0 || c.nbCommandes);
+      }
+      const mois = moisPeriode();
+      return src
+        .map(c => ({ ...c, ca: Math.round(mois.reduce((a, m) => a + (c.parMois[m] ?? 0), 0) * 100) / 100 }))
+        .filter(c => c.ca > 0);
+    }
+
+    function renderClients() {
+      const liste = clientsPeriode().sort((a, b) => b.ca - a.ca);
+      const total = liste.reduce((a, c) => a + c.ca, 0);
+      const s = D.stats.syntheseClients ?? {};
+
+      // KPI
+      const cum = []; let acc = 0;
+      for (const c of liste) { acc += c.ca; cum.push(acc); }
+      const part = n => total > 0 && cum.length ? Math.round(cum[Math.min(n, cum.length) - 1] / total * 1000) / 10 : 0;
+      const nbCmd = liste.reduce((a, c) => a + c.nbCommandes, 0);
+      document.getElementById('kpi-clients').innerHTML =
+        kpiCard('💶', eur(total), 'CA HT ' + (periodeClients === 'tout' ? 'cumulé' : periodeClients + ' mois')) +
+        kpiCard('👥', liste.length, 'Clients facturés') +
+        kpiCard('🟢', s.nbActifs ?? 0, 'Actifs') +
+        kpiCard('🟠', s.nbRisque ?? 0, 'À relancer') +
+        kpiCard('🔴', s.nbInactifs ?? 0, 'Inactifs') +
+        kpiCard('🧾', eur(nbCmd ? total / nbCmd : 0), 'Panier moyen') +
+        kpiCard('🏆', part(5) + ' %', 'Part du top 5') +
+        kpiCard('📊', part(20) + ' %', 'Part du top 20');
+
+      // Courbe CA par mois
+      const mois = moisPeriode();
+      const serie = mois.map(m => (D.stats.caParMois.find(x => x.mois === m)?.caHT) ?? 0);
+      chCaMois?.destroy();
+      chCaMois = new Chart(document.getElementById('ch-ca-mois'), {
+        type: 'line',
+        data: {
+          labels: mois.map(m => m.slice(2).split('-').reverse().join('/')),
+          datasets: [{ label: 'CA HT', data: serie, borderColor: '#27ae60', backgroundColor: 'rgba(39,174,96,0.12)', fill: true, tension: 0.3, pointRadius: 2 }],
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => eur(c.parsed.y) } } },
+          scales: { y: { ticks: { callback: v => eur(v) } } },
+        },
+      });
+
+      // Top 15
+      const top = liste.slice(0, 15);
+      chTopClients?.destroy();
+      chTopClients = new Chart(document.getElementById('ch-clients'), {
+        type: 'bar',
+        data: {
+          labels: top.map(c => c.nom.length > 24 ? c.nom.slice(0, 24) + '…' : c.nom),
+          datasets: [{ data: top.map(c => c.ca), backgroundColor: '#27ae60' }],
+        },
+        options: {
+          indexAxis: 'y', maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: c => eur(c.parsed.x) + ' — ' + (total ? Math.round(c.parsed.x / total * 1000) / 10 : 0) + ' % du CA' } },
+          },
+          scales: { x: { ticks: { callback: v => eur(v) } } },
+        },
+      });
+
+      // Pareto : CA par client (barres) + % cumulé (courbe)
+      const p = liste.slice(0, 20);
+      let accP = 0;
+      const cumulPct = p.map(c => { accP += c.ca; return total ? Math.round(accP / total * 1000) / 10 : 0; });
+      chPareto?.destroy();
+      chPareto = new Chart(document.getElementById('ch-pareto'), {
+        data: {
+          labels: p.map((c, i) => String(i + 1)),
+          datasets: [
+            { type: 'bar', label: 'CA HT', data: p.map(c => c.ca), backgroundColor: '#1a1a2e', yAxisID: 'y' },
+            { type: 'line', label: '% cumulé', data: cumulPct, borderColor: '#e8a020', pointRadius: 2, tension: 0.3, yAxisID: 'y2' },
+          ],
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: { tooltip: { callbacks: { title: items => p[items[0].dataIndex]?.nom ?? '' } } },
+          scales: {
+            y: { position: 'left', ticks: { callback: v => eur(v) } },
+            y2: { position: 'right', min: 0, max: 100, grid: { drawOnChartArea: false }, ticks: { callback: v => v + ' %' } },
+          },
+        },
+      });
+      document.getElementById('pareto-note').textContent =
+        `Les ${Math.min(5, liste.length)} premiers clients représentent ${part(5)} % du CA, les ${Math.min(20, liste.length)} premiers ${part(20)} %.`;
+
+      renderTableClients();
+    }
+
+    function renderTableClients() {
+      const q = document.getElementById('rech-client').value.trim().toLowerCase();
+      let liste = clientsPeriode();
+      if (q) liste = liste.filter(c => c.nom.toLowerCase().includes(q));
+      if (statutClients !== 'tous') liste = liste.filter(c => c.statut === statutClients);
+
+      const { col, desc } = triClients;
+      liste.sort((a, b) => {
+        const va = col === 'caHT' ? a.ca : a[col], vb = col === 'caHT' ? b.ca : b[col];
+        if (va === null || va === undefined) return 1;
+        if (vb === null || vb === undefined) return -1;
+        const r = typeof va === 'string' ? va.localeCompare(vb, 'fr') : va - vb;
+        return desc ? -r : r;
+      });
+
+      const totalP = clientsPeriode().reduce((a, c) => a + c.ca, 0);
+      const badge = st => ({
+        actif:   '<span style="color:#27ae60">🟢 Actif</span>',
+        risque:  '<span style="color:#e8a020">🟠 À relancer</span>',
+        inactif: '<span style="color:#c0392b">🔴 Inactif</span>',
+      }[st] ?? '—');
+      const evo = e => e === null || e === undefined ? '—'
+        : `<span style="color:${e >= 0 ? '#27ae60' : '#c0392b'}">${e >= 0 ? '▲ +' : '▼ '}${e} %</span>`;
+
+      document.getElementById('tbody-clients').innerHTML = liste.map(c => `
+        <tr>
+          <td>${c.nom}</td>
+          <td>${eur(c.ca)}</td>
+          <td>${totalP ? (Math.round(c.ca / totalP * 1000) / 10) : 0} %</td>
+          <td>${c.nbCommandes}</td>
+          <td>${eur(c.panierMoyen)}</td>
+          <td>${c.frequenceJours ? 'tous les ' + c.frequenceJours + ' j' : '—'}</td>
+          <td>${fmtD(c.derniere)}${c.joursDepuis !== null ? ` <span style="color:var(--muted)">(${c.joursDepuis} j)</span>` : ''}</td>
+          <td>${evo(c.evolution)}</td>
+          <td>${badge(c.statut)}</td>
+          <td>${c.id ? `<a href="/?client=${c.id}" style="color:var(--amber);white-space:nowrap">Commander →</a>` : ''}</td>
+        </tr>`).join('') || '<tr><td colspan="10" style="color:var(--muted)">Aucun client ne correspond.</td></tr>';
+
+      document.getElementById('clients-resume').textContent =
+        `${liste.length} client(s) affiché(s) · ${eur(liste.reduce((a, c) => a + c.ca, 0))} de CA HT` +
+        ` · évolution comparée aux 12 mois précédents`;
+    }
+
+    document.getElementById('filtres-clients').addEventListener('click', e => {
+      const b = e.target.closest('button[data-per]'); if (!b) return;
+      document.querySelectorAll('#filtres-clients button').forEach(x => x.classList.remove('actif'));
+      b.classList.add('actif');
+      periodeClients = b.dataset.per;
+      renderClients();
+    });
+    document.querySelectorAll('.st-filtre').forEach(b => b.addEventListener('click', () => {
+      document.querySelectorAll('.st-filtre').forEach(x => x.classList.remove('actif'));
+      b.classList.add('actif');
+      statutClients = b.dataset.st;
+      renderTableClients();
+    }));
+    document.getElementById('rech-client').addEventListener('input', renderTableClients);
+    document.querySelectorAll('#tbl-clients thead th[data-tri]').forEach(th => th.addEventListener('click', () => {
+      const col = th.dataset.tri;
+      triClients = { col, desc: triClients.col === col ? !triClients.desc : true };
+      document.querySelectorAll('#tbl-clients thead th[data-tri]').forEach(x => {
+        x.textContent = x.textContent.replace(/ [▾▴]$/, '');
+      });
+      th.textContent += triClients.desc ? ' ▾' : ' ▴';
+      renderTableClients();
+    }));
 
     // ---- Liste ----
     function renderListe(filtre = 'tous') {

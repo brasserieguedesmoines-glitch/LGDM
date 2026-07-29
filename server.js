@@ -1328,13 +1328,119 @@ async function construirePilotageInterne(req) {
   const commandesParSemaine = [...parSemaine.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(-12)
     .map(([semaine, nb]) => ({ semaine, nb }));
 
-  const caParClient = new Map();
+  // --- Analyse clients : CA cumulé, fréquence, tendance, statut ---
+  const moisCle = t => new Date(t).toISOString().slice(0, 7);
+  // 24 derniers mois glissants (du plus ancien au plus récent)
+  const moisRecents = [];
+  {
+    const d = new Date(debutAujourdhui);
+    d.setUTCDate(1);
+    d.setUTCMonth(d.getUTCMonth() - 23);
+    for (let i = 0; i < 24; i++) {
+      moisRecents.push(d.toISOString().slice(0, 7));
+      d.setUTCMonth(d.getUTCMonth() + 1);
+    }
+  }
+  const dansMois = new Set(moisRecents);
+
+  const fiches = new Map(); // idClient (ou nom) → fiche
   for (const c of valides) {
     const nom = c.client?.nom;
-    if (nom) caParClient.set(nom, (caParClient.get(nom) ?? 0) + (c.totalHT ?? 0));
+    if (!nom) continue;
+    const cle = c.client?.idClient ?? nom;
+    let f = fiches.get(cle);
+    if (!f) {
+      f = { id: c.client?.idClient ?? null, nom, caHT: 0, nbCommandes: 0,
+            premiere: null, derniere: null, parMois: {}, dates: [] };
+      fiches.set(cle, f);
+    }
+    const ca = c.totalHT ?? 0;
+    f.caHT += ca;
+    f.nbCommandes++;
+    const t = c.dateCreation ?? c.dateLivraisonPrevue ?? null;
+    if (t) {
+      f.dates.push(t);
+      if (f.premiere === null || t < f.premiere) f.premiere = t;
+      if (f.derniere === null || t > f.derniere) f.derniere = t;
+      const m = moisCle(t);
+      if (dansMois.has(m)) f.parMois[m] = Math.round(((f.parMois[m] ?? 0) + ca) * 100) / 100;
+    }
   }
-  const topClients = [...caParClient.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8)
-    .map(([nom, ca]) => ({ nom, caHT: Math.round(ca) }));
+
+  const il12Mois = debutAujourdhui - 365 * JOUR;
+  const il24Mois = debutAujourdhui - 730 * JOUR;
+  // Fenêtres glissantes 12 mois / 12 mois précédents
+  for (const c of valides) {
+    const cle = c.client?.idClient ?? c.client?.nom;
+    const f = fiches.get(cle);
+    if (!f) continue;
+    const t = c.dateCreation ?? c.dateLivraisonPrevue ?? null;
+    if (!t) continue;
+    const ca = c.totalHT ?? 0;
+    if (t >= il12Mois) f.ca12 = (f.ca12 ?? 0) + ca;
+    else if (t >= il24Mois) f.ca12Prec = (f.ca12Prec ?? 0) + ca;
+  }
+
+  const caTotalClients = [...fiches.values()].reduce((a, f) => a + f.caHT, 0);
+  const arrondi = n => Math.round(n * 100) / 100;
+
+  const clientsStats = [...fiches.values()].map(f => {
+    const ca12 = f.ca12 ?? 0, ca12Prec = f.ca12Prec ?? 0;
+    const joursDepuis = f.derniere ? Math.floor((debutAujourdhui - f.derniere) / JOUR) : null;
+    // Fréquence : intervalle moyen entre deux commandes
+    let frequenceJours = null;
+    if (f.nbCommandes >= 2 && f.premiere && f.derniere && f.derniere > f.premiere) {
+      frequenceJours = Math.round((f.derniere - f.premiere) / JOUR / (f.nbCommandes - 1));
+    }
+    // Statut : inactif au-delà de 3× sa fréquence habituelle (ou 180 j par défaut)
+    const seuilRisque = frequenceJours ? Math.max(frequenceJours * 2, 45) : 90;
+    const seuilInactif = frequenceJours ? Math.max(frequenceJours * 3, 90) : 180;
+    let statut = 'actif';
+    if (joursDepuis === null) statut = 'inconnu';
+    else if (joursDepuis > seuilInactif) statut = 'inactif';
+    else if (joursDepuis > seuilRisque) statut = 'risque';
+    return {
+      id: f.id, nom: f.nom,
+      caHT: arrondi(f.caHT),
+      nbCommandes: f.nbCommandes,
+      panierMoyen: arrondi(f.caHT / f.nbCommandes),
+      partCA: caTotalClients > 0 ? Math.round(f.caHT / caTotalClients * 1000) / 10 : 0,
+      premiere: f.premiere, derniere: f.derniere,
+      joursDepuis, frequenceJours, statut,
+      ca12: arrondi(ca12), ca12Prec: arrondi(ca12Prec),
+      evolution: ca12Prec > 0 ? Math.round((ca12 - ca12Prec) / ca12Prec * 1000) / 10 : null,
+      parMois: f.parMois,
+    };
+  }).sort((a, b) => b.caHT - a.caHT);
+
+  // CA global par mois (24 derniers mois) — courbe de tendance
+  const caParMois = moisRecents.map(m => ({
+    mois: m,
+    caHT: arrondi(clientsStats.reduce((a, c) => a + (c.parMois[m] ?? 0), 0)),
+    clients: clientsStats.filter(c => c.parMois[m]).length,
+  }));
+
+  // Concentration (Pareto) sur le CA cumulé
+  const cumul = [];
+  let acc = 0;
+  for (const c of clientsStats) { acc += c.caHT; cumul.push(acc); }
+  const partTop = n => caTotalClients > 0 && cumul.length
+    ? Math.round((cumul[Math.min(n, cumul.length) - 1] / caTotalClients) * 1000) / 10 : 0;
+
+  const syntheseClients = {
+    caTotalHT: Math.round(caTotalClients),
+    nbClients: clientsStats.length,
+    nbActifs: clientsStats.filter(c => c.statut === 'actif').length,
+    nbRisque: clientsStats.filter(c => c.statut === 'risque').length,
+    nbInactifs: clientsStats.filter(c => c.statut === 'inactif').length,
+    panierMoyen: clientsStats.length
+      ? arrondi(caTotalClients / clientsStats.reduce((a, c) => a + c.nbCommandes, 0)) : 0,
+    partTop5: partTop(5),
+    partTop10: partTop(10),
+    partTop20: partTop(20),
+  };
+
+  const topClients = clientsStats.slice(0, 8).map(c => ({ nom: c.nom, caHT: Math.round(c.caHT) }));
 
   const qteParProduit = new Map();
   for (const l of livraisons) for (const p of l.produits) {
@@ -1362,7 +1468,7 @@ async function construirePilotageInterne(req) {
     livraisons,
     tournees,
     alertes,
-    stats: { commandesParSemaine, topClients, topProduits },
+    stats: { commandesParSemaine, topClients, topProduits, caParMois, syntheseClients, clients: clientsStats },
   };
   // Si des détails ont échoué (saturation EasyBeer), cache court pour retenter vite
   pilotageCacheExpiry = Date.now() + (echecsDetail > 0 ? 3 : 30) * 60 * 1000;
