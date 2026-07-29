@@ -33,11 +33,12 @@ function erreurEasyBeer(status, text) {
   return Object.assign(new Error(`EasyBeer ${status}`), { status, detail: text });
 }
 
-// File d'attente globale : espace toutes les requêtes EasyBeer d'au moins 220 ms
-// (limite EasyBeer : 10 req/s, ban de 5 min en cas de dépassement)
+// File d'attente globale : espace toutes les requêtes EasyBeer d'au moins 250 ms
+// (limite EasyBeer : 10 req/s, ban de 5 min en cas de dépassement — 4 req/s laisse
+// une marge confortable tout en restant ~5× plus rapide que l'ancien réglage 1,2 s)
 let dernierAppel = Promise.resolve();
 function throttle() {
-  const attente = dernierAppel.then(() => new Promise(r => setTimeout(r, 1200)));
+  const attente = dernierAppel.then(() => new Promise(r => setTimeout(r, 250)));
   dernierAppel = attente;
   return attente;
 }
@@ -134,7 +135,6 @@ async function getAllClients() {
         }
       }
     } catch {}
-    await new Promise(r => setTimeout(r, 120));
   }
   allClientsCache = [...allClients.values()].sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
   allClientsCacheExpiry = Date.now() + 60 * 60 * 1000;
@@ -933,7 +933,7 @@ const FILTRE_COMMANDES = {
   resteAPayer: null, total: null,
 };
 
-async function fetchCommandesEtat(etat = 'toutes', maxPages = 20) {
+async function fetchCommandesEtat(etat = 'toutes', maxPages = 30) {
   const commandes = [];
   for (let page = 1; page <= maxPages; page++) {
     const data = await easybeerPost(
@@ -944,7 +944,6 @@ async function fetchCommandesEtat(etat = 'toutes', maxPages = 20) {
     commandes.push(...liste);
     const total = data?.nombreTotal ?? data?.totalElements ?? null;
     if (!liste.length || (total != null && commandes.length >= total)) break;
-    await new Promise(r => setTimeout(r, 150)); // rate limit EasyBeer
   }
   return commandes;
 }
