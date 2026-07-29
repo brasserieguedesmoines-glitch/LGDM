@@ -33,12 +33,12 @@ function erreurEasyBeer(status, text) {
   return Object.assign(new Error(`EasyBeer ${status}`), { status, detail: text });
 }
 
-// File d'attente globale : espace toutes les requêtes EasyBeer d'au moins 250 ms
-// (limite EasyBeer : 10 req/s, ban de 5 min en cas de dépassement — 4 req/s laisse
-// une marge confortable tout en restant ~5× plus rapide que l'ancien réglage 1,2 s)
+// File d'attente globale : espace toutes les requêtes EasyBeer d'au moins 400 ms.
+// Limite EasyBeer : 10 req/s (ban de 5 min). La file est par instance serverless :
+// plusieurs instances peuvent tourner en parallèle, 400 ms laisse la marge nécessaire.
 let dernierAppel = Promise.resolve();
 function throttle() {
-  const attente = dernierAppel.then(() => new Promise(r => setTimeout(r, 250)));
+  const attente = dernierAppel.then(() => new Promise(r => setTimeout(r, 400)));
   dernierAppel = attente;
   return attente;
 }
