@@ -1296,6 +1296,7 @@ async function construirePilotageInterne(req) {
         kmEstimes: km,
         dureeEstimeeMin: Math.round(km / 40 * 60 + groupe.length * 15),
         litres: Math.round(groupe.reduce((a, g) => a + g.litres, 0)),
+        caHT: Math.round(groupe.reduce((a, g) => a + g.totalHT, 0)),
       });
     }
   }
@@ -1327,6 +1328,42 @@ async function construirePilotageInterne(req) {
   }
   const commandesParSemaine = [...parSemaine.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(-12)
     .map(([semaine, nb]) => ({ semaine, nb }));
+
+  // --- Canal de vente par client : type EasyBeer d'abord, mots-clés du nom sinon ---
+  const typesTous = await getTypesClient().catch(() => []);
+  const libelleType = new Map(typesTous.map(t => [t.idClientType, (t.libelle ?? '').toLowerCase()]));
+  let typeParClient = new Map();
+  try {
+    const listeClients = await fetchInterne(req, '/api/clients');
+    typeParClient = new Map(listeClients.map(c => [c.id, c.idClientType]));
+  } catch {}
+  function canalDe(idClient, nom) {
+    const lib = libelleType.get(typeParClient.get(idClient) ?? clientTypeMap.get(idClient)) ?? '';
+    if (lib.includes('chr')) return 'CHR';
+    if (lib === 'gd' || lib.includes('enseigne') || lib.includes('grande')) return 'GMS';
+    if (lib.includes('distributeur') || lib.includes('ex works')) return 'Distributeurs';
+    if (lib.includes('asso')) return 'Associations';
+    const n = (nom ?? '').toLowerCase();
+    if (/leclerc|intermarch|carrefour|super\s*u|auchan|casino|biocoop|utile|spar|monoprix/.test(n)) return 'GMS';
+    if (/burger|restau|\bbar\b|h[ôo]tel|brasserie|pizz|caf[ée]|bistro|\bpub\b|camping|guinguette|food/.test(n)) return 'CHR';
+    if (/asso|comit[ée]|\bce\b|festival|club/.test(n)) return 'Associations';
+    if (/cave|caviste|[ée]picerie|vins/.test(n)) return 'Cavistes';
+    if (lib) return 'Autres pros';
+    return 'Non catégorisé';
+  }
+
+  // Historique léger de toutes les commandes : sert aux comparaisons de périodes côté client
+  const commandesLight = valides.map(c => ({
+    t: c.dateCreation ?? c.dateLivraisonPrevue ?? null,
+    dl: c.dateLivraisonPrevue ?? null,
+    id: c.client?.idClient ?? null,
+    nom: c.client?.nom ?? '',
+    canal: canalDe(c.client?.idClient, c.client?.nom),
+    ht: Math.round((c.totalHT ?? 0) * 100) / 100,
+  })).filter(c => c.t);
+
+  // Canal aussi sur les livraisons enrichies (croisement produit × canal, filtres)
+  for (const l of livraisons) l.canal = canalDe(l.client.id, l.client.nom);
 
   // --- Analyse clients : CA cumulé, fréquence, tendance, statut ---
   const moisCle = t => new Date(t).toISOString().slice(0, 7);
@@ -1401,6 +1438,7 @@ async function construirePilotageInterne(req) {
     else if (joursDepuis > seuilRisque) statut = 'risque';
     return {
       id: f.id, nom: f.nom,
+      canal: canalDe(f.id, f.nom),
       caHT: arrondi(f.caHT),
       nbCommandes: f.nbCommandes,
       panierMoyen: arrondi(f.caHT / f.nbCommandes),
@@ -1468,7 +1506,7 @@ async function construirePilotageInterne(req) {
     livraisons,
     tournees,
     alertes,
-    stats: { commandesParSemaine, topClients, topProduits, caParMois, syntheseClients, clients: clientsStats },
+    stats: { commandesParSemaine, topClients, topProduits, caParMois, syntheseClients, clients: clientsStats, commandes: commandesLight },
   };
   // Si des détails ont échoué (saturation EasyBeer), cache court pour retenter vite
   pilotageCacheExpiry = Date.now() + (echecsDetail > 0 ? 3 : 30) * 60 * 1000;

@@ -122,6 +122,54 @@
 
     <!-- Stats -->
     <div class="vue" id="vue-stats">
+
+      <!-- Période + comparaison -->
+      <div class="filtres-carte" id="filtres-periode">
+        <button data-mode="semaine">Semaine</button>
+        <button data-mode="mois" class="actif">Mois</button>
+        <button data-mode="trim">Trimestre</button>
+        <button data-mode="annee">Année</button>
+        <button data-mode="12m">12 mois</button>
+        <button data-mode="tout">Tout</button>
+        <span>du <input type="date" id="per-d1"> au <input type="date" id="per-d2"></span>
+        <span style="margin-left:auto;color:var(--muted);font-size:0.78rem">Comparer :</span>
+        <button data-cmp="prec" class="actif cmp-btn">Période préc.</button>
+        <button data-cmp="an" class="cmp-btn">Année préc.</button>
+        <button data-cmp="off" class="cmp-btn">Sans</button>
+      </div>
+
+      <!-- Filtre canal transverse -->
+      <div class="filtres-carte" id="filtres-canal"></div>
+      <p id="periode-libelle" style="font-size:0.78rem;color:var(--muted);margin:2px 0 8px"></p>
+
+      <!-- KPI avec évolution -->
+      <div class="kpi-grid" id="kpi-stats"></div>
+
+      <!-- Canaux de vente -->
+      <h2 class="section">🏪 Canaux de vente</h2>
+      <div class="charts-grid">
+        <div class="chart-box"><h3>Répartition du CA par canal (période)</h3><canvas id="ch-canal-donut" height="260"></canvas></div>
+        <div class="chart-box"><h3>Évolution mensuelle du CA par canal (12 mois)</h3><canvas id="ch-canal-mois" height="260"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <h3>Performance par canal (période)</h3>
+        <div style="overflow-x:auto">
+          <table class="table-liste"><thead><tr>
+            <th>Canal</th><th>CA HT</th><th>% du CA</th><th>Commandes</th><th>Clients</th><th>Panier moyen</th><th>Cmd / client</th>
+          </tr></thead><tbody id="tbody-canaux"></tbody></table>
+        </div>
+      </div>
+      <div class="chart-box">
+        <h3>Produits × canal (livraisons à venir)</h3>
+        <div style="overflow-x:auto"><table class="table-liste" id="tbl-prod-canal"><thead></thead><tbody></tbody></table></div>
+        <p style="font-size:0.72rem;color:var(--muted);margin-top:6px">Basé sur le contenu des livraisons planifiées (l'historique produit complet n'est pas disponible).</p>
+      </div>
+
+      <!-- Tournées -->
+      <h2 class="section">🚚 Équilibre des tournées (livraisons à venir)</h2>
+      <div class="chart-box"><canvas id="ch-tournees" height="110"></canvas></div>
+
+      <h2 class="section">📦 Activité</h2>
       <div class="charts-grid">
         <div class="chart-box"><h3>Commandes par semaine</h3><canvas id="ch-semaines"></canvas></div>
         <div class="chart-box"><h3>Répartition des formats (à livrer)</h3><canvas id="ch-formats"></canvas></div>
@@ -169,6 +217,7 @@
           <table class="table-liste" id="tbl-clients">
             <thead><tr>
               <th data-tri="nom">Client</th>
+              <th data-tri="canal">Canal</th>
               <th data-tri="caHT">CA HT ▾</th>
               <th data-tri="partCA">% du CA</th>
               <th data-tri="nbCommandes">Cmd</th>
@@ -387,7 +436,257 @@
         data: { labels: D.stats.topProduits.map(x => x.libelle.split(' - ')[1] ?? x.libelle.slice(0, 18)), datasets: [{ label: 'Qté', data: D.stats.topProduits.map(x => x.qte), backgroundColor: bl }] },
         options: { indexAxis: 'y', plugins: { legend: { display: false } } }
       });
+      initFiltresStats();
+      renderKPIStats();
+      renderCanaux();
+      renderTournesChart();
       renderClients();
+    }
+
+    // ---- Canaux : couleurs et surcharge manuelle (stockée dans le navigateur) ----
+    const CANAUX = ['CHR', 'GMS', 'Distributeurs', 'Cavistes', 'Associations', 'Autres pros', 'Non catégorisé'];
+    const COUL_CANAL = { CHR: '#e8a020', GMS: '#1a1a2e', Distributeurs: '#2980b9', Cavistes: '#8e44ad', Associations: '#27ae60', 'Autres pros': '#95a5a6', 'Non catégorisé': '#d5d8dc' };
+    const OVR_KEY = 'lgdm-canaux';
+    let canalOvr = {};
+    try { canalOvr = JSON.parse(localStorage.getItem(OVR_KEY) ?? '{}'); } catch {}
+    const canalOf = o => (o.id && canalOvr[o.id]) || o.canal || 'Non catégorisé';
+    function setCanalOvr(id, canal) {
+      canalOvr[id] = canal;
+      localStorage.setItem(OVR_KEY, JSON.stringify(canalOvr));
+      renderKPIStats(); renderCanaux(); renderClients();
+    }
+
+    // ---- Période sélectionnée + comparaison ----
+    const J = 86400000;
+    let per = { mode: 'mois', cmp: 'prec' };
+    let canalFiltre = 'tous';
+
+    function bornesPeriode() {
+      const now = new Date(); now.setHours(0, 0, 0, 0);
+      const auj = now.getTime();
+      const y = now.getFullYear(), m = now.getMonth();
+      const fin = auj + J; // inclut aujourd'hui
+      let d1, d2, p1, p2, a1, a2, libelle;
+      if (per.mode === 'semaine') {
+        d1 = auj - ((now.getDay() + 6) % 7) * J; d2 = d1 + 7 * J;
+        p1 = d1 - 7 * J; p2 = d1; a1 = d1 - 364 * J; a2 = a1 + 7 * J;
+        libelle = 'Semaine du ' + fmtD(d1);
+      } else if (per.mode === 'mois') {
+        d1 = new Date(y, m, 1).getTime(); d2 = new Date(y, m + 1, 1).getTime();
+        p1 = new Date(y, m - 1, 1).getTime(); p2 = d1;
+        a1 = new Date(y - 1, m, 1).getTime(); a2 = new Date(y - 1, m + 1, 1).getTime();
+        libelle = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+      } else if (per.mode === 'trim') {
+        const q = Math.floor(m / 3) * 3;
+        d1 = new Date(y, q, 1).getTime(); d2 = new Date(y, q + 3, 1).getTime();
+        p1 = new Date(y, q - 3, 1).getTime(); p2 = d1;
+        a1 = new Date(y - 1, q, 1).getTime(); a2 = new Date(y - 1, q + 3, 1).getTime();
+        libelle = 'T' + (q / 3 + 1) + ' ' + y;
+      } else if (per.mode === 'annee') {
+        d1 = new Date(y, 0, 1).getTime(); d2 = new Date(y + 1, 0, 1).getTime();
+        p1 = new Date(y - 1, 0, 1).getTime(); p2 = d1; a1 = p1; a2 = p2;
+        libelle = 'Année ' + y;
+      } else if (per.mode === '12m') {
+        d1 = fin - 365 * J; d2 = fin;
+        p1 = d1 - 365 * J; p2 = d1; a1 = p1; a2 = p2;
+        libelle = '12 derniers mois';
+      } else if (per.mode === 'perso') {
+        d1 = document.getElementById('per-d1').valueAsNumber || 0;
+        d2 = (document.getElementById('per-d2').valueAsNumber || auj) + J;
+        const len = d2 - d1;
+        p1 = d1 - len; p2 = d1; a1 = d1 - 365 * J; a2 = d2 - 365 * J;
+        libelle = 'Du ' + fmtD(d1) + ' au ' + fmtD(d2 - J);
+      } else { // tout
+        d1 = 0; d2 = fin; p1 = p2 = a1 = a2 = null;
+        libelle = 'Tout l\'historique';
+      }
+      const c = per.cmp === 'off' || per.mode === 'tout' ? null
+        : per.cmp === 'an' ? (a1 !== null ? [a1, a2] : null)
+        : (p1 !== null ? [p1, p2] : null);
+      return { d1, d2, cmp: c, libelle };
+    }
+
+    function cmdsEntre(a, b, avecFiltreCanal = true) {
+      let ls = (D.stats.commandes ?? []).filter(c => c.t >= a && c.t < b);
+      if (avecFiltreCanal && canalFiltre !== 'tous') ls = ls.filter(c => canalOf(c) === canalFiltre);
+      return ls;
+    }
+
+    function agrCmds(ls) {
+      const ca = ls.reduce((s, c) => s + c.ht, 0);
+      const clients = new Set(ls.map(c => c.id ?? c.nom)).size;
+      const parCanal = {};
+      for (const c of ls) parCanal[canalOf(c)] = (parCanal[canalOf(c)] ?? 0) + c.ht;
+      return { ca, nb: ls.length, clients, panier: ls.length ? ca / ls.length : 0, parCanal };
+    }
+
+    // ---- KPI avec évolution ----
+    function kpiEvo(ico, val, lbl, evolution) {
+      const fl = evolution === null || evolution === undefined ? ''
+        : `<div style="font-size:0.75rem;font-weight:700;color:${evolution >= 0 ? '#27ae60' : '#c0392b'}">${evolution >= 0 ? '▲ +' : '▼ '}${evolution} %</div>`;
+      return `<div class="kpi"><div class="ico">${ico}</div><div class="val">${val}</div>${fl}<div class="lbl">${lbl}</div></div>`;
+    }
+    const deltaPct = (a, b) => b > 0 ? Math.round((a - b) / b * 1000) / 10 : null;
+
+    function renderKPIStats() {
+      const { d1, d2, cmp, libelle } = bornesPeriode();
+      const cur = agrCmds(cmdsEntre(d1, d2));
+      const prev = cmp ? agrCmds(cmdsEntre(cmp[0], cmp[1])) : null;
+      const globale = agrCmds(cmdsEntre(d1, d2, false)); // parts CHR/GMS sur l'ensemble
+      const cmpLbl = cmp ? (per.cmp === 'an' ? ' vs année préc.' : ' vs période préc.') : '';
+      document.getElementById('periode-libelle').textContent =
+        libelle + cmpLbl + (canalFiltre !== 'tous' ? ' · filtre canal : ' + canalFiltre : '');
+      const el = document.getElementById('kpi-stats');
+      if (!cur.nb) {
+        el.innerHTML = '<div class="kpi" style="flex:1"><div class="val" style="font-size:1rem">Aucune commande sur cette période' + (canalFiltre !== 'tous' ? ' pour le canal ' + canalFiltre : '') + '</div><div class="lbl">Modifiez la période ou les filtres</div></div>';
+        return;
+      }
+      const part = canal => globale.ca > 0 ? Math.round((globale.parCanal[canal] ?? 0) / globale.ca * 1000) / 10 : 0;
+      el.innerHTML =
+        kpiEvo('💶', eur(cur.ca), 'CA HT', prev ? deltaPct(cur.ca, prev.ca) : null) +
+        kpiEvo('🧾', cur.nb, 'Commandes', prev ? deltaPct(cur.nb, prev.nb) : null) +
+        kpiEvo('👥', cur.clients, 'Clients actifs', prev ? deltaPct(cur.clients, prev.clients) : null) +
+        kpiEvo('🛒', eur(cur.panier), 'Panier moyen', prev ? deltaPct(cur.panier, prev.panier) : null) +
+        kpiEvo('🍺', part('CHR') + ' %', 'Part CHR', null) +
+        kpiEvo('🏬', part('GMS') + ' %', 'Part GMS', null);
+    }
+
+    // ---- Section Canaux ----
+    let chCanalDonut = null, chCanalMois = null, chTournees = null;
+    function renderCanaux() {
+      const { d1, d2 } = bornesPeriode();
+      const ls = cmdsEntre(d1, d2, false);
+      const agr = agrCmds(ls);
+      const canaux = CANAUX.filter(c => (agr.parCanal[c] ?? 0) > 0);
+
+      chCanalDonut?.destroy();
+      chCanalDonut = new Chart(document.getElementById('ch-canal-donut'), {
+        type: 'doughnut',
+        data: { labels: canaux, datasets: [{ data: canaux.map(c => Math.round(agr.parCanal[c])), backgroundColor: canaux.map(c => COUL_CANAL[c]) }] },
+        options: { maintainAspectRatio: false, plugins: { tooltip: { callbacks: { label: c => ' ' + c.label + ' : ' + eur(c.parsed) + (agr.ca ? ' (' + Math.round(c.parsed / agr.ca * 1000) / 10 + ' %)' : '') } } } },
+      });
+
+      // Évolution mensuelle par canal (12 derniers mois, indépendante de la période)
+      const mois = (D.stats.caParMois ?? []).map(x => x.mois).slice(-12);
+      const parCanalMois = {};
+      for (const c of (D.stats.commandes ?? [])) {
+        const m = new Date(c.t).toISOString().slice(0, 7);
+        if (!mois.includes(m)) continue;
+        const k = canalOf(c);
+        (parCanalMois[k] ??= {})[m] = (parCanalMois[k][m] ?? 0) + c.ht;
+      }
+      const canauxActifs = CANAUX.filter(c => parCanalMois[c]);
+      chCanalMois?.destroy();
+      chCanalMois = new Chart(document.getElementById('ch-canal-mois'), {
+        type: 'line',
+        data: {
+          labels: mois.map(m => m.slice(2).split('-').reverse().join('/')),
+          datasets: canauxActifs.map(c => ({
+            label: c, data: mois.map(m => Math.round(parCanalMois[c][m] ?? 0)),
+            borderColor: COUL_CANAL[c], backgroundColor: COUL_CANAL[c], tension: 0.3, pointRadius: 2,
+          })),
+        },
+        options: { maintainAspectRatio: false, scales: { y: { ticks: { callback: v => eur(v) } } } },
+      });
+
+      // Tableau performance par canal
+      const lignes = CANAUX.map(canal => {
+        const sous = ls.filter(c => canalOf(c) === canal);
+        if (!sous.length) return null;
+        const a = agrCmds(sous);
+        return `<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${COUL_CANAL[canal]};margin-right:6px"></span>${canal}</td>
+          <td>${eur(a.ca)}</td><td>${agr.ca ? Math.round(a.ca / agr.ca * 1000) / 10 : 0} %</td>
+          <td>${a.nb}</td><td>${a.clients}</td><td>${eur(a.panier)}</td>
+          <td>${a.clients ? Math.round(a.nb / a.clients * 10) / 10 : '—'}</td></tr>`;
+      }).filter(Boolean);
+      document.getElementById('tbody-canaux').innerHTML = lignes.join('') ||
+        '<tr><td colspan="7" style="color:var(--muted)">Aucune commande sur la période.</td></tr>';
+
+      // Croisement produit × canal (livraisons enrichies)
+      const prodCanal = new Map();
+      const canauxLivr = new Set();
+      for (const l of D.livraisons) {
+        const k = canalOf({ id: l.client.id, canal: l.canal });
+        canauxLivr.add(k);
+        for (const p of l.produits) {
+          if (!prodCanal.has(p.libelle)) prodCanal.set(p.libelle, { total: 0 });
+          const e = prodCanal.get(p.libelle);
+          e[k] = (e[k] ?? 0) + p.quantite; e.total += p.quantite;
+        }
+      }
+      const colsCanal = CANAUX.filter(c => canauxLivr.has(c));
+      const topProds = [...prodCanal.entries()].sort((a, b) => b[1].total - a[1].total).slice(0, 12);
+      const tbl = document.getElementById('tbl-prod-canal');
+      tbl.querySelector('thead').innerHTML = '<tr><th>Produit</th>' + colsCanal.map(c => `<th>${c}</th>`).join('') + '<th>Total</th></tr>';
+      tbl.querySelector('tbody').innerHTML = topProds.map(([lib, e]) => {
+        const max = Math.max(...colsCanal.map(c => e[c] ?? 0), 1);
+        return `<tr><td>${lib}</td>` + colsCanal.map(c => {
+          const v = e[c] ?? 0;
+          return `<td style="${v === max && v > 0 ? 'font-weight:700;color:var(--dark)' : v === 0 ? 'color:var(--muted)' : ''}">${v || '—'}</td>`;
+        }).join('') + `<td><strong>${e.total}</strong></td></tr>`;
+      }).join('') || '<tr><td style="color:var(--muted)">Aucune livraison enrichie.</td></tr>';
+    }
+
+    // ---- Équilibre des tournées ----
+    function renderTournesChart() {
+      const ts = D.tournees ?? [];
+      chTournees?.destroy();
+      if (!ts.length) return;
+      chTournees = new Chart(document.getElementById('ch-tournees'), {
+        data: {
+          labels: ts.map((t, i) => new Date(t.jour).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · T' + (ts.filter(x => x.jour === t.jour).indexOf(t) + 1)),
+          datasets: [
+            { type: 'bar', label: 'CA HT', data: ts.map(t => t.caHT ?? 0), backgroundColor: '#e8a020', yAxisID: 'y' },
+            { type: 'bar', label: 'Litres', data: ts.map(t => t.litres), backgroundColor: '#2980b9', yAxisID: 'y2' },
+            { type: 'line', label: 'Arrêts', data: ts.map(t => t.nbLivraisons), borderColor: '#1a1a2e', pointRadius: 3, yAxisID: 'y3' },
+          ],
+        },
+        options: {
+          maintainAspectRatio: false,
+          scales: {
+            y: { position: 'left', ticks: { callback: v => eur(v) } },
+            y2: { position: 'right', grid: { drawOnChartArea: false } },
+            y3: { display: false },
+          },
+        },
+      });
+    }
+
+    // ---- Filtres période / comparaison / canal ----
+    let filtresInit = false;
+    function initFiltresStats() {
+      if (filtresInit) return; filtresInit = true;
+      document.getElementById('filtres-periode').addEventListener('click', e => {
+        const b = e.target.closest('button'); if (!b) return;
+        if (b.dataset.mode) {
+          per.mode = b.dataset.mode;
+          document.querySelectorAll('#filtres-periode button[data-mode]').forEach(x => x.classList.remove('actif'));
+          b.classList.add('actif');
+        } else if (b.dataset.cmp) {
+          per.cmp = b.dataset.cmp;
+          document.querySelectorAll('#filtres-periode .cmp-btn').forEach(x => x.classList.remove('actif'));
+          b.classList.add('actif');
+        }
+        renderKPIStats(); renderCanaux();
+      });
+      ['per-d1', 'per-d2'].forEach(id => document.getElementById(id).addEventListener('change', () => {
+        per.mode = 'perso';
+        document.querySelectorAll('#filtres-periode button[data-mode]').forEach(x => x.classList.remove('actif'));
+        renderKPIStats(); renderCanaux();
+      }));
+      // Chips canal + compteur de non catégorisés
+      const fc = document.getElementById('filtres-canal');
+      const nonCat = (D.stats.clients ?? []).filter(c => canalOf(c) === 'Non catégorisé').length;
+      fc.innerHTML = '<button data-c="tous" class="actif">Tous canaux</button>' +
+        CANAUX.map(c => `<button data-c="${c}">${c}</button>`).join('') +
+        (nonCat ? `<span style="font-size:0.75rem;color:#c0392b">⚠️ ${nonCat} client(s) non catégorisé(s) — corrigez le canal dans le tableau ci-dessous</span>` : '');
+      fc.addEventListener('click', e => {
+        const b = e.target.closest('button[data-c]'); if (!b) return;
+        fc.querySelectorAll('button').forEach(x => x.classList.remove('actif'));
+        b.classList.add('actif');
+        canalFiltre = b.dataset.c;
+        renderKPIStats(); renderCanaux(); renderClients();
+      });
     }
 
     // ---- Analyse clients ----
@@ -405,7 +704,8 @@
 
     // Recalcule le CA de chaque client sur la période choisie
     function clientsPeriode() {
-      const src = D.stats.clients ?? [];
+      let src = (D.stats.clients ?? []).map(c => ({ ...c, canal: canalOf(c) }));
+      if (canalFiltre !== 'tous') src = src.filter(c => c.canal === canalFiltre);
       if (periodeClients === 'tout') {
         return src.map(c => ({ ...c, ca: c.caHT })).filter(c => c.ca > 0 || c.nbCommandes);
       }
@@ -523,9 +823,12 @@
       const evo = e => e === null || e === undefined ? '—'
         : `<span style="color:${e >= 0 ? '#27ae60' : '#c0392b'}">${e >= 0 ? '▲ +' : '▼ '}${e} %</span>`;
 
+      const selCanal = c => `<select data-idc="${c.id ?? ''}" class="sel-canal" style="font-size:0.75rem;padding:2px 4px;border:1px solid var(--border);border-radius:6px;background:${canalOvr[c.id] ? '#fff7ec' : 'transparent'}">` +
+        CANAUX.map(x => `<option${x === c.canal ? ' selected' : ''}>${x}</option>`).join('') + '</select>';
       document.getElementById('tbody-clients').innerHTML = liste.map(c => `
         <tr>
           <td>${c.nom}</td>
+          <td>${c.id ? selCanal(c) : (c.canal ?? '—')}</td>
           <td>${eur(c.ca)}</td>
           <td>${totalP ? (Math.round(c.ca / totalP * 1000) / 10) : 0} %</td>
           <td>${c.nbCommandes}</td>
@@ -535,7 +838,7 @@
           <td>${evo(c.evolution)}</td>
           <td>${badge(c.statut)}</td>
           <td>${c.id ? `<a href="/?client=${c.id}" style="color:var(--amber);white-space:nowrap">Commander →</a>` : ''}</td>
-        </tr>`).join('') || '<tr><td colspan="10" style="color:var(--muted)">Aucun client ne correspond.</td></tr>';
+        </tr>`).join('') || '<tr><td colspan="11" style="color:var(--muted)">Aucun client ne correspond.</td></tr>';
 
       document.getElementById('clients-resume').textContent =
         `${liste.length} client(s) affiché(s) · ${eur(liste.reduce((a, c) => a + c.ca, 0))} de CA HT` +
@@ -556,6 +859,11 @@
       renderTableClients();
     }));
     document.getElementById('rech-client').addEventListener('input', renderTableClients);
+    // Réassignation manuelle du canal (mémorisée dans le navigateur, jamais écrasée automatiquement)
+    document.getElementById('tbody-clients').addEventListener('change', e => {
+      const sel = e.target.closest('.sel-canal'); if (!sel || !sel.dataset.idc) return;
+      setCanalOvr(sel.dataset.idc, sel.value);
+    });
     document.querySelectorAll('#tbl-clients thead th[data-tri]').forEach(th => th.addEventListener('click', () => {
       const col = th.dataset.tri;
       triClients = { col, desc: triClients.col === col ? !triClients.desc : true };
