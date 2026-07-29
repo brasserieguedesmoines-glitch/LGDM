@@ -51,6 +51,9 @@
     .table-liste { width: 100%; border-collapse: collapse; font-size: 0.8rem; background: var(--card); border-radius: var(--radius); overflow: hidden; }
     .table-liste th, .table-liste td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; }
     .table-liste th { font-size: 0.7rem; text-transform: uppercase; color: var(--muted); }
+    .chart-wrap { position: relative; height: 260px; }
+    .chart-wrap.haut { height: 340px; }
+    .chart-wrap.bas { height: 180px; }
     #tbl-clients thead th[data-tri] { cursor: pointer; user-select: none; white-space: nowrap; }
     #tbl-clients thead th[data-tri]:hover { color: var(--dark); }
     #tbl-clients thead th { position: sticky; top: 0; background: var(--card); z-index: 1; }
@@ -148,8 +151,8 @@
       <!-- Canaux de vente -->
       <h2 class="section">🏪 Canaux de vente</h2>
       <div class="charts-grid">
-        <div class="chart-box"><h3>Répartition du CA par canal (période)</h3><canvas id="ch-canal-donut" height="260"></canvas></div>
-        <div class="chart-box"><h3>Évolution mensuelle du CA par canal (12 mois)</h3><canvas id="ch-canal-mois" height="260"></canvas></div>
+        <div class="chart-box"><h3>Répartition du CA par canal (période)</h3><div class="chart-wrap"><canvas id="ch-canal-donut"></canvas></div></div>
+        <div class="chart-box"><h3>Évolution mensuelle du CA par canal (12 mois)</h3><div class="chart-wrap"><canvas id="ch-canal-mois"></canvas></div></div>
       </div>
       <div class="chart-box">
         <h3>Performance par canal (période)</h3>
@@ -167,7 +170,7 @@
 
       <!-- Tournées -->
       <h2 class="section">🚚 Équilibre des tournées (livraisons à venir)</h2>
-      <div class="chart-box"><canvas id="ch-tournees" height="110"></canvas></div>
+      <div class="chart-box"><div class="chart-wrap bas"><canvas id="ch-tournees"></canvas></div></div>
 
       <h2 class="section">📦 Activité</h2>
       <div class="charts-grid">
@@ -188,17 +191,17 @@
 
       <div class="chart-box">
         <h3>Évolution du CA HT par mois</h3>
-        <canvas id="ch-ca-mois" height="90"></canvas>
+        <div class="chart-wrap bas"><canvas id="ch-ca-mois"></canvas></div>
       </div>
 
       <div class="charts-grid">
         <div class="chart-box">
           <h3>Top 15 clients (CA HT cumulé)</h3>
-          <canvas id="ch-clients" height="330"></canvas>
+          <div class="chart-wrap haut"><canvas id="ch-clients"></canvas></div>
         </div>
         <div class="chart-box">
           <h3>Concentration du CA (Pareto)</h3>
-          <canvas id="ch-pareto" height="330"></canvas>
+          <div class="chart-wrap haut"><canvas id="ch-pareto"></canvas></div>
           <p id="pareto-note" style="font-size:0.75rem;color:var(--muted);margin-top:8px"></p>
         </div>
       </div>
