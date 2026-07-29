@@ -1386,7 +1386,7 @@ async function construirePilotageInterne(req) {
 
   const clientsStats = [...fiches.values()].map(f => {
     const ca12 = f.ca12 ?? 0, ca12Prec = f.ca12Prec ?? 0;
-    const joursDepuis = f.derniere ? Math.floor((debutAujourdhui - f.derniere) / JOUR) : null;
+    const joursDepuis = f.derniere ? Math.max(0, Math.floor((debutAujourdhui - f.derniere) / JOUR)) : null;
     // Fréquence : intervalle moyen entre deux commandes
     let frequenceJours = null;
     if (f.nbCommandes >= 2 && f.premiere && f.derniere && f.derniere > f.premiere) {
