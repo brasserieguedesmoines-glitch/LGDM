@@ -925,7 +925,9 @@ const FILTRE_COMMANDES = {
   etats: [], etatsPaiement: [], typesPaiement: [], typesLivraison: [],
   idsClientsTypes: [], idsClientsTournees: [], idsCommerciaux: [],
   idsContenants: [], idsPointsRetrait: [], idsProduits: [],
-  contientSaisieLibre: false, inclureArchive: false,
+  // inclureArchive : sans lui les commandes archivées (anciennes, soldées)
+  // disparaissent des statistiques et le CA par client est sous-évalué
+  contientSaisieLibre: false, inclureArchive: true,
   locationFut: false, locationMateriel: false, sansLocationMateriel: false,
   recherche: '', relancePaiement: false, retardPaiement: false,
   resteAPayer: null, total: null,
