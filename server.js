@@ -23,12 +23,19 @@ function easybeerHeaders() {
   };
 }
 
+// Disjoncteur : après un ban EasyBeer (5 min), on cesse tout appel pendant 6 min.
+// Sans lui, chaque nouvelle tentative pendant le ban le prolongeait indéfiniment.
+let banniJusqua = 0;
+function erreurBan() {
+  return Object.assign(
+    new Error('API EasyBeer temporairement saturée. Réessayez dans 5 minutes.'),
+    { status: 503 }
+  );
+}
 function erreurEasyBeer(status, text) {
   if (String(text).includes('banned') || String(text).includes('requests per second')) {
-    return Object.assign(
-      new Error('API EasyBeer temporairement saturée. Réessayez dans 5 minutes.'),
-      { status: 503, detail: text }
-    );
+    banniJusqua = Date.now() + 6 * 60 * 1000;
+    return Object.assign(erreurBan(), { detail: text });
   }
   return Object.assign(new Error(`EasyBeer ${status}`), { status, detail: text });
 }
@@ -44,6 +51,7 @@ function throttle() {
 }
 
 async function easybeerGet(path) {
+  if (Date.now() < banniJusqua) throw erreurBan();
   await throttle();
   const res = await fetch(`${BASE_URL}${path}`, { headers: easybeerHeaders() });
   if (!res.ok) {
@@ -54,6 +62,7 @@ async function easybeerGet(path) {
 }
 
 async function easybeerPost(path, body) {
+  if (Date.now() < banniJusqua) throw erreurBan();
   await throttle();
   const res = await fetch(`${BASE_URL}${path}`, {
     method: 'POST',
@@ -1133,10 +1142,15 @@ let pilotageCacheExpiry = 0;
 // Contenu des commandes (change rarement) : cache 1h par idCommande
 const detailCommandeCache = new Map();
 
+let pilotageEnCours = null;
 async function construirePilotage(req) {
   if (pilotageCache && Date.now() < pilotageCacheExpiry) return pilotageCache;
+  // Mutex : les requêtes simultanées partagent la même construction
+  if (!pilotageEnCours) {
+    pilotageEnCours = construirePilotageInterne(req).finally(() => { pilotageEnCours = null; });
+  }
   try {
-    return await construirePilotageInterne(req);
+    return await pilotageEnCours;
   } catch (err) {
     console.error('pilotage:', err.message);
     if (pilotageCache) return pilotageCache;
