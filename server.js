@@ -40,12 +40,12 @@ function erreurEasyBeer(status, text) {
   return Object.assign(new Error(`EasyBeer ${status}`), { status, detail: text });
 }
 
-// File d'attente globale : espace toutes les requêtes EasyBeer d'au moins 400 ms.
-// Limite EasyBeer : 10 req/s (ban de 5 min). La file est par instance serverless :
-// plusieurs instances peuvent tourner en parallèle, 400 ms laisse la marge nécessaire.
+// File d'attente globale : espace les requêtes EasyBeer de 1,2 s. Testé en réel :
+// EasyBeer banni même à ~2,5 req/s soutenus — sa limite effective est ~50 appels/min.
+// Ne pas descendre sous 1,2 s ; la vitesse perçue vient du cache CDN, pas d'ici.
 let dernierAppel = Promise.resolve();
 function throttle() {
-  const attente = dernierAppel.then(() => new Promise(r => setTimeout(r, 400)));
+  const attente = dernierAppel.then(() => new Promise(r => setTimeout(r, 1200)));
   dernierAppel = attente;
   return attente;
 }
@@ -1238,7 +1238,7 @@ async function construirePilotageInterne(req) {
           detailCommandeCache.set(c.idCommande, volInfo);
         } catch (e) {
           if (erreursDetail.length < 5) erreursDetail.push({ idCommande: c.idCommande, essai, message: e.message?.slice(0, 200) });
-          if (essai === 0) await new Promise(r => setTimeout(r, 5000));
+          if (essai === 0) await new Promise(r => setTimeout(r, 1500));
         }
       }
     }
@@ -1533,8 +1533,8 @@ app.get('/api/pilotage', async (req, res) => {
     const data = await construirePilotage(req);
     // Cache CDN court si des données sont incomplètes, pour retenter rapidement
     res.set('Cache-Control', data.incomplet
-      ? 'public, s-maxage=180, stale-while-revalidate=3600'
-      : 'public, s-maxage=1800, stale-while-revalidate=86400');
+      ? 'public, s-maxage=300, stale-while-revalidate=3600'
+      : 'public, s-maxage=3600, stale-while-revalidate=604800');
     res.json(data);
   } catch (err) {
     console.error('GET /api/pilotage', err.message);
