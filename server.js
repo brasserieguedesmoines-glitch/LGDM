@@ -33,7 +33,7 @@ function erreurBan() {
   );
 }
 function erreurEasyBeer(status, text) {
-  if (String(text).includes('banned') || String(text).includes('requests per second')) {
+  if (status === 429 || String(text).includes('banned') || String(text).includes('requests per second')) {
     banniJusqua = Date.now() + 6 * 60 * 1000;
     return Object.assign(erreurBan(), { detail: text });
   }
