@@ -1788,6 +1788,31 @@ app.post('/api/commande', async (req, res) => {
   }
 });
 
+// --- Debug : états de commande possibles (Swagger + valeurs réellement utilisées) ---
+app.get('/api/debug-etats', async (req, res) => {
+  const out = {};
+  try {
+    const sw = await easybeerGet('/v2/api-docs');
+    const defs = sw.definitions ?? {};
+    out.definitions = Object.fromEntries(
+      Object.entries(defs).filter(([n]) => /etat/i.test(n)).map(([n, d]) => [n, d.properties ?? d])
+    );
+    out.champEtatCommande = defs.ModeleCommande?.properties?.etat ?? null;
+  } catch (e) { out.swaggerError = e.message; }
+  try {
+    const toutes = await fetchCommandesEtat('toutes');
+    const vus = new Map();
+    for (const c of toutes) {
+      if (!c.etat) continue;
+      const k = JSON.stringify(c.etat);
+      vus.set(k, (vus.get(k) ?? 0) + 1);
+    }
+    out.etatsUtilises = [...vus].map(([etat, n]) => ({ etat: JSON.parse(etat), nb: n }))
+      .sort((a, b) => b.nb - a.nb);
+  } catch (e) { out.listeError = e.message; }
+  res.json(out);
+});
+
 // --- Export PDF récapitulatif des commandes ---
 app.get('/api/commandes-pdf', (req, res) => {
   const doc = new PDFDocument({ margin: 40, size: 'A4' });
