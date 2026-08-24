@@ -1480,9 +1480,12 @@ async function construirePilotageInterne(req) {
   // Budget de temps : la fonction Vercel est coupée à 300 s. On s'arrête avant
   // pour renvoyer un tableau de bord exploitable plutôt qu'une erreur. Ce qui
   // n'a pas été chargé le sera à la visite suivante (le cache CDN se remplit).
+  // Échéance unique partagée par toutes les phases : la limite Vercel est de
+  // 300 s, et des budgets séparés par phase s'additionnaient jusqu'à la dépasser.
   const t0 = Date.now();
-  const BUDGET_MS = 190 * 1000;
-  const tempsEcoule = () => Date.now() - t0 > BUDGET_MS;
+  const BUDGET_MS = 210 * 1000;
+  const resteMs = () => Math.max(0, BUDGET_MS - (Date.now() - t0));
+  const tempsEcoule = () => resteMs() === 0;
   let budgetAtteint = false;
 
   const JOUR = 24 * 60 * 60 * 1000;
@@ -1507,7 +1510,10 @@ async function construirePilotageInterne(req) {
 
   // Toutes les commandes (pros uniquement, les particuliers sont exclus)
   // En cas d'échec on lève l'erreur : le cache périmé sera servi à la place
-  const toutes = await chargerCommandes(req);
+  // La récupération des commandes ne peut consommer plus que les deux tiers du
+  // budget : il faut garder de quoi charger le contenu des livraisons.
+  const toutes = await chargerCommandes(req, Math.min(resteMs(), BUDGET_MS * 0.65));
+  if (Date.now() - t0 > BUDGET_MS * 0.65) budgetAtteint = true;
   // Sans cette garde, un échec de récupération produit un tableau de bord vide
   // qui serait mis en cache une heure et servi comme un résultat valide.
   if (!toutes.length) {
