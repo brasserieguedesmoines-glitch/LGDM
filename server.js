@@ -1727,6 +1727,9 @@ async function construirePayloadCommande(req, body, natureOperations) {
       // Note visible sur le bon de livraison (indications pour le livreur)
       informationLivraison: commentaire ?? '',
       commentaireClient: commentaire ?? '',
+      // Les commandes saisies ici partent directement en préparation :
+      // sans état explicite, EasyBeer les classe « En attente de stock »
+      etat: { code: 'PRETE', libelle: 'Prête pour livraison' },
       // Livraison par nos soins, le vendredi de la semaine en cours
       typeLivraison: { code: 'SELF', libelle: 'Livraison par nos soins' },
       dateLivraisonPrevue: prochainVendredi(),
@@ -1785,6 +1788,34 @@ app.post('/api/commande', async (req, res) => {
   } catch (err) {
     console.error('POST /api/commande', err.message, err.detail);
     res.status(err.status ?? 502).json({ error: err.message, detail: err.detail, payloadEnvoye: payload });
+  }
+});
+
+// --- Debug : cree une commande test et renvoie l'etat obtenu ---
+app.get('/api/debug-etat-commande/:idClient', async (req, res) => {
+  try {
+    const idClient = parseInt(req.params.idClient);
+    const clients = await fetchInterne(req, '/api/clients');
+    const idClientType = clients.find(c => c.id === idClient)?.idClientType ?? null;
+    const produits = await fetchInterne(req, `/api/tarifs/${idClient}`);
+    const p = produits[0];
+    if (!p) return res.json({ error: 'aucun produit' });
+    const payload = await construirePayloadCommande(req, {
+      idClient, idClientType,
+      lignes: [{ idProduit: p.idProduit, idContenant: p.idContenant, idLot: p.idLot ?? 1, idStockBouteille: p.idStockBouteille, quantite: 1 }],
+      commentaire: 'TEST ETAT — a supprimer',
+    });
+    const result = await easybeerPost('/commande/enregistrer', payload);
+    const num = result.map?.numero ?? null;
+    // Relit la commande pour connaitre l'etat reellement enregistre
+    let etat = null;
+    try {
+      const detail = await easybeerGet(`/commande/detail/${result.map?.id}`);
+      etat = detail?.etat ?? null;
+    } catch (e) { etat = { erreur: e.message }; }
+    res.json({ numero: num, etatEnvoye: payload.etat, etatEnregistre: etat });
+  } catch (err) {
+    res.status(500).json({ error: err.message, detail: err.detail });
   }
 });
 
