@@ -1508,6 +1508,11 @@ async function construirePilotageInterne(req) {
   // Toutes les commandes (pros uniquement, les particuliers sont exclus)
   // En cas d'échec on lève l'erreur : le cache périmé sera servi à la place
   const toutes = await chargerCommandes(req);
+  // Sans cette garde, un échec de récupération produit un tableau de bord vide
+  // qui serait mis en cache une heure et servi comme un résultat valide.
+  if (!toutes.length) {
+    throw Object.assign(new Error('Aucune commande récupérée depuis EasyBeer'), { status: 503 });
+  }
   const typesParticuliers = await getIdsTypesParticuliers();
   const valides = toutes.filter(c =>
     !c.estDevis && !c.estAnnulee &&
@@ -2027,6 +2032,9 @@ async function construirePilotageInterne(req) {
   const topProduits = [...qteParProduit.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8)
     .map(([libelle, qte]) => ({ libelle, qte }));
 
+  if (!livraisons.length && !valides.length) {
+    throw Object.assign(new Error('Analyse vide — données EasyBeer indisponibles'), { status: 503 });
+  }
   pilotageCache = {
     genere: new Date().toISOString(),
     incomplet: echecsDetail > 0 || budgetAtteint,
