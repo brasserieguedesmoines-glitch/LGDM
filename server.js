@@ -1872,8 +1872,12 @@ async function construirePayloadCommande(req, body, natureOperations) {
       // Note visible sur le bon de livraison (indications pour le livreur)
       informationLivraison: commentaire ?? '',
       commentaireClient: commentaire ?? '',
-      // « Prête pour livraison » : EasyBeer déduit l'état de la préparation
-      // (elementsPrepares + validation), le champ etat seul est ignoré.
+      // Tentative de forcer « Prête pour livraison ». Vérifié en conditions réelles :
+      // /commande/enregistrer ignore ces trois champs et recalcule l'état lui-même
+      // (EN_COURS, ou EN_ATTENTE_STOCK si le stock est insuffisant). L'état PRETE
+      // n'est atteint que par le circuit de préparation d'EasyBeer, qui horodate un
+      // preparateur — non exposé à l'API. Champs conservés : sans effet aujourd'hui,
+      // ils prendront effet si EasyBeer ouvre ce droit au compte API.
       etat: { code: 'PRETE', libelle: 'Prête pour livraison' },
       elementsPrepares: true,
       dateValidation: Date.now(),
