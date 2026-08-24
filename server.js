@@ -932,8 +932,15 @@ app.get('/api/cache/detail/:idCommande', async (req, res) => {
       quantite: e.quantite ?? 0,
       libelle: libelleCourt(e.stockProduit?.libelle ?? e.designation ?? ''),
     }));
+    // Adresse de livraison propre à CETTE commande : la seule fiable. L'adresse
+    // du client est son siège social (Auchan Launaguet pointe sur Lille).
+    const a = det?.adresseLivraison ?? null;
+    const adresseLivraison = a && (a.latitude ?? a.longitude) ? {
+      lat: a.latitude ?? null, lng: a.longitude ?? null,
+      complete: a.complete ?? [a.rue, a.codePostal, a.ville].filter(Boolean).join(', '),
+    } : null;
     res.set('Cache-Control', 'public, s-maxage=21600, stale-while-revalidate=86400');
-    res.json({ elements });
+    res.json({ elements, adresseLivraison });
   } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
 });
 
@@ -942,11 +949,16 @@ app.get('/api/cache/client-infos/:idClient', async (req, res) => {
   try {
     const d = await easybeerGet(`/parametres/client/detail/${req.params.idClient}`);
     const contact = (d?.contacts ?? [])[0];
+    // Une adresse de livraison d'abord ; l'adresse principale est le siège social
+    // et peut se trouver à l'autre bout de la France pour les enseignes nationales.
+    const liv = (d?.listeAdresseLivraison ?? []).find(a => a?.latitude && a?.longitude);
+    const src = liv ?? d?.adresse ?? {};
     res.set('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800');
     res.json({
-      lat: d?.adresse?.latitude ?? null,
-      lng: d?.adresse?.longitude ?? null,
-      adresse: d?.adresse?.complete ?? '',
+      lat: src.latitude ?? null,
+      lng: src.longitude ?? null,
+      adresse: src.complete ?? '',
+      estAdresseLivraison: !!liv,
       contact: contact ? [contact.nom, contact.telephone ?? contact.portable, contact.email].filter(Boolean).join(' — ') : '',
     });
   } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
@@ -1219,6 +1231,7 @@ const ROUTE = {
   minutesChargement: 30,  // chargement du camion au dépôt
   maxArrets: 14,          // au-delà, la journée est scindée en plusieurs tournées
   maxDureeMin: 420,       // 7 h de tournée maximum, sinon on scinde davantage
+  rayonMaxKm: parseFloat(process.env.RAYON_MAX_KM ?? '150'), // au-delà : adresse suspecte
   heureDepart: process.env.HEURE_DEPART ?? '06:00',
 };
 
@@ -1357,7 +1370,7 @@ async function construirePilotageInterne(req) {
     if (!volInfo) {
       for (let essai = 0; essai < 2 && !volInfo; essai++) {
         try {
-          const { elements } = await fetchInterne(req, `/api/cache/detail/${c.idCommande}`);
+          const { elements, adresseLivraison } = await fetchInterne(req, `/api/cache/detail/${c.idCommande}?v=2`);
           const produits = [];
           let litres = 0, b33 = 0, b75 = 0, futs = 0, bouteilles = 0;
           for (const e of elements) {
@@ -1372,7 +1385,7 @@ async function construirePilotageInterne(req) {
             }
             produits.push({ libelle: e.libelle, quantite: q, contenance: cont.contenance, estFut: cont.estFut });
           }
-          volInfo = { produits, litres, b33, b75, futs, bouteilles };
+          volInfo = { produits, litres, b33, b75, futs, bouteilles, adresseLivraison };
           detailCommandeCache.set(c.idCommande, volInfo);
         } catch (e) {
           if (erreursDetail.length < 5) erreursDetail.push({ idCommande: c.idCommande, essai, message: e.message?.slice(0, 200) });
@@ -1386,13 +1399,33 @@ async function construirePilotageInterne(req) {
 
   // Passe 2 : coordonnées et contact des clients — via le cache CDN
   // (uniquement livraisons futures, la carte n'affiche pas le passé)
+  const adressesHorsZone = [];
   for (const c of selection) {
     const idClient = c.client?.idClient;
-    const { produits, litres, b33, b75, futs, bouteilles } = volumesParCommande.get(c.idCommande);
+    const { produits, litres, b33, b75, futs, bouteilles, adresseLivraison } = volumesParCommande.get(c.idCommande);
     const future = !c.dateLivraisonPrevue || c.dateLivraisonPrevue >= debutAujourdhui;
     let infos = {};
-    if (idClient && future) {
+    // L'adresse portée par la commande fait foi ; on n'interroge le client
+    // que si elle manque (repli sur ses adresses de livraison enregistrées).
+    if (adresseLivraison?.lat && adresseLivraison?.lng) {
+      infos = { lat: adresseLivraison.lat, lng: adresseLivraison.lng, adresse: adresseLivraison.complete };
+      if (idClient && future) {
+        try {
+          const ic = await fetchInterne(req, `/api/cache/client-infos/${idClient}`);
+          infos.contact = ic.contact;
+        } catch {}
+      }
+    } else if (idClient && future) {
       try { infos = await fetchInterne(req, `/api/cache/client-infos/${idClient}`); } catch {}
+    }
+    // Garde-fou : une adresse hors zone de livraison est presque toujours un
+    // siège social mal renseigné. On la retire des tournées et on le signale.
+    if (infos.lat && infos.lng) {
+      const dKm = haversineKm({ lat: infos.lat, lng: infos.lng }, DEPOT);
+      if (dKm > ROUTE.rayonMaxKm) {
+        adressesHorsZone.push({ numero: c.numero, nom: c.client?.nom ?? '', adresse: infos.adresse, km: Math.round(dKm) });
+        infos = { ...infos, lat: null, lng: null };
+      }
     }
     livraisons.push({
       idCommande: c.idCommande,
@@ -1545,6 +1578,13 @@ async function construirePilotageInterne(req) {
   }
   for (const l of livraisons) {
     if (!l.produits.length) alertes.push({ type: 'incomplete', message: `Commande n°${l.numero} (${l.client.nom}) sans produits détectés` });
+  }
+  for (const a of adressesHorsZone) {
+    alertes.push({
+      type: 'incomplete',
+      message: `Commande n°${a.numero} (${a.nom}) : adresse à ${a.km} km de la brasserie (${a.adresse})`
+             + ` — hors zone, exclue des tournées. Vérifiez l'adresse de livraison dans EasyBeer.`,
+    });
   }
   const litresParJour = [...parJour.entries()].map(([j, pts]) => ({ j, litres: pts.reduce((a, p) => a + p.litres, 0) }));
   const moyLitres = litresParJour.reduce((a, x) => a + x.litres, 0) / (litresParJour.length || 1);

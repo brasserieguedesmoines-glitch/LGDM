@@ -128,8 +128,8 @@
       .arrets th:nth-child(1), .arrets td:nth-child(1) { width: 4%; }
       .arrets th:nth-child(2), .arrets td:nth-child(2) { width: 4%; }
       .arrets th:nth-child(3), .arrets td:nth-child(3) { width: 7%; }
-      .arrets th:nth-child(4), .arrets td:nth-child(4) { width: 39%; }
-      .arrets th:nth-child(5), .arrets td:nth-child(5) { width: 36%; }
+      .arrets th:nth-child(4), .arrets td:nth-child(4) { width: 52%; }
+      .arrets th:nth-child(5), .arrets td:nth-child(5) { width: 23%; }
       .arrets th:nth-child(6), .arrets td:nth-child(6) { width: 10%; }
       .case-fait { display: table-cell !important; text-align: center; font-size: 13pt; }
     }</style>
@@ -447,9 +447,8 @@
             }),
           }).addTo(coucheTournees).bindPopup(
             `<strong>${a.ordre}. ${a.client}</strong><br>${t.nom} — arrivée ${a.heureArrivee}<br>` +
-            `${a.adresse || ''}<br>` +
-            (a.produits.map(p => `• ${p.libelle} × ${p.quantite}`).join('<br>') || '—') +
-            `<br>💧 ${a.litres} L` + (a.contact ? `<br>📞 ${a.contact}` : '')
+            `${a.adresse || ''}<br>${charge(a)}` +
+            (a.contact ? `<br>📞 ${a.contact}` : '')
           );
         });
       });
@@ -566,6 +565,14 @@
     // ---- Tournées ----
     const jourLong = j => new Date(j).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
     const hhmm = min => `${Math.floor(min / 60)} h ${String(Math.round(min % 60)).padStart(2, '0')}`;
+    // Volume à décharger, sans le détail des références : ce qu'il faut au chauffeur
+    function charge(a) {
+      const bits = [];
+      if (a.bouteilles) bits.push(`🍺 ${a.bouteilles} bouteilles`);
+      if (a.futs) bits.push(`🛢 ${a.futs} fût${a.futs > 1 ? 's' : ''}`);
+      if (a.litres) bits.push(`💧 ${Math.round(a.litres)} L`);
+      return bits.join(' · ') || '—';
+    }
     let jourTournees = 'tous';
 
     function renderTournees() {
@@ -614,7 +621,7 @@
           <table class="arrets">
             <thead><tr>
               <th class="case-fait">✓</th><th></th><th>Heure</th><th>Client</th>
-              <th>Contenu</th><th style="text-align:right">Distance</th>
+              <th>Charge</th><th style="text-align:right">Distance</th>
             </tr></thead>
             <tbody>
               <tr><td class="case-fait"></td><td colspan="5" class="depot-ligne">🏭 Départ ${t.depart.nom} à ${t.heureDepart}</td></tr>
@@ -628,7 +635,7 @@
                     <div class="adr">${a.adresse || '—'}${a.contact ? ' · 📞 ' + a.contact : ''}</div>
                     <div class="adr">Commande n°${a.numero} — ${a.etat || ''}</div>
                   </td>
-                  <td class="prod">${a.produits.map(p => `${p.quantite} × ${p.libelle}`).join('<br>') || '—'}</td>
+                  <td class="prod">${charge(a)}</td>
                   <td class="km">+${a.kmDepuisPrecedent} km<br>${a.kmCumules} km</td>
                 </tr>`).join('')}
               <tr><td class="case-fait"></td><td colspan="5" class="depot-ligne">🏭 Retour au dépôt vers ${t.heureRetour} (+${t.kmRetour} km)</td></tr>
