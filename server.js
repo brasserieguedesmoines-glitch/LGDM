@@ -1755,6 +1755,15 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
       groupes[g].push(p);
       cumul += poids[i];
     });
+    // Garantit n groupes non vides dès qu'il y a assez d'arrêts. Sans cela la
+    // fonction pouvait renvoyer moins de groupes que demandé, et l'appelant qui
+    // boucle « tant qu'il en manque » ne terminait jamais.
+    for (let k = 0; k < n; k++) {
+      if (groupes[k].length) continue;
+      const src = groupes.reduce((a, b) => (b.length > a.length ? b : a), groupes[0]);
+      if (src.length < 2) break;
+      groupes[k].push(src.pop());
+    }
     return groupes.filter(x => x.length);
   }
 
@@ -1783,7 +1792,9 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
       let iMax = 0, max = -1;
       fam.forEach((g, i) => { if (g.length > max) { max = g.length; iMax = i; } });
       if (fam[iMax].length < 2) break;
-      fam.splice(iMax, 1, ...decouperEnTournees(fam[iMax], 2));
+      const parts = decouperEnTournees(fam[iMax], 2);
+      if (parts.length < 2) break;   // impossible de scinder davantage : on s'arrête
+      fam.splice(iMax, 1, ...parts);
     }
     return fam.filter(g => g.length);
   }
