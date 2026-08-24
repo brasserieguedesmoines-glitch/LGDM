@@ -1046,7 +1046,7 @@ async function analyserClientsInterne(req) {
   const typesParticuliers = await getIdsTypesParticuliers();
   toutes = toutes.filter(c =>
     !c.estDevis && !c.estAnnulee &&
-    !estParticulierParNom(c.client?.nom) &&
+    !estCompteInterne(c.client?.nom) &&
     !typesParticuliers.has(clientTypeMap.get(c.client?.idClient))
   );
 
@@ -1190,8 +1190,11 @@ async function getIdsTypesParticuliers() {
   return idsTypesParticuliers;
 }
 
-function estParticulierParNom(nom) {
-  return (nom ?? '').toLowerCase().includes('particulier');
+// Comptes non commerciaux exclus des analyses (relances et pilotage) :
+// clients particuliers et comptes salariés « EMPLOYE NOM PRENOM »
+function estCompteInterne(nom) {
+  const n = (nom ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  return n.includes('particulier') || /^employe\b/.test(n);
 }
 
 function haversineKm(a, b) {
@@ -1250,7 +1253,7 @@ async function construirePilotageInterne(req) {
   const typesParticuliers = await getIdsTypesParticuliers();
   const valides = toutes.filter(c =>
     !c.estDevis && !c.estAnnulee &&
-    !estParticulierParNom(c.client?.nom) &&
+    !estCompteInterne(c.client?.nom) &&
     !typesParticuliers.has(clientTypeMap.get(c.client?.idClient))
   );
 
