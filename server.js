@@ -1819,6 +1819,36 @@ app.get('/api/debug-etat-commande/:idClient', async (req, res) => {
   }
 });
 
+// --- Debug : compare une commande PRETE existante avec la notre ---
+app.get('/api/debug-compare/:numA/:numB', async (req, res) => {
+  try {
+    const toutes = await fetchCommandesEtat('toutes');
+    const trouve = n => toutes.find(c => String(c.numero) === String(n));
+    const a = trouve(req.params.numA), b = trouve(req.params.numB);
+    if (!a || !b) return res.json({ error: 'commande introuvable', a: !!a, b: !!b });
+    const da = await easybeerGet(`/commande/detail/${a.idCommande}`);
+    const db = await easybeerGet(`/commande/detail/${b.idCommande}`);
+    // Champs de haut niveau qui different
+    const diffs = {};
+    const cles = new Set([...Object.keys(da), ...Object.keys(db)]);
+    for (const k of cles) {
+      if (/^elements|^historiques|^documents|^palettisation|^relances|^expeditions/.test(k)) continue;
+      const va = JSON.stringify(da[k]), vb = JSON.stringify(db[k]);
+      if (va !== vb) diffs[k] = { [`n${req.params.numA}`]: da[k], [`n${req.params.numB}`]: db[k] };
+    }
+    const resume = d => ({
+      etat: d.etat?.code, estPrete: d.estPrete, estEnCours: d.estEnCours,
+      estValidee: d.estValidee, estEnPreparation: d.estEnPreparation,
+      estEnAttenteStock: d.estEnAttenteStock, elementsPrepares: d.elementsPrepares,
+      preparateur: d.preparateur, dateValidation: d.dateValidation,
+      elemB: (d.elementsBouteilles ?? []).slice(0, 1),
+    });
+    res.json({ resumeA: resume(da), resumeB: resume(db), diffs });
+  } catch (err) {
+    res.status(500).json({ error: err.message, detail: err.detail });
+  }
+});
+
 // --- Debug : états de commande possibles (Swagger + valeurs réellement utilisées) ---
 app.get('/api/debug-etats', async (req, res) => {
   const out = {};
