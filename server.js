@@ -1516,14 +1516,22 @@ async function construirePilotage(req) {
   }
 }
 
-async function construirePilotageInterne(req) {
+async function construirePilotageInterne(req, optionsPilotage = {}) {
   // Budget de temps : la fonction Vercel est coupée à 300 s. On s'arrête avant
   // pour renvoyer un tableau de bord exploitable plutôt qu'une erreur. Ce qui
   // n'a pas été chargé le sera à la visite suivante (le cache CDN se remplit).
   // Échéance unique partagée par toutes les phases : la limite Vercel est de
   // 300 s, et des budgets séparés par phase s'additionnaient jusqu'à la dépasser.
   const t0 = Date.now();
-  const BUDGET_MS = 210 * 1000;
+  const BUDGET_MS = optionsPilotage.budgetMs ?? 210 * 1000;
+  // Chronométrage des phases, renvoyé dans la réponse pour diagnostiquer
+  // facilement quelle étape consomme le temps.
+  const chrono = [];
+  const mesurer = async (nom, fn) => {
+    const t = Date.now();
+    try { return await fn(); }
+    finally { chrono.push({ nom, ms: Date.now() - t }); }
+  };
   const resteMs = () => Math.max(0, BUDGET_MS - (Date.now() - t0));
   const tempsEcoule = () => resteMs() === 0;
   let budgetAtteint = false;
@@ -1552,7 +1560,7 @@ async function construirePilotageInterne(req) {
   // En cas d'échec on lève l'erreur : le cache périmé sera servi à la place
   // La récupération des commandes ne peut consommer plus que les deux tiers du
   // budget : il faut garder de quoi charger le contenu des livraisons.
-  const toutes = await chargerCommandes(req, Math.min(resteMs(), BUDGET_MS * 0.65));
+  const toutes = await mesurer('chargerCommandes', () => chargerCommandes(req, Math.min(resteMs(), BUDGET_MS * 0.65)));
   if (Date.now() - t0 > BUDGET_MS * 0.65) budgetAtteint = true;
   // Sans cette garde, un échec de récupération produit un tableau de bord vide
   // qui serait mis en cache une heure et servi comme un résultat valide.
@@ -1594,11 +1602,11 @@ async function construirePilotageInterne(req) {
   // exploser le budget. Concurrence modérée pour ne pas saturer EasyBeer quand
   // certaines entrées sont encore froides.
   const aCharger = selection.filter(c => !detailCommandeCache.has(c.idCommande));
-  const bruts = tempsEcoule() ? [] : await enParallele(aCharger, 6, async (c) => {
+  const bruts = tempsEcoule() ? [] : await mesurer(`details x${aCharger.length}`, () => enParallele(aCharger, 6, async (c) => {
     if (tempsEcoule()) return { erreur: new Error('budget') };
     try { return { c, data: await fetchInterne(req, `/api/cache/detail/${c.idCommande}?v=2`) }; }
     catch (e) { return { c, erreur: e }; }
-  });
+  }));
   const detailsRecus = new Map();
   for (const r of bruts) {
     if (r?.c && r.data) detailsRecus.set(r.c.idCommande, r.data);
@@ -1645,11 +1653,11 @@ async function construirePilotageInterne(req) {
     const besoin = [...new Set(selection
       .filter(c => c.client?.idClient && (!c.dateLivraisonPrevue || c.dateLivraisonPrevue >= debutAujourdhui))
       .map(c => c.client.idClient))];
-    const recus = tempsEcoule() ? [] : await enParallele(besoin, 6, async (id) => {
+    const recus = tempsEcoule() ? [] : await mesurer(`client-infos x${besoin.length}`, () => enParallele(besoin, 6, async (id) => {
       if (tempsEcoule()) return null;
       try { return { id, data: await fetchInterne(req, `/api/cache/client-infos/${id}`) }; }
       catch { return null; }
-    });
+    }));
     for (const r of recus) if (r?.data) infosClients.set(r.id, r.data);
     if (recus.some(r => !r)) budgetAtteint = true;
   }
@@ -1709,6 +1717,7 @@ async function construirePilotageInterne(req) {
 
   // Tournées : une journée = un ou plusieurs circuits au départ de la brasserie,
   // découpés en secteurs géographiques puis ordonnés (plus proche voisin + 2-opt)
+  const tCalculTournees = Date.now();
   const tournees = [];
   const parJour = new Map();
   const nonLivres = [];
@@ -1885,6 +1894,8 @@ async function construirePilotageInterne(req) {
     });
   }
   tournees.sort((a, b) => a.jour.localeCompare(b.jour) || a.numero - b.numero);
+  chrono.push({ nom: 'calcul tournees', ms: Date.now() - tCalculTournees });
+  const tStats = Date.now();
 
   // Alertes
   const alertes = [];
@@ -1954,11 +1965,11 @@ async function construirePilotageInterne(req) {
     .map(([semaine, nb]) => ({ semaine, nb }));
 
   // --- Canal de vente par client : type EasyBeer d'abord, mots-clés du nom sinon ---
-  const typesTous = await getTypesClient().catch(() => []);
+  const typesTous = await mesurer('getTypesClient', () => getTypesClient().catch(() => []));
   const libelleType = new Map(typesTous.map(t => [t.idClientType, (t.libelle ?? '').toLowerCase()]));
   let typeParClient = new Map();
   try {
-    const listeClients = await fetchInterne(req, '/api/clients');
+    const listeClients = await mesurer('api/clients', () => fetchInterne(req, '/api/clients'));
     typeParClient = new Map(listeClients.map(c => [c.id, c.idClientType]));
   } catch {}
   const canalDe = (idClient, nom) =>
@@ -2102,7 +2113,10 @@ async function construirePilotageInterne(req) {
   if (!livraisons.length && !valides.length) {
     throw Object.assign(new Error('Analyse vide — données EasyBeer indisponibles'), { status: 503 });
   }
+  chrono.push({ nom: 'stats + alertes', ms: Date.now() - tStats });
+  chrono.push({ nom: 'TOTAL', ms: Date.now() - t0 });
   pilotageCache = {
+    chrono,
     genere: new Date().toISOString(),
     incomplet: echecsDetail > 0 || budgetAtteint,
     budgetAtteint,
@@ -2356,6 +2370,19 @@ app.get('/api/debug-total', async (req, res) => {
       page3Taille: l3.length,
     });
   } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
+});
+
+// --- Diagnostic : construit le pilotage avec un budget court et renvoie les temps ---
+app.get('/api/diag-pilotage', async (req, res) => {
+  const budgetMs = (parseInt(req.query.budget) || 60) * 1000;
+  try {
+    const d = await construirePilotageInterne(req, { budgetMs });
+    res.set('Cache-Control', 'no-store');
+    res.json({ chrono: d.chrono, livraisons: d.livraisons.length, incomplet: d.incomplet, tournees: d.tournees.length });
+  } catch (err) {
+    res.set('Cache-Control', 'no-store');
+    res.status(500).json({ erreur: err.message });
+  }
 });
 
 // --- Diagnostic : chronométrage de chaque phase, borné à 60 s ---
