@@ -1727,9 +1727,11 @@ async function construirePayloadCommande(req, body, natureOperations) {
       // Note visible sur le bon de livraison (indications pour le livreur)
       informationLivraison: commentaire ?? '',
       commentaireClient: commentaire ?? '',
-      // Les commandes saisies ici partent directement en préparation :
-      // sans état explicite, EasyBeer les classe « En attente de stock »
+      // « Prête pour livraison » : EasyBeer déduit l'état de la préparation
+      // (elementsPrepares + validation), le champ etat seul est ignoré.
       etat: { code: 'PRETE', libelle: 'Prête pour livraison' },
+      elementsPrepares: true,
+      dateValidation: Date.now(),
       // Livraison par nos soins, le vendredi de la semaine en cours
       typeLivraison: { code: 'SELF', libelle: 'Livraison par nos soins' },
       dateLivraisonPrevue: prochainVendredi(),
@@ -1843,7 +1845,14 @@ app.get('/api/debug-compare/:numA/:numB', async (req, res) => {
       preparateur: d.preparateur, dateValidation: d.dateValidation,
       elemB: (d.elementsBouteilles ?? []).slice(0, 1),
     });
-    res.json({ resumeA: resume(da), resumeB: resume(db), diffs });
+    // Différences sur le premier élément bouteille (champs de préparation ?)
+    const ea = (da.elementsBouteilles ?? [])[0] ?? {}, eb = (db.elementsBouteilles ?? [])[0] ?? {};
+    const diffsElement = {};
+    for (const k of new Set([...Object.keys(ea), ...Object.keys(eb)])) {
+      if (k === 'stockProduit' || k === 'stockBouteille' || k === 'idCommandeElement') continue;
+      if (JSON.stringify(ea[k]) !== JSON.stringify(eb[k])) diffsElement[k] = { a: ea[k], b: eb[k] };
+    }
+    res.json({ resumeA: resume(da), resumeB: resume(db), diffs, diffsElement });
   } catch (err) {
     res.status(500).json({ error: err.message, detail: err.detail });
   }
