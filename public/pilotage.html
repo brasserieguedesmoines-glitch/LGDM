@@ -50,9 +50,32 @@
     .cal-badge.confirme { background: var(--ok); color: #14120f; }
     .cal-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
     .cal-nav button { border: 1px solid var(--border); background: var(--card); border-radius: 8px; padding: 4px 12px; cursor: pointer; }
-    .tournee { background: var(--card); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; font-size: 0.85rem; }
-    .tournee .head { font-weight: 700; margin-bottom: 4px; }
-    .tournee .meta { color: var(--muted); font-size: 0.78rem; margin-bottom: 4px; }
+    .tournee { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; font-size: 0.85rem; }
+    .tournee .head { font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.05em;
+                     font-size: 1rem; color: var(--dark); display: flex; align-items: center;
+                     gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+    .tournee .meta { color: var(--muted); font-size: 0.78rem; margin-bottom: 10px; }
+    .tournee .actions { margin-left: auto; display: flex; gap: 6px; }
+    .tournee .actions button { border: 1px solid var(--pill-border); background: transparent; color: var(--amber);
+                               border-radius: 999px; padding: 5px 12px; font-size: 0.72rem; font-weight: 600;
+                               text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; }
+    .tournee .actions button:hover { background: var(--tint-amber); border-color: var(--amber); }
+    /* Arrêts : un tableau compact, lisible en un coup d'œil au volant */
+    .arrets { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    .arrets th { font-size: 0.68rem; text-transform: uppercase; color: var(--muted); text-align: left;
+                 padding: 4px 8px; border-bottom: 1px solid var(--border); }
+    .arrets td { padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .arrets tr:last-child td { border-bottom: none; }
+    .arrets .num { font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 700; color: var(--amber);
+                   width: 30px; text-align: center; }
+    .arrets .heure { font-weight: 600; white-space: nowrap; width: 58px; }
+    .arrets .cli { font-weight: 600; color: var(--dark); }
+    .arrets .adr { color: var(--muted); font-size: 0.74rem; }
+    .arrets .prod { color: var(--muted); font-size: 0.74rem; }
+    .arrets .km { color: var(--muted); font-size: 0.74rem; white-space: nowrap; text-align: right; }
+    .depot-ligne { color: var(--muted); font-size: 0.76rem; padding: 6px 8px; }
+    .case-fait { display: none; }
+    .tournee-alerte { color: var(--danger); font-weight: 600; font-size: 0.76rem; }
     .chart-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 14px; }
     .chart-box h3 { font-size: 0.85rem; margin-bottom: 8px; color: var(--muted); }
     .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
@@ -72,7 +95,35 @@
     .vue { display: none; }
     .vue.active { display: block; animation: apparait 0.25s ease; }
     #meta-pilotage { color: var(--muted); font-size: 0.78rem; margin: 6px 0; }
-    </style>
+
+    /* ---- Feuille de route imprimable ---- */
+    #entete-route { display: none; }
+    @media print {
+      @page { size: A4 portrait; margin: 10mm; }
+      :root, :root[data-theme="dark"] {
+        --card: #fff; --card2: #fff; --bg: #fff; --text: #000;
+        --muted: #444; --border: #bbb; --amber: #a8620d; --dark: #000;
+      }
+      body { background: #fff !important; color: #000 !important; }
+      header, .tabs, #meta-pilotage, #filtres-jour, .tournee .actions { display: none !important; }
+      main { max-width: none !important; padding: 0 !important; }
+      /* N'imprime que la tournée demandée */
+      body.impression-tournee .tournee { display: none !important; }
+      body.impression-tournee .tournee.a-imprimer { display: block !important; }
+      #entete-route { display: flex; align-items: center; gap: 12px; border-bottom: 2px solid #000;
+                      padding-bottom: 6px; margin-bottom: 10px; }
+      #entete-route img { height: 40px; filter: invert(1); }
+      #entete-route h2 { font-size: 13pt; margin: 0; color: #000; }
+      #entete-route p { font-size: 9pt; color: #444; margin: 2px 0 0; }
+      .tournee { border: none; padding: 0; page-break-after: always; }
+      .tournee:last-of-type { page-break-after: auto; }
+      .tournee .head { font-size: 12pt; color: #000; }
+      .arrets { font-size: 9pt; }
+      .arrets tr { page-break-inside: avoid; }
+      .arrets th, .arrets td { border-bottom: 1px solid #ccc; color: #000; padding: 5px 6px; }
+      .arrets .num, .arrets .cli { color: #000; }
+      .case-fait { display: table-cell !important; width: 26px; text-align: center; font-size: 13pt; }
+    }</style>
 </head>
 <body>
   <header>
@@ -94,6 +145,13 @@
   </script>
 
   <main>
+    <div id="entete-route">
+      <img src="logo.png" alt="">
+      <div>
+        <h2 id="route-titre"></h2>
+        <p id="route-meta"></p>
+      </div>
+    </div>
     <p id="meta-pilotage">Chargement du tableau de bord… (peut prendre ~30 s la première fois)</p>
 
     <div class="tabs" style="display:none" id="tabs">
@@ -124,6 +182,7 @@
         <button data-p="auj">Aujourd'hui</button>
         <button data-p="demain">Demain</button>
         <button data-p="semaine">Cette semaine</button>
+        <button data-p="tournees">🚚 Itinéraires</button>
         <span>du <input type="date" id="p-debut"> au <input type="date" id="p-fin"></span>
       </div>
       <div id="map"></div>
@@ -142,6 +201,7 @@
 
     <!-- Tournées -->
     <div class="vue" id="vue-tournees">
+      <div class="filtres-carte" id="filtres-jour"></div>
       <div id="tournees-liste"></div>
     </div>
 
@@ -353,6 +413,58 @@
     }
 
     // ---- Carte ----
+    let coucheTournees = null, tourneeCiblee = null;
+    const COUL_TOURNEE = ['#e8a020', '#2980b9', '#27ae60', '#8e44ad', '#c0392b', '#16a085'];
+
+    // Trace les itinéraires (dépôt → arrêts → dépôt) avec des pastilles numérotées
+    function dessinerTournees(jour) {
+      if (!map) return;
+      coucheTournees.clearLayers();
+      const ts = (D.tournees ?? []).filter(t => jour === 'tous' || t.jour === jour);
+      const bounds = [];
+      ts.forEach((t, i) => {
+        const couleur = COUL_TOURNEE[i % COUL_TOURNEE.length];
+        const points = [[t.depart.lat, t.depart.lng], ...t.arrets.map(a => [a.lat, a.lng]), [t.depart.lat, t.depart.lng]];
+        L.polyline(points, { color: couleur, weight: 3, opacity: 0.75 }).addTo(coucheTournees);
+        bounds.push(...points);
+        t.arrets.forEach(a => {
+          L.marker([a.lat, a.lng], {
+            icon: L.divIcon({
+              className: '',
+              html: `<div style="background:${couleur};color:#fff;width:26px;height:26px;border-radius:50%;
+                     display:flex;align-items:center;justify-content:center;font:700 13px Oswald,sans-serif;
+                     border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5)">${a.ordre}</div>`,
+              iconSize: [26, 26], iconAnchor: [13, 13],
+            }),
+          }).addTo(coucheTournees).bindPopup(
+            `<strong>${a.ordre}. ${a.client}</strong><br>${t.nom} — arrivée ${a.heureArrivee}<br>` +
+            `${a.adresse || ''}<br>` +
+            (a.produits.map(p => `• ${p.libelle} × ${p.quantite}`).join('<br>') || '—') +
+            `<br>💧 ${a.litres} L` + (a.contact ? `<br>📞 ${a.contact}` : '')
+          );
+        });
+      });
+      // Dépôt
+      if (ts.length) {
+        L.marker([ts[0].depart.lat, ts[0].depart.lng], {
+          icon: L.divIcon({ className: '', html: '<div style="font-size:22px">🏭</div>', iconSize: [24, 24], iconAnchor: [12, 12] }),
+        }).addTo(coucheTournees).bindPopup(`<strong>${ts[0].depart.nom}</strong><br>Départ et retour des tournées`);
+      }
+      if (bounds.length) map.fitBounds(bounds, { padding: [30, 30] });
+    }
+
+    // Depuis l'onglet Tournées : bascule sur la carte, centrée sur cette tournée
+    function afficherTourneeSurCarte(t) {
+      tourneeCiblee = t;
+      document.querySelector('.tabs button[data-vue="carte"]').click();
+      setTimeout(() => {
+        document.querySelectorAll('#filtres-carte button').forEach(x => x.classList.remove('actif'));
+        const b = document.querySelector('#filtres-carte button[data-p="tournees"]');
+        b?.classList.add('actif');
+        majMarqueurs('tournees');
+      }, 200);
+    }
+
     function filtrerLivraisons(p) {
       const auj = new Date(); auj.setHours(0,0,0,0);
       const j = n => auj.getTime() + n * 86400000;
@@ -371,6 +483,16 @@
 
     function majMarqueurs(p) {
       markersLayer.clearLayers();
+      coucheTournees?.clearLayers();
+      if (p === 'tournees') {
+        dessinerTournees(tourneeCiblee ? tourneeCiblee.jour : 'tous');
+        if (tourneeCiblee) {
+          const pts = tourneeCiblee.arrets.map(a => [a.lat, a.lng]);
+          if (pts.length) map.fitBounds(pts, { padding: [40, 40] });
+        }
+        return;
+      }
+      tourneeCiblee = null;
       const ls = filtrerLivraisons(p);
       const bounds = [];
       for (const l of ls) {
@@ -391,6 +513,7 @@
       map = L.map('map').setView([43.65, 1.43], 10);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
       markersLayer = L.layerGroup().addTo(map);
+      coucheTournees = L.layerGroup().addTo(map);
       majMarqueurs('tout');
       document.getElementById('filtres-carte').addEventListener('click', e => {
         const b = e.target.closest('button[data-p]'); if (!b) return;
@@ -432,15 +555,99 @@
     document.getElementById('cal-next').addEventListener('click', () => { calMois.setMonth(calMois.getMonth() + 1); renderCalendrier(); });
 
     // ---- Tournées ----
+    const jourLong = j => new Date(j).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    const hhmm = min => `${Math.floor(min / 60)} h ${String(Math.round(min % 60)).padStart(2, '0')}`;
+    let jourTournees = 'tous';
+
     function renderTournees() {
       const el = document.getElementById('tournees-liste');
-      el.innerHTML = D.tournees.length ? D.tournees.map(t => `
-        <div class="tournee">
-          <div class="head">🚚 ${new Date(t.jour).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} — ${t.nbLivraisons} livraison(s)</div>
-          <div class="meta">≈ ${t.kmEstimes} km · ≈ ${Math.floor(t.dureeEstimeeMin / 60)}h${String(t.dureeEstimeeMin % 60).padStart(2,'0')} · 💧 ${t.litres} L</div>
-          <div>${t.clients.join(' → ')}</div>
-        </div>`).join('')
-        : '<p style="color:var(--muted)">Aucune tournée à suggérer (livraisons sans coordonnées ou sans date).</p>';
+      const filtres = document.getElementById('filtres-jour');
+      const ts = D.tournees ?? [];
+      if (!ts.length) {
+        filtres.innerHTML = '';
+        el.innerHTML = '<p style="color:var(--muted)">Aucune tournée à proposer — les livraisons doivent avoir une date et une adresse géolocalisée.</p>';
+        return;
+      }
+      // Sélecteur de jour
+      const jours = [...new Set(ts.map(t => t.jour))].sort();
+      if (!filtres.dataset.pret) {
+        filtres.innerHTML = `<button data-j="tous" class="actif">Tous les jours</button>`
+          + jours.map(j => `<button data-j="${j}">${jourLong(j)}</button>`).join('');
+        filtres.dataset.pret = '1';
+        filtres.addEventListener('click', e => {
+          const b = e.target.closest('button[data-j]'); if (!b) return;
+          filtres.querySelectorAll('button').forEach(x => x.classList.remove('actif'));
+          b.classList.add('actif');
+          jourTournees = b.dataset.j;
+          renderTournees();
+        });
+      }
+
+      const liste = jourTournees === 'tous' ? ts : ts.filter(t => t.jour === jourTournees);
+      el.innerHTML = liste.map((t, i) => {
+        const trop = t.dureeEstimeeMin > 420;
+        return `
+        <div class="tournee" data-idx="${ts.indexOf(t)}">
+          <div class="head">
+            🚚 ${jourLong(t.jour)} — ${t.nom}
+            <span class="pill">${t.nbLivraisons} arrêts</span>
+            ${trop ? '<span class="tournee-alerte">⚠️ journée très longue</span>' : ''}
+            <span class="actions">
+              <button data-action="carte">Voir sur la carte</button>
+              <button data-action="imprimer">🖨️ Feuille de route</button>
+            </span>
+          </div>
+          <div class="meta">
+            Départ ${t.heureDepart} · retour estimé ${t.heureRetour} · ${hhmm(t.dureeEstimeeMin)} ·
+            ${t.kmEstimes} km (aller-retour dépôt) · 💧 ${t.litres} L ·
+            🍺 ${t.bouteilles} bouteilles · 🛢 ${t.futs} fûts · 💶 ${t.caHT} €
+          </div>
+          <table class="arrets">
+            <thead><tr>
+              <th class="case-fait">✓</th><th></th><th>Heure</th><th>Client</th>
+              <th>Contenu</th><th style="text-align:right">Distance</th>
+            </tr></thead>
+            <tbody>
+              <tr><td class="case-fait"></td><td colspan="5" class="depot-ligne">🏭 Départ ${t.depart.nom} à ${t.heureDepart}</td></tr>
+              ${t.arrets.map(a => `
+                <tr>
+                  <td class="case-fait">☐</td>
+                  <td class="num">${a.ordre}</td>
+                  <td class="heure">${a.heureArrivee}</td>
+                  <td>
+                    <div class="cli">${a.client}</div>
+                    <div class="adr">${a.adresse || '—'}${a.contact ? ' · 📞 ' + a.contact : ''}</div>
+                    <div class="adr">Commande n°${a.numero} — ${a.etat || ''}</div>
+                  </td>
+                  <td class="prod">${a.produits.map(p => `${p.quantite} × ${p.libelle}`).join('<br>') || '—'}</td>
+                  <td class="km">+${a.kmDepuisPrecedent} km<br>${a.kmCumules} km</td>
+                </tr>`).join('')}
+              <tr><td class="case-fait"></td><td colspan="5" class="depot-ligne">🏭 Retour au dépôt vers ${t.heureRetour} (+${t.kmRetour} km)</td></tr>
+            </tbody>
+          </table>
+        </div>`;
+      }).join('');
+
+      // Actions : impression d'une feuille de route, ou aperçu cartographique
+      el.querySelectorAll('.tournee .actions button').forEach(b => b.addEventListener('click', () => {
+        const carte = b.closest('.tournee');
+        const t = ts[parseInt(carte.dataset.idx)];
+        if (b.dataset.action === 'imprimer') imprimerFeuilleRoute(carte, t);
+        else afficherTourneeSurCarte(t);
+      }));
+    }
+
+    function imprimerFeuilleRoute(carte, t) {
+      document.getElementById('route-titre').textContent = `Feuille de route — ${jourLong(t.jour)} — ${t.nom}`;
+      document.getElementById('route-meta').textContent =
+        `${t.nbLivraisons} arrêts · départ ${t.heureDepart} · retour estimé ${t.heureRetour} · ${t.kmEstimes} km`
+        + ` · ${t.litres} L · ${t.bouteilles} bouteilles · ${t.futs} fûts`
+        + ` — Le Gué des Moines, édité le ${new Date().toLocaleDateString('fr-FR')}`;
+      document.querySelectorAll('.tournee').forEach(x => x.classList.remove('a-imprimer'));
+      carte.classList.add('a-imprimer');
+      document.body.classList.add('impression-tournee');
+      window.print();
+      setTimeout(() => document.body.classList.remove('impression-tournee'), 500);
     }
 
     // ---- Stats ----

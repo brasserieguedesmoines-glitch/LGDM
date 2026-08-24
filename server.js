@@ -1205,6 +1205,69 @@ function estCompteInterne(nom) {
   return n.includes('particulier') || /^employe\b/.test(n);
 }
 
+// Point de départ et de retour des tournées (brasserie, Bruguières).
+// Surchargeable par variables d'environnement si le dépôt change.
+const DEPOT = {
+  lat: parseFloat(process.env.DEPOT_LAT ?? '43.7286'),
+  lng: parseFloat(process.env.DEPOT_LNG ?? '1.4067'),
+  nom: process.env.DEPOT_NOM ?? 'Brasserie du Gué des Moines — Bruguières',
+};
+const ROUTE = {
+  facteurRoute: 1.3,      // vol d'oiseau → distance routière approchée
+  vitesseKmH: 42,         // moyenne périurbaine toulousaine
+  minutesParArret: 15,    // déchargement + émargement
+  minutesChargement: 30,  // chargement du camion au dépôt
+  maxArrets: 14,          // au-delà, la journée est scindée en plusieurs tournées
+  maxDureeMin: 420,       // 7 h de tournée maximum, sinon on scinde davantage
+  heureDepart: process.env.HEURE_DEPART ?? '06:00',
+};
+
+// Distance routière estimée entre deux points
+function distanceRoute(a, b) {
+  return haversineKm(a, b) * ROUTE.facteurRoute;
+}
+
+// Cap (angle) d'un point vu depuis le dépôt — sert à découper la journée en secteurs
+function capDepuisDepot(p) {
+  return Math.atan2(p.lng - DEPOT.lng, p.lat - DEPOT.lat);
+}
+
+// Ordonne les arrêts : plus proche voisin depuis le dépôt, puis amélioration 2-opt
+function ordonnerArrets(pts) {
+  if (pts.length <= 2) return [...pts];
+  const restants = [...pts];
+  const ordre = [];
+  let courant = DEPOT;
+  while (restants.length) {
+    let iMin = 0, dMin = Infinity;
+    for (let i = 0; i < restants.length; i++) {
+      const d = distanceRoute(courant, restants[i]);
+      if (d < dMin) { dMin = d; iMin = i; }
+    }
+    courant = restants[iMin];
+    ordre.push(restants.splice(iMin, 1)[0]);
+  }
+  // 2-opt : supprime les croisements de l'itinéraire
+  const longueur = o => {
+    let t = distanceRoute(DEPOT, o[0]);
+    for (let i = 1; i < o.length; i++) t += distanceRoute(o[i - 1], o[i]);
+    return t + distanceRoute(o[o.length - 1], DEPOT);
+  };
+  let meilleur = longueur(ordre);
+  for (let boucle = 0; boucle < 40; boucle++) {
+    let ameliore = false;
+    for (let i = 0; i < ordre.length - 1; i++) {
+      for (let j = i + 1; j < ordre.length; j++) {
+        const essai = [...ordre.slice(0, i), ...ordre.slice(i, j + 1).reverse(), ...ordre.slice(j + 1)];
+        const l = longueur(essai);
+        if (l < meilleur - 0.01) { ordre.splice(0, ordre.length, ...essai); meilleur = l; ameliore = true; }
+      }
+    }
+    if (!ameliore) break;
+  }
+  return ordre;
+}
+
 function haversineKm(a, b) {
   const R = 6371, rad = x => x * Math.PI / 180;
   const dLat = rad(b.lat - a.lat), dLng = rad(b.lng - a.lng);
@@ -1361,7 +1424,8 @@ async function construirePilotageInterne(req) {
   const ilYA6Mois = debutAujourdhui - 182 * JOUR;
   const clientsActifs = new Set(valides.filter(c => (c.dateCreation ?? 0) >= ilYA6Mois).map(c => c.client?.idClient)).size;
 
-  // Tournées suggérées : regroupement glouton par proximité (< 8 km), par jour
+  // Tournées : une journée = un ou plusieurs circuits au départ de la brasserie,
+  // découpés en secteurs géographiques puis ordonnés (plus proche voisin + 2-opt)
   const tournees = [];
   const parJour = new Map();
   for (const l of livraisons.filter(l => l.lat && l.lng && l.dateLivraison)) {
@@ -1369,28 +1433,108 @@ async function construirePilotageInterne(req) {
     if (!parJour.has(j)) parJour.set(j, []);
     parJour.get(j).push(l);
   }
-  for (const [jour, pts] of parJour) {
-    const restants = [...pts];
-    while (restants.length) {
-      const groupe = [restants.shift()];
-      for (let i = restants.length - 1; i >= 0; i--) {
-        if (groupe.some(g => haversineKm(g, restants[i]) < 8)) groupe.push(...restants.splice(i, 1));
-      }
-      let km = 0;
-      for (let i = 1; i < groupe.length; i++) km += haversineKm(groupe[i - 1], groupe[i]);
-      km = Math.round(km * 10) / 10;
+
+  const [hDep, mDep] = ROUTE.heureDepart.split(':').map(Number);
+  const enHeure = min => {
+    const t = hDep * 60 + mDep + min;
+    return `${String(Math.floor(t / 60) % 24).padStart(2, '0')}:${String(Math.round(t % 60)).padStart(2, '0')}`;
+  };
+
+  // Découpe une journée en n secteurs contigus (tri par cap depuis le dépôt),
+  // équilibrés sur le temps estimé et non sur le nombre d'arrêts : sans cela un
+  // client lointain (Albi, Montauban) déséquilibre complètement une tournée.
+  function decouperEnSecteurs(pts, n) {
+    const parCap = [...pts].sort((a, b) => capDepuisDepot(a) - capDepuisDepot(b));
+    if (n <= 1) return [parCap];
+    const poids = parCap.map(p =>
+      distanceRoute(DEPOT, p) / ROUTE.vitesseKmH * 60 + ROUTE.minutesParArret);
+    const total = poids.reduce((a, b) => a + b, 0);
+    const groupes = Array.from({ length: n }, () => []);
+    let cumul = 0, g = 0;
+    parCap.forEach((p, i) => {
+      // On avance de secteur dès que la part de charge de celui-ci est atteinte,
+      // en gardant au moins un arrêt pour chacun des secteurs restants
+      while (g < n - 1 && cumul > total * (g + 1) / n && parCap.length - i > n - g - 1) g++;
+      groupes[g].push(p);
+      cumul += poids[i];
+    });
+    return groupes.filter(x => x.length);
+  }
+
+  for (const [jour, pts] of [...parJour].sort((a, b) => a[0].localeCompare(b[0]))) {
+    // Nombre de tournées : d'abord la contrainte d'arrêts, puis on scinde
+    // davantage tant qu'une tournée dépasse la durée maximale d'une journée
+    let nbTournees = Math.max(1, Math.ceil(pts.length / ROUTE.maxArrets));
+    let groupes = decouperEnSecteurs(pts, nbTournees);
+    const dureeDe = groupe => {
+      const o = ordonnerArrets(groupe);
+      let km = distanceRoute(DEPOT, o[0]);
+      for (let i = 1; i < o.length; i++) km += distanceRoute(o[i - 1], o[i]);
+      km += distanceRoute(o[o.length - 1], DEPOT);
+      return km / ROUTE.vitesseKmH * 60 + o.length * ROUTE.minutesParArret + ROUTE.minutesChargement;
+    };
+    while (nbTournees < pts.length && groupes.some(g => dureeDe(g) > ROUTE.maxDureeMin)) {
+      nbTournees++;
+      groupes = decouperEnSecteurs(pts, nbTournees);
+    }
+
+    groupes.forEach((groupe, idx) => {
+      if (!groupe.length) return;
+      const ordre = ordonnerArrets(groupe);
+      let km = 0, minutes = ROUTE.minutesChargement;
+      const arrets = ordre.map((l, i) => {
+        const depuis = i === 0 ? DEPOT : ordre[i - 1];
+        const d = distanceRoute(depuis, l);
+        km += d;
+        minutes += d / ROUTE.vitesseKmH * 60;
+        const heureArrivee = enHeure(minutes);
+        minutes += ROUTE.minutesParArret;
+        return {
+          ordre: i + 1,
+          idCommande: l.idCommande,
+          numero: l.numero,
+          client: l.client.nom,
+          adresse: l.adresse ?? '',
+          contact: l.contact ?? '',
+          lat: l.lat, lng: l.lng,
+          etat: l.etat,
+          litres: l.litres,
+          bouteilles: l.bouteilles,
+          futs: l.futs,
+          totalHT: l.totalHT,
+          produits: l.produits,
+          kmDepuisPrecedent: Math.round(d * 10) / 10,
+          kmCumules: Math.round(km * 10) / 10,
+          heureArrivee,
+        };
+      });
+      // Retour au dépôt
+      const kmRetour = distanceRoute(ordre[ordre.length - 1], DEPOT);
+      km += kmRetour;
+      minutes += kmRetour / ROUTE.vitesseKmH * 60;
+
       tournees.push({
         jour,
-        nbLivraisons: groupe.length,
-        clients: groupe.map(g => g.client.nom),
-        kmEstimes: km,
-        dureeEstimeeMin: Math.round(km / 40 * 60 + groupe.length * 15),
-        litres: Math.round(groupe.reduce((a, g) => a + g.litres, 0)),
-        caHT: Math.round(groupe.reduce((a, g) => a + g.totalHT, 0)),
+        numero: idx + 1,
+        nbTourneesDuJour: groupes.length,
+        nom: groupes.length > 1 ? `Tournée ${idx + 1}` : 'Tournée du jour',
+        depart: DEPOT,
+        heureDepart: ROUTE.heureDepart,
+        heureRetour: enHeure(minutes),
+        arrets,
+        nbLivraisons: arrets.length,
+        clients: arrets.map(a => a.client),
+        kmEstimes: Math.round(km * 10) / 10,
+        kmRetour: Math.round(kmRetour * 10) / 10,
+        dureeEstimeeMin: Math.round(minutes),
+        litres: Math.round(arrets.reduce((a, x) => a + x.litres, 0)),
+        bouteilles: arrets.reduce((a, x) => a + x.bouteilles, 0),
+        futs: arrets.reduce((a, x) => a + x.futs, 0),
+        caHT: Math.round(arrets.reduce((a, x) => a + x.totalHT, 0)),
       });
-    }
+    });
   }
-  tournees.sort((a, b) => a.jour.localeCompare(b.jour));
+  tournees.sort((a, b) => a.jour.localeCompare(b.jour) || a.numero - b.numero);
 
   // Alertes
   const alertes = [];
@@ -1856,6 +2000,23 @@ app.get('/api/debug-compare/:numA/:numB', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message, detail: err.detail });
   }
+});
+
+// --- Debug : cherche un endpoint EasyBeer de changement d'état de commande ---
+app.get('/api/debug-endpoints-commande', async (req, res) => {
+  const out = {};
+  for (const chemin of ['/v2/api-docs', '/v3/api-docs', '/swagger.json', '/api-docs']) {
+    try {
+      const sw = await easybeerGet(chemin);
+      const paths = Object.keys(sw.paths ?? {});
+      out.source = chemin;
+      out.nbPaths = paths.length;
+      out.cheminsCommande = paths.filter(p => /commande/i.test(p));
+      out.cheminsEtat = paths.filter(p => /etat|valid|prepar|statut|livr/i.test(p));
+      break;
+    } catch (e) { out[chemin] = e.message; }
+  }
+  res.json(out);
 });
 
 // --- Debug : états de commande possibles (Swagger + valeurs réellement utilisées) ---
