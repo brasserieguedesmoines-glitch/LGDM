@@ -1034,38 +1034,67 @@ async function fetchCommandesEtat(etat = 'toutes', maxPages = 50, budgetMs = 200
   return commandes;
 }
 
-// Liste des commandes via le cache CDN. La pagination EasyBeer (29 pages avec
-// les archives) prend plus de deux minutes : la refaire à chaque construction
-// du pilotage et des relances faisait exploser la limite de 300 s de Vercel.
-// On ne conserve que les champs réellement exploités, pour une réponse légère.
-app.get('/api/cache/commandes', async (req, res) => {
+// Liste des commandes via le cache CDN, page par page.
+// Deux contraintes : la pagination EasyBeer complète prend ~195 s (impossible à
+// refaire à chaque calcul), et un seul gros JSON de 7 400 commandes fait échouer
+// l'appel interne de Vercel en ETIMEDOUT. Chaque page est donc cachée séparément :
+// une page froide = un appel EasyBeer, une page chaude = une lecture CDN immédiate.
+function commandeAllegee(c) {
+  return {
+    idCommande: c.idCommande,
+    numero: c.numero,
+    client: { idClient: c.client?.idClient ?? null, nom: c.client?.nom ?? '' },
+    dateCreation: c.dateCreation ?? null,
+    dateLivraisonPrevue: c.dateLivraisonPrevue ?? null,
+    dateLivraisonReelle: c.dateLivraisonReelle ?? null,
+    totalHT: c.totalHT ?? 0,
+    etat: c.etat ? { code: c.etat.code, libelle: c.etat.libelle } : null,
+    estDevis: !!c.estDevis, estAnnulee: !!c.estAnnulee,
+    estLivree: !!c.estLivree, estFacturee: !!c.estFacturee, estArchivee: !!c.estArchivee,
+    estValidee: !!c.estValidee, estEnPreparation: !!c.estEnPreparation,
+    estPrete: !!c.estPrete, estEnLivraison: !!c.estEnLivraison,
+    nombreElements: c.nombreElements ?? 0,
+    syntheseConditionnement: c.syntheseConditionnement ?? '',
+  };
+}
+
+app.get('/api/cache/commandes/p/:page', async (req, res) => {
   try {
-    const toutes = await fetchCommandesEtat('toutes');
-    const liste = toutes.map(c => ({
-      idCommande: c.idCommande,
-      numero: c.numero,
-      client: { idClient: c.client?.idClient ?? null, nom: c.client?.nom ?? '' },
-      dateCreation: c.dateCreation ?? null,
-      dateLivraisonPrevue: c.dateLivraisonPrevue ?? null,
-      dateLivraisonReelle: c.dateLivraisonReelle ?? null,
-      totalHT: c.totalHT ?? 0,
-      etat: c.etat ? { code: c.etat.code, libelle: c.etat.libelle } : null,
-      estDevis: !!c.estDevis, estAnnulee: !!c.estAnnulee,
-      estLivree: !!c.estLivree, estFacturee: !!c.estFacturee, estArchivee: !!c.estArchivee,
-      estValidee: !!c.estValidee, estEnPreparation: !!c.estEnPreparation,
-      estPrete: !!c.estPrete, estEnLivraison: !!c.estEnLivraison,
-      nombreElements: c.nombreElements ?? 0,
-      syntheseConditionnement: c.syntheseConditionnement ?? '',
-    }));
-    // 7 400 commandes = ~195 s de pagination : on garde longtemps et on sert
-    // la version périmée pendant que le rafraîchissement se fait en arrière-plan,
-    // pour que le pilotage n'attende jamais cette récupération.
+    const page = Math.max(1, parseInt(req.params.page) || 1);
+    const data = await easybeerPost(
+      `/commande/liste/toutes?numeroPage=${page}&nombreParPage=${PAR_PAGE}&colonneTri=-numero`,
+      FILTRE_COMMANDES
+    );
+    const liste = data?.liste ?? data?.contenu ?? data?.content ?? (Array.isArray(data) ? data : []);
     res.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=604800');
-    res.json(liste);
+    res.json({ page, complete: liste.length >= PAR_PAGE, commandes: liste.map(commandeAllegee) });
   } catch (err) {
     res.status(err.status ?? 502).json({ error: err.message });
   }
 });
+
+// Rassemble toutes les pages ; s'arrête sur une page incomplète (fin de liste)
+// ou quand le budget de temps est épuisé, pour ne jamais dépasser la limite Vercel.
+async function chargerCommandes(req, budgetMs = 150 * 1000, maxPages = 60) {
+  const t0 = Date.now();
+  const toutes = [];
+  for (let page = 1; page <= maxPages; page++) {
+    let r;
+    try {
+      r = await fetchInterne(req, `/api/cache/commandes/p/${page}`);
+    } catch (e) {
+      console.error(`chargerCommandes page ${page}:`, e.message);
+      break;
+    }
+    toutes.push(...(r.commandes ?? []));
+    if (!r.complete) break;
+    if (Date.now() - t0 > budgetMs) {
+      console.warn(`chargerCommandes: budget atteint page ${page} (${toutes.length} commandes)`);
+      break;
+    }
+  }
+  return toutes;
+}
 
 // Cache de l'analyse (30 min)
 let relancesCache = null;
@@ -1091,7 +1120,7 @@ async function analyserClientsInterne(req) {
   // Toutes les commandes (l'app EasyBeer utilise l'état "toutes").
   // En cas d'échec on laisse remonter l'erreur : le cache périmé sera servi
   // plutôt qu'une analyse vide mise en cache comme si elle était valide.
-  const toutes0 = await fetchInterne(req, '/api/cache/commandes');
+  const toutes0 = await chargerCommandes(req);
   if (!toutes0.length) {
     throw Object.assign(new Error('Aucune commande récupérée depuis EasyBeer'), { status: 503 });
   }
@@ -1478,7 +1507,7 @@ async function construirePilotageInterne(req) {
 
   // Toutes les commandes (pros uniquement, les particuliers sont exclus)
   // En cas d'échec on lève l'erreur : le cache périmé sera servi à la place
-  const toutes = await fetchInterne(req, '/api/cache/commandes');
+  const toutes = await chargerCommandes(req);
   const typesParticuliers = await getIdsTypesParticuliers();
   const valides = toutes.filter(c =>
     !c.estDevis && !c.estAnnulee &&
@@ -2257,7 +2286,7 @@ app.get('/api/debug-total', async (req, res) => {
 // --- Debug : état des dernières commandes enregistrées (lecture seule) ---
 app.get('/api/debug-dernieres', async (req, res) => {
   try {
-    const toutes = await fetchInterne(req, '/api/cache/commandes');
+    const toutes = await chargerCommandes(req);
     const recentes = [...toutes]
       .sort((a, b) => (b.dateCreation ?? 0) - (a.dateCreation ?? 0))
       .slice(0, 12)
