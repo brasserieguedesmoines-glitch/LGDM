@@ -1532,12 +1532,9 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
     try { return await fn(); }
     finally { chrono.push({ nom, ms: Date.now() - t }); }
   };
-  // Diagnostic : interrompt volontairement après une phase donnée
-  const stopApres = optionsPilotage.stop ?? null;
-  const jalon = (nom) => {
-    chrono.push({ nom: 'jalon:' + nom, ms: Date.now() - t0 });
-    if (stopApres === nom) throw Object.assign(new Error('ARRET_DIAG'), { chrono });
-  };
+  // Repère de progression, renvoyé dans la réponse : permet de voir d'un coup
+  // d'œil quelle phase consomme le temps si le tableau de bord ralentit.
+  const jalon = (nom) => chrono.push({ nom: 'jalon:' + nom, ms: Date.now() - t0 });
   const resteMs = () => Math.max(0, BUDGET_MS - (Date.now() - t0));
   const tempsEcoule = () => resteMs() === 0;
   let budgetAtteint = false;
@@ -2384,63 +2381,6 @@ app.post('/api/commande', async (req, res) => {
     console.error('POST /api/commande', err.message, err.detail);
     res.status(err.status ?? 502).json({ error: err.message, detail: err.detail, payloadEnvoye: payload });
   }
-});
-
-// --- Debug : nombre total de commandes annoncé par EasyBeer (1 appel) ---
-app.get('/api/debug-total', async (req, res) => {
-  try {
-    const data = await easybeerPost(
-      '/commande/liste/toutes?numeroPage=1&nombreParPage=200&colonneTri=-numero', FILTRE_COMMANDES);
-    const liste = data?.liste ?? data?.contenu ?? data?.content ?? [];
-    const p3 = await easybeerPost(
-      '/commande/liste/toutes?numeroPage=3&nombreParPage=200&colonneTri=-numero', FILTRE_COMMANDES);
-    const l3 = p3?.liste ?? [];
-    res.json({
-      totalElements: data?.totalElements ?? null,
-      totalPages: data?.totalPages ?? null,
-      parPageObtenu: liste.length,
-      page1Premier: liste[0]?.numero ?? null,
-      page1Dernier: liste[liste.length - 1]?.numero ?? null,
-      page3Premier: l3[0]?.numero ?? null,
-      page3Dernier: l3[l3.length - 1]?.numero ?? null,
-      page3Taille: l3.length,
-    });
-  } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
-});
-
-// --- Diagnostic : construit le pilotage avec un budget court et renvoie les temps ---
-app.get('/api/diag-pilotage', async (req, res) => {
-  const budgetMs = (parseInt(req.query.budget) || 60) * 1000;
-  const stop = req.query.stop || null;
-  res.set('Cache-Control', 'no-store');
-  try {
-    const d = await construirePilotageInterne(req, { budgetMs, stop });
-    res.json({ chrono: d.chrono, livraisons: d.livraisons.length, incomplet: d.incomplet, tournees: d.tournees.length });
-  } catch (err) {
-    res.json({ erreur: err.message, chrono: err.chrono ?? null });
-  }
-});
-
-// --- Diagnostic : chronométrage de chaque phase, borné à 60 s ---
-app.get('/api/diag', async (req, res) => {
-  const etapes = [];
-  const chrono = async (nom, fn) => {
-    const t = Date.now();
-    try { const r = await fn(); etapes.push({ nom, ms: Date.now() - t, ok: true, info: r }); }
-    catch (e) { etapes.push({ nom, ms: Date.now() - t, ok: false, erreur: e.message }); }
-  };
-  await chrono('build', async () => process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? 'inconnu');
-  await chrono('easybeerGet contenants', async () => {
-    const c = await easybeerGet('/stock/bouteilles/contenants-disponibles');
-    return Array.isArray(c) ? c.length : typeof c;
-  });
-  await chrono('fetchInterne types-client', async () => (await fetchInterne(req, '/api/cache/types-client')).length);
-  await chrono('fetchInterne commandes p/1', async () => (await fetchInterne(req, '/api/cache/commandes/p/1')).commandes.length);
-  await chrono('fetchInterne commandes p/37', async () => (await fetchInterne(req, '/api/cache/commandes/p/37')).commandes.length);
-  await chrono('fetchInterne clients', async () => (await fetchInterne(req, '/api/clients')).length);
-  await chrono('chargerCommandes (budget 40 s)', async () => (await chargerCommandes(req, 40 * 1000)).length);
-  res.set('Cache-Control', 'no-store');
-  res.json({ etapes, total: etapes.reduce((a, e) => a + e.ms, 0) });
 });
 
 // --- Debug : état des dernières commandes enregistrées (lecture seule) ---
