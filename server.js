@@ -1014,12 +1014,13 @@ async function fetchCommandesEtat(etat = 'toutes', maxPages = 30) {
   const commandes = [];
   for (let page = 1; page <= maxPages; page++) {
     const data = await easybeerPost(
-      `/commande/liste/${etat}?numeroPage=${page}&nombreParPage=100&colonneTri=-numero`,
+      `/commande/liste/${etat}?numeroPage=${page}&nombreParPage=200&colonneTri=-numero`,
       FILTRE_COMMANDES
     );
     const liste = data?.liste ?? data?.contenu ?? data?.content ?? (Array.isArray(data) ? data : []);
     commandes.push(...liste);
     const total = data?.nombreTotal ?? data?.totalElements ?? null;
+    if (page === 1) console.log(`fetchCommandesEtat: ${total ?? '?'} commandes annoncées, ${liste.length} par page`);
     if (!liste.length || (total != null && commandes.length >= total)) break;
   }
   return commandes;
