@@ -225,16 +225,33 @@ function reinitialiserLignes() {
   ajouterLigne();
 }
 
+// Colisage : nombre de bouteilles par colis selon le contenant.
+// 75 cL → colis de 6, 33 cL → colis de 12 (ou 24 = 2 colis). Les fûts vont à l'unité.
+function colisagePour(contenant) {
+  const l = (contenant ?? '').toLowerCase();
+  if (/f[uû]t|keg/.test(l)) return [];
+  const m = l.match(/(\d+(?:[.,]\d+)?)\s*l\b/);
+  const cl = m ? parseFloat(m[1].replace(',', '.')) : null;
+  if (cl === null) return [];
+  if (Math.abs(cl - 0.75) < 0.01) return [6, 12];
+  if (Math.abs(cl - 0.33) < 0.01) return [12, 24];
+  return [];
+}
+
 function ajouterLigne(valeurInitiale = '', labelInitial = '') {
   const div = document.createElement('div');
   div.className = 'ligne-produit';
+  div._qteVierge = true; // la quantité n'a pas encore été saisie : le 1er colis la remplace
 
   const prodOptions = catalogueFiltre().map(p => ({
     value: JSON.stringify({ idProduit: p.idProduit, idContenant: p.idContenant, idLot: p.idLot ?? 1, idStockBouteille: p.idStockBouteille, gtin: p.gtin }),
     label: `${p.libelle} ${p.contenant}`,
   }));
 
-  const prodSelect = createSearchSelect('Rechercher un produit…', prodOptions, () => {});
+  const prodSelect = createSearchSelect('Rechercher un produit…', prodOptions, () => {
+    div._qteVierge = true;
+    majPacks();
+  });
   if (valeurInitiale) prodSelect.setValue(valeurInitiale, labelInitial);
 
   const inputQte = document.createElement('input');
@@ -242,6 +259,7 @@ function ajouterLigne(valeurInitiale = '', labelInitial = '') {
   inputQte.min = 1;
   inputQte.value = 1;
   inputQte.placeholder = 'Qté';
+  inputQte.addEventListener('input', () => { div._qteVierge = false; majResume(); });
 
   const btnSuppr = document.createElement('button');
   btnSuppr.className = 'btn-suppr';
@@ -251,8 +269,57 @@ function ajouterLigne(valeurInitiale = '', labelInitial = '') {
     if (lignesContainer.children.length > 1) div.remove();
   });
 
-  div.append(prodSelect, inputQte, btnSuppr);
+  // Touches de colisage + rappel du nombre de colis
+  const zonePacks = document.createElement('div');
+  zonePacks.className = 'packs';
+  const resume = document.createElement('div');
+  resume.className = 'resume-colis';
+
+  // Produit sélectionné dans cette ligne (depuis le catalogue complet)
+  function produitCourant() {
+    try {
+      const d = JSON.parse(prodSelect.getValue());
+      return catalogue.find(p => p.idProduit === d.idProduit && p.idContenant === d.idContenant) ?? null;
+    } catch { return null; }
+  }
+
+  function majResume() {
+    const packs = colisagePour(produitCourant()?.contenant);
+    const q = parseInt(inputQte.value) || 0;
+    if (!packs.length || !q) { resume.textContent = ''; return; }
+    const parColis = packs[0];
+    const colis = Math.floor(q / parColis);
+    const reste = q % parColis;
+    resume.textContent = colis
+      ? `${q} bouteilles = ${colis} colis de ${parColis}${reste ? ` + ${reste}` : ''}`
+      : `${q} bouteille${q > 1 ? 's' : ''} — colis de ${parColis}`;
+  }
+
+  function majPacks() {
+    const packs = colisagePour(produitCourant()?.contenant);
+    zonePacks.innerHTML = '';
+    zonePacks.style.display = packs.length ? 'flex' : 'none';
+    for (const n of packs) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn-pack';
+      b.textContent = '+' + n;
+      b.title = `Ajouter ${n} bouteilles`;
+      b.addEventListener('click', () => {
+        const actuel = div._qteVierge ? 0 : (parseInt(inputQte.value) || 0);
+        inputQte.value = actuel + n;
+        div._qteVierge = false;
+        majResume();
+      });
+      zonePacks.appendChild(b);
+    }
+    majResume();
+  }
+
+  div.append(prodSelect, inputQte, btnSuppr, zonePacks, resume);
   div._prodSelect = prodSelect;
+  div._majPacks = majPacks;
+  majPacks();
   lignesContainer.appendChild(div);
 }
 
@@ -286,6 +353,8 @@ async function preRemplirDerniereCommande(idClient) {
       ajouterLigne(valeur, label);
       const div = lignesContainer.lastElementChild;
       div.querySelector('input[type="number"]').value = e.quantite ?? 1;
+      div._qteVierge = false;
+      div._majPacks();
     });
     if (!lignesContainer.children.length) ajouterLigne();
     setStatut(introuvables ? `${introuvables} produit(s) de la dernière commande absent(s) du tarif actuel.` : '');

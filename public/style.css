@@ -314,6 +314,30 @@ textarea { resize: vertical; font-family: inherit; }
 .ligne-produit select { font-size: 0.95rem; }
 .ligne-produit input[type="number"] { text-align: center; padding: 12px 8px; }
 
+/* Touches de colisage (colis de 6 / 12 / 24) */
+.packs, .resume-colis { grid-column: 1 / -1; }
+.packs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+.btn-pack {
+  background: transparent;
+  border: 1.5px solid var(--pill-border);
+  border-radius: 999px;
+  color: var(--amber);
+  font-family: 'Oswald', 'Inter', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 9px 20px;
+  min-width: 68px;
+}
+.btn-pack:hover { background: var(--tint-amber); border-color: var(--amber); }
+.btn-pack:active { background: var(--amber); color: #14120f; }
+.resume-colis {
+  font-size: 0.74rem;
+  color: var(--muted);
+  min-height: 1em;
+  margin-top: -2px;
+}
+
 .btn-suppr {
   background: none;
   border: none;
