@@ -121,6 +121,19 @@ async function getTypesClient() {
   return typesClientCache;
 }
 
+// Raccourcit un libellé produit EasyBeer pour l'affichage :
+// "GOAMBRE - Game Over Ambrée - 5.8° - Bouteille - 0.75L" → "Game Over Ambrée 0.75L"
+function libelleCourt(libelle) {
+  const parts = String(libelle ?? '').split(' - ').map(p => p.trim()).filter(Boolean);
+  if (parts.length < 2) return libelle ?? '';
+  // Code article en tête (majuscules/chiffres, pas d'espace) : on l'enlève
+  if (/^[A-Z0-9]{3,12}$/.test(parts[0]) && parts.length > 2) parts.shift();
+  const nom = parts.shift();
+  const contenance = parts.find(p => /\d\s*L$/i.test(p)) ?? '';
+  const fut = parts.some(p => /f[uû]t|keg/i.test(p));
+  return [nom, fut ? 'Fût' : '', contenance].filter(Boolean).join(' ');
+}
+
 // Canal de vente déduit du type EasyBeer, puis du nom du client en secours.
 // Partagé par la prise de commande (filtrage de gamme) et le pilotage (statistiques).
 function canalParLibelleEtNom(libelleType, nom) {
@@ -917,7 +930,7 @@ app.get('/api/cache/detail/:idCommande', async (req, res) => {
     const elements = [...(det.elementsBouteilles ?? []), ...(det.elementsFuts ?? [])].map(e => ({
       idContenant: e.stockProduit?.idContenant ?? null,
       quantite: e.quantite ?? 0,
-      libelle: e.stockProduit?.libelle ?? e.designation ?? '',
+      libelle: libelleCourt(e.stockProduit?.libelle ?? e.designation ?? ''),
     }));
     res.set('Cache-Control', 'public, s-maxage=21600, stale-while-revalidate=86400');
     res.json({ elements });
@@ -938,19 +951,6 @@ app.get('/api/cache/client-infos/:idClient', async (req, res) => {
     });
   } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
 });
-
-// Raccourcit un libellé produit EasyBeer pour l'affichage :
-// "GOAMBRE - Game Over Ambrée - 5.8° - Bouteille - 0.75L" → "Game Over Ambrée 0.75L"
-function libelleCourt(libelle) {
-  const parts = String(libelle ?? '').split(' - ').map(p => p.trim()).filter(Boolean);
-  if (parts.length < 2) return libelle ?? '';
-  // Code article en tête (majuscules/chiffres, pas d'espace) : on l'enlève
-  if (/^[A-Z0-9]{3,12}$/.test(parts[0]) && parts.length > 2) parts.shift();
-  const nom = parts.shift();
-  const contenance = parts.find(p => /\d\s*L$/i.test(p)) ?? '';
-  const fut = parts.some(p => /f[uû]t|keg/i.test(p));
-  return [nom, fut ? 'Fût' : '', contenance].filter(Boolean).join(' ');
-}
 
 // Dernière commande d'un client, réduite au nécessaire pour les relances
 app.get('/api/cache/derniere-commande/:idClient', async (req, res) => {
@@ -1436,8 +1436,9 @@ async function construirePilotageInterne(req) {
 
   const [hDep, mDep] = ROUTE.heureDepart.split(':').map(Number);
   const enHeure = min => {
-    const t = hDep * 60 + mDep + min;
-    return `${String(Math.floor(t / 60) % 24).padStart(2, '0')}:${String(Math.round(t % 60)).padStart(2, '0')}`;
+    // Arrondi sur le total : arrondir les minutes seules peut donner « 09:60 »
+    const t = Math.round(hDep * 60 + mDep + min);
+    return `${String(Math.floor(t / 60) % 24).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
   };
 
   // Découpe une journée en n secteurs contigus (tri par cap depuis le dépôt),
