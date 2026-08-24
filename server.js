@@ -1942,6 +1942,26 @@ app.post('/api/commande', async (req, res) => {
   }
 });
 
+// --- Debug : structures d'adresses (client + commande) ---
+app.get('/api/debug-adresses/:idClient/:numero', async (req, res) => {
+  const out = {};
+  try {
+    const d = await easybeerGet(`/parametres/client/detail/${req.params.idClient}`);
+    out.adressePrincipale = d?.adresse ?? null;
+    out.listeAdresseLivraison = d?.listeAdresseLivraison ?? null;
+  } catch (e) { out.clientErr = e.message; }
+  try {
+    const toutes = await fetchCommandesEtat('toutes');
+    const c = toutes.find(x => String(x.numero) === String(req.params.numero));
+    if (c) {
+      const det = await easybeerGet(`/commande/detail/${c.idCommande}`);
+      out.adresseLivraisonCommande = det?.adresseLivraison ?? null;
+      out.clesAdresse = det?.adresseLivraison ? Object.keys(det.adresseLivraison) : null;
+    } else out.commandeErr = 'introuvable';
+  } catch (e) { out.commandeErr = e.message; }
+  res.json(out);
+});
+
 // --- Debug : état des dernières commandes enregistrées (lecture seule) ---
 app.get('/api/debug-dernieres', async (req, res) => {
   try {
