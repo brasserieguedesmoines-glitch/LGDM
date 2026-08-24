@@ -2320,6 +2320,28 @@ app.get('/api/debug-total', async (req, res) => {
   } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
 });
 
+// --- Diagnostic : chronométrage de chaque phase, borné à 60 s ---
+app.get('/api/diag', async (req, res) => {
+  const etapes = [];
+  const chrono = async (nom, fn) => {
+    const t = Date.now();
+    try { const r = await fn(); etapes.push({ nom, ms: Date.now() - t, ok: true, info: r }); }
+    catch (e) { etapes.push({ nom, ms: Date.now() - t, ok: false, erreur: e.message }); }
+  };
+  await chrono('build', async () => process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? 'inconnu');
+  await chrono('easybeerGet contenants', async () => {
+    const c = await easybeerGet('/stock/bouteilles/contenants-disponibles');
+    return Array.isArray(c) ? c.length : typeof c;
+  });
+  await chrono('fetchInterne types-client', async () => (await fetchInterne(req, '/api/cache/types-client')).length);
+  await chrono('fetchInterne commandes p/1', async () => (await fetchInterne(req, '/api/cache/commandes/p/1')).commandes.length);
+  await chrono('fetchInterne commandes p/37', async () => (await fetchInterne(req, '/api/cache/commandes/p/37')).commandes.length);
+  await chrono('fetchInterne clients', async () => (await fetchInterne(req, '/api/clients')).length);
+  await chrono('chargerCommandes (budget 40 s)', async () => (await chargerCommandes(req, 40 * 1000)).length);
+  res.set('Cache-Control', 'no-store');
+  res.json({ etapes, total: etapes.reduce((a, e) => a + e.ms, 0) });
+});
+
 // --- Debug : état des dernières commandes enregistrées (lecture seule) ---
 app.get('/api/debug-dernieres', async (req, res) => {
   try {
