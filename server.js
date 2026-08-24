@@ -1166,7 +1166,6 @@ async function analyserClientsInterne(req) {
   }
   let toutes = toutes0;
   // Exclut devis, annulées et clients particuliers de l'analyse
-  jalon('commandes');
   const typesParticuliers = await getIdsTypesParticuliers();
   toutes = toutes.filter(c =>
     !c.estDevis && !c.estAnnulee &&
@@ -1543,6 +1542,7 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
   const tempsEcoule = () => resteMs() === 0;
   let budgetAtteint = false;
 
+  jalon('debut');
   const JOUR = 24 * 60 * 60 * 1000;
   const debutAujourdhui = new Date(new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' })).getTime();
   // Lundi de la semaine en cours (la semaine s'entend du lundi au dimanche)
@@ -1568,6 +1568,7 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
   // La récupération des commandes ne peut consommer plus que les deux tiers du
   // budget : il faut garder de quoi charger le contenu des livraisons.
   const toutes = await mesurer('chargerCommandes', () => chargerCommandes(req, Math.min(resteMs(), BUDGET_MS * 0.65)));
+  jalon('commandes');
   if (Date.now() - t0 > BUDGET_MS * 0.65) budgetAtteint = true;
   // Sans cette garde, un échec de récupération produit un tableau de bord vide
   // qui serait mis en cache une heure et servi comme un résultat valide.
