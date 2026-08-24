@@ -50,10 +50,22 @@ function throttle() {
   return attente;
 }
 
-async function easybeerGet(path) {
+// Aucun appel réseau ne doit pouvoir pendre indéfiniment : sans délai maximal,
+// une seule requête bloquée fait expirer toute la fonction Vercel (300 s).
+function avecDelai(ms) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  return { signal: ctrl.signal, fin: () => clearTimeout(timer) };
+}
+
+async function easybeerGet(path, timeoutMs = 20000) {
   if (Date.now() < banniJusqua) throw erreurBan();
   await throttle();
-  const res = await fetch(`${BASE_URL}${path}`, { headers: easybeerHeaders() });
+  const d = avecDelai(timeoutMs);
+  let res;
+  try { res = await fetch(`${BASE_URL}${path}`, { headers: easybeerHeaders(), signal: d.signal }); }
+  catch (e) { throw Object.assign(new Error(`EasyBeer injoignable (${e.name === 'AbortError' ? 'délai dépassé' : e.message})`), { status: 504 }); }
+  finally { d.fin(); }
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     throw erreurEasyBeer(res.status, text);
@@ -61,14 +73,21 @@ async function easybeerGet(path) {
   return res.json();
 }
 
-async function easybeerPost(path, body) {
+async function easybeerPost(path, body, timeoutMs = 30000) {
   if (Date.now() < banniJusqua) throw erreurBan();
   await throttle();
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method: 'POST',
-    headers: easybeerHeaders(),
-    body: JSON.stringify(body),
-  });
+  const d = avecDelai(timeoutMs);
+  let res;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      method: 'POST',
+      headers: easybeerHeaders(),
+      body: JSON.stringify(body),
+      signal: d.signal,
+    });
+  } catch (e) {
+    throw Object.assign(new Error(`EasyBeer injoignable (${e.name === 'AbortError' ? 'délai dépassé' : e.message})`), { status: 504 });
+  } finally { d.fin(); }
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     const err = erreurEasyBeer(res.status, text);
@@ -984,8 +1003,12 @@ function urlInterne(req, chemin) {
   const proto = host?.startsWith('localhost') ? 'http' : 'https';
   return `${proto}://${host}${chemin}`;
 }
-async function fetchInterne(req, chemin) {
-  const r = await fetch(urlInterne(req, chemin));
+async function fetchInterne(req, chemin, timeoutMs = 25000) {
+  const d = avecDelai(timeoutMs);
+  let r;
+  try { r = await fetch(urlInterne(req, chemin), { signal: d.signal }); }
+  catch (e) { throw Object.assign(new Error(`Cache interne injoignable (${e.name === 'AbortError' ? 'délai dépassé' : e.message})`), { status: 504 }); }
+  finally { d.fin(); }
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw Object.assign(new Error(data.error ?? `HTTP ${r.status}`), { status: r.status });
   return data;
