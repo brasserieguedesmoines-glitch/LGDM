@@ -1010,18 +1010,26 @@ const FILTRE_COMMANDES = {
   resteAPayer: null, total: null,
 };
 
-async function fetchCommandesEtat(etat = 'toutes', maxPages = 30) {
+// Pagination des commandes. Attention : EasyBeer renvoie des métadonnées
+// fausses (totalElements: 201, totalPages: 2 alors que la page 3 contient
+// 200 commandes réelles). On ne peut donc s'y fier — on s'arrête sur une page
+// incomplète, seul signal fiable de fin de liste.
+const PAR_PAGE = 200;
+async function fetchCommandesEtat(etat = 'toutes', maxPages = 50, budgetMs = 200 * 1000) {
+  const t0 = Date.now();
   const commandes = [];
   for (let page = 1; page <= maxPages; page++) {
     const data = await easybeerPost(
-      `/commande/liste/${etat}?numeroPage=${page}&nombreParPage=200&colonneTri=-numero`,
+      `/commande/liste/${etat}?numeroPage=${page}&nombreParPage=${PAR_PAGE}&colonneTri=-numero`,
       FILTRE_COMMANDES
     );
     const liste = data?.liste ?? data?.contenu ?? data?.content ?? (Array.isArray(data) ? data : []);
     commandes.push(...liste);
-    const total = data?.nombreTotal ?? data?.totalElements ?? null;
-    if (page === 1) console.log(`fetchCommandesEtat: ${total ?? '?'} commandes annoncées, ${liste.length} par page`);
-    if (!liste.length || (total != null && commandes.length >= total)) break;
+    if (liste.length < PAR_PAGE) break;          // dernière page atteinte
+    if (Date.now() - t0 > budgetMs) {            // garde-fou : limite Vercel
+      console.warn(`fetchCommandesEtat: budget atteint à la page ${page} (${commandes.length} commandes)`);
+      break;
+    }
   }
   return commandes;
 }
