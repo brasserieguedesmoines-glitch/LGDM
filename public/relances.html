@@ -16,7 +16,8 @@
     tbody tr { cursor: pointer; }
     tbody tr:hover { background: rgba(232,160,32,0.08); }
     th { font-weight: 600; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; }
-    td.produits { white-space: normal; max-width: 260px; font-size: 0.8rem; color: var(--muted); }
+    td.produits { white-space: normal; max-width: 300px; font-size: 0.78rem; color: var(--muted); line-height: 1.35; }
+    tbody tr:hover td { background: var(--tint-amber); }
     .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; color: #fff; }
     .badge.urgent { background: #c0392b; }
     .badge.cette_semaine { background: #e8a020; }
@@ -111,7 +112,7 @@
           <td>${ecart}</td>
           <td>${c.volumeMoyen || '—'}</td>
           <td>${c.montantMoyenHT ? c.montantMoyenHT.toFixed(2) + ' €' : '—'}</td>
-          <td class="produits">${(c.produitsHabituels ?? []).join(', ') || '—'}</td>`;
+          <td class="produits" title="${(c.produitsHabituels ?? []).join(' · ')}">${(c.produitsHabituels ?? []).join(', ') || '—'}</td>`;
         tbody.appendChild(tr);
       }
       if (!list.length) {

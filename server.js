@@ -939,6 +939,19 @@ app.get('/api/cache/client-infos/:idClient', async (req, res) => {
   } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
 });
 
+// Raccourcit un libellé produit EasyBeer pour l'affichage :
+// "GOAMBRE - Game Over Ambrée - 5.8° - Bouteille - 0.75L" → "Game Over Ambrée 0.75L"
+function libelleCourt(libelle) {
+  const parts = String(libelle ?? '').split(' - ').map(p => p.trim()).filter(Boolean);
+  if (parts.length < 2) return libelle ?? '';
+  // Code article en tête (majuscules/chiffres, pas d'espace) : on l'enlève
+  if (/^[A-Z0-9]{3,12}$/.test(parts[0]) && parts.length > 2) parts.shift();
+  const nom = parts.shift();
+  const contenance = parts.find(p => /\d\s*L$/i.test(p)) ?? '';
+  const fut = parts.some(p => /f[uû]t|keg/i.test(p));
+  return [nom, fut ? 'Fût' : '', contenance].filter(Boolean).join(' ');
+}
+
 // Dernière commande d'un client, réduite au nécessaire pour les relances
 app.get('/api/cache/derniere-commande/:idClient', async (req, res) => {
   try {
@@ -947,7 +960,7 @@ app.get('/api/cache/derniere-commande/:idClient', async (req, res) => {
     res.json({
       elementsBouteilles: (cmd.elementsBouteilles ?? []).map(e => ({
         quantite: e.quantite ?? 0,
-        stockProduit: { libelle: e.stockProduit?.libelle ?? e.produit?.libelle ?? '' },
+        stockProduit: { libelle: libelleCourt(e.stockProduit?.libelle ?? e.produit?.libelle ?? '') },
       })),
     });
   } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
