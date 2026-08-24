@@ -2221,6 +2221,20 @@ app.post('/api/commande', async (req, res) => {
   }
 });
 
+// --- Debug : nombre total de commandes annoncé par EasyBeer (1 appel) ---
+app.get('/api/debug-total', async (req, res) => {
+  try {
+    const data = await easybeerPost(
+      '/commande/liste/toutes?numeroPage=1&nombreParPage=200&colonneTri=-numero', FILTRE_COMMANDES);
+    const liste = data?.liste ?? data?.contenu ?? data?.content ?? [];
+    res.json({
+      nombreTotal: data?.nombreTotal ?? data?.totalElements ?? null,
+      parPageObtenu: liste.length,
+      clesReponse: Object.keys(data ?? {}).slice(0, 20),
+    });
+  } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
+});
+
 // --- Debug : état des dernières commandes enregistrées (lecture seule) ---
 app.get('/api/debug-dernieres', async (req, res) => {
   try {
