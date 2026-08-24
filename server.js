@@ -1166,6 +1166,7 @@ async function analyserClientsInterne(req) {
   }
   let toutes = toutes0;
   // Exclut devis, annulées et clients particuliers de l'analyse
+  jalon('commandes');
   const typesParticuliers = await getIdsTypesParticuliers();
   toutes = toutes.filter(c =>
     !c.estDevis && !c.estAnnulee &&
@@ -1532,6 +1533,12 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
     try { return await fn(); }
     finally { chrono.push({ nom, ms: Date.now() - t }); }
   };
+  // Diagnostic : interrompt volontairement après une phase donnée
+  const stopApres = optionsPilotage.stop ?? null;
+  const jalon = (nom) => {
+    chrono.push({ nom: 'jalon:' + nom, ms: Date.now() - t0 });
+    if (stopApres === nom) throw Object.assign(new Error('ARRET_DIAG'), { chrono });
+  };
   const resteMs = () => Math.max(0, BUDGET_MS - (Date.now() - t0));
   const tempsEcoule = () => resteMs() === 0;
   let budgetAtteint = false;
@@ -1644,6 +1651,7 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
     volumesParCommande.set(c.idCommande, volInfo);
   }
 
+  jalon('details');
   // Passe 2 : coordonnées et contact des clients — via le cache CDN
   // (uniquement livraisons futures, la carte n'affiche pas le passé)
   // Coordonnées clients : lues en parallèle, pour les seules commandes qui en
@@ -1698,6 +1706,7 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
     });
   }
 
+  jalon('livraisons');
   // KPI — la semaine va du lundi au dimanche
   const dansJours = n => debutAujourdhui + n * JOUR;
   const moisCourant = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' }).slice(0, 7);
@@ -1717,6 +1726,7 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
 
   // Tournées : une journée = un ou plusieurs circuits au départ de la brasserie,
   // découpés en secteurs géographiques puis ordonnés (plus proche voisin + 2-opt)
+  jalon('kpi');
   const tCalculTournees = Date.now();
   const tournees = [];
   const parJour = new Map();
@@ -1895,6 +1905,7 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
   }
   tournees.sort((a, b) => a.jour.localeCompare(b.jour) || a.numero - b.numero);
   chrono.push({ nom: 'calcul tournees', ms: Date.now() - tCalculTournees });
+  jalon('tournees');
   const tStats = Date.now();
 
   // Alertes
@@ -2113,6 +2124,7 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
   if (!livraisons.length && !valides.length) {
     throw Object.assign(new Error('Analyse vide — données EasyBeer indisponibles'), { status: 503 });
   }
+  jalon('stats');
   chrono.push({ nom: 'stats + alertes', ms: Date.now() - tStats });
   chrono.push({ nom: 'TOTAL', ms: Date.now() - t0 });
   pilotageCache = {
@@ -2375,13 +2387,13 @@ app.get('/api/debug-total', async (req, res) => {
 // --- Diagnostic : construit le pilotage avec un budget court et renvoie les temps ---
 app.get('/api/diag-pilotage', async (req, res) => {
   const budgetMs = (parseInt(req.query.budget) || 60) * 1000;
+  const stop = req.query.stop || null;
+  res.set('Cache-Control', 'no-store');
   try {
-    const d = await construirePilotageInterne(req, { budgetMs });
-    res.set('Cache-Control', 'no-store');
+    const d = await construirePilotageInterne(req, { budgetMs, stop });
     res.json({ chrono: d.chrono, livraisons: d.livraisons.length, incomplet: d.incomplet, tournees: d.tournees.length });
   } catch (err) {
-    res.set('Cache-Control', 'no-store');
-    res.status(500).json({ erreur: err.message });
+    res.json({ erreur: err.message, chrono: err.chrono ?? null });
   }
 });
 
