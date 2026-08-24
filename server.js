@@ -939,6 +939,20 @@ app.get('/api/cache/client-infos/:idClient', async (req, res) => {
   } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
 });
 
+// Dernière commande d'un client, réduite au nécessaire pour les relances
+app.get('/api/cache/derniere-commande/:idClient', async (req, res) => {
+  try {
+    const cmd = await easybeerGet(`/commande/derniere-commande/${req.params.idClient}`);
+    res.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+    res.json({
+      elementsBouteilles: (cmd.elementsBouteilles ?? []).map(e => ({
+        quantite: e.quantite ?? 0,
+        stockProduit: { libelle: e.stockProduit?.libelle ?? e.produit?.libelle ?? '' },
+      })),
+    });
+  } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
+});
+
 // Appel interne via le CDN Vercel (HIT = zéro requête EasyBeer)
 function urlInterne(req, chemin) {
   const host = req.get('host');
@@ -990,25 +1004,31 @@ async function fetchCommandesEtat(etat = 'toutes', maxPages = 30) {
 let relancesCache = null;
 let relancesCacheExpiry = 0;
 
-async function analyserClients() {
+let relancesEnCours = null;
+async function analyserClients(req) {
   if (relancesCache && Date.now() < relancesCacheExpiry) return relancesCache;
+  if (!relancesEnCours) {
+    relancesEnCours = analyserClientsInterne(req).finally(() => { relancesEnCours = null; });
+  }
   try {
-    return await analyserClientsInterne();
+    return await relancesEnCours;
   } catch (err) {
+    console.error('relances:', err.message);
     if (relancesCache) return relancesCache; // sert la version périmée plutôt qu'une erreur
     throw err;
   }
 }
 
-async function analyserClientsInterne() {
+async function analyserClientsInterne(req) {
 
-  // Toutes les commandes (l'app EasyBeer utilise l'état "toutes")
-  let toutes = [];
-  try {
-    toutes = await fetchCommandesEtat('toutes');
-  } catch (e) {
-    console.error('fetchCommandes toutes:', e.message);
+  // Toutes les commandes (l'app EasyBeer utilise l'état "toutes").
+  // En cas d'échec on laisse remonter l'erreur : le cache périmé sera servi
+  // plutôt qu'une analyse vide mise en cache comme si elle était valide.
+  const toutes0 = await fetchCommandesEtat('toutes');
+  if (!toutes0.length) {
+    throw Object.assign(new Error('Aucune commande récupérée depuis EasyBeer'), { status: 503 });
   }
+  let toutes = toutes0;
   // Exclut devis, annulées et clients particuliers de l'analyse
   const typesParticuliers = await getIdsTypesParticuliers();
   toutes = toutes.filter(c =>
@@ -1102,16 +1122,18 @@ async function analyserClientsInterne() {
   const prioritaires = clients.filter(c => c.priorite !== 'pas_prioritaire').slice(0, 40);
   for (const c of prioritaires) {
     try {
-      const cmd = await easybeerGet(`/commande/derniere-commande/${c.idClient}`);
+      const cmd = await fetchInterne(req, `/api/cache/derniere-commande/${c.idClient}`);
       const elements = cmd.elementsBouteilles ?? [];
       c.volumeMoyen = elements.reduce((a, e) => a + (e.quantite ?? 0), 0);
       c.produitsHabituels = [...new Set(elements.map(e =>
         e.stockProduit?.libelle ?? e.produit?.libelle ?? ''
       ).filter(Boolean))].slice(0, 4);
-      await new Promise(r => setTimeout(r, 130));
     } catch {}
   }
 
+  if (!clients.length) {
+    throw Object.assign(new Error('Analyse des relances vide — données EasyBeer incomplètes'), { status: 503 });
+  }
   relancesCache = { generePour: new Date().toISOString(), nbCommandesAnalysees: toutes.length, clients };
   relancesCacheExpiry = Date.now() + 30 * 60 * 1000;
   return relancesCache;
@@ -1562,7 +1584,7 @@ app.get('/api/pilotage', async (req, res) => {
 // --- API Relances ---
 app.get('/api/relances', async (req, res) => {
   try {
-    const data = await analyserClients();
+    const data = await analyserClients(req);
     res.set('Cache-Control', 'public, s-maxage=1800, stale-while-revalidate=86400');
     res.json(data);
   } catch (err) {

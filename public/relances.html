@@ -50,7 +50,7 @@
   </script>
 
   <main style="max-width: 1100px;">
-    <p id="meta">Chargement de l'analyse…</p>
+    <p id="meta">Chargement de l'analyse… (jusqu'à 2 min au premier chargement)</p>
     <div id="filtres" style="display:none">
       <button data-f="tous" class="actif">Tous</button>
       <button data-f="urgent">🔴 Urgent</button>
@@ -114,8 +114,15 @@
           <td class="produits">${(c.produitsHabituels ?? []).join(', ') || '—'}</td>`;
         tbody.appendChild(tr);
       }
+      if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="9" style="color:var(--muted);text-align:center;padding:24px">`
+          + (clients.length
+              ? 'Aucun client dans cette catégorie — essayez un autre filtre.'
+              : 'Aucune donnée d\'analyse disponible.')
+          + '</td></tr>';
+      }
       document.getElementById('meta').textContent =
-        `${list.length} client(s) affiché(s) — analyse générée le ${new Date(window._genere).toLocaleString('fr-FR')}`;
+        `${list.length} client(s) affiché(s) sur ${clients.length} — analyse générée le ${new Date(window._genere).toLocaleString('fr-FR')}`;
     }
 
     document.getElementById('filtres').addEventListener('click', e => {
@@ -137,7 +144,9 @@
         render('tous');
       })
       .catch(err => {
-        document.getElementById('meta').textContent = 'Erreur : ' + err.message;
+        document.getElementById('meta').innerHTML =
+          `<span class="error">Analyse indisponible : ${err.message}</span>`
+          + ' — l\'API EasyBeer est momentanément saturée, réessayez dans quelques minutes.';
       });
   </script>
 </body>
