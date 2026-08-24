@@ -286,13 +286,12 @@ function ajouterLigne(valeurInitiale = '', labelInitial = '') {
   function majResume() {
     const packs = colisagePour(produitCourant()?.contenant);
     const q = parseInt(inputQte.value) || 0;
-    if (!packs.length || !q) { resume.textContent = ''; return; }
     const parColis = packs[0];
-    const colis = Math.floor(q / parColis);
-    const reste = q % parColis;
-    resume.textContent = colis
-      ? `${q} bouteilles = ${colis} colis de ${parColis}${reste ? ` + ${reste}` : ''}`
-      : `${q} bouteille${q > 1 ? 's' : ''} — colis de ${parColis}`;
+    const reste = parColis ? q % parColis : 0;
+    resume.textContent = reste
+      ? `${q} bouteilles = ${Math.floor(q / parColis)} colis de ${parColis} + ${reste} à l'unité`
+      : '';
+    resume.style.display = reste ? 'block' : 'none';
   }
 
   function majPacks() {
@@ -316,7 +315,7 @@ function ajouterLigne(valeurInitiale = '', labelInitial = '') {
     majResume();
   }
 
-  div.append(prodSelect, inputQte, btnSuppr, zonePacks, resume);
+  div.append(prodSelect, zonePacks, inputQte, btnSuppr, resume);
   div._prodSelect = prodSelect;
   div._majPacks = majPacks;
   majPacks();
