@@ -1057,7 +1057,10 @@ app.get('/api/cache/commandes', async (req, res) => {
       nombreElements: c.nombreElements ?? 0,
       syntheseConditionnement: c.syntheseConditionnement ?? '',
     }));
-    res.set('Cache-Control', 'public, s-maxage=1800, stale-while-revalidate=86400');
+    // 7 400 commandes = ~195 s de pagination : on garde longtemps et on sert
+    // la version périmée pendant que le rafraîchissement se fait en arrière-plan,
+    // pour que le pilotage n'attende jamais cette récupération.
+    res.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=604800');
     res.json(liste);
   } catch (err) {
     res.status(err.status ?? 502).json({ error: err.message });
