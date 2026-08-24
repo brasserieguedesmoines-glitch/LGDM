@@ -356,14 +356,33 @@
 
     const fmtD = t => t ? new Date(t).toLocaleDateString('fr-FR') : '—';
 
-    fetch('/api/pilotage').then(r => r.json()).then(data => {
+    // Le tableau de bord peut mettre plusieurs minutes à se construire à froid ;
+    // Vercel renvoie alors une page d'erreur en texte, pas du JSON.
+    fetch('/api/pilotage').then(async r => {
+      const brut = await r.text();
+      let data;
+      try { data = JSON.parse(brut); }
+      catch {
+        throw new Error(r.status === 504 || /timeout|error occurred/i.test(brut)
+          ? 'Le tableau de bord est encore en cours de construction. Rechargez la page dans une minute — chaque tentative accélère la suivante.'
+          : `Réponse inattendue du serveur (HTTP ${r.status}).`);
+      }
       if (data.error) throw new Error(data.error);
+      return data;
+    }).then(data => {
       D = data;
-      document.getElementById('meta-pilotage').textContent =
+      const meta = document.getElementById('meta-pilotage');
+      meta.textContent =
         'Généré le ' + new Date(D.genere).toLocaleString('fr-FR') + ' — ' + D.livraisons.length + ' livraisons à venir analysées';
+      if (D.incomplet) {
+        meta.innerHTML += ' — <span style="color:var(--amber)">données partielles, rechargez dans une minute pour compléter</span>';
+      }
       document.getElementById('tabs').style.display = 'flex';
       renderOverview(); renderCalendrier(); renderTournees(); renderListe();
-    }).catch(e => document.getElementById('meta-pilotage').textContent = 'Erreur : ' + e.message);
+    }).catch(e => {
+      document.getElementById('meta-pilotage').innerHTML =
+        `<span class="error">${e.message}</span>`;
+    });
 
     // Onglets
     document.getElementById('tabs').addEventListener('click', e => {

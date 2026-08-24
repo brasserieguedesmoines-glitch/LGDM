@@ -1406,6 +1406,13 @@ async function construirePilotage(req) {
 }
 
 async function construirePilotageInterne(req) {
+  // Budget de temps : la fonction Vercel est coupée à 300 s. On s'arrête avant
+  // pour renvoyer un tableau de bord exploitable plutôt qu'une erreur. Ce qui
+  // n'a pas été chargé le sera à la visite suivante (le cache CDN se remplit).
+  const t0 = Date.now();
+  const BUDGET_MS = 190 * 1000;
+  const tempsEcoule = () => Date.now() - t0 > BUDGET_MS;
+  let budgetAtteint = false;
 
   const JOUR = 24 * 60 * 60 * 1000;
   const debutAujourdhui = new Date(new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' })).getTime();
@@ -1463,7 +1470,8 @@ async function construirePilotageInterne(req) {
   const volumesParCommande = new Map();
   for (const c of selection) {
     let volInfo = detailCommandeCache.get(c.idCommande);
-    if (!volInfo) {
+    if (!volInfo && tempsEcoule()) { budgetAtteint = true; }
+    else if (!volInfo) {
       for (let essai = 0; essai < 2 && !volInfo; essai++) {
         try {
           const { elements, adresseLivraison } = await fetchInterne(req, `/api/cache/detail/${c.idCommande}?v=2`);
@@ -1485,7 +1493,8 @@ async function construirePilotageInterne(req) {
           detailCommandeCache.set(c.idCommande, volInfo);
         } catch (e) {
           if (erreursDetail.length < 5) erreursDetail.push({ idCommande: c.idCommande, essai, message: e.message?.slice(0, 200) });
-          if (essai === 0) await new Promise(r => setTimeout(r, 1500));
+          if (essai === 0 && !tempsEcoule()) await new Promise(r => setTimeout(r, 1500));
+          else break;
         }
       }
     }
@@ -1505,14 +1514,16 @@ async function construirePilotageInterne(req) {
     // que si elle manque (repli sur ses adresses de livraison enregistrées).
     if (adresseLivraison?.lat && adresseLivraison?.lng) {
       infos = { lat: adresseLivraison.lat, lng: adresseLivraison.lng, adresse: adresseLivraison.complete };
-      if (idClient && future) {
+      if (idClient && future && !tempsEcoule()) {
         try {
           const ic = await fetchInterne(req, `/api/cache/client-infos/${idClient}`);
           infos.contact = ic.contact;
         } catch {}
       }
-    } else if (idClient && future) {
+    } else if (idClient && future && !tempsEcoule()) {
       try { infos = await fetchInterne(req, `/api/cache/client-infos/${idClient}`); } catch {}
+    } else if (idClient && future) {
+      budgetAtteint = true;
     }
     // Garde-fou : une adresse hors zone de livraison est presque toujours un
     // siège social mal renseigné. On la retire des tournées et on le signale.
@@ -1947,7 +1958,8 @@ async function construirePilotageInterne(req) {
 
   pilotageCache = {
     genere: new Date().toISOString(),
-    incomplet: echecsDetail > 0,
+    incomplet: echecsDetail > 0 || budgetAtteint,
+    budgetAtteint,
     erreursDetail,
     kpi: {
       commandesAVenir: cmdAVenir.length,
@@ -1967,7 +1979,8 @@ async function construirePilotageInterne(req) {
     stats: { commandesParSemaine, topClients, topProduits, caParMois, syntheseClients, clients: clientsStats, commandes: commandesLight },
   };
   // Si des détails ont échoué (saturation EasyBeer), cache court pour retenter vite
-  pilotageCacheExpiry = Date.now() + (echecsDetail > 0 ? 3 : 30) * 60 * 1000;
+  // Données incomplètes : cache court pour compléter rapidement à la visite suivante
+  pilotageCacheExpiry = Date.now() + (echecsDetail > 0 || budgetAtteint ? 2 : 30) * 60 * 1000;
   return pilotageCache;
 }
 
