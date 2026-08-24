@@ -1025,6 +1025,36 @@ async function fetchCommandesEtat(etat = 'toutes', maxPages = 30) {
   return commandes;
 }
 
+// Liste des commandes via le cache CDN. La pagination EasyBeer (29 pages avec
+// les archives) prend plus de deux minutes : la refaire à chaque construction
+// du pilotage et des relances faisait exploser la limite de 300 s de Vercel.
+// On ne conserve que les champs réellement exploités, pour une réponse légère.
+app.get('/api/cache/commandes', async (req, res) => {
+  try {
+    const toutes = await fetchCommandesEtat('toutes');
+    const liste = toutes.map(c => ({
+      idCommande: c.idCommande,
+      numero: c.numero,
+      client: { idClient: c.client?.idClient ?? null, nom: c.client?.nom ?? '' },
+      dateCreation: c.dateCreation ?? null,
+      dateLivraisonPrevue: c.dateLivraisonPrevue ?? null,
+      dateLivraisonReelle: c.dateLivraisonReelle ?? null,
+      totalHT: c.totalHT ?? 0,
+      etat: c.etat ? { code: c.etat.code, libelle: c.etat.libelle } : null,
+      estDevis: !!c.estDevis, estAnnulee: !!c.estAnnulee,
+      estLivree: !!c.estLivree, estFacturee: !!c.estFacturee, estArchivee: !!c.estArchivee,
+      estValidee: !!c.estValidee, estEnPreparation: !!c.estEnPreparation,
+      estPrete: !!c.estPrete, estEnLivraison: !!c.estEnLivraison,
+      nombreElements: c.nombreElements ?? 0,
+      syntheseConditionnement: c.syntheseConditionnement ?? '',
+    }));
+    res.set('Cache-Control', 'public, s-maxage=1800, stale-while-revalidate=86400');
+    res.json(liste);
+  } catch (err) {
+    res.status(err.status ?? 502).json({ error: err.message });
+  }
+});
+
 // Cache de l'analyse (30 min)
 let relancesCache = null;
 let relancesCacheExpiry = 0;
@@ -1049,7 +1079,7 @@ async function analyserClientsInterne(req) {
   // Toutes les commandes (l'app EasyBeer utilise l'état "toutes").
   // En cas d'échec on laisse remonter l'erreur : le cache périmé sera servi
   // plutôt qu'une analyse vide mise en cache comme si elle était valide.
-  const toutes0 = await fetchCommandesEtat('toutes');
+  const toutes0 = await fetchInterne(req, '/api/cache/commandes');
   if (!toutes0.length) {
     throw Object.assign(new Error('Aucune commande récupérée depuis EasyBeer'), { status: 503 });
   }
@@ -1436,7 +1466,7 @@ async function construirePilotageInterne(req) {
 
   // Toutes les commandes (pros uniquement, les particuliers sont exclus)
   // En cas d'échec on lève l'erreur : le cache périmé sera servi à la place
-  const toutes = await fetchCommandesEtat('toutes');
+  const toutes = await fetchInterne(req, '/api/cache/commandes');
   const typesParticuliers = await getIdsTypesParticuliers();
   const valides = toutes.filter(c =>
     !c.estDevis && !c.estAnnulee &&
@@ -2190,30 +2220,10 @@ app.post('/api/commande', async (req, res) => {
   }
 });
 
-// --- Debug : structures d'adresses (client + commande) ---
-app.get('/api/debug-adresses/:idClient/:numero', async (req, res) => {
-  const out = {};
-  try {
-    const d = await easybeerGet(`/parametres/client/detail/${req.params.idClient}`);
-    out.adressePrincipale = d?.adresse ?? null;
-    out.listeAdresseLivraison = d?.listeAdresseLivraison ?? null;
-  } catch (e) { out.clientErr = e.message; }
-  try {
-    const toutes = await fetchCommandesEtat('toutes');
-    const c = toutes.find(x => String(x.numero) === String(req.params.numero));
-    if (c) {
-      const det = await easybeerGet(`/commande/detail/${c.idCommande}`);
-      out.adresseLivraisonCommande = det?.adresseLivraison ?? null;
-      out.clesAdresse = det?.adresseLivraison ? Object.keys(det.adresseLivraison) : null;
-    } else out.commandeErr = 'introuvable';
-  } catch (e) { out.commandeErr = e.message; }
-  res.json(out);
-});
-
 // --- Debug : état des dernières commandes enregistrées (lecture seule) ---
 app.get('/api/debug-dernieres', async (req, res) => {
   try {
-    const toutes = await fetchCommandesEtat('toutes');
+    const toutes = await fetchInterne(req, '/api/cache/commandes');
     const recentes = [...toutes]
       .sort((a, b) => (b.dateCreation ?? 0) - (a.dateCreation ?? 0))
       .slice(0, 12)
