@@ -1096,23 +1096,40 @@ app.get('/api/cache/commandes/p/:page', async (req, res) => {
   }
 });
 
-// Rassemble toutes les pages ; s'arrête sur une page incomplète (fin de liste)
-// ou quand le budget de temps est épuisé, pour ne jamais dépasser la limite Vercel.
+// Exécute une série de tâches avec une concurrence bornée. Les lectures du cache
+// CDN coûtent ~1,6 s chacune en interne : les enchaîner séquentiellement (37 pages
+// puis 120 détails) dépassait à soi seul la limite de 300 s de Vercel.
+async function enParallele(items, concurrence, fn) {
+  const resultats = new Array(items.length);
+  let curseur = 0;
+  await Promise.all(Array.from({ length: Math.min(concurrence, items.length) }, async () => {
+    while (curseur < items.length) {
+      const i = curseur++;
+      try { resultats[i] = await fn(items[i], i); }
+      catch (e) { resultats[i] = { erreur: e }; }
+    }
+  }));
+  return resultats;
+}
+
+// Rassemble les pages par lots parallèles ; s'arrête sur une page incomplète
+// (fin de liste) ou quand le budget de temps est épuisé.
 async function chargerCommandes(req, budgetMs = 150 * 1000, maxPages = 60) {
   const t0 = Date.now();
+  const LOT = 8;
   const toutes = [];
-  for (let page = 1; page <= maxPages; page++) {
-    let r;
-    try {
-      r = await fetchInterne(req, `/api/cache/commandes/p/${page}`);
-    } catch (e) {
-      console.error(`chargerCommandes page ${page}:`, e.message);
-      break;
+  for (let debut = 1; debut <= maxPages; debut += LOT) {
+    const pages = Array.from({ length: Math.min(LOT, maxPages - debut + 1) }, (_, k) => debut + k);
+    const lots = await enParallele(pages, LOT, p => fetchInterne(req, `/api/cache/commandes/p/${p}`));
+    let fini = false;
+    for (const r of lots) {
+      if (!r || r.erreur || !r.commandes) { fini = true; break; }
+      toutes.push(...r.commandes);
+      if (!r.complete) { fini = true; break; }
     }
-    toutes.push(...(r.commandes ?? []));
-    if (!r.complete) break;
+    if (fini) break;
     if (Date.now() - t0 > budgetMs) {
-      console.warn(`chargerCommandes: budget atteint page ${page} (${toutes.length} commandes)`);
+      console.warn(`chargerCommandes: budget atteint (${toutes.length} commandes)`);
       break;
     }
   }
@@ -1573,13 +1590,27 @@ async function construirePilotageInterne(req) {
   // Passe 1 : le contenu des commandes (bouteilles) — via le cache CDN
   // (persistant entre les instances : HIT = zéro appel EasyBeer)
   const volumesParCommande = new Map();
+  // Les détails sont lus en parallèle : 120 lectures à ~1,6 s en série faisaient
+  // exploser le budget. Concurrence modérée pour ne pas saturer EasyBeer quand
+  // certaines entrées sont encore froides.
+  const aCharger = selection.filter(c => !detailCommandeCache.has(c.idCommande));
+  const bruts = tempsEcoule() ? [] : await enParallele(aCharger, 6, async (c) => {
+    if (tempsEcoule()) return { erreur: new Error('budget') };
+    try { return { c, data: await fetchInterne(req, `/api/cache/detail/${c.idCommande}?v=2`) }; }
+    catch (e) { return { c, erreur: e }; }
+  });
+  const detailsRecus = new Map();
+  for (const r of bruts) {
+    if (r?.c && r.data) detailsRecus.set(r.c.idCommande, r.data);
+    else if (r?.erreur) budgetAtteint = budgetAtteint || /budget|délai/.test(r.erreur.message ?? '');
+  }
+
   for (const c of selection) {
     let volInfo = detailCommandeCache.get(c.idCommande);
-    if (!volInfo && tempsEcoule()) { budgetAtteint = true; }
-    else if (!volInfo) {
-      for (let essai = 0; essai < 2 && !volInfo; essai++) {
+    if (!volInfo && detailsRecus.has(c.idCommande)) {
+      for (let essai = 0; essai < 1 && !volInfo; essai++) {
         try {
-          const { elements, adresseLivraison } = await fetchInterne(req, `/api/cache/detail/${c.idCommande}?v=2`);
+          const { elements, adresseLivraison } = detailsRecus.get(c.idCommande);
           const produits = [];
           let litres = 0, b33 = 0, b75 = 0, futs = 0, bouteilles = 0;
           for (const e of elements) {
@@ -1598,8 +1629,6 @@ async function construirePilotageInterne(req) {
           detailCommandeCache.set(c.idCommande, volInfo);
         } catch (e) {
           if (erreursDetail.length < 5) erreursDetail.push({ idCommande: c.idCommande, essai, message: e.message?.slice(0, 200) });
-          if (essai === 0 && !tempsEcoule()) await new Promise(r => setTimeout(r, 1500));
-          else break;
         }
       }
     }
@@ -1609,6 +1638,22 @@ async function construirePilotageInterne(req) {
 
   // Passe 2 : coordonnées et contact des clients — via le cache CDN
   // (uniquement livraisons futures, la carte n'affiche pas le passé)
+  // Coordonnées clients : lues en parallèle, pour les seules commandes qui en
+  // ont besoin (adresse absente de la commande elle-même).
+  const infosClients = new Map();
+  {
+    const besoin = [...new Set(selection
+      .filter(c => c.client?.idClient && (!c.dateLivraisonPrevue || c.dateLivraisonPrevue >= debutAujourdhui))
+      .map(c => c.client.idClient))];
+    const recus = tempsEcoule() ? [] : await enParallele(besoin, 6, async (id) => {
+      if (tempsEcoule()) return null;
+      try { return { id, data: await fetchInterne(req, `/api/cache/client-infos/${id}`) }; }
+      catch { return null; }
+    });
+    for (const r of recus) if (r?.data) infosClients.set(r.id, r.data);
+    if (recus.some(r => !r)) budgetAtteint = true;
+  }
+
   const adressesHorsZone = [];
   for (const c of selection) {
     const idClient = c.client?.idClient;
@@ -1619,16 +1664,9 @@ async function construirePilotageInterne(req) {
     // que si elle manque (repli sur ses adresses de livraison enregistrées).
     if (adresseLivraison?.lat && adresseLivraison?.lng) {
       infos = { lat: adresseLivraison.lat, lng: adresseLivraison.lng, adresse: adresseLivraison.complete };
-      if (idClient && future && !tempsEcoule()) {
-        try {
-          const ic = await fetchInterne(req, `/api/cache/client-infos/${idClient}`);
-          infos.contact = ic.contact;
-        } catch {}
-      }
-    } else if (idClient && future && !tempsEcoule()) {
-      try { infos = await fetchInterne(req, `/api/cache/client-infos/${idClient}`); } catch {}
+      infos.contact = infosClients.get(idClient)?.contact;
     } else if (idClient && future) {
-      budgetAtteint = true;
+      infos = { ...(infosClients.get(idClient) ?? {}) };
     }
     // Garde-fou : une adresse hors zone de livraison est presque toujours un
     // siège social mal renseigné. On la retire des tournées et on le signale.
