@@ -73,6 +73,7 @@
     .arrets .adr { color: var(--muted); font-size: 0.74rem; }
     .arrets .prod { color: var(--muted); font-size: 0.74rem; }
     .arrets .km { color: var(--muted); font-size: 0.74rem; white-space: nowrap; text-align: right; }
+    .arrets .canal { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--amber); font-weight: 600; }
     .depot-ligne { color: var(--muted); font-size: 0.76rem; padding: 6px 8px; }
     .case-fait { display: none; }
     .tournee-alerte { color: var(--danger); font-weight: 600; font-size: 0.76rem; }
@@ -128,9 +129,10 @@
       .arrets th:nth-child(1), .arrets td:nth-child(1) { width: 4%; }
       .arrets th:nth-child(2), .arrets td:nth-child(2) { width: 4%; }
       .arrets th:nth-child(3), .arrets td:nth-child(3) { width: 7%; }
-      .arrets th:nth-child(4), .arrets td:nth-child(4) { width: 52%; }
-      .arrets th:nth-child(5), .arrets td:nth-child(5) { width: 23%; }
-      .arrets th:nth-child(6), .arrets td:nth-child(6) { width: 10%; }
+      .arrets th:nth-child(4), .arrets td:nth-child(4) { width: 42%; }
+      .arrets th:nth-child(5), .arrets td:nth-child(5) { width: 12%; }
+      .arrets th:nth-child(6), .arrets td:nth-child(6) { width: 21%; }
+      .arrets th:nth-child(7), .arrets td:nth-child(7) { width: 10%; }
       .case-fait { display: table-cell !important; text-align: center; font-size: 13pt; }
     }</style>
 </head>
@@ -601,44 +603,48 @@
 
       const liste = jourTournees === 'tous' ? ts : ts.filter(t => t.jour === jourTournees);
       el.innerHTML = liste.map((t, i) => {
-        const trop = t.dureeEstimeeMin > 420;
+        const trop = t.depassementDuree;
         return `
         <div class="tournee" data-idx="${ts.indexOf(t)}">
           <div class="head">
             🚚 ${jourLong(t.jour)} — ${t.nom}
             <span class="pill">${t.nbLivraisons} arrêts</span>
-            ${trop ? '<span class="tournee-alerte">⚠️ journée très longue</span>' : ''}
+            ${trop ? '<span class="tournee-alerte">⚠️ dépasse 4 h</span>' : ''}
+            ${t.nbHorsCreneau ? `<span class="tournee-alerte">⚠️ ${t.nbHorsCreneau} hors créneau</span>` : ''}
             <span class="actions">
               <button data-action="carte">Voir sur la carte</button>
               <button data-action="imprimer">🖨️ Feuille de route</button>
             </span>
           </div>
           <div class="meta">
-            Départ ${t.heureDepart} · retour estimé ${t.heureRetour} · ${hhmm(t.dureeEstimeeMin)} ·
-            ${t.kmEstimes} km (aller-retour dépôt) · 💧 ${t.litres} L ·
-            🍺 ${t.bouteilles} bouteilles · 🛢 ${t.futs} fûts · 💶 ${t.caHT} €
+            Chargement ${t.heureChargement} · départ ${t.heureDepart} · retour ${t.heureRetour} ·
+            <strong style="color:${trop ? 'var(--danger)' : 'var(--ok)'}">${hhmm(t.dureeEstimeeMin)}</strong>
+            ${trop ? '(au-delà des 4 h)' : '(dans les 4 h)'} ·
+            ${t.kmEstimes} km${t.attenteMin > 5 ? ` · ⏳ ${t.attenteMin} min d'attente` : ''} ·
+            💧 ${t.litres} L · 🍺 ${t.bouteilles} bouteilles · 🛢 ${t.futs} fûts · 💶 ${t.caHT} €
           </div>
           <table class="arrets">
             <thead><tr>
               <th class="case-fait">✓</th><th></th><th>Heure</th><th>Client</th>
-              <th>Charge</th><th style="text-align:right">Distance</th>
+              <th>Créneau</th><th>Charge</th><th style="text-align:right">Distance</th>
             </tr></thead>
             <tbody>
-              <tr><td class="case-fait"></td><td colspan="5" class="depot-ligne">🏭 Départ ${t.depart.nom} à ${t.heureDepart}</td></tr>
+              <tr><td class="case-fait"></td><td colspan="6" class="depot-ligne">🏭 Chargement ${t.heureChargement}, départ ${t.depart.nom} à ${t.heureDepart}</td></tr>
               ${t.arrets.map(a => `
                 <tr>
                   <td class="case-fait">☐</td>
                   <td class="num">${a.ordre}</td>
-                  <td class="heure">${a.heureArrivee}</td>
+                  <td class="heure" style="${a.horsCreneau ? 'color:var(--danger)' : ''}">${a.heureArrivee}${a.horsCreneau ? ' ⚠️' : ''}</td>
                   <td>
                     <div class="cli">${a.client}</div>
                     <div class="adr">${a.adresse || '—'}${a.contact ? ' · 📞 ' + a.contact : ''}</div>
                     <div class="adr">Commande n°${a.numero} — ${a.etat || ''}</div>
                   </td>
+                  <td class="prod">${a.canal ? `<span class="canal">${a.canal}</span><br>` : ''}${a.creneau}</td>
                   <td class="prod">${charge(a)}</td>
                   <td class="km">+${a.kmDepuisPrecedent} km<br>${a.kmCumules} km</td>
                 </tr>`).join('')}
-              <tr><td class="case-fait"></td><td colspan="5" class="depot-ligne">🏭 Retour au dépôt vers ${t.heureRetour} (+${t.kmRetour} km)</td></tr>
+              <tr><td class="case-fait"></td><td colspan="6" class="depot-ligne">🏭 Retour au dépôt vers ${t.heureRetour} (+${t.kmRetour} km)</td></tr>
             </tbody>
           </table>
         </div>`;

@@ -1229,10 +1229,29 @@ const ROUTE = {
   vitesseKmH: 42,         // moyenne périurbaine toulousaine
   minutesParArret: 15,    // déchargement + émargement
   minutesChargement: 30,  // chargement du camion au dépôt
-  maxArrets: 14,          // au-delà, la journée est scindée en plusieurs tournées
-  maxDureeMin: 420,       // 7 h de tournée maximum, sinon on scinde davantage
+  maxDureeMin: 240,       // 4 h maximum par tournée, chargement compris
+  cibleTournees: 2,       // deux tournées par jour de livraison en régime normal
+  maxTournees: 3,         // trois au maximum ; au-delà on alerte plutôt que scinder
   rayonMaxKm: parseFloat(process.env.RAYON_MAX_KM ?? '150'), // au-delà : adresse suspecte
-  heureDepart: process.env.HEURE_DEPART ?? '06:00',
+  heureMin: 6 * 60,       // le camion ne part jamais avant 6 h
+};
+
+// Créneaux de livraison par canal, en minutes depuis minuit.
+// GMS tôt le matin ; restaurants après 9 h 30 et avant le service de midi ;
+// cavistes selon leur ouverture, donc fenêtre large en milieu de matinée.
+const FENETRES = {
+  GMS:              { debut:  7 * 60,      fin: 11 * 60 },
+  Distributeurs:    { debut:  7 * 60,      fin: 12 * 60 },
+  Associations:     { debut:  8 * 60,      fin: 12 * 60 },
+  Cavistes:         { debut:  9 * 60,      fin: 12 * 60 },
+  CHR:              { debut:  9 * 60 + 30, fin: 11 * 60 + 30 },
+  'Autres pros':    { debut:  8 * 60,      fin: 12 * 60 },
+  'Non catégorisé': { debut:  8 * 60,      fin: 12 * 60 },
+};
+const fenetreDe = l => FENETRES[l.canal] ?? FENETRES['Non catégorisé'];
+const enHHMM = min => {
+  const t = Math.round(min);
+  return `${String(Math.floor(t / 60) % 24).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
 };
 
 // Distance routière estimée entre deux points
@@ -1245,35 +1264,72 @@ function capDepuisDepot(p) {
   return Math.atan2(p.lng - DEPOT.lng, p.lat - DEPOT.lat);
 }
 
-// Ordonne les arrêts : plus proche voisin depuis le dépôt, puis amélioration 2-opt
+// Déroule un itinéraire : heures d'arrivée, kilomètres, respect des créneaux.
+// Le camion patiente s'il arrive avant l'ouverture ; il est en faute s'il arrive après.
+function simuler(ordre, heureDepart) {
+  let t = heureDepart, km = 0, attente = 0;
+  const hors = [];
+  const etapes = ordre.map((l, i) => {
+    const d = distanceRoute(i === 0 ? DEPOT : ordre[i - 1], l);
+    km += d;
+    t += d / ROUTE.vitesseKmH * 60;
+    const f = fenetreDe(l);
+    if (t < f.debut) { attente += f.debut - t; t = f.debut; }
+    if (t > f.fin + 0.5) hors.push({ client: l.client?.nom ?? '', arrivee: t, fin: f.fin });
+    const etape = { l, arrivee: t, km, kmEtape: d };
+    t += ROUTE.minutesParArret;
+    return etape;
+  });
+  const kmRetour = distanceRoute(ordre[ordre.length - 1], DEPOT);
+  km += kmRetour;
+  t += kmRetour / ROUTE.vitesseKmH * 60;
+  return {
+    etapes, kmRetour, kmTotal: km, heureRetour: t, attente, hors,
+    dureeMin: t - heureDepart + ROUTE.minutesChargement,
+  };
+}
+
+// Heure de départ : juste ce qu'il faut pour arriver à l'ouverture du 1er client
+function departPour(ordre) {
+  const f = fenetreDe(ordre[0]);
+  return Math.max(ROUTE.heureMin, f.debut - distanceRoute(DEPOT, ordre[0]) / ROUTE.vitesseKmH * 60);
+}
+
+// Ordonne les arrêts sous contrainte de créneaux : insertion gloutonne par
+// « au plus tôt réalisable », puis 2-opt qui n'accepte que les ordres faisables.
 function ordonnerArrets(pts) {
-  if (pts.length <= 2) return [...pts];
+  if (pts.length <= 1) return [...pts];
   const restants = [...pts];
   const ordre = [];
+  let t = Math.max(ROUTE.heureMin, Math.min(...pts.map(p => fenetreDe(p).debut))
+                                   - distanceRoute(DEPOT, pts[0]) / ROUTE.vitesseKmH * 60);
   let courant = DEPOT;
   while (restants.length) {
-    let iMin = 0, dMin = Infinity;
+    let choix = 0, meilleur = Infinity;
     for (let i = 0; i < restants.length; i++) {
-      const d = distanceRoute(courant, restants[i]);
-      if (d < dMin) { dMin = d; iMin = i; }
+      const f = fenetreDe(restants[i]);
+      const arrivee = Math.max(t + distanceRoute(courant, restants[i]) / ROUTE.vitesseKmH * 60, f.debut);
+      // Retard sur la fermeture : fortement pénalisé, sans jamais bloquer le calcul
+      const retard = Math.max(0, arrivee - f.fin);
+      const score = arrivee + retard * 10;
+      if (score < meilleur) { meilleur = score; choix = i; }
     }
-    courant = restants[iMin];
-    ordre.push(restants.splice(iMin, 1)[0]);
+    const p = restants.splice(choix, 1)[0];
+    const f = fenetreDe(p);
+    t = Math.max(t + distanceRoute(courant, p) / ROUTE.vitesseKmH * 60, f.debut) + ROUTE.minutesParArret;
+    courant = p;
+    ordre.push(p);
   }
-  // 2-opt : supprime les croisements de l'itinéraire
-  const longueur = o => {
-    let t = distanceRoute(DEPOT, o[0]);
-    for (let i = 1; i < o.length; i++) t += distanceRoute(o[i - 1], o[i]);
-    return t + distanceRoute(o[o.length - 1], DEPOT);
-  };
-  let meilleur = longueur(ordre);
-  for (let boucle = 0; boucle < 40; boucle++) {
+  // 2-opt : raccourcit le trajet sans jamais dégrader le respect des créneaux
+  const note = o => { const s = simuler(o, departPour(o)); return s.hors.length * 1000 + s.kmTotal; };
+  let meilleureNote = note(ordre);
+  for (let boucle = 0; boucle < 30; boucle++) {
     let ameliore = false;
     for (let i = 0; i < ordre.length - 1; i++) {
       for (let j = i + 1; j < ordre.length; j++) {
         const essai = [...ordre.slice(0, i), ...ordre.slice(i, j + 1).reverse(), ...ordre.slice(j + 1)];
-        const l = longueur(essai);
-        if (l < meilleur - 0.01) { ordre.splice(0, ordre.length, ...essai); meilleur = l; ameliore = true; }
+        const n = note(essai);
+        if (n < meilleureNote - 0.01) { ordre.splice(0, ordre.length, ...essai); meilleureNote = n; ameliore = true; }
       }
     }
     if (!ameliore) break;
@@ -1467,100 +1523,162 @@ async function construirePilotageInterne(req) {
     parJour.get(j).push(l);
   }
 
-  const [hDep, mDep] = ROUTE.heureDepart.split(':').map(Number);
-  const enHeure = min => {
-    // Arrondi sur le total : arrondir les minutes seules peut donner « 09:60 »
-    const t = Math.round(hDep * 60 + mDep + min);
-    return `${String(Math.floor(t / 60) % 24).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
-  };
-
-  // Découpe une journée en n secteurs contigus (tri par cap depuis le dépôt),
-  // équilibrés sur le temps estimé et non sur le nombre d'arrêts : sans cela un
-  // client lointain (Albi, Montauban) déséquilibre complètement une tournée.
-  function decouperEnSecteurs(pts, n) {
-    const parCap = [...pts].sort((a, b) => capDepuisDepot(a) - capDepuisDepot(b));
-    if (n <= 1) return [parCap];
-    const poids = parCap.map(p =>
+  // Découpe une journée en n tournées : tri par créneau puis par secteur
+  // géographique, réparties à charge égale (temps), pas à nombre d'arrêts égal.
+  function decouperEnTournees(pts, n) {
+    if (n <= 1) return [pts];
+    const tri = [...pts].sort((a, b) =>
+      fenetreDe(a).debut - fenetreDe(b).debut || capDepuisDepot(a) - capDepuisDepot(b));
+    const poids = tri.map(p =>
       distanceRoute(DEPOT, p) / ROUTE.vitesseKmH * 60 + ROUTE.minutesParArret);
     const total = poids.reduce((a, b) => a + b, 0);
     const groupes = Array.from({ length: n }, () => []);
     let cumul = 0, g = 0;
-    parCap.forEach((p, i) => {
-      // On avance de secteur dès que la part de charge de celui-ci est atteinte,
-      // en gardant au moins un arrêt pour chacun des secteurs restants
-      while (g < n - 1 && cumul > total * (g + 1) / n && parCap.length - i > n - g - 1) g++;
+    tri.forEach((p, i) => {
+      while (g < n - 1 && cumul > total * (g + 1) / n && tri.length - i > n - g - 1) g++;
       groupes[g].push(p);
       cumul += poids[i];
     });
     return groupes.filter(x => x.length);
   }
 
-  for (const [jour, pts] of [...parJour].sort((a, b) => a[0].localeCompare(b[0]))) {
-    // Nombre de tournées : d'abord la contrainte d'arrêts, puis on scinde
-    // davantage tant qu'une tournée dépasse la durée maximale d'une journée
-    let nbTournees = Math.max(1, Math.ceil(pts.length / ROUTE.maxArrets));
-    let groupes = decouperEnSecteurs(pts, nbTournees);
-    const dureeDe = groupe => {
-      const o = ordonnerArrets(groupe);
-      let km = distanceRoute(DEPOT, o[0]);
-      for (let i = 1; i < o.length; i++) km += distanceRoute(o[i - 1], o[i]);
-      km += distanceRoute(o[o.length - 1], DEPOT);
-      return km / ROUTE.vitesseKmH * 60 + o.length * ROUTE.minutesParArret + ROUTE.minutesChargement;
+  // Second découpage possible : par famille de créneau (les GMS du matin d'un côté,
+  // les restaurants de 9 h 30 de l'autre). Éviter de mélanger deux familles dans
+  // une même tournée supprime les longues attentes entre 7 h et 9 h 30.
+  function decouperParCreneau(pts, n) {
+    const familles = new Map();
+    for (const p of pts) {
+      const k = fenetreDe(p).debut;
+      if (!familles.has(k)) familles.set(k, []);
+      familles.get(k).push(p);
+    }
+    let fam = [...familles.entries()].sort((a, b) => a[0] - b[0]).map(([, v]) => v);
+    // Trop de familles : on fusionne les plus petites voisines (créneaux proches)
+    while (fam.length > n) {
+      let iMin = 0, min = Infinity;
+      for (let i = 0; i < fam.length - 1; i++) {
+        const t = fam[i].length + fam[i + 1].length;
+        if (t < min) { min = t; iMin = i; }
+      }
+      fam.splice(iMin, 2, [...fam[iMin], ...fam[iMin + 1]]);
+    }
+    // Pas assez : on scinde géographiquement la famille la plus chargée
+    while (fam.length < n) {
+      let iMax = 0, max = -1;
+      fam.forEach((g, i) => { if (g.length > max) { max = g.length; iMax = i; } });
+      if (fam[iMax].length < 2) break;
+      fam.splice(iMax, 1, ...decouperEnTournees(fam[iMax], 2));
+    }
+    return fam.filter(g => g.length);
+  }
+
+  // Un plan est jugé sur : créneaux tenus, dépassement des 4 h, équité entre
+  // tournées, puis kilomètres. Les deux premiers priment très largement.
+  function evaluer(groupes) {
+    const plans = groupes.map(g => {
+      const ordre = ordonnerArrets(g);
+      return { ordre, sim: simuler(ordre, departPour(ordre)) };
+    });
+    const hors = plans.reduce((a, p) => a + p.sim.hors.length, 0);
+    const depassement = plans.reduce((a, p) => a + Math.max(0, p.sim.dureeMin - ROUTE.maxDureeMin), 0);
+    const durees = plans.map(p => p.sim.dureeMin);
+    const ecart = Math.max(...durees) - Math.min(...durees);
+    const km = plans.reduce((a, p) => a + p.sim.kmTotal, 0);
+    // L'attente est du temps perdu (arriver à 7 h puis patienter jusqu'à 9 h 30
+    // parce qu'on a mélangé une GMS et des restaurants) : on la pénalise.
+    const attente = plans.reduce((a, p) => a + p.sim.attente, 0);
+    return {
+      plans,
+      parfait: !hors && !depassement,
+      score: hors * 10000 + depassement * 20 + attente * 4 + ecart * 3 + km,
     };
-    while (nbTournees < pts.length && groupes.some(g => dureeDe(g) > ROUTE.maxDureeMin)) {
-      nbTournees++;
-      groupes = decouperEnSecteurs(pts, nbTournees);
+  }
+
+  const tourneesHorsCreneau = [];
+  const diagnosticsJour = [];
+  for (const [jour, pts] of [...parJour].sort((a, b) => a[0].localeCompare(b[0]))) {
+    // On vise 2 tournées, on monte à 3 seulement si nécessaire. Pour chaque
+    // nombre on essaie les deux découpages et on garde le meilleur plan global.
+    let meilleur = null;
+    for (let nb = Math.min(ROUTE.cibleTournees, pts.length);
+         nb <= Math.min(ROUTE.maxTournees, pts.length); nb++) {
+      for (const groupes of [decouperParCreneau(pts, nb), decouperEnTournees(pts, nb)]) {
+        if (!groupes.length) continue;
+        const e = evaluer(groupes);
+        if (!meilleur || e.score < meilleur.score) meilleur = e;
+      }
+      if (meilleur?.parfait) break;
     }
 
-    groupes.forEach((groupe, idx) => {
-      if (!groupe.length) return;
-      const ordre = ordonnerArrets(groupe);
-      let km = 0, minutes = ROUTE.minutesChargement;
-      const arrets = ordre.map((l, i) => {
-        const depuis = i === 0 ? DEPOT : ordre[i - 1];
-        const d = distanceRoute(depuis, l);
-        km += d;
-        minutes += d / ROUTE.vitesseKmH * 60;
-        const heureArrivee = enHeure(minutes);
-        minutes += ROUTE.minutesParArret;
-        return {
-          ordre: i + 1,
-          idCommande: l.idCommande,
-          numero: l.numero,
-          client: l.client.nom,
-          adresse: l.adresse ?? '',
-          contact: l.contact ?? '',
-          lat: l.lat, lng: l.lng,
-          etat: l.etat,
-          litres: l.litres,
-          bouteilles: l.bouteilles,
-          futs: l.futs,
-          totalHT: l.totalHT,
-          produits: l.produits,
-          kmDepuisPrecedent: Math.round(d * 10) / 10,
-          kmCumules: Math.round(km * 10) / 10,
-          heureArrivee,
-        };
-      });
-      // Retour au dépôt
-      const kmRetour = distanceRoute(ordre[ordre.length - 1], DEPOT);
-      km += kmRetour;
-      minutes += kmRetour / ROUTE.vitesseKmH * 60;
+    // Si le plafond de 3 tournées ne permet pas de tenir les contraintes, on
+    // cherche combien il en faudrait vraiment, et quels clients restent
+    // impossibles à livrer dans leur créneau quel que soit le découpage.
+    let nbNecessaire = null, impossibles = [];
+    if (!meilleur.parfait) {
+      for (let nb = ROUTE.maxTournees + 1; nb <= Math.min(pts.length, 8); nb++) {
+        const e = evaluer(decouperParCreneau(pts, nb));
+        if (e.parfait) { nbNecessaire = nb; break; }
+      }
+      // Un arrêt reste impossible si, livré seul depuis le dépôt, il rate déjà
+      // sa fenêtre : trop loin pour le créneau de son canal.
+      impossibles = pts.filter(p => {
+        const f = fenetreDe(p);
+        const aller = distanceRoute(DEPOT, p) / ROUTE.vitesseKmH * 60;
+        return Math.max(ROUTE.heureMin, f.debut - aller) + aller > f.fin + 0.5;
+      }).map(p => ({
+        nom: p.client.nom, numero: p.numero, canal: p.canal,
+        km: Math.round(distanceRoute(DEPOT, p)),
+        creneau: `${enHHMM(fenetreDe(p).debut)}–${enHHMM(fenetreDe(p).fin)}`,
+      }));
+      diagnosticsJour.push({ jour, nbArrets: pts.length, nbTournees: meilleur.plans.length, nbNecessaire, impossibles });
+    }
+    const plans = meilleur.plans;
 
+    plans.forEach((plan, idx) => {
+      const { ordre, sim } = plan;
+      const heureDepart = departPour(ordre);
+      const arrets = sim.etapes.map((e, i) => ({
+        ordre: i + 1,
+        idCommande: e.l.idCommande,
+        numero: e.l.numero,
+        client: e.l.client.nom,
+        canal: e.l.canal,
+        creneau: `${enHHMM(fenetreDe(e.l).debut)}–${enHHMM(fenetreDe(e.l).fin)}`,
+        adresse: e.l.adresse ?? '',
+        contact: e.l.contact ?? '',
+        lat: e.l.lat, lng: e.l.lng,
+        etat: e.l.etat,
+        litres: e.l.litres,
+        bouteilles: e.l.bouteilles,
+        futs: e.l.futs,
+        totalHT: e.l.totalHT,
+        produits: e.l.produits,
+        kmDepuisPrecedent: Math.round(e.kmEtape * 10) / 10,
+        kmCumules: Math.round(e.km * 10) / 10,
+        heureArrivee: enHHMM(e.arrivee),
+        horsCreneau: e.arrivee > fenetreDe(e.l).fin + 0.5,
+      }));
+      if (sim.hors.length) {
+        tourneesHorsCreneau.push({ jour, numero: idx + 1, hors: sim.hors.length });
+      }
       tournees.push({
         jour,
         numero: idx + 1,
-        nbTourneesDuJour: groupes.length,
-        nom: groupes.length > 1 ? `Tournée ${idx + 1}` : 'Tournée du jour',
+        nbTourneesDuJour: plans.length,
+        nom: plans.length > 1 ? `Tournée ${idx + 1}` : 'Tournée du jour',
         depart: DEPOT,
-        heureDepart: ROUTE.heureDepart,
-        heureRetour: enHeure(minutes),
+        heureChargement: enHHMM(heureDepart - ROUTE.minutesChargement),
+        heureDepart: enHHMM(heureDepart),
+        heureRetour: enHHMM(sim.heureRetour),
         arrets,
         nbLivraisons: arrets.length,
         clients: arrets.map(a => a.client),
-        kmEstimes: Math.round(km * 10) / 10,
-        kmRetour: Math.round(kmRetour * 10) / 10,
-        dureeEstimeeMin: Math.round(minutes),
+        kmEstimes: Math.round(sim.kmTotal * 10) / 10,
+        kmRetour: Math.round(sim.kmRetour * 10) / 10,
+        dureeEstimeeMin: Math.round(sim.dureeMin),
+        attenteMin: Math.round(sim.attente),
+        depassementDuree: sim.dureeMin > ROUTE.maxDureeMin,
+        nbHorsCreneau: sim.hors.length,
         litres: Math.round(arrets.reduce((a, x) => a + x.litres, 0)),
         bouteilles: arrets.reduce((a, x) => a + x.bouteilles, 0),
         futs: arrets.reduce((a, x) => a + x.futs, 0),
@@ -1572,12 +1690,36 @@ async function construirePilotageInterne(req) {
 
   // Alertes
   const alertes = [];
-  for (const t of tournees) {
-    if (t.nbLivraisons > 8) alertes.push({ type: 'tournee_chargee', message: `Tournée très chargée le ${t.jour} : ${t.nbLivraisons} livraisons` });
-    if (t.nbLivraisons >= 3) alertes.push({ type: 'zone', message: `${t.nbLivraisons} livraisons dans la même zone le ${t.jour} (${t.kmEstimes} km) — tournée recommandée` });
-  }
   for (const l of livraisons) {
     if (!l.produits.length) alertes.push({ type: 'incomplete', message: `Commande n°${l.numero} (${l.client.nom}) sans produits détectés` });
+  }
+  for (const t of tournees) {
+    if (t.depassementDuree) alertes.push({
+      type: 'tournee_chargee',
+      message: `${t.nom} du ${t.jour} : ${Math.floor(t.dureeEstimeeMin / 60)} h ${String(t.dureeEstimeeMin % 60).padStart(2, '0')}`
+             + ` pour ${t.nbLivraisons} arrêts, soit ${t.dureeEstimeeMin - ROUTE.maxDureeMin} min au-delà des 4 h visées.`,
+    });
+    const ko = t.arrets.filter(a => a.horsCreneau);
+    if (ko.length) alertes.push({
+      type: 'incomplete',
+      message: `${t.nom} du ${t.jour} — livraison hors créneau : `
+             + ko.map(a => `${a.client} (arrivée ${a.heureArrivee}, créneau ${a.creneau})`).join(', '),
+    });
+  }
+  for (const d of diagnosticsJour) {
+    alertes.push({
+      type: 'tournee_chargee',
+      message: `${d.jour} : ${d.nbArrets} livraisons ne tiennent pas en ${d.nbTournees} tournées de 4 h. `
+             + (d.nbNecessaire ? `Il en faudrait ${d.nbNecessaire}. ` : '')
+             + `Répartissez une partie des clients sur un autre jour de livraison.`,
+    });
+    for (const i of d.impossibles) {
+      alertes.push({
+        type: 'incomplete',
+        message: `${i.nom} (n°${i.numero}, ${i.canal}) est à ${i.km} km : le trajet dépasse à lui seul le créneau ${i.creneau}.`
+               + ` Ce client ne peut pas être livré dans les horaires de son canal — prévoyez un passage dédié ou un transporteur.`,
+      });
+    }
   }
   for (const a of adressesHorsZone) {
     alertes.push({
