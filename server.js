@@ -2227,10 +2227,18 @@ app.get('/api/debug-total', async (req, res) => {
     const data = await easybeerPost(
       '/commande/liste/toutes?numeroPage=1&nombreParPage=200&colonneTri=-numero', FILTRE_COMMANDES);
     const liste = data?.liste ?? data?.contenu ?? data?.content ?? [];
+    const p3 = await easybeerPost(
+      '/commande/liste/toutes?numeroPage=3&nombreParPage=200&colonneTri=-numero', FILTRE_COMMANDES);
+    const l3 = p3?.liste ?? [];
     res.json({
-      nombreTotal: data?.nombreTotal ?? data?.totalElements ?? null,
+      totalElements: data?.totalElements ?? null,
+      totalPages: data?.totalPages ?? null,
       parPageObtenu: liste.length,
-      clesReponse: Object.keys(data ?? {}).slice(0, 20),
+      page1Premier: liste[0]?.numero ?? null,
+      page1Dernier: liste[liste.length - 1]?.numero ?? null,
+      page3Premier: l3[0]?.numero ?? null,
+      page3Dernier: l3[l3.length - 1]?.numero ?? null,
+      page3Taille: l3.length,
     });
   } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
 });
