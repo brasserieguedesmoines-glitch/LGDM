@@ -1938,111 +1938,22 @@ app.post('/api/commande', async (req, res) => {
   }
 });
 
-// --- Debug : cree une commande test et renvoie l'etat obtenu ---
-app.get('/api/debug-etat-commande/:idClient', async (req, res) => {
-  try {
-    const idClient = parseInt(req.params.idClient);
-    const clients = await fetchInterne(req, '/api/clients');
-    const idClientType = clients.find(c => c.id === idClient)?.idClientType ?? null;
-    const produits = await fetchInterne(req, `/api/tarifs/${idClient}`);
-    const p = produits[0];
-    if (!p) return res.json({ error: 'aucun produit' });
-    const payload = await construirePayloadCommande(req, {
-      idClient, idClientType,
-      lignes: [{ idProduit: p.idProduit, idContenant: p.idContenant, idLot: p.idLot ?? 1, idStockBouteille: p.idStockBouteille, quantite: 1 }],
-      commentaire: 'TEST ETAT — a supprimer',
-    });
-    const result = await easybeerPost('/commande/enregistrer', payload);
-    const num = result.map?.numero ?? null;
-    // Relit la commande pour connaitre l'etat reellement enregistre
-    let etat = null;
-    try {
-      const detail = await easybeerGet(`/commande/detail/${result.map?.id}`);
-      etat = detail?.etat ?? null;
-    } catch (e) { etat = { erreur: e.message }; }
-    res.json({ numero: num, etatEnvoye: payload.etat, etatEnregistre: etat });
-  } catch (err) {
-    res.status(500).json({ error: err.message, detail: err.detail });
-  }
-});
-
-// --- Debug : compare une commande PRETE existante avec la notre ---
-app.get('/api/debug-compare/:numA/:numB', async (req, res) => {
+// --- Debug : état des dernières commandes enregistrées (lecture seule) ---
+app.get('/api/debug-dernieres', async (req, res) => {
   try {
     const toutes = await fetchCommandesEtat('toutes');
-    const trouve = n => toutes.find(c => String(c.numero) === String(n));
-    const a = trouve(req.params.numA), b = trouve(req.params.numB);
-    if (!a || !b) return res.json({ error: 'commande introuvable', a: !!a, b: !!b });
-    const da = await easybeerGet(`/commande/detail/${a.idCommande}`);
-    const db = await easybeerGet(`/commande/detail/${b.idCommande}`);
-    // Champs de haut niveau qui different
-    const diffs = {};
-    const cles = new Set([...Object.keys(da), ...Object.keys(db)]);
-    for (const k of cles) {
-      if (/^elements|^historiques|^documents|^palettisation|^relances|^expeditions/.test(k)) continue;
-      const va = JSON.stringify(da[k]), vb = JSON.stringify(db[k]);
-      if (va !== vb) diffs[k] = { [`n${req.params.numA}`]: da[k], [`n${req.params.numB}`]: db[k] };
-    }
-    const resume = d => ({
-      etat: d.etat?.code, estPrete: d.estPrete, estEnCours: d.estEnCours,
-      estValidee: d.estValidee, estEnPreparation: d.estEnPreparation,
-      estEnAttenteStock: d.estEnAttenteStock, elementsPrepares: d.elementsPrepares,
-      preparateur: d.preparateur, dateValidation: d.dateValidation,
-      elemB: (d.elementsBouteilles ?? []).slice(0, 1),
-    });
-    // Différences sur le premier élément bouteille (champs de préparation ?)
-    const ea = (da.elementsBouteilles ?? [])[0] ?? {}, eb = (db.elementsBouteilles ?? [])[0] ?? {};
-    const diffsElement = {};
-    for (const k of new Set([...Object.keys(ea), ...Object.keys(eb)])) {
-      if (k === 'stockProduit' || k === 'stockBouteille' || k === 'idCommandeElement') continue;
-      if (JSON.stringify(ea[k]) !== JSON.stringify(eb[k])) diffsElement[k] = { a: ea[k], b: eb[k] };
-    }
-    res.json({ resumeA: resume(da), resumeB: resume(db), diffs, diffsElement });
-  } catch (err) {
-    res.status(500).json({ error: err.message, detail: err.detail });
-  }
-});
-
-// --- Debug : cherche un endpoint EasyBeer de changement d'état de commande ---
-app.get('/api/debug-endpoints-commande', async (req, res) => {
-  const out = {};
-  for (const chemin of ['/v2/api-docs', '/v3/api-docs', '/swagger.json', '/api-docs']) {
-    try {
-      const sw = await easybeerGet(chemin);
-      const paths = Object.keys(sw.paths ?? {});
-      out.source = chemin;
-      out.nbPaths = paths.length;
-      out.cheminsCommande = paths.filter(p => /commande/i.test(p));
-      out.cheminsEtat = paths.filter(p => /etat|valid|prepar|statut|livr/i.test(p));
-      break;
-    } catch (e) { out[chemin] = e.message; }
-  }
-  res.json(out);
-});
-
-// --- Debug : états de commande possibles (Swagger + valeurs réellement utilisées) ---
-app.get('/api/debug-etats', async (req, res) => {
-  const out = {};
-  try {
-    const sw = await easybeerGet('/v2/api-docs');
-    const defs = sw.definitions ?? {};
-    out.definitions = Object.fromEntries(
-      Object.entries(defs).filter(([n]) => /etat/i.test(n)).map(([n, d]) => [n, d.properties ?? d])
-    );
-    out.champEtatCommande = defs.ModeleCommande?.properties?.etat ?? null;
-  } catch (e) { out.swaggerError = e.message; }
-  try {
-    const toutes = await fetchCommandesEtat('toutes');
-    const vus = new Map();
-    for (const c of toutes) {
-      if (!c.etat) continue;
-      const k = JSON.stringify(c.etat);
-      vus.set(k, (vus.get(k) ?? 0) + 1);
-    }
-    out.etatsUtilises = [...vus].map(([etat, n]) => ({ etat: JSON.parse(etat), nb: n }))
-      .sort((a, b) => b.nb - a.nb);
-  } catch (e) { out.listeError = e.message; }
-  res.json(out);
+    const recentes = [...toutes]
+      .sort((a, b) => (b.dateCreation ?? 0) - (a.dateCreation ?? 0))
+      .slice(0, 12)
+      .map(c => ({
+        numero: c.numero,
+        client: c.client?.nom,
+        creee: c.dateCreation ? new Date(c.dateCreation).toISOString().slice(0, 16) : null,
+        etat: c.etat?.code,
+        preparee: c.elementsPrepares ?? null,
+      }));
+    res.json(recentes);
+  } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
 });
 
 // --- Export PDF récapitulatif des commandes ---
