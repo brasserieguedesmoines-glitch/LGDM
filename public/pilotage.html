@@ -617,7 +617,7 @@
             </span>
           </div>
           <div class="meta">
-            Chargement ${t.heureChargement} · départ ${t.heureDepart} · retour ${t.heureRetour} ·
+            Départ ${t.heureDepart} · retour ${t.heureRetour} ·
             <strong style="color:${trop ? 'var(--danger)' : 'var(--ok)'}">${hhmm(t.dureeEstimeeMin)}</strong>
             ${trop ? '(au-delà des 4 h)' : '(dans les 4 h)'} ·
             ${t.kmEstimes} km${t.attenteMin > 5 ? ` · ⏳ ${t.attenteMin} min d'attente` : ''} ·
@@ -629,7 +629,7 @@
               <th>Créneau</th><th>Charge</th><th style="text-align:right">Distance</th>
             </tr></thead>
             <tbody>
-              <tr><td class="case-fait"></td><td colspan="6" class="depot-ligne">🏭 Chargement ${t.heureChargement}, départ ${t.depart.nom} à ${t.heureDepart}</td></tr>
+              <tr><td class="case-fait"></td><td colspan="6" class="depot-ligne">🏭 Départ ${t.depart.nom} à ${t.heureDepart} (camion chargé)</td></tr>
               ${t.arrets.map(a => `
                 <tr>
                   <td class="case-fait">☐</td>

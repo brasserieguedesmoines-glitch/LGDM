@@ -1227,9 +1227,9 @@ const DEPOT = {
 const ROUTE = {
   facteurRoute: 1.3,      // vol d'oiseau → distance routière approchée
   vitesseKmH: 42,         // moyenne périurbaine toulousaine
-  minutesParArret: 15,    // déchargement + émargement
-  minutesChargement: 30,  // chargement du camion au dépôt
-  maxDureeMin: 240,       // 4 h maximum par tournée, chargement compris
+  minutesParArret: 7,     // déchargement moyen constaté par commande
+  minutesChargement: 0,   // le camion part déjà chargé
+  maxDureeMin: 240,       // 4 h maximum par tournée, du départ au retour
   cibleTournees: 2,       // deux tournées par jour de livraison en régime normal
   maxTournees: 3,         // trois au maximum ; au-delà on alerte plutôt que scinder
   rayonMaxKm: parseFloat(process.env.RAYON_MAX_KM ?? '150'), // au-delà : adresse suspecte
