@@ -1826,9 +1826,11 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
   for (const [jour, pts] of [...parJour].sort((a, b) => a[0].localeCompare(b[0]))) {
     // On vise 2 tournées, on monte à 3 seulement si nécessaire. Pour chaque
     // nombre on essaie les deux découpages et on garde le meilleur plan global.
+    // On part d'une seule tournée : la cible de 2 par jour traduit le volume
+    // habituel, pas une obligation. Scinder deux arrêts en deux tournées n'a
+    // aucun sens ; on n'ajoute une tournée que si la précédente ne tient pas.
     let meilleur = null;
-    for (let nb = Math.min(ROUTE.cibleTournees, pts.length);
-         nb <= Math.min(ROUTE.maxTournees, pts.length); nb++) {
+    for (let nb = 1; nb <= Math.min(ROUTE.maxTournees, pts.length); nb++) {
       for (const groupes of [decouperParCreneau(pts, nb), decouperEnTournees(pts, nb)]) {
         if (!groupes.length) continue;
         const e = evaluer(groupes);
@@ -1959,6 +1961,16 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
         type: 'incomplete',
         message: `${i.nom} (n°${i.numero}, ${i.canal}) est à ${i.km} km : le trajet dépasse à lui seul le créneau ${i.creneau}.`
                + ` Ce client ne peut pas être livré dans les horaires de son canal — prévoyez un passage dédié ou un transporteur.`,
+      });
+    }
+  }
+  const dansUnAn = debutAujourdhui + 365 * JOUR;
+  for (const l of livraisons) {
+    if (l.dateLivraison && l.dateLivraison > dansUnAn) {
+      alertes.push({
+        type: 'incomplete',
+        message: `Commande n°${l.numero} (${l.client.nom}) : date de livraison au `
+               + `${new Date(l.dateLivraison).toLocaleDateString('fr-FR')}, probablement une erreur de saisie dans EasyBeer.`,
       });
     }
   }
