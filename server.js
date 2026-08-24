@@ -1132,7 +1132,15 @@ async function analyserClientsInterne(req) {
 
   // Enrichit les clients prioritaires avec produits/volume de leur dernière commande
   // (la vue liste ne contient pas ces détails)
-  const prioritaires = clients.filter(c => c.priorite !== 'pas_prioritaire').slice(0, 40);
+  // Budget d'enrichissement limité : on sert d'abord les relances réellement
+  // actionnables (à faire cette semaine, puis à surveiller), et seulement ensuite
+  // les urgents du moins en retard au plus ancien — les clients perdus en dernier.
+  const ordreEnrichissement = { cette_semaine: 0, a_surveiller: 1, urgent: 2 };
+  const prioritaires = clients
+    .filter(c => c.priorite !== 'pas_prioritaire')
+    .sort((a, b) => (ordreEnrichissement[a.priorite] - ordreEnrichissement[b.priorite])
+                    || ((a.joursRetard ?? 0) - (b.joursRetard ?? 0)))
+    .slice(0, 60);
   for (const c of prioritaires) {
     try {
       const cmd = await fetchInterne(req, `/api/cache/derniere-commande/${c.idClient}`);
