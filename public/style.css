@@ -271,6 +271,35 @@ textarea { resize: vertical; font-family: inherit; }
 :root[data-theme="light"] input[type="date"] { color-scheme: light; }
 :root:not([data-theme="light"]) input[type="date"] { color-scheme: dark; }
 
+/* Bandeau de gamme (CHR / GMS) */
+#info-gamme {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  background: var(--tint-amber);
+  border: 1px solid var(--pill-border);
+  border-radius: 999px;
+  padding: 7px 8px 7px 16px;
+  font-size: 0.8rem;
+  color: var(--text);
+}
+#info-gamme strong { color: var(--amber); }
+#info-gamme button {
+  background: transparent;
+  border: 1px solid var(--pill-border);
+  border-radius: 999px;
+  color: var(--amber);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+#info-gamme button:hover { background: var(--tint-amber); border-color: var(--amber); }
+
 /* Lignes produit */
 .ligne-produit {
   display: grid;

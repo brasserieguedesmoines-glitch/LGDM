@@ -121,6 +121,29 @@ async function getTypesClient() {
   return typesClientCache;
 }
 
+// Canal de vente déduit du type EasyBeer, puis du nom du client en secours.
+// Partagé par la prise de commande (filtrage de gamme) et le pilotage (statistiques).
+function canalParLibelleEtNom(libelleType, nom) {
+  const lib = (libelleType ?? '').toLowerCase();
+  if (lib.includes('chr')) return 'CHR';
+  if (lib === 'gd' || lib.includes('enseigne') || lib.includes('grande')) return 'GMS';
+  if (lib.includes('distributeur') || lib.includes('ex works')) return 'Distributeurs';
+  if (lib.includes('asso')) return 'Associations';
+  const n = (nom ?? '').toLowerCase();
+  if (/leclerc|intermarch|carrefour|super\s*u|auchan|casino|biocoop|utile|spar|monoprix/.test(n)) return 'GMS';
+  if (/burger|restau|\bbar\b|h[ôo]tel|brasserie|pizz|caf[ée]|bistro|\bpub\b|camping|guinguette|food/.test(n)) return 'CHR';
+  if (/asso|comit[ée]|\bce\b|festival|club/.test(n)) return 'Associations';
+  if (/cave|caviste|[ée]picerie|vins/.test(n)) return 'Cavistes';
+  if (lib) return 'Autres pros';
+  return 'Non catégorisé';
+}
+
+// Gamme d'un produit : la Bruguiéroise est la gamme destinée à la GMS,
+// tout le reste constitue la gamme classique (CHR, cavistes, distributeurs…).
+function gammeProduit(libelle) {
+  return /brugui[éeè]roise/i.test(libelle ?? '') ? 'gms' : 'classique';
+}
+
 // Map clientId → idClientType (peuplé au chargement des clients)
 const clientTypeMap = new Map();
 
@@ -186,7 +209,7 @@ async function getProduitsClient(idClient) {
     const key = `${t.modeleProduit.idProduit}-${t.modeleContenant.idContenant}-${t.modeleLot.idLot}`;
     if (!seen.has(key) && condMap[key]) {
       seen.add(key);
-      produits.push(condMap[key]);
+      produits.push({ ...condMap[key], gamme: gammeProduit(condMap[key].libelle) });
     }
   }
 
@@ -538,11 +561,17 @@ app.get('/api/debug-commande/:idClient', async (req, res) => {
 // --- Clients ---
 app.get('/api/clients', async (req, res) => {
   try {
-    // Inclut idClientType pour que le frontend puisse l'envoyer avec la commande
+    // Inclut idClientType pour que le frontend puisse l'envoyer avec la commande,
+    // et le canal (CHR / GMS / …) qui détermine la gamme proposée à la saisie
     const clients = await getAllClients();
+    const types = await getTypesClient().catch(() => []);
+    const libelleType = new Map(types.map(t => [t.idClientType, t.libelle]));
     // Cache CDN Vercel : évite de refaire ~10 appels EasyBeer à chaque visite
     res.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
-    res.json(clients.map(c => ({ ...c, idClientType: clientTypeMap.get(c.id) })));
+    res.json(clients.map(c => {
+      const idClientType = clientTypeMap.get(c.id);
+      return { ...c, idClientType, canal: canalParLibelleEtNom(libelleType.get(idClientType), c.nom) };
+    }));
   } catch (err) {
     console.error('GET /api/clients', err.message);
     res.status(err.status ?? 502).json({ error: err.message });
@@ -1352,20 +1381,8 @@ async function construirePilotageInterne(req) {
     const listeClients = await fetchInterne(req, '/api/clients');
     typeParClient = new Map(listeClients.map(c => [c.id, c.idClientType]));
   } catch {}
-  function canalDe(idClient, nom) {
-    const lib = libelleType.get(typeParClient.get(idClient) ?? clientTypeMap.get(idClient)) ?? '';
-    if (lib.includes('chr')) return 'CHR';
-    if (lib === 'gd' || lib.includes('enseigne') || lib.includes('grande')) return 'GMS';
-    if (lib.includes('distributeur') || lib.includes('ex works')) return 'Distributeurs';
-    if (lib.includes('asso')) return 'Associations';
-    const n = (nom ?? '').toLowerCase();
-    if (/leclerc|intermarch|carrefour|super\s*u|auchan|casino|biocoop|utile|spar|monoprix/.test(n)) return 'GMS';
-    if (/burger|restau|\bbar\b|h[ôo]tel|brasserie|pizz|caf[ée]|bistro|\bpub\b|camping|guinguette|food/.test(n)) return 'CHR';
-    if (/asso|comit[ée]|\bce\b|festival|club/.test(n)) return 'Associations';
-    if (/cave|caviste|[ée]picerie|vins/.test(n)) return 'Cavistes';
-    if (lib) return 'Autres pros';
-    return 'Non catégorisé';
-  }
+  const canalDe = (idClient, nom) =>
+    canalParLibelleEtNom(libelleType.get(typeParClient.get(idClient) ?? clientTypeMap.get(idClient)), nom);
 
   // Historique léger de toutes les commandes : sert aux comparaisons de périodes côté client
   const commandesLight = valides.map(c => ({

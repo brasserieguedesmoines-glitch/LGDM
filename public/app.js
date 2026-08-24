@@ -74,6 +74,8 @@ let catalogue = [];
 let clientSearchSelect = null;
 let currentIdClient = '';
 let currentIdClientType = null;
+let currentCanal = null;
+let toutesGammes = false; // vrai = ignorer le filtre de gamme pour ce client
 let adressesLivraison = [];
 let selectAdresse = null;
 
@@ -87,6 +89,8 @@ const sectionEnvoi = document.getElementById('section-envoi');
 const btnEnvoyer = document.getElementById('btn-envoyer');
 const msgStatut = document.getElementById('msg-statut');
 const msgStatutClient = document.getElementById('msg-statut-client');
+const infoGamme = document.getElementById('info-gamme');
+const btnToutesGammes = document.getElementById('btn-toutes-gammes');
 const modalOverlay = document.getElementById('modal-overlay');
 const modalDetail = document.getElementById('modal-detail');
 const btnNouvelleCommande = document.getElementById('btn-nouvelle-commande');
@@ -96,12 +100,18 @@ async function chargerClients() {
   try {
     const clients = await apiFetch('/api/clients');
     const clientTypeIndex = {};
-    clients.forEach(c => { clientTypeIndex[String(c.id)] = c.idClientType; });
+    const clientCanalIndex = {};
+    clients.forEach(c => {
+      clientTypeIndex[String(c.id)] = c.idClientType;
+      clientCanalIndex[String(c.id)] = c.canal;
+    });
     const options = clients.map(c => ({ value: String(c.id), label: c.nom }));
 
     clientSearchSelect = createSearchSelect('Rechercher un client…', options, async (value) => {
       currentIdClient = value;
       currentIdClientType = clientTypeIndex[value] ?? null;
+      currentCanal = clientCanalIndex[value] ?? null;
+      toutesGammes = false;
       if (!value) { masquerSections(); btnDerniereCommande.style.display = 'none'; return; }
       await chargerTarifs(value);
       btnDerniereCommande.style.display = 'block';
@@ -117,6 +127,7 @@ async function chargerClients() {
         clientSearchSelect.setValue(String(c.id), c.nom);
         currentIdClient = String(c.id);
         currentIdClientType = c.idClientType ?? null;
+        currentCanal = c.canal ?? null;
         await chargerTarifs(currentIdClient);
         btnDerniereCommande.style.display = 'block';
       }
@@ -152,6 +163,44 @@ async function chargerAdresses(idClient) {
   } catch {}
 }
 
+// Gamme attendue selon le canal du client :
+// GMS → La Bruguiéroise, tout le reste → gamme classique
+function gammeAttendue() {
+  return currentCanal === 'GMS' ? 'gms' : 'classique';
+}
+
+// Catalogue effectivement proposé dans les listes déroulantes
+function catalogueFiltre() {
+  if (toutesGammes) return catalogue;
+  const attendue = gammeAttendue();
+  const filtre = catalogue.filter(p => (p.gamme ?? 'classique') === attendue);
+  return filtre.length ? filtre : catalogue; // jamais de liste vide
+}
+
+// Bandeau indiquant la gamme active, avec bascule vers le catalogue complet
+function majBandeauGamme() {
+  const attendue = gammeAttendue();
+  const nbGamme = catalogue.filter(p => (p.gamme ?? 'classique') === attendue).length;
+  if (!catalogue.length || !nbGamme || nbGamme === catalogue.length) {
+    infoGamme.style.display = 'none';
+    return;
+  }
+  infoGamme.style.display = 'flex';
+  const nom = attendue === 'gms' ? 'La Bruguiéroise (GMS)' : 'Gamme classique';
+  infoGamme.querySelector('.info-gamme-txt').innerHTML = toutesGammes
+    ? `Catalogue complet affiché (${catalogue.length} références)`
+    : `<strong>${nom}</strong> — ${nbGamme} références proposées`;
+  infoGamme.querySelector('button').textContent = toutesGammes
+    ? 'Revenir à la gamme du client'
+    : 'Afficher toute la gamme';
+}
+
+btnToutesGammes.addEventListener('click', () => {
+  toutesGammes = !toutesGammes;
+  majBandeauGamme();
+  reinitialiserLignes();
+});
+
 async function chargerTarifs(idClient) {
   msgStatutClient.textContent = 'Chargement des produits…';
   msgStatutClient.className = '';
@@ -160,6 +209,7 @@ async function chargerTarifs(idClient) {
   try {
     catalogue = await apiFetch(`/api/tarifs/${idClient}`);
     msgStatutClient.textContent = '';
+    majBandeauGamme();
     reinitialiserLignes();
     afficherSections();
     chargerAdresses(idClient); // en arrière-plan, n'est bloquant pour rien
@@ -179,7 +229,7 @@ function ajouterLigne(valeurInitiale = '', labelInitial = '') {
   const div = document.createElement('div');
   div.className = 'ligne-produit';
 
-  const prodOptions = catalogue.map(p => ({
+  const prodOptions = catalogueFiltre().map(p => ({
     value: JSON.stringify({ idProduit: p.idProduit, idContenant: p.idContenant, idLot: p.idLot ?? 1, idStockBouteille: p.idStockBouteille, gtin: p.gtin }),
     label: `${p.libelle} ${p.contenant}`,
   }));
@@ -215,6 +265,13 @@ async function preRemplirDerniereCommande(idClient) {
     const commande = await apiFetch(`/api/derniere-commande/${idClient}`);
     const elements = commande.elementsBouteilles ?? [];
     if (!elements.length) { setStatut('Aucune commande précédente trouvée.'); return; }
+
+    const attendue = gammeAttendue();
+    const horsGamme = elements.some(e => {
+      const p = catalogue.find(p => p.idProduit === e.stockProduit?.idProduit && p.idContenant === e.stockProduit?.idContenant);
+      return p && (p.gamme ?? 'classique') !== attendue;
+    });
+    if (horsGamme && !toutesGammes) { toutesGammes = true; majBandeauGamme(); }
 
     lignesContainer.innerHTML = '';
     let introuvables = 0;
@@ -294,6 +351,9 @@ btnNouvelleCommande.addEventListener('click', () => {
   clientSearchSelect?.reset();
   currentIdClient = '';
   currentIdClientType = null;
+  currentCanal = null;
+  toutesGammes = false;
+  infoGamme.style.display = 'none';
   masquerSections();
   btnDerniereCommande.style.display = 'none';
   document.getElementById('note-livraison').value = '';
