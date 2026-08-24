@@ -1233,6 +1233,9 @@ const ROUTE = {
   cibleTournees: 2,       // deux tournées par jour de livraison en régime normal
   maxTournees: 3,         // trois au maximum ; au-delà on alerte plutôt que scinder
   rayonMaxKm: parseFloat(process.env.RAYON_MAX_KM ?? '150'), // au-delà : adresse suspecte
+  // Canaux que nous ne livrons pas nous-mêmes (enlèvement ou transporteur) :
+  // ils sortent des tournées mais restent dans les statistiques et la liste.
+  canauxNonLivres: (process.env.CANAUX_NON_LIVRES ?? 'Distributeurs,Associations').split(',').map(c => c.trim()),
   heureMin: 6 * 60,       // le camion ne part jamais avant 6 h
 };
 
@@ -1517,7 +1520,9 @@ async function construirePilotageInterne(req) {
   // découpés en secteurs géographiques puis ordonnés (plus proche voisin + 2-opt)
   const tournees = [];
   const parJour = new Map();
+  const nonLivres = [];
   for (const l of livraisons.filter(l => l.lat && l.lng && l.dateLivraison)) {
+    if (ROUTE.canauxNonLivres.includes(l.canal)) { nonLivres.push(l); continue; }
     const j = new Date(l.dateLivraison).toISOString().slice(0, 10);
     if (!parJour.has(j)) parJour.set(j, []);
     parJour.get(j).push(l);
@@ -1704,6 +1709,15 @@ async function construirePilotageInterne(req) {
       type: 'incomplete',
       message: `${t.nom} du ${t.jour} — livraison hors créneau : `
              + ko.map(a => `${a.client} (arrivée ${a.heureArrivee}, créneau ${a.creneau})`).join(', '),
+    });
+  }
+  if (nonLivres.length) {
+    alertes.push({
+      type: 'zone',
+      message: `${nonLivres.length} commande(s) hors tournée (${ROUTE.canauxNonLivres.join(', ')} — non livrés par nos soins) : `
+             + nonLivres.slice(0, 6).map(l => `${l.client.nom} (n°${l.numero})`).join(', ')
+             + (nonLivres.length > 6 ? `, +${nonLivres.length - 6} autres` : '')
+             + '. À enlever sur place ou à expédier.',
     });
   }
   for (const d of diagnosticsJour) {
