@@ -1226,7 +1226,6 @@ const DEPOT = {
 };
 const ROUTE = {
   facteurRoute: 1.3,      // vol d'oiseau → distance routière approchée
-  vitesseKmH: 42,         // moyenne périurbaine toulousaine
   minutesParArret: 7,     // déchargement moyen constaté par commande
   minutesChargement: 0,   // le camion part déjà chargé
   maxDureeMin: 240,       // 4 h maximum par tournée, du départ au retour
@@ -1262,6 +1261,34 @@ function distanceRoute(a, b) {
   return haversineKm(a, b) * ROUTE.facteurRoute;
 }
 
+// --- Circulation ---
+// Les livraisons ont lieu en pleine heure de pointe toulousaine. Une vitesse
+// moyenne fixe fausse les horaires : un trajet de 8 h et le même à 10 h n'ont
+// rien à voir. Vitesses calibrées sur l'agglomération, réglables par variable.
+const PROFIL_TRAFIC = (process.env.PROFIL_TRAFIC
+  ? JSON.parse(process.env.PROFIL_TRAFIC)
+  : [
+      { avant:  7 * 60,      kmh: 55 }, // avant 7 h : routes dégagées
+      { avant:  8 * 60,      kmh: 42 }, // 7 h – 8 h : trafic qui monte
+      { avant:  9 * 60 + 30, kmh: 32 }, // 8 h – 9 h 30 : heure de pointe
+      { avant: 11 * 60,      kmh: 46 }, // 9 h 30 – 11 h : accalmie
+      { avant: 24 * 60,      kmh: 40 }, // reste de la journée
+    ]);
+const vitesseA = min => (PROFIL_TRAFIC.find(p => min < p.avant) ?? PROFIL_TRAFIC[PROFIL_TRAFIC.length - 1]).kmh;
+
+// Traverser Toulouse coûte plus cher que la périphérie : feux, bouchons, livraison en ville
+const TOULOUSE = { lat: 43.6045, lng: 1.4442 };
+function facteurAgglo(a, b) {
+  const dedans = p => haversineKm(p, TOULOUSE) < 8;
+  const n = (dedans(a) ? 1 : 0) + (dedans(b) ? 1 : 0);
+  return n === 2 ? 0.72 : n === 1 ? 0.85 : 1;
+}
+
+// Durée d'un trajet, à l'heure où il est effectivement parcouru
+function dureeTrajetMin(a, b, heure) {
+  return distanceRoute(a, b) / (vitesseA(heure) * facteurAgglo(a, b)) * 60;
+}
+
 // Cap (angle) d'un point vu depuis le dépôt — sert à découper la journée en secteurs
 function capDepuisDepot(p) {
   return Math.atan2(p.lng - DEPOT.lng, p.lat - DEPOT.lat);
@@ -1270,12 +1297,15 @@ function capDepuisDepot(p) {
 // Déroule un itinéraire : heures d'arrivée, kilomètres, respect des créneaux.
 // Le camion patiente s'il arrive avant l'ouverture ; il est en faute s'il arrive après.
 function simuler(ordre, heureDepart) {
-  let t = heureDepart, km = 0, attente = 0;
+  let t = heureDepart, km = 0, attente = 0, roulage = 0;
   const hors = [];
   const etapes = ordre.map((l, i) => {
-    const d = distanceRoute(i === 0 ? DEPOT : ordre[i - 1], l);
+    const depuis = i === 0 ? DEPOT : ordre[i - 1];
+    const d = distanceRoute(depuis, l);
     km += d;
-    t += d / ROUTE.vitesseKmH * 60;
+    const trajet = dureeTrajetMin(depuis, l, t);
+    roulage += trajet;
+    t += trajet;
     const f = fenetreDe(l);
     if (t < f.debut) { attente += f.debut - t; t = f.debut; }
     if (t > f.fin + 0.5) hors.push({ client: l.client?.nom ?? '', arrivee: t, fin: f.fin });
@@ -1283,11 +1313,14 @@ function simuler(ordre, heureDepart) {
     t += ROUTE.minutesParArret;
     return etape;
   });
-  const kmRetour = distanceRoute(ordre[ordre.length - 1], DEPOT);
+  const dernier = ordre[ordre.length - 1];
+  const kmRetour = distanceRoute(dernier, DEPOT);
   km += kmRetour;
-  t += kmRetour / ROUTE.vitesseKmH * 60;
+  const retour = dureeTrajetMin(dernier, DEPOT, t);
+  roulage += retour;
+  t += retour;
   return {
-    etapes, kmRetour, kmTotal: km, heureRetour: t, attente, hors,
+    etapes, kmRetour, kmTotal: km, heureRetour: t, attente, hors, roulage,
     dureeMin: t - heureDepart + ROUTE.minutesChargement,
   };
 }
@@ -1295,7 +1328,11 @@ function simuler(ordre, heureDepart) {
 // Heure de départ : juste ce qu'il faut pour arriver à l'ouverture du 1er client
 function departPour(ordre) {
   const f = fenetreDe(ordre[0]);
-  return Math.max(ROUTE.heureMin, f.debut - distanceRoute(DEPOT, ordre[0]) / ROUTE.vitesseKmH * 60);
+  // La vitesse dépend de l'heure de départ, qui dépend de la vitesse : deux
+  // passages suffisent à converger.
+  let depart = f.debut - dureeTrajetMin(DEPOT, ordre[0], f.debut);
+  depart = f.debut - dureeTrajetMin(DEPOT, ordre[0], depart);
+  return Math.max(ROUTE.heureMin, depart);
 }
 
 // Ordonne les arrêts sous contrainte de créneaux : insertion gloutonne par
@@ -1304,14 +1341,14 @@ function ordonnerArrets(pts) {
   if (pts.length <= 1) return [...pts];
   const restants = [...pts];
   const ordre = [];
-  let t = Math.max(ROUTE.heureMin, Math.min(...pts.map(p => fenetreDe(p).debut))
-                                   - distanceRoute(DEPOT, pts[0]) / ROUTE.vitesseKmH * 60);
+  const ouvertureMin = Math.min(...pts.map(p => fenetreDe(p).debut));
+  let t = Math.max(ROUTE.heureMin, ouvertureMin - dureeTrajetMin(DEPOT, pts[0], ouvertureMin));
   let courant = DEPOT;
   while (restants.length) {
     let choix = 0, meilleur = Infinity;
     for (let i = 0; i < restants.length; i++) {
       const f = fenetreDe(restants[i]);
-      const arrivee = Math.max(t + distanceRoute(courant, restants[i]) / ROUTE.vitesseKmH * 60, f.debut);
+      const arrivee = Math.max(t + dureeTrajetMin(courant, restants[i], t), f.debut);
       // Retard sur la fermeture : fortement pénalisé, sans jamais bloquer le calcul
       const retard = Math.max(0, arrivee - f.fin);
       const score = arrivee + retard * 10;
@@ -1319,7 +1356,7 @@ function ordonnerArrets(pts) {
     }
     const p = restants.splice(choix, 1)[0];
     const f = fenetreDe(p);
-    t = Math.max(t + distanceRoute(courant, p) / ROUTE.vitesseKmH * 60, f.debut) + ROUTE.minutesParArret;
+    t = Math.max(t + dureeTrajetMin(courant, p, t), f.debut) + ROUTE.minutesParArret;
     courant = p;
     ordre.push(p);
   }
@@ -1535,7 +1572,7 @@ async function construirePilotageInterne(req) {
     const tri = [...pts].sort((a, b) =>
       fenetreDe(a).debut - fenetreDe(b).debut || capDepuisDepot(a) - capDepuisDepot(b));
     const poids = tri.map(p =>
-      distanceRoute(DEPOT, p) / ROUTE.vitesseKmH * 60 + ROUTE.minutesParArret);
+      dureeTrajetMin(DEPOT, p, fenetreDe(p).debut) + ROUTE.minutesParArret);
     const total = poids.reduce((a, b) => a + b, 0);
     const groupes = Array.from({ length: n }, () => []);
     let cumul = 0, g = 0;
@@ -1595,7 +1632,7 @@ async function construirePilotageInterne(req) {
     return {
       plans,
       parfait: !hors && !depassement,
-      score: hors * 10000 + depassement * 20 + attente * 4 + ecart * 3 + km,
+      score: hors * 10000 + depassement * 20 + attente * 12 + ecart * 3 + km,
     };
   }
 
@@ -1628,7 +1665,7 @@ async function construirePilotageInterne(req) {
       // sa fenêtre : trop loin pour le créneau de son canal.
       impossibles = pts.filter(p => {
         const f = fenetreDe(p);
-        const aller = distanceRoute(DEPOT, p) / ROUTE.vitesseKmH * 60;
+        const aller = dureeTrajetMin(DEPOT, p, f.debut);
         return Math.max(ROUTE.heureMin, f.debut - aller) + aller > f.fin + 0.5;
       }).map(p => ({
         nom: p.client.nom, numero: p.numero, canal: p.canal,
@@ -1682,6 +1719,8 @@ async function construirePilotageInterne(req) {
         kmRetour: Math.round(sim.kmRetour * 10) / 10,
         dureeEstimeeMin: Math.round(sim.dureeMin),
         attenteMin: Math.round(sim.attente),
+        roulageMin: Math.round(sim.roulage),
+        vitesseMoyenne: sim.roulage > 0 ? Math.round(sim.kmTotal / (sim.roulage / 60)) : null,
         depassementDuree: sim.dureeMin > ROUTE.maxDureeMin,
         nbHorsCreneau: sim.hors.length,
         litres: Math.round(arrets.reduce((a, x) => a + x.litres, 0)),

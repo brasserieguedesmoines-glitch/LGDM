@@ -620,7 +620,7 @@
             Départ ${t.heureDepart} · retour ${t.heureRetour} ·
             <strong style="color:${trop ? 'var(--danger)' : 'var(--ok)'}">${hhmm(t.dureeEstimeeMin)}</strong>
             ${trop ? '(au-delà des 4 h)' : '(dans les 4 h)'} ·
-            ${t.kmEstimes} km${t.attenteMin > 5 ? ` · ⏳ ${t.attenteMin} min d'attente` : ''} ·
+            ${t.kmEstimes} km en ${hhmm(t.roulageMin)} de route${t.vitesseMoyenne ? ` (${t.vitesseMoyenne} km/h moyens, circulation prise en compte)` : ''}${t.attenteMin > 5 ? ` · ⏳ ${t.attenteMin} min d'attente` : ''} ·
             💧 ${t.litres} L · 🍺 ${t.bouteilles} bouteilles · 🛢 ${t.futs} fûts · 💶 ${t.caHT} €
           </div>
           <table class="arrets">
