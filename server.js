@@ -1886,20 +1886,22 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
   jalon('kpi');
   const tCalculTournees = Date.now();
   const tournees = [];
-  const parJour = new Map();
   const nonLivres = [];
   // Une feuille de route ne concerne que ce qui reste à livrer. Les journées
   // déjà passées sont faites, et une date aberrante (faute de saisie) ne doit
   // pas générer de tournée fantôme : les deux étaient comptées jusqu'ici.
   const limiteDateValide = debutAujourdhui + 365 * JOUR;
+  // Le jour de passage est décidé en interne, pas par la date saisie dans
+  // EasyBeer : toutes les livraisons à venir forment un seul lot, découpé en
+  // tournées que l'équipe répartit elle-même sur la semaine.
+  const aPlanifier = [];
   for (const l of livraisons.filter(l =>
         l.lat && l.lng && l.dateLivraison &&
         l.dateLivraison >= debutAujourdhui && l.dateLivraison <= limiteDateValide)) {
     if (ROUTE.canauxNonLivres.includes(l.canal)) { nonLivres.push(l); continue; }
-    const j = new Date(l.dateLivraison).toISOString().slice(0, 10);
-    if (!parJour.has(j)) parJour.set(j, []);
-    parJour.get(j).push(l);
+    aPlanifier.push(l);
   }
+  const parJour = new Map(aPlanifier.length ? [[null, aPlanifier]] : []);
 
   // Découpe une journée en n tournées : tri par créneau puis par secteur
   // géographique, réparties à charge égale (temps), pas à nombre d'arrêts égal.
@@ -1985,7 +1987,7 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
 
   const tourneesHorsCreneau = [];
   const diagnosticsJour = [];
-  for (const [jour, pts] of [...parJour].sort((a, b) => a[0].localeCompare(b[0]))) {
+  for (const [jour, pts] of parJour) {
     // On vise 2 tournées, on monte à 3 seulement si nécessaire. Pour chaque
     // nombre on essaie les deux découpages et on garde le meilleur plan global.
     // On part d'une seule tournée : la cible de 2 par jour traduit le volume
@@ -2075,7 +2077,7 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
         variante: nbDemande,
         parDefaut,
         nbTourneesDuJour: plans.length,
-        nom: plans.length > 1 ? `Tournée ${idx + 1}` : 'Tournée du jour',
+        nom: `Tournée ${idx + 1}`,
         depart: DEPOT,
         heureChargement: enHHMM(heureDepart - ROUTE.minutesChargement),
         heureDepart: enHHMM(heureDepart),
@@ -2099,7 +2101,7 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
       });
     }
   }
-  tournees.sort((a, b) => a.jour.localeCompare(b.jour) || a.variante - b.variante || a.numero - b.numero);
+  tournees.sort((a, b) => a.variante - b.variante || a.numero - b.numero);
   chrono.push({ nom: 'calcul tournees', ms: Date.now() - tCalculTournees });
   jalon('tournees');
   const tStats = Date.now();
@@ -2113,13 +2115,13 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
     if (!t.parDefaut) continue;   // les variantes non retenues n'alertent pas
     if (t.depassementDuree) alertes.push({
       type: 'tournee_chargee',
-      message: `${t.nom} du ${t.jour} : ${Math.floor(t.dureeEstimeeMin / 60)} h ${String(t.dureeEstimeeMin % 60).padStart(2, '0')}`
+      message: `${t.nom} : ${Math.floor(t.dureeEstimeeMin / 60)} h ${String(t.dureeEstimeeMin % 60).padStart(2, '0')}`
              + ` pour ${t.nbLivraisons} arrêts, soit ${t.dureeEstimeeMin - ROUTE.maxDureeMin} min au-delà des 4 h visées.`,
     });
     const ko = t.arrets.filter(a => a.horsCreneau);
     if (ko.length) alertes.push({
       type: 'incomplete',
-      message: `${t.nom} du ${t.jour} — livraison hors créneau : `
+      message: `${t.nom} — livraison hors créneau : `
              + ko.map(a => `${a.client} (arrivée ${a.heureArrivee}, créneau ${a.creneau})`).join(', '),
     });
   }
@@ -2135,9 +2137,9 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
   for (const d of diagnosticsJour) {
     alertes.push({
       type: 'tournee_chargee',
-      message: `${d.jour} : ${d.nbArrets} livraisons ne tiennent pas en ${d.nbTournees} tournées de 4 h. `
-             + (d.nbNecessaire ? `Il en faudrait ${d.nbNecessaire}. ` : '')
-             + `Répartissez une partie des clients sur un autre jour de livraison.`,
+      message: `${d.nbArrets} livraisons à venir ne tiennent pas en ${d.nbTournees} tournées de 4 h`
+             + (d.nbNecessaire ? ` — il en faudrait ${d.nbNecessaire}` : '')
+             + `. Prévoyez des passages supplémentaires dans la semaine.`,
     });
     for (const i of d.impossibles) {
       alertes.push({

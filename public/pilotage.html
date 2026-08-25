@@ -644,7 +644,7 @@
     document.getElementById('cal-next').addEventListener('click', () => { calMois.setMonth(calMois.getMonth() + 1); renderCalendrier(); });
 
     // ---- Tournées ----
-    const jourLong = j => new Date(j).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    const jourLong = j => j ? new Date(j).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : '';
     const hhmm = min => `${Math.floor(min / 60)} h ${String(Math.round(min % 60)).padStart(2, '0')}`;
     // Volume à décharger, sans le détail des références : ce qu'il faut au chauffeur
     function charge(a) {
@@ -678,7 +678,7 @@
         if (!sel.length) sel = arr.filter(t => t.parDefaut);
         res.push(...sel);
       }
-      return res.sort((a, b) => a.jour.localeCompare(b.jour) || a.numero - b.numero);
+      return res.sort((a, b) => (a.jour ?? '').localeCompare(b.jour ?? '') || a.numero - b.numero);
     }
 
     function renderTournees() {
@@ -708,9 +708,11 @@
         el.innerHTML = '<p style="color:var(--texte-3)">Aucune tournée à proposer — les livraisons doivent avoir une date et une adresse géolocalisée.</p>';
         return;
       }
-      // Sélecteur de jour
-      const jours = [...new Set(ts.map(t => t.jour))].sort();
-      if (!filtres.dataset.pret) {
+      // Sélecteur de jour — seulement si les tournées sont datées (le jour de
+      // passage se décide en interne : le lot courant n'a pas de date).
+      const jours = [...new Set(ts.map(t => t.jour))].filter(Boolean).sort();
+      if (jours.length < 2) { filtres.innerHTML = ''; filtres.style.display = 'none'; }
+      else if (!filtres.dataset.pret) {
         filtres.innerHTML = `<button data-j="tous" class="actif">Tous les jours</button>`
           + jours.map(j => `<button data-j="${j}">${jourLong(j)}</button>`).join('');
         filtres.dataset.pret = '1';
@@ -730,7 +732,7 @@
         return `
         <div class="tournee" data-idx="${ts.indexOf(t)}">
           <div class="head">
-            ${ico('camion')} ${jourLong(t.jour)} — ${t.nom}
+            ${ico('camion')} ${t.jour ? jourLong(t.jour) + ' — ' : ''}${t.nom}
             <span class="pill">${t.nbLivraisons} arrêts</span>
             ${trop ? `<span class="tournee-alerte">${ico('alerte')} dépasse 4 h</span>` : ''}
             ${t.nbHorsCreneau ? `<span class="tournee-alerte">${ico('alerte')} ${t.nbHorsCreneau} hors créneau</span>` : ''}
@@ -783,7 +785,7 @@
     }
 
     function imprimerFeuilleRoute(carte, t) {
-      document.getElementById('route-titre').textContent = `Feuille de route — ${jourLong(t.jour)} — ${t.nom}`;
+      document.getElementById('route-titre').textContent = `Feuille de route${t.jour ? ' — ' + jourLong(t.jour) : ''} — ${t.nom}`;
       document.getElementById('route-meta').textContent =
         `${t.nbLivraisons} arrêts · départ ${t.heureDepart} · retour estimé ${t.heureRetour} · ${t.kmEstimes} km`
         + ` · ${t.litres} L · ${t.bouteilles} bouteilles · ${t.futs} fûts`
@@ -1017,7 +1019,7 @@
       if (!ts.length) return;
       chTournees = new Chart(document.getElementById('ch-tournees'), {
         data: {
-          labels: ts.map((t, i) => new Date(t.jour).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · T' + (ts.filter(x => x.jour === t.jour).indexOf(t) + 1)),
+          labels: ts.map((t, i) => (t.jour ? new Date(t.jour).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' : '') + 'T' + (t.numero ?? i + 1)),
           datasets: [
             { type: 'bar', label: 'CA HT', data: ts.map(t => t.caHT ?? 0), backgroundColor: CSSV('--g1'), yAxisID: 'y' },
             { type: 'bar', label: 'Litres', data: ts.map(t => t.litres), backgroundColor: CSSV('--g3'), yAxisID: 'y2' },
