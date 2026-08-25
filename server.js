@@ -162,6 +162,9 @@ function canalParLibelleEtNom(libelleType, nom) {
   if (lib.includes('distributeur') || lib.includes('ex works')) return 'Distributeurs';
   if (lib.includes('asso')) return 'Associations';
   const n = (nom ?? '').toLowerCase();
+  // « La Boîte à Utile » est une association : à tester avant l'enseigne Utile,
+  // dont le mot-clé attraperait le nom et l'enverrait en GMS (donc en tournée).
+  if (/bo[îi]te\s*[àa]\s*utile/.test(n)) return 'Associations';
   if (/leclerc|intermarch|carrefour|super\s*u|auchan|casino|biocoop|utile|spar|monoprix/.test(n)) return 'GMS';
   if (/burger|restau|\bbar\b|h[ôo]tel|brasserie|pizz|caf[ée]|bistro|\bpub\b|camping|guinguette|food/.test(n)) return 'CHR';
   if (/asso|comit[ée]|\bce\b|festival|club/.test(n)) return 'Associations';
