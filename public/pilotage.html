@@ -20,6 +20,20 @@
 
     /* --- Onglets de vue --- */
     .tabs { margin-bottom: var(--e5); }
+    #meta-pilotage { margin-bottom: var(--e4); }
+
+    /* --- Espacement des barres de filtres : chaque groupe respire ---
+       Les rangées se suivaient à 8 px et les groupes se touchaient ; sur la
+       grille 4/8/12/16/24, les groupes d'une même rangée sont espacés de 24 px
+       et les rangées de 12 px, avec 24 px avant le contenu qu'elles pilotent. */
+    #filtres-periode { column-gap: var(--e5); row-gap: var(--e3); margin-bottom: var(--e3); }
+    #filtres-canal { margin-bottom: var(--e2); }
+    #periode-libelle { font-size: var(--t-sm); color: var(--texte-3); margin: var(--e1) 0 var(--e5); }
+    #vue-stats .kpi-grid { margin-bottom: var(--e5); }
+    #filtres-clients { margin-bottom: var(--e4); }
+    #filtres-jour { margin-bottom: var(--e3); }
+    #filtres-decoupe { margin-bottom: var(--e5); }
+    #filtres-carte { margin-bottom: var(--e4); }
 
     /* --- Alertes --- */
     .alerte.zone, .alerte.volume { background: var(--info-doux); border-left-color: var(--info); }
@@ -239,7 +253,7 @@
     <!-- Tournées -->
     <div class="vue" id="vue-tournees">
       <div class="filtres-carte" id="filtres-jour"></div>
-      <div class="filtres-carte" id="filtres-decoupe" style="margin-top:var(--e2)"></div>
+      <div class="filtres-carte" id="filtres-decoupe"></div>
       <div id="tournees-liste"></div>
     </div>
 
@@ -268,7 +282,7 @@
 
       <!-- Filtre canal transverse -->
       <div class="filtres-carte" id="filtres-canal"></div>
-      <p id="periode-libelle" style="font-size:0.78rem;color:var(--muted);margin:2px 0 8px"></p>
+      <p id="periode-libelle"></p>
 
       <!-- KPI avec évolution -->
       <div class="kpi-grid" id="kpi-stats"></div>
@@ -290,7 +304,7 @@
       <div class="chart-box">
         <h3>Produits × canal (livraisons à venir)</h3>
         <div class="table-wrap"><table class="table-liste" id="tbl-prod-canal"><thead></thead><tbody></tbody></table></div>
-        <p style="font-size:0.72rem;color:var(--muted);margin-top:6px">Basé sur le contenu des livraisons planifiées (l'historique produit complet n'est pas disponible).</p>
+        <p class="carte-soustitre" style="margin-top:var(--e3)">Basé sur le contenu des livraisons planifiées (l'historique produit complet n'est pas disponible).</p>
       </div>
 
       <!-- Tournées -->
@@ -327,7 +341,7 @@
         <div class="chart-box">
           <h3>Concentration du CA (Pareto)</h3>
           <div class="chart-wrap haut"><canvas id="ch-pareto"></canvas></div>
-          <p id="pareto-note" style="font-size:0.75rem;color:var(--muted);margin-top:8px"></p>
+          <p id="pareto-note" class="carte-soustitre" style="margin-top:var(--e3)"></p>
         </div>
       </div>
 
@@ -361,7 +375,7 @@
             <tbody id="tbody-clients"></tbody>
           </table>
         </div>
-        <p id="clients-resume" style="font-size:0.75rem;color:var(--muted);margin-top:8px"></p>
+        <p id="clients-resume" class="carte-soustitre" style="margin-top:var(--e3)"></p>
       </div>
     </div>
 
@@ -410,7 +424,7 @@
       meta.textContent =
         'Généré le ' + new Date(D.genere).toLocaleString('fr-FR') + ' — ' + D.livraisons.length + ' livraisons à venir analysées';
       if (D.incomplet) {
-        meta.innerHTML += ' — <span style="color:var(--amber)">données partielles, rechargez dans une minute pour compléter</span>';
+        meta.innerHTML += ' — <span style="color:var(--alerte)">données partielles, rechargez dans une minute pour compléter</span>';
       }
       document.getElementById('squelette-chargement')?.remove();
       meta.removeAttribute('aria-busy');
@@ -691,7 +705,7 @@
       }
       if (!ts.length) {
         filtres.innerHTML = '';
-        el.innerHTML = '<p style="color:var(--muted)">Aucune tournée à proposer — les livraisons doivent avoir une date et une adresse géolocalisée.</p>';
+        el.innerHTML = '<p style="color:var(--texte-3)">Aucune tournée à proposer — les livraisons doivent avoir une date et une adresse géolocalisée.</p>';
         return;
       }
       // Sélecteur de jour
@@ -970,7 +984,7 @@
           <td>${a.clients ? Math.round(a.nb / a.clients * 10) / 10 : '—'}</td></tr>`;
       }).filter(Boolean);
       document.getElementById('tbody-canaux').innerHTML = lignes.join('') ||
-        '<tr><td colspan="7" style="color:var(--muted)">Aucune commande sur la période.</td></tr>';
+        '<tr><td colspan="7" style="color:var(--texte-3)">Aucune commande sur la période.</td></tr>';
 
       // Croisement produit × canal (livraisons enrichies)
       const prodCanal = new Map();
@@ -992,9 +1006,9 @@
         const max = Math.max(...colsCanal.map(c => e[c] ?? 0), 1);
         return `<tr><td>${lib}</td>` + colsCanal.map(c => {
           const v = e[c] ?? 0;
-          return `<td style="${v === max && v > 0 ? 'font-weight:700;color:var(--dark)' : v === 0 ? 'color:var(--muted)' : ''}">${v || '—'}</td>`;
+          return `<td style="${v === max && v > 0 ? 'font-weight:700;color:var(--texte)' : v === 0 ? 'color:var(--texte-3)' : ''}">${v || '—'}</td>`;
         }).join('') + `<td><strong>${e.total}</strong></td></tr>`;
-      }).join('') || '<tr><td style="color:var(--muted)">Aucune livraison enrichie.</td></tr>';
+      }).join('') || '<tr><td style="color:var(--texte-3)">Aucune livraison enrichie.</td></tr>';
     }
 
     // ---- Équilibre des tournées ----
@@ -1197,7 +1211,7 @@
       const evo = e => e === null || e === undefined ? '—'
         : `<span style="color:${e >= 0 ? 'var(--ok)' : 'var(--danger)'}">${e >= 0 ? '▲ +' : '▼ '}${e} %</span>`;
 
-      const selCanal = c => `<select data-idc="${c.id ?? ''}" class="sel-canal" style="font-size:0.75rem;padding:2px 4px;border:1px solid var(--border);border-radius:6px;color:var(--text);background:${canalOvr[c.id] ? 'var(--tint-amber)' : 'var(--card2)'}">` +
+      const selCanal = c => `<select data-idc="${c.id ?? ''}" class="sel-canal" style="font-size:var(--t-xs);padding:2px var(--e2);min-height:28px;width:auto;background:${canalOvr[c.id] ? 'var(--accent-doux)' : 'var(--surface)'}">` +
         CANAUX.map(x => `<option${x === c.canal ? ' selected' : ''}>${x}</option>`).join('') + '</select>';
       document.getElementById('tbody-clients').innerHTML = liste.map(c => `
         <tr>
@@ -1208,11 +1222,11 @@
           <td data-libelle="Commandes">${c.nbCommandes}</td>
           <td data-libelle="Panier moyen">${eur(c.panierMoyen)}</td>
           <td data-libelle="Fréquence">${c.frequenceJours ? 'tous les ' + c.frequenceJours + ' j' : '—'}</td>
-          <td data-libelle="Dernière commande">${fmtD(c.derniere)}${c.joursDepuis !== null ? ` <span style="color:var(--muted)">(${c.joursDepuis} j)</span>` : ''}</td>
+          <td data-libelle="Dernière commande">${fmtD(c.derniere)}${c.joursDepuis !== null ? ` <span style="color:var(--texte-3)">(${c.joursDepuis} j)</span>` : ''}</td>
           <td data-libelle="Évolution">${evo(c.evolution)}</td>
           <td data-libelle="Statut">${badge(c.statut)}</td>
           <td>${c.id ? `<a href="/?client=${c.id}" class="lien-action">Commander<svg class="ico" aria-hidden="true" style="transform:rotate(180deg)"><use href="#i-retour"/></svg></a>` : ''}</td>
-        </tr>`).join('') || '<tr><td colspan="11" style="color:var(--muted)">Aucun client ne correspond.</td></tr>';
+        </tr>`).join('') || '<tr><td colspan="11" style="color:var(--texte-3)">Aucun client ne correspond.</td></tr>';
 
       document.getElementById('clients-resume').textContent =
         `${liste.length} client(s) affiché(s) · ${eur(liste.reduce((a, c) => a + c.ca, 0))} de CA HT` +

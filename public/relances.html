@@ -183,7 +183,7 @@
         tbody.appendChild(tr);
       }
       if (!list.length) {
-        tbody.innerHTML = `<tr><td colspan="10" style="color:var(--muted);text-align:center;padding:24px">`
+        tbody.innerHTML = `<tr><td colspan="10" style="color:var(--texte-3);text-align:center;padding:24px">`
           + (clients.length
               ? 'Aucun client dans cette catégorie — essayez un autre filtre.'
               : 'Aucune donnée d\'analyse disponible.')
@@ -194,7 +194,7 @@
       document.getElementById('meta').innerHTML =
         `${list.length} client(s) affiché(s) sur ${clients.length} — analyse générée le ${new Date(window._genere).toLocaleString('fr-FR')}`
         + (window._inactifs
-            ? ` · <span style="color:var(--muted)">${window._inactifs} client(s) désactivé(s) dans EasyBeer, exclus</span>`
+            ? ` · <span style="color:var(--texte-3)">${window._inactifs} client(s) désactivé(s) dans EasyBeer, exclus</span>`
             : '');
       // Entête repris sur la version imprimée
       document.getElementById('imp-filtre').textContent = nomFiltre;
