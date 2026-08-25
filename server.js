@@ -593,6 +593,15 @@ app.get('/api/debug-commande/:idClient', async (req, res) => {
 // --- Debug temporaire : champs disponibles sur une fiche client ---
 app.get('/api/debug-client/:idClient', async (req, res) => {
   const out = {};
+  // La grille tarifaire porte-t-elle l'info d'activité ? (1 appel pour ~500 clients)
+  try {
+    await getAllClients();
+    const type = clientTypeMap.get(parseInt(req.params.idClient));
+    const g = await getGrilleByType(type);
+    const c = g.clients.find(x => x.modeleClient.idClient === parseInt(req.params.idClient));
+    out.grilleModeleClient = c?.modeleClient ?? null;
+    out.grilleClesClient = c ? Object.keys(c) : null;
+  } catch (e) { out.grille2Err = e.message; }
   try {
     const d = await easybeerGet(`/parametres/client/detail/${req.params.idClient}`);
     out.clesDetail = Object.keys(d ?? {});

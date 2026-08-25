@@ -13,7 +13,7 @@
   <style>
     main { max-width: 1200px; }
     .tabs { display: flex; gap: 6px; margin: 14px 0; flex-wrap: wrap; }
-    .tabs button { border: 1px solid var(--border); background: var(--card); border-radius: 20px; padding: 8px 16px; cursor: pointer; font-size: 0.85rem; }
+    .tabs button { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 20px; padding: 8px 16px; cursor: pointer; font-size: 0.85rem; }
     .tabs button.actif { background: var(--amber); color: #14120f; border-color: var(--amber); }
     .tabs button:hover:not(.actif) { border-color: var(--amber); }
     .kpi-grid { display: flex; gap: 10px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
@@ -35,7 +35,7 @@
     .alerte.incomplete { border-color: var(--danger); background: var(--tint-danger); }
     #map { height: 65vh; border-radius: var(--radius); }
     .filtres-carte { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
-    .filtres-carte button { border: 1px solid var(--border); background: var(--card); border-radius: 16px; padding: 5px 12px; cursor: pointer; font-size: 0.8rem; }
+    .filtres-carte button { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 16px; padding: 5px 12px; cursor: pointer; font-size: 0.8rem; }
     .filtres-carte button.actif { background: var(--amber); color: #14120f; border-color: var(--amber); }
     .filtres-carte button:hover:not(.actif) { border-color: var(--amber); }
     .filtres-carte input[type="date"] { width: auto; padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.8rem; }
@@ -49,7 +49,7 @@
     .cal-badge { background: var(--amber); color: #14120f; border-radius: 8px; padding: 1px 7px; font-size: 0.72rem; display: inline-block; margin-top: 4px; }
     .cal-badge.confirme { background: var(--ok); color: #14120f; }
     .cal-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-    .cal-nav button { border: 1px solid var(--border); background: var(--card); border-radius: 8px; padding: 4px 12px; cursor: pointer; }
+    .cal-nav button { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 8px; padding: 4px 12px; cursor: pointer; }
     .tournee { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; font-size: 0.85rem; }
     .tournee .head { font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.05em;
                      font-size: 1rem; color: var(--dark); display: flex; align-items: center;
@@ -93,6 +93,7 @@
     #tbl-clients thead th { position: sticky; top: 0; background: var(--card); z-index: 1; }
     #tbl-clients td { white-space: nowrap; }
     #tbl-clients td:first-child { white-space: normal; min-width: 160px; }
+    button, select, input { color: var(--text); }
     .vue { display: none; }
     .vue.active { display: block; animation: apparait 0.25s ease; }
     #meta-pilotage { color: var(--muted); font-size: 0.78rem; margin: 6px 0; }
@@ -1101,7 +1102,7 @@
       const evo = e => e === null || e === undefined ? '—'
         : `<span style="color:${e >= 0 ? 'var(--ok)' : 'var(--danger)'}">${e >= 0 ? '▲ +' : '▼ '}${e} %</span>`;
 
-      const selCanal = c => `<select data-idc="${c.id ?? ''}" class="sel-canal" style="font-size:0.75rem;padding:2px 4px;border:1px solid var(--border);border-radius:6px;background:${canalOvr[c.id] ? 'var(--tint-amber)' : 'transparent'}">` +
+      const selCanal = c => `<select data-idc="${c.id ?? ''}" class="sel-canal" style="font-size:0.75rem;padding:2px 4px;border:1px solid var(--border);border-radius:6px;color:var(--text);background:${canalOvr[c.id] ? 'var(--tint-amber)' : 'var(--card2)'}">` +
         CANAUX.map(x => `<option${x === c.canal ? ' selected' : ''}>${x}</option>`).join('') + '</select>';
       document.getElementById('tbody-clients').innerHTML = liste.map(c => `
         <tr>
