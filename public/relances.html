@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script src="icons.js" defer></script>
   <style>
     .table-wrap { overflow-x: auto; background: var(--card); border-radius: var(--radius); padding: 8px; }
     table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
@@ -28,8 +29,67 @@
     #filtres { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
     #filtres button { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 20px; padding: 6px 14px; cursor: pointer; font-size: 0.8rem; }
     #filtres button.actif { background: var(--amber); color: #14120f; border-color: var(--amber); }
-    #meta { color: var(--muted); font-size: 0.8rem; margin: 8px 0; }
-    button, select, input { color: var(--text); }
+    #meta { color: var(--muted); font-size: var(--fs-sm); margin: var(--sp-2) 0; }
+
+    /* Puce de statut : la couleur ne porte jamais seule le sens, le libellé
+       du bouton et le badge de la ligne l'accompagnent toujours. */
+    .puce { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    .puce.urgent { background: var(--danger); }
+    .puce.cette_semaine { background: var(--amber); }
+    .puce.a_surveiller { background: var(--info); }
+    .puce.pas_prioritaire { background: var(--faint); }
+    #filtres button { display: inline-flex; align-items: center; gap: var(--sp-2); }
+    .case { font-size: 1.1rem; color: var(--faint); }
+
+    /* Sous 768px la table passe en cartes : une ligne = un bloc lisible,
+       plutôt qu'un défilement horizontal pénible au doigt. */
+    @media (max-width: 767px) {
+      .table-wrap { padding: 0; background: none; border: none; }
+      table, tbody, tr, td { display: block; width: 100%; }
+      /* Intitulés repris par data-libelle sur chaque cellule */
+      thead { display: none; }
+      tbody tr {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+        padding: var(--sp-3);
+        margin-bottom: var(--sp-3);
+        box-shadow: var(--shadow-1);
+      }
+      tbody td {
+        display: flex;
+        justify-content: space-between;
+        gap: var(--sp-3);
+        align-items: baseline;
+        padding: var(--sp-1) 0;
+        border: none;
+        white-space: normal;
+        text-align: right;
+      }
+      tbody td::before {
+        content: attr(data-libelle);
+        font-size: var(--fs-xs);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        text-align: left;
+        flex: 0 0 44%;
+      }
+      tbody td:first-child { justify-content: flex-start; padding-bottom: var(--sp-2); }
+      tbody td:first-child::before { content: none; }
+      /* Le nom du client est le titre de la carte : pleine largeur, aligné à
+         gauche, sans césure au milieu d'un mot. */
+      tbody td[data-libelle="Client"] {
+        flex-direction: column; align-items: flex-start; text-align: left;
+        padding-bottom: var(--sp-2); margin-bottom: var(--sp-1);
+        border-bottom: 1px solid var(--border);
+      }
+      tbody td[data-libelle="Client"]::before { flex: none; margin-bottom: 2px; }
+      tbody td[data-libelle="Client"] strong { font-size: 1rem; }
+      td.produits { flex-direction: column; align-items: flex-start; text-align: left; }
+      td.produits::before { flex: none; margin-bottom: 2px; }
+      tbody td > * { min-width: 0; max-width: 100%; overflow-wrap: break-word; }
+    }
     #filtres .btn-export {
       border-color: var(--pill-border); color: var(--amber);
       font-weight: 600; background: transparent;
@@ -95,10 +155,18 @@
       <img src="logo.png" alt="Le Gué des Moines">
       <h1>Clients à relancer<small>Le Gué des Moines</small></h1>
     </div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <a href="/" class="btn-retour">← Commande</a>
-      <button class="btn-theme" id="btn-theme" title="Basculer clair/sombre">☀️</button>
-    </div>
+    <nav class="actions-entete" aria-label="Navigation principale">
+      <a href="/" class="btn-retour">
+        <svg class="ico" aria-hidden="true"><use href="#i-retour"/></svg>Commande
+      </a>
+      <a href="/pilotage.html" class="btn-pdf">
+        <svg class="ico" aria-hidden="true"><use href="#i-pilotage"/></svg>Pilotage
+      </a>
+      <button class="btn-theme" id="btn-theme" aria-label="Basculer entre thème clair et sombre">
+        <svg class="ico i-soleil" aria-hidden="true"><use href="#i-soleil"/></svg>
+        <svg class="ico i-lune" aria-hidden="true"><use href="#i-lune"/></svg>
+      </button>
+    </nav>
   </header>
   <script>
     document.getElementById('btn-theme').addEventListener('click', () => {
@@ -111,14 +179,18 @@
   <main style="max-width: 1100px;">
     <p id="meta">Chargement de l'analyse… (jusqu'à 2 min au premier chargement)</p>
     <div id="filtres" style="display:none">
-      <button data-f="tous" class="actif">Tous</button>
-      <button data-f="urgent">🔴 Urgent</button>
-      <button data-f="cette_semaine">🟠 Cette semaine</button>
-      <button data-f="a_surveiller">🔵 À surveiller</button>
-      <button data-f="pas_prioritaire">⚪ Pas prioritaire</button>
+      <button data-f="tous" class="actif" aria-pressed="true">Tous</button>
+      <button data-f="urgent" aria-pressed="false"><i class="puce urgent"></i>Urgent</button>
+      <button data-f="cette_semaine" aria-pressed="false"><i class="puce cette_semaine"></i>Cette semaine</button>
+      <button data-f="a_surveiller" aria-pressed="false"><i class="puce a_surveiller"></i>À surveiller</button>
+      <button data-f="pas_prioritaire" aria-pressed="false"><i class="puce pas_prioritaire"></i>Pas prioritaire</button>
       <span style="flex:1"></span>
-      <button id="btn-imprimer" class="btn-export">🖨️ Imprimer</button>
-      <button id="btn-csv" class="btn-export">⬇️ Export CSV</button>
+      <button id="btn-imprimer" class="btn-export">
+        <svg class="ico" aria-hidden="true"><use href="#i-imprimer"/></svg>Imprimer
+      </button>
+      <button id="btn-csv" class="btn-export">
+        <svg class="ico" aria-hidden="true"><use href="#i-telecharger"/></svg>Export CSV
+      </button>
     </div>
 
     <!-- Entête visible uniquement à l'impression -->
@@ -179,16 +251,16 @@
             : `<span class="avance">dans ${-c.joursRetard} j</span>`;
         }
         tr.innerHTML = `
-          <td><span class="badge ${c.priorite}">${LABELS[c.priorite]}</span></td>
-          <td><strong>${c.nom}</strong><br><small>${c.nbCommandes} commandes</small></td>
-          <td>${fmtDate(c.dateDerniereCommande)}</td>
-          <td>${c.frequenceMoyenneJours != null ? c.frequenceMoyenneJours + ' j' : '—'}</td>
-          <td>${fmtDate(c.dateProchaineEstimee)}</td>
-          <td>${ecart}</td>
-          <td>${c.volumeMoyen || '—'}</td>
-          <td>${c.montantMoyenHT ? c.montantMoyenHT.toFixed(2) + ' €' : '—'}</td>
-          <td class="produits" title="${(c.produitsHabituels ?? []).join(' · ')}">${(c.produitsHabituels ?? []).join(', ') || '—'}</td>
-          <td class="case-suivi">☐</td>`;
+          <td data-libelle="Priorité"><span class="badge ${c.priorite}">${LABELS[c.priorite]}</span></td>
+          <td data-libelle="Client"><strong>${c.nom}</strong><br><small>${c.nbCommandes} commandes</small></td>
+          <td data-libelle="Dernière commande">${fmtDate(c.dateDerniereCommande)}</td>
+          <td data-libelle="Fréquence">${c.frequenceMoyenneJours != null ? c.frequenceMoyenneJours + ' j' : '—'}</td>
+          <td data-libelle="Prochaine estimée">${fmtDate(c.dateProchaineEstimee)}</td>
+          <td data-libelle="Écart">${ecart}</td>
+          <td data-libelle="Volume moyen">${c.volumeMoyen || '—'}</td>
+          <td data-libelle="Montant moyen HT">${c.montantMoyenHT ? c.montantMoyenHT.toFixed(2) + ' €' : '—'}</td>
+          <td class="produits" data-libelle="Produits habituels" title="${(c.produitsHabituels ?? []).join(' · ')}">${(c.produitsHabituels ?? []).join(', ') || '—'}</td>
+          <td class="case-suivi" data-libelle="Fait"><span class="case">&#9744;</span></td>`;
         tbody.appendChild(tr);
       }
       if (!list.length) {
@@ -239,8 +311,12 @@
     document.getElementById('filtres').addEventListener('click', e => {
       const btn = e.target.closest('button[data-f]');
       if (!btn) return;
-      document.querySelectorAll('#filtres button').forEach(b => b.classList.remove('actif'));
+      document.querySelectorAll('#filtres button[data-f]').forEach(b => {
+        b.classList.remove('actif');
+        b.setAttribute('aria-pressed', 'false');
+      });
       btn.classList.add('actif');
+      btn.setAttribute('aria-pressed', 'true');
       render(btn.dataset.f);
     });
 

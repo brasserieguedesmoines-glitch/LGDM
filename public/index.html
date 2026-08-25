@@ -2,78 +2,111 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <title>LGDM — Prise de commande</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0D0D0D">
+  <title>Prise de commande — Le Gué des Moines</title>
   <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'dark';</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script src="icons.js" defer></script>
 </head>
 <body>
   <header>
     <div class="brand">
-      <img src="logo.png" alt="Le Gué des Moines">
+      <img src="logo.png" alt="">
       <h1>Prise de commande<small>Le Gué des Moines</small></h1>
     </div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
-      <a href="/pilotage.html" class="btn-pdf">📊 Pilotage</a>
-      <a href="/relances.html" class="btn-pdf">📋 Relances</a>
-      <a href="/api/commandes-pdf" target="_blank" id="btn-pdf" class="btn-pdf">📄 PDF</a>
-      <button class="btn-theme" id="btn-theme" title="Basculer clair/sombre">☀️</button>
-    </div>
+    <nav class="actions-entete" aria-label="Navigation principale">
+      <a href="/pilotage.html" class="btn-pdf">
+        <svg class="ico" aria-hidden="true"><use href="#i-pilotage"/></svg>Pilotage
+      </a>
+      <a href="/relances.html" class="btn-pdf">
+        <svg class="ico" aria-hidden="true"><use href="#i-relances"/></svg>Relances
+      </a>
+      <a href="/api/commandes-pdf" target="_blank" rel="noopener" id="btn-pdf" class="btn-pdf">
+        <svg class="ico" aria-hidden="true"><use href="#i-pdf"/></svg>PDF
+      </a>
+      <button class="btn-theme" id="btn-theme" aria-label="Basculer entre thème clair et sombre">
+        <svg class="ico i-soleil" aria-hidden="true"><use href="#i-soleil"/></svg>
+        <svg class="ico i-lune" aria-hidden="true"><use href="#i-lune"/></svg>
+      </button>
+    </nav>
   </header>
-  <script>
-    document.getElementById('btn-theme').addEventListener('click', () => {
-      const t = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
-      localStorage.setItem('lgdm-theme', t);
-      document.documentElement.dataset.theme = t;
-    });
-  </script>
 
   <main>
-    <!-- Étape 1 : Sélection client -->
-    <section id="section-client">
-      <label>Client</label>
-      <p id="msg-statut-client"></p>
+    <!-- Étape 1 : sélection du client -->
+    <section id="section-client" aria-labelledby="titre-client">
+      <h2 id="titre-client">
+        <svg class="ico" aria-hidden="true"><use href="#i-clients"/></svg>Client
+      </h2>
+      <label for="champ-client">Rechercher un client</label>
+      <p id="msg-statut-client" role="status" aria-live="polite"></p>
       <button id="btn-derniere-commande" class="secondary" style="display:none">
+        <svg class="ico" aria-hidden="true"><use href="#i-horloge"/></svg>
         Recharger la dernière commande
       </button>
     </section>
 
-    <!-- Étape 2 : Lignes de produit -->
-    <section id="section-produits" style="display:none">
-      <h2>Produits</h2>
+    <!-- Étape 2 : lignes de produit -->
+    <section id="section-produits" style="display:none" aria-labelledby="titre-produits">
+      <h2 id="titre-produits">
+        <svg class="ico" aria-hidden="true"><use href="#i-colis"/></svg>Produits
+      </h2>
       <div id="info-gamme" style="display:none">
         <span class="info-gamme-txt"></span>
         <button type="button" id="btn-toutes-gammes">Afficher toute la gamme</button>
       </div>
       <div id="lignes-container"></div>
-      <button id="btn-ajouter-ligne" class="secondary">+ Ajouter un produit</button>
+      <button id="btn-ajouter-ligne" class="secondary">
+        <svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg>Ajouter un produit
+      </button>
     </section>
 
     <!-- Note de livraison -->
-    <section id="section-note" style="display:none">
-      <label for="note-livraison">Note de livraison</label>
-      <textarea id="note-livraison" rows="3" placeholder="Horaire, accès, instructions particulières…"></textarea>
+    <section id="section-note" style="display:none" aria-labelledby="titre-note">
+      <h2 id="titre-note">
+        <svg class="ico" aria-hidden="true"><use href="#i-camion"/></svg>Note de livraison
+      </h2>
+      <label for="note-livraison">Instructions pour le livreur</label>
+      <textarea id="note-livraison" rows="3" aria-describedby="aide-note"
+                placeholder="Horaire, accès, code portail…"></textarea>
+      <p id="aide-note" style="font-size:var(--fs-xs);color:var(--muted)">
+        Cette note apparaît sur le bon de livraison.
+      </p>
     </section>
 
     <!-- Envoi -->
     <section id="section-envoi" style="display:none">
-      <button id="btn-envoyer" class="primary">Envoyer la commande</button>
-      <p id="msg-statut"></p>
+      <button id="btn-envoyer" class="primary">
+        <svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Envoyer la commande
+      </button>
+      <p id="msg-statut" role="status" aria-live="polite"></p>
     </section>
   </main>
 
-  <!-- Modal de confirmation -->
-  <div id="modal-overlay" style="display:none">
+  <!-- Confirmation -->
+  <div id="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="modal-titre">
     <div id="modal">
-      <h2>Commande envoyée ✓</h2>
+      <svg class="ico ico-xl modal-ico" aria-hidden="true"><use href="#i-check"/></svg>
+      <h2 id="modal-titre">Commande envoyée</h2>
       <p id="modal-detail"></p>
-      <button id="btn-nouvelle-commande" class="primary">Nouvelle commande</button>
+      <button id="btn-nouvelle-commande" class="primary">
+        <svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg>Nouvelle commande
+      </button>
     </div>
   </div>
 
+  <script>
+    document.getElementById('btn-theme').addEventListener('click', () => {
+      const t = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+      localStorage.setItem('lgdm-theme', t);
+      document.documentElement.dataset.theme = t;
+      document.querySelector('meta[name="theme-color"]')
+        .setAttribute('content', t === 'light' ? '#F7F4EF' : '#0D0D0D');
+    });
+  </script>
   <script src="app.js"></script>
 </body>
 </html>

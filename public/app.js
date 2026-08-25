@@ -1,7 +1,7 @@
 // ---- Composant SearchSelect ----
 // Crée un champ de recherche avec liste déroulante filtrée
 // options: [{ value, label }], onChange(value) appelé à la sélection
-function createSearchSelect(placeholder, options, onChange) {
+function createSearchSelect(placeholder, options, onChange, idChamp = null) {
   const wrapper = document.createElement('div');
   wrapper.className = 'search-select';
 
@@ -9,6 +9,10 @@ function createSearchSelect(placeholder, options, onChange) {
   input.type = 'text';
   input.placeholder = placeholder;
   input.autocomplete = 'off';
+  input.setAttribute('role', 'combobox');
+  input.setAttribute('aria-expanded', 'false');
+  input.setAttribute('aria-autocomplete', 'list');
+  if (idChamp) input.id = idChamp;
 
   const dropdown = document.createElement('div');
   dropdown.className = 'search-dropdown';
@@ -36,12 +40,14 @@ function createSearchSelect(placeholder, options, onChange) {
           selectedValue = o.value;
           input.value = o.label;
           dropdown.style.display = 'none';
+          input.setAttribute('aria-expanded', 'false');
           onChange(o.value);
         });
         dropdown.appendChild(item);
       });
     }
     dropdown.style.display = 'block';
+    input.setAttribute('aria-expanded', 'true');
   }
 
   input.addEventListener('focus', () => renderOptions(input.value));
@@ -51,7 +57,10 @@ function createSearchSelect(placeholder, options, onChange) {
     renderOptions(input.value);
   });
   input.addEventListener('blur', () => {
-    setTimeout(() => { dropdown.style.display = 'none'; }, 150);
+    setTimeout(() => {
+      dropdown.style.display = 'none';
+      input.setAttribute('aria-expanded', 'false');
+    }, 150);
   });
 
   wrapper.append(input, dropdown);
@@ -107,17 +116,17 @@ async function chargerClients() {
     });
     const options = clients.map(c => ({ value: String(c.id), label: c.nom }));
 
-    clientSearchSelect = createSearchSelect('Rechercher un client…', options, async (value) => {
+    clientSearchSelect = createSearchSelect('Nom du client…', options, async (value) => {
       currentIdClient = value;
       currentIdClientType = clientTypeIndex[value] ?? null;
       currentCanal = clientCanalIndex[value] ?? null;
       toutesGammes = false;
       if (!value) { masquerSections(); btnDerniereCommande.style.display = 'none'; return; }
       await chargerTarifs(value);
-      btnDerniereCommande.style.display = 'block';
-    });
+      btnDerniereCommande.style.display = 'flex';
+    }, 'champ-client');
 
-    sectionClient.insertBefore(clientSearchSelect, btnDerniereCommande);
+    sectionClient.insertBefore(clientSearchSelect, msgStatutClient);
 
     // Pré-sélection depuis l'URL (?client=ID) — utilisé par la liste de relances
     const preId = new URLSearchParams(location.search).get('client');
@@ -129,7 +138,7 @@ async function chargerClients() {
         currentIdClientType = c.idClientType ?? null;
         currentCanal = c.canal ?? null;
         await chargerTarifs(currentIdClient);
-        btnDerniereCommande.style.display = 'block';
+        btnDerniereCommande.style.display = 'flex';
       }
     }
   } catch (err) {
@@ -152,10 +161,11 @@ async function chargerAdresses(idClient) {
     if (adressesLivraison.length >= 2) {
       selectAdresse = document.createElement('select');
       selectAdresse.id = 'select-adresse';
+      selectAdresse.setAttribute('aria-label', 'Adresse de livraison');
       adressesLivraison.forEach((a, i) => {
         const opt = document.createElement('option');
         opt.value = i;
-        opt.textContent = '📍 ' + (a.complete || [a.ligne1, a.ligne2, a.ligne3, a.ligne4].filter(Boolean).join(', '));
+        opt.textContent = a.complete || [a.ligne1, a.ligne2, a.ligne3, a.ligne4].filter(Boolean).join(', ');
         selectAdresse.appendChild(opt);
       });
       sectionClient.appendChild(selectAdresse);
@@ -202,7 +212,7 @@ btnToutesGammes.addEventListener('click', () => {
 });
 
 async function chargerTarifs(idClient) {
-  msgStatutClient.textContent = 'Chargement des produits…';
+  msgStatutClient.innerHTML = '<span class="loader"></span> Chargement des produits…';
   msgStatutClient.className = '';
   btnDerniereCommande.style.display = 'none';
   masquerSections();
@@ -214,7 +224,7 @@ async function chargerTarifs(idClient) {
     afficherSections();
     chargerAdresses(idClient); // en arrière-plan, n'est bloquant pour rien
   } catch (err) {
-    msgStatutClient.textContent = 'Erreur chargement produits : ' + err.message;
+    msgStatutClient.innerHTML = ico('alerte') + ' Erreur chargement produits : ' + err.message;
     msgStatutClient.className = 'error';
   }
 }
@@ -259,12 +269,15 @@ function ajouterLigne(valeurInitiale = '', labelInitial = '') {
   inputQte.min = 1;
   inputQte.value = 1;
   inputQte.placeholder = 'Qté';
+  inputQte.setAttribute('aria-label', 'Quantité');
   inputQte.addEventListener('input', () => { div._qteVierge = false; majResume(); });
 
   const btnSuppr = document.createElement('button');
+  btnSuppr.type = 'button';
   btnSuppr.className = 'btn-suppr';
-  btnSuppr.textContent = '×';
-  btnSuppr.title = 'Supprimer';
+  btnSuppr.innerHTML = ico('croix');
+  btnSuppr.setAttribute('aria-label', 'Supprimer cette ligne');
+  btnSuppr.title = 'Supprimer cette ligne';
   btnSuppr.addEventListener('click', () => {
     if (lignesContainer.children.length > 1) div.remove();
   });
@@ -288,8 +301,8 @@ function ajouterLigne(valeurInitiale = '', labelInitial = '') {
     const q = parseInt(inputQte.value) || 0;
     const parColis = packs[0];
     const reste = parColis ? q % parColis : 0;
-    resume.textContent = reste
-      ? `${q} bouteilles = ${Math.floor(q / parColis)} colis de ${parColis} + ${reste} à l'unité`
+    resume.innerHTML = reste
+      ? ico('alerte') + ` ${q} bouteilles = ${Math.floor(q / parColis)} colis de ${parColis} + ${reste} à l'unité`
       : '';
     resume.style.display = reste ? 'block' : 'none';
   }
@@ -388,7 +401,8 @@ btnEnvoyer.addEventListener('click', async () => {
   const commentaire = document.getElementById('note-livraison').value.trim();
 
   btnEnvoyer.disabled = true;
-  btnEnvoyer.innerHTML = '<span class="loader"></span>Envoi en cours…';
+  btnEnvoyer.setAttribute('aria-busy', 'true');
+  btnEnvoyer.innerHTML = '<span class="loader"></span> Envoi en cours…';
   setStatut('');
 
   try {
@@ -410,7 +424,8 @@ btnEnvoyer.addEventListener('click', async () => {
     setStatut('Erreur lors de l\'envoi : ' + err.message, true);
   } finally {
     btnEnvoyer.disabled = false;
-    btnEnvoyer.textContent = 'Envoyer la commande';
+    btnEnvoyer.removeAttribute('aria-busy');
+    btnEnvoyer.innerHTML = ico('check') + ' Envoyer la commande';
   }
 });
 
@@ -452,7 +467,7 @@ function masquerSections() {
 }
 
 function setStatut(msg, isError = false) {
-  msgStatut.textContent = msg;
+  msgStatut.innerHTML = msg ? (isError ? ico('alerte') : '') + ' ' + msg : '';
   msgStatut.className = isError ? 'error' : '';
 }
 

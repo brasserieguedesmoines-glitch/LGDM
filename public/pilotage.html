@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="icons.js" defer></script>
   <style>
     main { max-width: 1200px; }
     .tabs { display: flex; gap: 6px; margin: 14px 0; flex-wrap: wrap; }
@@ -19,7 +20,8 @@
     .kpi-grid { display: flex; gap: 10px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
     .kpi { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; flex: 1 0 130px; min-width: 130px; transition: border-color 0.2s, transform 0.15s; }
     .kpi:hover { border-color: var(--pill-border); transform: translateY(-1px); }
-    .kpi .val { font-size: 1.6rem; font-weight: 700; color: var(--dark); }
+    .kpi .val { font-size: 1.5rem; font-weight: 700; color: var(--dark); white-space: nowrap;
+                font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
     .kpi .lbl { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
     .kpi .ico { font-size: 1.2rem; }
     .kpi.hero { background: var(--header-bg); flex: 1 0 170px; }
@@ -53,7 +55,9 @@
     .tournee { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; font-size: 0.85rem; }
     .tournee .head { font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.05em;
                      font-size: 1rem; color: var(--dark); display: flex; align-items: center;
-                     gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+                     gap: 10px; flex-wrap: wrap; margin-bottom: 6px;
+                     display: flex; align-items: baseline; gap: var(--sp-2); }
+    .tournee .head .ico { align-self: center; color: var(--amber-strong); }
     .tournee .meta { color: var(--muted); font-size: 0.78rem; margin-bottom: 10px; }
     .tournee .actions { margin-left: auto; display: flex; gap: 6px; }
     .tournee .actions button { border: 1px solid var(--pill-border); background: transparent; color: var(--amber);
@@ -94,6 +98,97 @@
     #tbl-clients td { white-space: nowrap; }
     #tbl-clients td:first-child { white-space: normal; min-width: 160px; }
     button, select, input { color: var(--text); }
+
+    /* Réservé aux lecteurs d'écran */
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden;
+               clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+    /* Puces de statut : toujours accompagnées d'un libellé, jamais seules */
+    .puce { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    .puce.confirme { background: var(--ok); }
+    .puce.attente  { background: var(--amber); }
+    .puce.ko       { background: var(--danger); }
+    .legende { display: inline-flex; align-items: center; gap: var(--sp-1); font-size: var(--fs-xs); color: var(--muted); }
+    .etat { display: inline-flex; align-items: center; gap: var(--sp-1); white-space: nowrap; }
+    .etat.ok { color: var(--ok); } .etat.att { color: var(--amber-strong); } .etat.ko { color: var(--danger); }
+    .avertissement { display: inline-flex; align-items: center; gap: var(--sp-1); font-size: var(--fs-xs); color: var(--danger); }
+    .vide { display: flex; align-items: center; gap: var(--sp-2); color: var(--muted); font-size: var(--fs-sm); }
+    .case { font-size: 1.15rem; color: var(--faint); }
+    .lien-action { display: inline-flex; align-items: center; gap: 4px; color: var(--amber-strong);
+                   white-space: nowrap; text-decoration: none; font-weight: 600; }
+    .lien-action:hover { text-decoration: underline; }
+    .marqueur-depot { display: grid; place-items: center; color: var(--amber); }
+
+    .kpi-ico { color: var(--amber-strong); display: flex; justify-content: center; margin-bottom: 2px; }
+    .kpi-evo { font-size: var(--fs-xs); font-weight: 700; }
+    .kpi-evo.hausse { color: var(--ok); } .kpi-evo.baisse { color: var(--danger); }
+
+    /* Onglets et filtres : cibles tactiles confortables sur tablette */
+    .tabs button, .filtres-carte button, #filtres button {
+      display: inline-flex; align-items: center; gap: var(--sp-2);
+      min-height: 40px; font-weight: 600;
+    }
+
+    /* Tableau clients : passage en cartes sous 768px plutôt qu'un long
+       défilement horizontal, difficile à manipuler au doigt. */
+    @media (max-width: 767px) {
+      #tbl-clients thead { display: none; }
+      #tbl-clients, #tbl-clients tbody, #tbl-clients tr, #tbl-clients td { display: block; width: 100%; }
+      #tbl-clients tr {
+        background: var(--card2); border: 1px solid var(--border);
+        border-radius: var(--r-md); padding: var(--sp-3); margin-bottom: var(--sp-3);
+      }
+      #tbl-clients td {
+        display: flex; justify-content: space-between; gap: var(--sp-3);
+        padding: var(--sp-1) 0; border: none; white-space: normal; text-align: right;
+      }
+      #tbl-clients td::before {
+        content: attr(data-libelle); font-size: var(--fs-xs); text-transform: uppercase;
+        letter-spacing: 0.05em; color: var(--muted); text-align: left; flex: 0 0 42%;
+      }
+      #tbl-clients td:first-child {
+        justify-content: flex-start; font-weight: 600; font-size: 1rem;
+        padding-bottom: var(--sp-2); margin-bottom: var(--sp-1);
+        border-bottom: 1px solid var(--border); overflow-wrap: break-word;
+      }
+      #tbl-clients td:first-child::before { content: none; }
+    }
+
+    /* Calendrier : les 7 colonnes doivent pouvoir se comprimer sans déborder */
+    .cal-grid > * { min-width: 0; }
+    .cal-jour { overflow: hidden; }
+    @media (max-width: 480px) {
+      .cal-jour { min-height: 58px; padding: 4px 2px; font-size: 0.65rem; }
+      .cal-head { font-size: 0.58rem; }
+      .cal-badge { padding: 0 5px; font-size: 0.62rem; }
+      .cal-jour > div:last-child { display: none; }  /* noms de clients illisibles à cette taille */
+    }
+
+    /* Feuille de route : une carte par arrêt sous 768px. Le chauffeur consulte
+       sur téléphone dans le camion, un défilement latéral y est impraticable. */
+    @media (max-width: 767px) {
+      .arrets, .arrets tbody, .arrets tr, .arrets td { display: block; width: 100%; }
+      /* Les intitulés sont repris par data-libelle sur chaque cellule :
+         l'en-tête peut donc être retiré du flux sans perte d'information. */
+      .arrets thead { display: none; }
+      .arrets tr { border: 1px solid var(--border); border-radius: var(--r-md);
+                   background: var(--card2); padding: var(--sp-3); margin-bottom: var(--sp-2); }
+      .arrets td { display: flex; justify-content: space-between; gap: var(--sp-3);
+                   padding: 3px 0; border: none; text-align: right; white-space: normal; }
+      .arrets td::before { content: attr(data-libelle); font-size: var(--fs-xs);
+                           text-transform: uppercase; letter-spacing: 0.05em;
+                           color: var(--muted); text-align: left; flex: 0 0 38%; }
+      .arrets td.num, .arrets td.client { justify-content: flex-start; text-align: left; }
+      .arrets td.client { flex-direction: column; align-items: flex-start; }
+      .arrets td > div { min-width: 0; max-width: 100%; overflow-wrap: break-word; }
+      .arrets td.num::before, .arrets td.client::before { content: none; }
+      .arrets td.num { font-family: var(--police-titre); font-size: 1.1rem; color: var(--amber-strong); }
+      .arrets td.case-fait { display: none; }
+      .arrets tr:has(.depot-ligne) { background: none; border: none; padding: 0; }
+      .arrets td.depot-ligne { justify-content: flex-start; text-align: left; }
+      .arrets td.depot-ligne::before { content: none; }
+    }
+
     .vue { display: none; }
     .vue.active { display: block; animation: apparait 0.25s ease; }
     #meta-pilotage { color: var(--muted); font-size: 0.78rem; margin: 6px 0; }
@@ -143,10 +238,18 @@
       <img src="logo.png" alt="Le Gué des Moines">
       <h1>Pilotage<small>Le Gué des Moines</small></h1>
     </div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <a href="/" class="btn-retour">← Commande</a>
-      <button class="btn-theme" id="btn-theme" title="Basculer clair/sombre">☀️</button>
-    </div>
+    <nav class="actions-entete" aria-label="Navigation principale">
+      <a href="/" class="btn-retour">
+        <svg class="ico" aria-hidden="true"><use href="#i-retour"/></svg>Commande
+      </a>
+      <a href="/relances.html" class="btn-pdf">
+        <svg class="ico" aria-hidden="true"><use href="#i-relances"/></svg>Relances
+      </a>
+      <button class="btn-theme" id="btn-theme" aria-label="Basculer entre thème clair et sombre">
+        <svg class="ico i-soleil" aria-hidden="true"><use href="#i-soleil"/></svg>
+        <svg class="ico i-lune" aria-hidden="true"><use href="#i-lune"/></svg>
+      </button>
+    </nav>
   </header>
   <script>
     document.getElementById('btn-theme').addEventListener('click', () => {
@@ -164,22 +267,33 @@
         <p id="route-meta"></p>
       </div>
     </div>
-    <p id="meta-pilotage">Chargement du tableau de bord… (peut prendre ~30 s la première fois)</p>
+    <p id="meta-pilotage" role="status" aria-live="polite" aria-busy="true">
+      <span class="loader"></span> Chargement du tableau de bord…
+    </p>
+    <div id="squelette-chargement" aria-hidden="true">
+      <div class="squelette" style="height:38px;max-width:520px;margin-bottom:16px"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div class="squelette" style="height:92px;flex:1 0 130px"></div>
+        <div class="squelette" style="height:92px;flex:1 0 130px"></div>
+        <div class="squelette" style="height:92px;flex:1 0 130px"></div>
+        <div class="squelette" style="height:92px;flex:1 0 130px"></div>
+      </div>
+    </div>
 
     <div class="tabs" style="display:none" id="tabs">
-      <button data-vue="overview" class="actif">Vue d'ensemble</button>
-      <button data-vue="carte">🗺️ Carte</button>
-      <button data-vue="calendrier">📅 Calendrier</button>
-      <button data-vue="tournees">🚚 Tournées</button>
-      <button data-vue="stats">📈 Statistiques</button>
-      <button data-vue="liste">📋 Liste</button>
+      <button data-vue="overview" class="actif" aria-pressed="true"><svg class="ico" aria-hidden="true"><use href="#i-stats"/></svg>Vue d'ensemble</button>
+      <button data-vue="carte" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-carte"/></svg>Carte</button>
+      <button data-vue="calendrier" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-calendrier"/></svg>Calendrier</button>
+      <button data-vue="tournees" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-camion"/></svg>Tournées</button>
+      <button data-vue="stats" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-pilotage"/></svg>Statistiques</button>
+      <button data-vue="liste" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-liste"/></svg>Liste</button>
     </div>
 
     <!-- Vue d'ensemble -->
     <div class="vue active" id="vue-overview">
-      <h2 class="section">🗓️ Semaine en cours</h2>
+      <h2 class="section"><svg class="ico" aria-hidden="true"><use href="#i-calendrier"/></svg>Semaine en cours</h2>
       <div class="kpi-grid" id="kpi-semaine"></div>
-      <h2 class="section">📆 Mois en cours</h2>
+      <h2 class="section"><svg class="ico" aria-hidden="true"><use href="#i-calendrier"/></svg>Mois en cours</h2>
       <div class="kpi-grid" id="kpi-mois"></div>
       <h2 class="section">Ensemble des livraisons à venir</h2>
       <div class="kpi-grid" id="kpi-logistique"></div>
@@ -194,7 +308,7 @@
         <button data-p="auj">Aujourd'hui</button>
         <button data-p="demain">Demain</button>
         <button data-p="semaine">Cette semaine</button>
-        <button data-p="tournees">🚚 Itinéraires</button>
+        <button data-p="tournees"><svg class="ico" aria-hidden="true"><use href="#i-camion"/></svg>Itinéraires</button>
         <span>du <input type="date" id="p-debut"> au <input type="date" id="p-fin"></span>
       </div>
       <div id="map"></div>
@@ -203,10 +317,10 @@
     <!-- Calendrier -->
     <div class="vue" id="vue-calendrier">
       <div class="cal-nav">
-        <button id="cal-prev">←</button>
+        <button id="cal-prev" aria-label="Mois précédent"><svg class="ico" aria-hidden="true"><use href="#i-retour"/></svg></button>
         <strong id="cal-titre"></strong>
-        <button id="cal-next">→</button>
-        <span style="font-size:0.75rem;color:var(--muted)">🟠 en attente · 🟢 confirmée</span>
+        <button id="cal-next" aria-label="Mois suivant"><svg class="ico" aria-hidden="true" style="transform:rotate(180deg)"><use href="#i-retour"/></svg></button>
+        <span class="legende"><i class="puce attente"></i>en attente <i class="puce confirme"></i>confirmée</span>
       </div>
       <div class="cal-grid" id="cal-grid"></div>
     </div>
@@ -243,7 +357,7 @@
       <div class="kpi-grid" id="kpi-stats"></div>
 
       <!-- Canaux de vente -->
-      <h2 class="section">🏪 Canaux de vente</h2>
+      <h2 class="section"><svg class="ico" aria-hidden="true"><use href="#i-magasin"/></svg>Canaux de vente</h2>
       <div class="charts-grid">
         <div class="chart-box"><h3>Répartition du CA par canal (période)</h3><div class="chart-wrap"><canvas id="ch-canal-donut"></canvas></div></div>
         <div class="chart-box"><h3>Évolution mensuelle du CA par canal (12 mois)</h3><div class="chart-wrap"><canvas id="ch-canal-mois"></canvas></div></div>
@@ -263,17 +377,17 @@
       </div>
 
       <!-- Tournées -->
-      <h2 class="section">🚚 Équilibre des tournées (livraisons à venir)</h2>
+      <h2 class="section"><svg class="ico" aria-hidden="true"><use href="#i-camion"/></svg>Équilibre des tournées</h2>
       <div class="chart-box"><div class="chart-wrap bas"><canvas id="ch-tournees"></canvas></div></div>
 
-      <h2 class="section">📦 Activité</h2>
+      <h2 class="section"><svg class="ico" aria-hidden="true"><use href="#i-colis"/></svg>Activité</h2>
       <div class="charts-grid">
         <div class="chart-box"><h3>Commandes par semaine</h3><canvas id="ch-semaines"></canvas></div>
         <div class="chart-box"><h3>Répartition des formats (à livrer)</h3><canvas id="ch-formats"></canvas></div>
         <div class="chart-box"><h3>Top produits (quantités à livrer)</h3><canvas id="ch-produits"></canvas></div>
       </div>
 
-      <h2 class="section">👥 Analyse clients</h2>
+      <h2 class="section"><svg class="ico" aria-hidden="true"><use href="#i-clients"/></svg>Analyse clients</h2>
 
       <div class="filtres-carte" id="filtres-clients">
         <button data-per="12" class="actif">12 derniers mois</button>
@@ -306,9 +420,9 @@
           <input type="search" id="rech-client" placeholder="Rechercher un client…"
                  style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:0.82rem;flex:1 0 180px">
           <button data-st="tous" class="actif st-filtre">Tous</button>
-          <button data-st="actif" class="st-filtre">🟢 Actifs</button>
-          <button data-st="risque" class="st-filtre">🟠 À relancer</button>
-          <button data-st="inactif" class="st-filtre">🔴 Inactifs</button>
+          <button data-st="actif" class="st-filtre"><i class="puce confirme"></i>Actifs</button>
+          <button data-st="risque" class="st-filtre"><i class="puce attente"></i>À relancer</button>
+          <button data-st="inactif" class="st-filtre"><i class="puce ko"></i>Inactifs</button>
         </div>
         <div style="overflow-x:auto;max-height:60vh">
           <table class="table-liste" id="tbl-clients">
@@ -336,8 +450,8 @@
     <div class="vue" id="vue-liste">
       <div class="filtres-carte" id="filtres-liste">
         <button data-f="tous" class="actif">Toutes</button>
-        <button data-f="alivrer">🚚 À livrer</button>
-        <button data-f="livrees">✅ Livrées</button>
+        <button data-f="alivrer" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-camion"/></svg>À livrer</button>
+        <button data-f="livrees" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Livrées</button>
       </div>
       <div style="overflow-x:auto">
         <table class="table-liste">
@@ -378,26 +492,34 @@
       if (D.incomplet) {
         meta.innerHTML += ' — <span style="color:var(--amber)">données partielles, rechargez dans une minute pour compléter</span>';
       }
+      document.getElementById('squelette-chargement')?.remove();
+      meta.removeAttribute('aria-busy');
       document.getElementById('tabs').style.display = 'flex';
       renderOverview(); renderCalendrier(); renderTournees(); renderListe();
     }).catch(e => {
-      document.getElementById('meta-pilotage').innerHTML =
-        `<span class="error">${e.message}</span>`;
+      document.getElementById('squelette-chargement')?.remove();
+      const m = document.getElementById('meta-pilotage');
+      m.removeAttribute('aria-busy');
+      m.innerHTML = `<span class="error">${ico('alerte')} ${e.message}</span>`;
     });
 
     // Onglets
     document.getElementById('tabs').addEventListener('click', e => {
       const btn = e.target.closest('button[data-vue]'); if (!btn) return;
-      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('actif'));
+      document.querySelectorAll('.tabs button').forEach(b => {
+        b.classList.remove('actif'); b.setAttribute('aria-pressed', 'false');
+      });
       btn.classList.add('actif');
+      btn.setAttribute('aria-pressed', 'true');
       document.querySelectorAll('.vue').forEach(v => v.classList.remove('active'));
       document.getElementById('vue-' + btn.dataset.vue).classList.add('active');
       if (btn.dataset.vue === 'carte') initCarte();
       if (btn.dataset.vue === 'stats') renderStats();
     });
 
-    function kpiCard(ico, val, lbl) {
-      return `<div class="kpi"><div class="ico">${ico}</div><div class="val">${val}</div><div class="lbl">${lbl}</div></div>`;
+    function kpiCard(nomIco, val, lbl) {
+      return `<div class="kpi"><div class="kpi-ico">${ico(nomIco, { classe: 'ico-lg' })}</div>`
+           + `<div class="val">${val}</div><div class="lbl">${lbl}</div></div>`;
     }
 
     // Agrège les livraisons d'une période : commandes, clients, volumes, CA
@@ -414,14 +536,14 @@
 
     function ligneStats(elId, a) {
       document.getElementById(elId).innerHTML =
-        kpiCard('🚚', a.commandes, 'Livraisons') +
-        kpiCard('👥', a.clients, 'Clients') +
-        kpiCard('🍺', a.bouteilles, 'Bouteilles') +
-        kpiCard('🟠', a.b33, '33 cL') +
-        kpiCard('⚫', a.b75, '75 cL') +
-        kpiCard('🛢', a.futs, 'Fûts') +
-        kpiCard('💧', a.litres + ' L', 'Litres') +
-        kpiCard('💶', a.caHT + ' €', 'CA HT');
+        kpiCard('camion', a.commandes, 'Livraisons') +
+        kpiCard('clients', a.clients, 'Clients') +
+        kpiCard('bouteille', a.bouteilles, 'Bouteilles') +
+        kpiCard('bouteille', a.b33, '33 cL') +
+        kpiCard('bouteille', a.b75, '75 cL') +
+        kpiCard('fut', a.futs, 'Fûts') +
+        kpiCard('goutte', a.litres + ' L', 'Litres') +
+        kpiCard('euro', a.caHT + ' €', 'CA HT');
     }
 
     function renderOverview() {
@@ -439,8 +561,8 @@
       ligneStats('kpi-mois', agreger(mois));
       ligneStats('kpi-logistique', agreger(futures));
       document.getElementById('alertes').innerHTML = D.alertes.length
-        ? D.alertes.map(a => `<div class="alerte ${a.type}">${a.type === 'incomplete' ? '⚠️' : a.type === 'volume' ? '📈' : a.type === 'tournee_chargee' ? '🚚' : '📍'} ${a.message}</div>`).join('')
-        : '<p style="color:var(--muted);font-size:0.85rem">Aucune alerte 👌</p>';
+        ? D.alertes.map(a => `<div class="alerte ${a.type}">${ico(a.type === 'incomplete' ? 'alerte' : a.type === 'volume' ? 'stats' : a.type === 'tournee_chargee' ? 'camion' : 'carte')} ${a.message}</div>`).join('')
+        : '<p class="vide">' + ico('check') + ' Aucune alerte en cours</p>';
     }
 
     // ---- Carte ----
@@ -470,14 +592,14 @@
           }).addTo(coucheTournees).bindPopup(
             `<strong>${a.ordre}. ${a.client}</strong><br>${t.nom} — arrivée ${a.heureArrivee}<br>` +
             `${a.adresse || ''}<br>${charge(a)}` +
-            (a.contact ? `<br>📞 ${a.contact}` : '')
+            (a.contact ? '<br>' + ico('telephone') + ` ${a.contact}` : '')
           );
         });
       });
       // Dépôt
       if (ts.length) {
         L.marker([ts[0].depart.lat, ts[0].depart.lng], {
-          icon: L.divIcon({ className: '', html: '<div style="font-size:22px">🏭</div>', iconSize: [24, 24], iconAnchor: [12, 12] }),
+          icon: L.divIcon({ className: '', html: '<div class="marqueur-depot">' + ico('brasserie', { classe: 'ico-lg' }) + '</div>', iconSize: [24, 24], iconAnchor: [12, 12] }),
         }).addTo(coucheTournees).bindPopup(`<strong>${ts[0].depart.nom}</strong><br>Départ et retour des tournées`);
       }
       if (bounds.length) map.fitBounds(bounds, { padding: [30, 30] });
@@ -529,9 +651,9 @@
         const prods = l.produits.map(x => `• ${x.libelle} × ${x.quantite}`).join('<br>') || '—';
         L.marker([l.lat, l.lng]).addTo(markersLayer).bindPopup(
           `<strong>${l.client.nom}</strong><br>${l.adresse}<br>` +
-          `📅 ${fmtD(l.dateLivraison)} — ${l.etat}<br>` +
-          `${prods}<br>💧 ${l.litres} L` +
-          (l.contact ? `<br>📞 ${l.contact}` : '')
+          ico('calendrier') + ` ${fmtD(l.dateLivraison)} — ${l.etat}<br>` +
+          `${prods}<br>` + ico('goutte') + ` ${l.litres} L` +
+          (l.contact ? '<br>' + ico('telephone') + ` ${l.contact}` : '')
         );
         bounds.push([l.lat, l.lng]);
       }
@@ -590,9 +712,9 @@
     // Volume à décharger, sans le détail des références : ce qu'il faut au chauffeur
     function charge(a) {
       const bits = [];
-      if (a.bouteilles) bits.push(`🍺 ${a.bouteilles} bouteilles`);
-      if (a.futs) bits.push(`🛢 ${a.futs} fût${a.futs > 1 ? 's' : ''}`);
-      if (a.litres) bits.push(`💧 ${Math.round(a.litres)} L`);
+      if (a.bouteilles) bits.push(ico('bouteille') + ` ${a.bouteilles} bouteilles`);
+      if (a.futs) bits.push(ico('fut') + ` ${a.futs} fût${a.futs > 1 ? 's' : ''}`);
+      if (a.litres) bits.push(ico('goutte') + ` ${Math.round(a.litres)} L`);
       return bits.join(' · ') || '—';
     }
     let jourTournees = 'tous';
@@ -627,13 +749,13 @@
         return `
         <div class="tournee" data-idx="${ts.indexOf(t)}">
           <div class="head">
-            🚚 ${jourLong(t.jour)} — ${t.nom}
+            ${ico('camion')} ${jourLong(t.jour)} — ${t.nom}
             <span class="pill">${t.nbLivraisons} arrêts</span>
-            ${trop ? '<span class="tournee-alerte">⚠️ dépasse 4 h</span>' : ''}
-            ${t.nbHorsCreneau ? `<span class="tournee-alerte">⚠️ ${t.nbHorsCreneau} hors créneau</span>` : ''}
+            ${trop ? `<span class="tournee-alerte">${ico('alerte')} dépasse 4 h</span>` : ''}
+            ${t.nbHorsCreneau ? `<span class="tournee-alerte">${ico('alerte')} ${t.nbHorsCreneau} hors créneau</span>` : ''}
             <span class="actions">
               <button data-action="carte">Voir sur la carte</button>
-              <button data-action="imprimer">🖨️ Feuille de route</button>
+              <button data-action="imprimer">${'' }Feuille de route</button>
             </span>
           </div>
           <div class="meta">
@@ -641,30 +763,31 @@
             <strong style="color:${trop ? 'var(--danger)' : 'var(--ok)'}">${hhmm(t.dureeEstimeeMin)}</strong>
             ${trop ? '(au-delà des 4 h)' : '(dans les 4 h)'} ·
             ${t.kmEstimes} km en ${hhmm(t.roulageMin)} de route${t.vitesseMoyenne ? ` (${t.vitesseMoyenne} km/h moyens, circulation prise en compte)` : ''}${t.attenteMin > 5 ? ` · ⏳ ${t.attenteMin} min d'attente` : ''} ·
-            💧 ${t.litres} L · 🍺 ${t.bouteilles} bouteilles · 🛢 ${t.futs} fûts · 💶 ${t.caHT} €
+            ${ico('goutte')} ${t.litres} L · ${ico('bouteille')} ${t.bouteilles} bouteilles
+            · ${ico('fut')} ${t.futs} fûts · ${ico('euro')} ${t.caHT} €
           </div>
           <table class="arrets">
             <thead><tr>
-              <th class="case-fait">✓</th><th></th><th>Heure</th><th>Client</th>
+              <th class="case-fait"><span class="sr-only">Fait</span></th><th></th><th>Heure</th><th>Client</th>
               <th>Créneau</th><th>Charge</th><th style="text-align:right">Distance</th>
             </tr></thead>
             <tbody>
-              <tr><td class="case-fait"></td><td colspan="6" class="depot-ligne">🏭 Départ ${t.depart.nom} à ${t.heureDepart} (camion chargé)</td></tr>
+              <tr><td class="case-fait"></td><td colspan="6" class="depot-ligne">${ico('brasserie')} Départ ${t.depart.nom} à ${t.heureDepart} (camion chargé)</td></tr>
               ${t.arrets.map(a => `
                 <tr>
-                  <td class="case-fait">☐</td>
-                  <td class="num">${a.ordre}</td>
-                  <td class="heure" style="${a.horsCreneau ? 'color:var(--danger)' : ''}">${a.heureArrivee}${a.horsCreneau ? ' ⚠️' : ''}</td>
-                  <td>
+                  <td class="case-fait" data-libelle="Fait"><span class="case">&#9744;</span></td>
+                  <td class="num" data-libelle="Arrêt">${a.ordre}</td>
+                  <td class="heure" data-libelle="Heure" style="${a.horsCreneau ? 'color:var(--danger)' : ''}">${a.heureArrivee}${a.horsCreneau ? ' ' + ico('alerte') : ''}</td>
+                  <td class="client" data-libelle="Client">
                     <div class="cli">${a.client}</div>
-                    <div class="adr">${a.adresse || '—'}${a.contact ? ' · 📞 ' + a.contact : ''}</div>
+                    <div class="adr">${a.adresse || '—'}${a.contact ? ' · ' + ico('telephone') + ' ' + a.contact : ''}</div>
                     <div class="adr">Commande n°${a.numero} — ${a.etat || ''}</div>
                   </td>
-                  <td class="prod">${a.canal ? `<span class="canal">${a.canal}</span><br>` : ''}${a.creneau}</td>
-                  <td class="prod">${charge(a)}</td>
-                  <td class="km">+${a.kmDepuisPrecedent} km<br>${a.kmCumules} km</td>
+                  <td class="prod" data-libelle="Créneau">${a.canal ? `<span class="canal">${a.canal}</span> ` : ''}${a.creneau}</td>
+                  <td class="prod" data-libelle="Charge">${charge(a)}</td>
+                  <td class="km" data-libelle="Distance">+${a.kmDepuisPrecedent} km · ${a.kmCumules} km cumulés</td>
                 </tr>`).join('')}
-              <tr><td class="case-fait"></td><td colspan="6" class="depot-ligne">🏭 Retour au dépôt vers ${t.heureRetour} (+${t.kmRetour} km)</td></tr>
+              <tr><td class="case-fait"></td><td colspan="6" class="depot-ligne">${ico('brasserie')} Retour au dépôt vers ${t.heureRetour} (+${t.kmRetour} km)</td></tr>
             </tbody>
           </table>
         </div>`;
@@ -800,10 +923,11 @@
     }
 
     // ---- KPI avec évolution ----
-    function kpiEvo(ico, val, lbl, evolution) {
+    function kpiEvo(nomIco, val, lbl, evolution) {
       const fl = evolution === null || evolution === undefined ? ''
-        : `<div style="font-size:0.75rem;font-weight:700;color:${evolution >= 0 ? 'var(--ok)' : 'var(--danger)'}">${evolution >= 0 ? '▲ +' : '▼ '}${evolution} %</div>`;
-      return `<div class="kpi"><div class="ico">${ico}</div><div class="val">${val}</div>${fl}<div class="lbl">${lbl}</div></div>`;
+        : `<div class="kpi-evo ${evolution >= 0 ? 'hausse' : 'baisse'}">${evolution >= 0 ? '▲ +' : '▼ '}${evolution} %</div>`;
+      return `<div class="kpi"><div class="kpi-ico">${ico(nomIco, { classe: 'ico-lg' })}</div>`
+           + `<div class="val">${val}</div>${fl}<div class="lbl">${lbl}</div></div>`;
     }
     const deltaPct = (a, b) => b > 0 ? Math.round((a - b) / b * 1000) / 10 : null;
 
@@ -822,12 +946,12 @@
       }
       const part = canal => globale.ca > 0 ? Math.round((globale.parCanal[canal] ?? 0) / globale.ca * 1000) / 10 : 0;
       el.innerHTML =
-        kpiEvo('💶', eur(cur.ca), 'CA HT', prev ? deltaPct(cur.ca, prev.ca) : null) +
-        kpiEvo('🧾', cur.nb, 'Commandes', prev ? deltaPct(cur.nb, prev.nb) : null) +
-        kpiEvo('👥', cur.clients, 'Clients actifs', prev ? deltaPct(cur.clients, prev.clients) : null) +
-        kpiEvo('🛒', eur(cur.panier), 'Panier moyen', prev ? deltaPct(cur.panier, prev.panier) : null) +
-        kpiEvo('🍺', part('CHR') + ' %', 'Part CHR', null) +
-        kpiEvo('🏬', part('GMS') + ' %', 'Part GMS', null);
+        kpiEvo('euro', eur(cur.ca), 'CA HT', prev ? deltaPct(cur.ca, prev.ca) : null) +
+        kpiEvo('pdf', cur.nb, 'Commandes', prev ? deltaPct(cur.nb, prev.nb) : null) +
+        kpiEvo('clients', cur.clients, 'Clients actifs', prev ? deltaPct(cur.clients, prev.clients) : null) +
+        kpiEvo('colis', eur(cur.panier), 'Panier moyen', prev ? deltaPct(cur.panier, prev.panier) : null) +
+        kpiEvo('restaurant', part('CHR') + ' %', 'Part CHR', null) +
+        kpiEvo('magasin', part('GMS') + ' %', 'Part GMS', null);
     }
 
     // ---- Section Canaux ----
@@ -958,7 +1082,7 @@
       const nonCat = (D.stats.clients ?? []).filter(c => canalOf(c) === 'Non catégorisé').length;
       fc.innerHTML = '<button data-c="tous" class="actif">Tous canaux</button>' +
         CANAUX.map(c => `<button data-c="${c}">${c}</button>`).join('') +
-        (nonCat ? `<span style="font-size:0.75rem;color:var(--danger)">⚠️ ${nonCat} client(s) non catégorisé(s) — corrigez le canal dans le tableau ci-dessous</span>` : '');
+        (nonCat ? `<span class="avertissement">${ico('alerte')} ${nonCat} client(s) non catégorisé(s) — corrigez le canal dans le tableau ci-dessous</span>` : '');
       fc.addEventListener('click', e => {
         const b = e.target.closest('button[data-c]'); if (!b) return;
         fc.querySelectorAll('button').forEach(x => x.classList.remove('actif'));
@@ -1005,14 +1129,14 @@
       const part = n => total > 0 && cum.length ? Math.round(cum[Math.min(n, cum.length) - 1] / total * 1000) / 10 : 0;
       const nbCmd = liste.reduce((a, c) => a + c.nbCommandes, 0);
       document.getElementById('kpi-clients').innerHTML =
-        kpiCard('💶', eur(total), 'CA HT ' + (periodeClients === 'tout' ? 'cumulé' : periodeClients + ' mois')) +
-        kpiCard('👥', liste.length, 'Clients facturés') +
-        kpiCard('🟢', s.nbActifs ?? 0, 'Actifs') +
-        kpiCard('🟠', s.nbRisque ?? 0, 'À relancer') +
-        kpiCard('🔴', s.nbInactifs ?? 0, 'Inactifs') +
-        kpiCard('🧾', eur(nbCmd ? total / nbCmd : 0), 'Panier moyen') +
-        kpiCard('🏆', part(5) + ' %', 'Part du top 5') +
-        kpiCard('📊', part(20) + ' %', 'Part du top 20');
+        kpiCard('euro', eur(total), 'CA HT ' + (periodeClients === 'tout' ? 'cumulé' : periodeClients + ' mois')) +
+        kpiCard('clients', liste.length, 'Clients facturés') +
+        kpiCard('check', s.nbActifs ?? 0, 'Actifs') +
+        kpiCard('horloge', s.nbRisque ?? 0, 'À relancer') +
+        kpiCard('alerte', s.nbInactifs ?? 0, 'Inactifs') +
+        kpiCard('colis', eur(nbCmd ? total / nbCmd : 0), 'Panier moyen') +
+        kpiCard('stats', part(5) + ' %', 'Part du top 5') +
+        kpiCard('pilotage', part(20) + ' %', 'Part du top 20');
 
       // Courbe CA par mois
       const mois = moisPeriode();
@@ -1095,9 +1219,9 @@
 
       const totalP = clientsPeriode().reduce((a, c) => a + c.ca, 0);
       const badge = st => ({
-        actif:   '<span style="color:var(--ok)">🟢 Actif</span>',
-        risque:  '<span style="color:var(--amber)">🟠 À relancer</span>',
-        inactif: '<span style="color:var(--danger)">🔴 Inactif</span>',
+        actif:   '<span class="etat ok"><i class="puce confirme"></i>Actif</span>',
+        risque:  '<span class="etat att"><i class="puce attente"></i>À relancer</span>',
+        inactif: '<span class="etat ko"><i class="puce ko"></i>Inactif</span>',
       }[st] ?? '—');
       const evo = e => e === null || e === undefined ? '—'
         : `<span style="color:${e >= 0 ? 'var(--ok)' : 'var(--danger)'}">${e >= 0 ? '▲ +' : '▼ '}${e} %</span>`;
@@ -1106,17 +1230,17 @@
         CANAUX.map(x => `<option${x === c.canal ? ' selected' : ''}>${x}</option>`).join('') + '</select>';
       document.getElementById('tbody-clients').innerHTML = liste.map(c => `
         <tr>
-          <td>${c.nom}</td>
-          <td>${c.id ? selCanal(c) : (c.canal ?? '—')}</td>
-          <td>${eur(c.ca)}</td>
-          <td>${totalP ? (Math.round(c.ca / totalP * 1000) / 10) : 0} %</td>
-          <td>${c.nbCommandes}</td>
-          <td>${eur(c.panierMoyen)}</td>
-          <td>${c.frequenceJours ? 'tous les ' + c.frequenceJours + ' j' : '—'}</td>
-          <td>${fmtD(c.derniere)}${c.joursDepuis !== null ? ` <span style="color:var(--muted)">(${c.joursDepuis} j)</span>` : ''}</td>
-          <td>${evo(c.evolution)}</td>
-          <td>${badge(c.statut)}</td>
-          <td>${c.id ? `<a href="/?client=${c.id}" style="color:var(--amber);white-space:nowrap">Commander →</a>` : ''}</td>
+          <td data-libelle="Client">${c.nom}</td>
+          <td data-libelle="Canal">${c.id ? selCanal(c) : (c.canal ?? '—')}</td>
+          <td data-libelle="CA HT">${eur(c.ca)}</td>
+          <td data-libelle="% du CA">${totalP ? (Math.round(c.ca / totalP * 1000) / 10) : 0} %</td>
+          <td data-libelle="Commandes">${c.nbCommandes}</td>
+          <td data-libelle="Panier moyen">${eur(c.panierMoyen)}</td>
+          <td data-libelle="Fréquence">${c.frequenceJours ? 'tous les ' + c.frequenceJours + ' j' : '—'}</td>
+          <td data-libelle="Dernière commande">${fmtD(c.derniere)}${c.joursDepuis !== null ? ` <span style="color:var(--muted)">(${c.joursDepuis} j)</span>` : ''}</td>
+          <td data-libelle="Évolution">${evo(c.evolution)}</td>
+          <td data-libelle="Statut">${badge(c.statut)}</td>
+          <td>${c.id ? `<a href="/?client=${c.id}" class="lien-action">Commander<svg class="ico" aria-hidden="true" style="transform:rotate(180deg)"><use href="#i-retour"/></svg></a>` : ''}</td>
         </tr>`).join('') || '<tr><td colspan="11" style="color:var(--muted)">Aucun client ne correspond.</td></tr>';
 
       document.getElementById('clients-resume').textContent =
