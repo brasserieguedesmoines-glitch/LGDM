@@ -761,8 +761,7 @@
                   <td class="heure" data-libelle="Heure" style="${a.horsCreneau ? 'color:var(--danger)' : ''}">${a.heureArrivee}${a.horsCreneau ? ' ' + ico('alerte') : ''}</td>
                   <td class="client" data-libelle="Client">
                     <div class="cli">${a.client}</div>
-                    <div class="adr">${a.adresse || '—'}${a.contact ? ' · ' + ico('telephone') + ' ' + a.contact : ''}</div>
-                    <div class="adr">Commande n°${a.numero} — ${a.etat || ''}</div>
+                    <div class="adr">${(a.adresse || '—').replace(/,\s*France\s*$/i, '')} · Commande n°${a.numero}${a.etat ? ' — ' + a.etat : ''}</div>
                   </td>
                   <td class="prod" data-libelle="Créneau">${a.canal ? `<span class="canal">${a.canal}</span> ` : ''}${a.creneau}</td>
                   <td class="prod" data-libelle="Charge">${charge(a)}</td>
