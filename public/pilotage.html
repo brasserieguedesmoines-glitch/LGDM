@@ -103,6 +103,25 @@
                      letter-spacing: 0.04em; }
     .arrets .km { color: var(--texte-3); font-size: var(--t-xs); text-align: right;
                   white-space: nowrap; font-variant-numeric: tabular-nums; }
+    /* Sélection d'arrêts : retirer ou déplacer un point de livraison */
+    .sel-arret { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+    .barre-arrets[hidden] { display: none; }
+    .barre-arrets { display: flex; align-items: center; gap: var(--e2); flex-wrap: wrap;
+                    margin-top: var(--e3); padding: var(--e2) var(--e3);
+                    background: var(--accent-doux); border-radius: var(--r-sm); }
+    .barre-arrets .nb-sel { font-size: var(--t-sm); color: var(--accent-texte); font-weight: 600; }
+    .barre-arrets button { min-height: var(--cible-min); padding: 0 var(--e3);
+      border: 1px solid var(--bordure-forte); background: var(--surface);
+      color: var(--texte); font-size: var(--t-sm); }
+    .barre-arrets button:hover { background: var(--surface-3); }
+    .retires { display: flex; align-items: center; gap: var(--e2); flex-wrap: wrap;
+               margin-top: var(--e3); font-size: var(--t-sm); color: var(--texte-2); }
+    .retire { display: inline-flex; align-items: center; gap: var(--e2);
+              background: var(--surface-2); border: 1px solid var(--bordure);
+              border-radius: var(--r-full); padding: var(--e1) var(--e3); }
+    .retire button { border: none; background: none; color: var(--accent-texte);
+                     font-size: var(--t-xs); font-weight: 600; min-height: 24px; }
+    .retire button:hover { text-decoration: underline; }
     .depot-ligne { color: var(--texte-3); font-size: var(--t-xs); font-style: normal; }
     .depot-ligne .ico { color: var(--texte-3); }
     .case-fait { width: 28px; }
@@ -151,7 +170,8 @@
       .arrets td.num::before, .arrets td.client::before { content: none; }
       .arrets td.client { flex-direction: column; align-items: flex-start; }
       .arrets td > div { min-width: 0; max-width: 100%; overflow-wrap: break-word; }
-      .arrets td.case-fait { display: none; }
+      .arrets td.case-fait { justify-content: flex-start; }
+      .arrets td.case-fait::before { flex: none; }
       .arrets td.depot-ligne { justify-content: flex-start; text-align: left; }
       .arrets td.depot-ligne::before { content: none; }
       .arrets tr:has(.depot-ligne) { background: none; border: none; padding: 0; }
@@ -198,6 +218,8 @@
       .arrets tr { page-break-inside: avoid; }
       .case-fait { display: table-cell !important; width: 20px; }
       .case { font-size: 10pt; }
+      .barre-arrets, .retires { display: none !important; }
+      .sel-arret { accent-color: #000; }
     }
     #entete-route { display: none; }
   </style>
@@ -701,6 +723,66 @@
       return res.sort((a, b) => (a.jour ?? '').localeCompare(b.jour ?? '') || a.numero - b.numero);
     }
 
+    // --- Ajustement manuel d'une tournée -------------------------------------
+    // Après retrait ou déplacement d'un arrêt, on réestime localement :
+    // distances à vol d'oiseau × 1,3 (facteur route), 40 km/h de moyenne,
+    // 7 min par arrêt, attente jusqu'à l'ouverture du créneau. C'est une
+    // approximation assumée — le plan optimal du serveur revient au prochain
+    // rechargement des données.
+    const hmVersMin = s => { const [h, m] = String(s || '7:00').split(/[:h]/).map(Number); return h * 60 + (m || 0); };
+    const minVersHM = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(Math.round(m) % 60).padStart(2, '0')}`;
+    function havKm(a, b) {
+      const r = x => x * Math.PI / 180, R = 6371;
+      const dLat = r(b.lat - a.lat), dLng = r(b.lng - a.lng);
+      const h = Math.sin(dLat / 2) ** 2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(dLng / 2) ** 2;
+      return 2 * R * Math.asin(Math.sqrt(h));
+    }
+    const dKm = (a, b) => (a.lat && b.lat) ? havKm(a, b) * 1.3 : 0;
+
+    // Insère un arrêt là où il allonge le moins le circuit (détour minimal)
+    function insererAuMieux(t, a) {
+      const pts = [t.depart, ...t.arrets, t.depart];
+      let iMin = 0, min = Infinity;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const detour = dKm(pts[i], a) + dKm(a, pts[i + 1]) - dKm(pts[i], pts[i + 1]);
+        if (detour < min) { min = detour; iMin = i; }
+      }
+      t.arrets.splice(iMin, 0, a);
+    }
+
+    function replanifier(t) {
+      let prev = t.depart, heure = hmVersMin(t.heureDepart), km = 0, attente = 0;
+      t.arrets.forEach((a, i) => {
+        const d = dKm(prev, a); km += d; heure += d / 40 * 60;
+        const [deb, fin] = (a.creneau || '').split('–').map(hmVersMin);
+        if (deb && heure < deb) { attente += deb - heure; heure = deb; }
+        a.heureArrivee = minVersHM(heure);
+        a.horsCreneau = !!fin && heure > fin + 0.5;
+        a.ordre = i + 1;
+        a.kmDepuisPrecedent = Math.round(d * 10) / 10;
+        a.kmCumules = Math.round(km * 10) / 10;
+        heure += 7; prev = a;
+      });
+      const dRet = dKm(prev, t.depart);
+      km += dRet; heure += dRet / 40 * 60;
+      t.kmRetour = Math.round(dRet * 10) / 10;
+      t.kmEstimes = Math.round(km * 10) / 10;
+      t.heureRetour = minVersHM(heure);
+      t.dureeEstimeeMin = Math.round(heure - hmVersMin(t.heureDepart));
+      t.depassementDuree = t.dureeEstimeeMin > 240;
+      t.roulageMin = Math.round(km / 40 * 60);
+      t.attenteMin = Math.round(attente);
+      t.vitesseMoyenne = null;
+      t.nbLivraisons = t.arrets.length;
+      t.nbHorsCreneau = t.arrets.filter(a => a.horsCreneau).length;
+      t.litres = Math.round(t.arrets.reduce((s, a) => s + a.litres, 0));
+      t.bouteilles = t.arrets.reduce((s, a) => s + a.bouteilles, 0);
+      t.futs = t.arrets.reduce((s, a) => s + a.futs, 0);
+      t.caHT = Math.round(t.arrets.reduce((s, a) => s + a.totalHT, 0));
+      t.clients = t.arrets.map(a => a.client);
+      t.modifie = true;
+    }
+
     function renderTournees() {
       const el = document.getElementById('tournees-liste');
       const filtres = document.getElementById('filtres-jour');
@@ -768,6 +850,7 @@
             ${t.kmEstimes} km en ${hhmm(t.roulageMin)} de route${t.vitesseMoyenne ? ` (${t.vitesseMoyenne} km/h moyens, circulation prise en compte)` : ''}${t.attenteMin > 5 ? ` · ⏳ ${t.attenteMin} min d'attente` : ''} ·
             ${ico('goutte')} ${t.litres} L · ${ico('bouteille')} ${t.bouteilles} bouteilles
             · ${ico('fut')} ${t.futs} fûts · ${ico('euro')} ${t.caHT} €
+            ${t.modifie ? `<span class="tournee-alerte">${ico('alerte')} ajustée à la main — heures et km réestimés</span>` : ''}
           </div>
           <table class="arrets">
             <thead><tr>
@@ -778,7 +861,7 @@
               <tr><td class="case-fait"></td><td colspan="6" class="depot-ligne">${ico('brasserie')} Départ ${t.depart.nom} à ${t.heureDepart} (camion chargé)</td></tr>
               ${t.arrets.map(a => `
                 <tr>
-                  <td class="case-fait" data-libelle="Fait"><span class="case">&#9744;</span></td>
+                  <td class="case-fait" data-libelle="Sélection"><input type="checkbox" class="sel-arret" aria-label="Sélectionner ${a.client}"></td>
                   <td class="num" data-libelle="Arrêt">${a.ordre}</td>
                   <td class="heure" data-libelle="Heure" style="${a.horsCreneau ? 'color:var(--danger)' : ''}">${a.heureArrivee}${a.horsCreneau ? ' ' + ico('alerte') : ''}</td>
                   <td class="client" data-libelle="Client">
@@ -792,8 +875,55 @@
               <tr><td class="case-fait"></td><td colspan="6" class="depot-ligne">${ico('brasserie')} Retour au dépôt vers ${t.heureRetour} (+${t.kmRetour} km)</td></tr>
             </tbody>
           </table>
+          <div class="barre-arrets" hidden>
+            <span class="nb-sel"></span>
+            <button data-mod="retirer">Retirer de la tournée</button>
+            ${liste.filter(x => x !== t).map(x =>
+              `<button data-mod="deplacer" data-vers="${ts.indexOf(x)}">Déplacer vers ${x.nom}</button>`).join('')}
+          </div>
+          ${(t.retires ?? []).length ? `
+          <div class="retires">
+            <span class="intitule-grp">Retirés de la tournée :</span>
+            ${t.retires.map((a, k) => `<span class="retire">${a.client}
+              <button data-mod="reintegrer" data-k="${k}" aria-label="Réintégrer ${a.client}">Réintégrer</button></span>`).join('')}
+          </div>` : ''}
         </div>`;
       }).join('');
+
+      // Sélection d'arrêts : retirer, déplacer vers une autre tournée, réintégrer.
+      // Les heures, km et totaux sont réestimés localement (voir replanifier) ;
+      // l'ajustement vit dans la page jusqu'au prochain rechargement des données.
+      el.querySelectorAll('.tournee').forEach(carte => {
+        const t = ts[parseInt(carte.dataset.idx)];
+        const barre = carte.querySelector('.barre-arrets');
+        const cochees = () => [...carte.querySelectorAll('.sel-arret')]
+          .map((c, i) => c.checked ? i : -1).filter(i => i >= 0);
+        carte.addEventListener('change', e => {
+          if (!e.target.classList.contains('sel-arret')) return;
+          const n = cochees().length;
+          barre.hidden = !n;
+          barre.querySelector('.nb-sel').textContent = `${n} arrêt${n > 1 ? 's' : ''} sélectionné${n > 1 ? 's' : ''} :`;
+        });
+        carte.addEventListener('click', e => {
+          const b = e.target.closest('button[data-mod]'); if (!b) return;
+          if (b.dataset.mod === 'reintegrer') {
+            const a = t.retires.splice(parseInt(b.dataset.k), 1)[0];
+            insererAuMieux(t, a); replanifier(t); renderTournees(); renderTournesChart();
+            return;
+          }
+          const sel = cochees(); if (!sel.length) return;
+          const pris = sel.map(i => t.arrets[i]);
+          t.arrets = t.arrets.filter((_, i) => !sel.includes(i));
+          if (b.dataset.mod === 'retirer') {
+            t.retires = (t.retires ?? []).concat(pris);
+          } else {
+            const cible = ts[parseInt(b.dataset.vers)];
+            pris.forEach(a => insererAuMieux(cible, a));
+            replanifier(cible);
+          }
+          replanifier(t); renderTournees(); renderTournesChart();
+        });
+      });
 
       // Actions : impression d'une feuille de route, ou aperçu cartographique
       el.querySelectorAll('.tournee .actions button').forEach(b => b.addEventListener('click', () => {
