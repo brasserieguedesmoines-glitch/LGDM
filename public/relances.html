@@ -4,131 +4,74 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LGDM — Clients à relancer</title>
-  <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'dark';</script>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'light';</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <script src="icons.js" defer></script>
-  <script src="ui.js" defer></script>
+  <script src="icons.js"></script>
+  <script src="ui.js"></script>
+  <script src="shell.js"></script>
   <style>
-    .table-wrap { overflow-x: auto; background: var(--card); border-radius: var(--radius); padding: 8px; }
-    table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
-    th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    /* Styles propres aux relances. Cartes, badges, boutons, tableaux et filtres
+       viennent de style.css : rien n'est redéfini ici. */
+    .table-wrap { overflow-x: auto; }
     tbody tr { cursor: pointer; }
-    tbody tr:hover { background: rgba(232,160,32,0.08); }
-    th { font-weight: 600; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; }
-    td.produits { white-space: normal; max-width: 300px; font-size: 0.78rem; color: var(--muted); line-height: 1.35; }
-    tbody tr:hover td { background: var(--tint-amber); }
-    .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; color: #fff; }
-    .badge.urgent { background: #c0392b; }
-    .badge.cette_semaine { background: #e8a020; }
-    .badge.a_surveiller { background: #2980b9; }
-    .badge.pas_prioritaire { background: #95a5a6; }
-    .retard { color: #c0392b; font-weight: 600; }
-    .avance { color: #27ae60; }
-    .zone-filtres { display: flex; gap: var(--sp-2); margin: var(--sp-3) 0;
+    td.produits { white-space: normal; max-width: 320px; font-size: var(--t-xs);
+                  color: var(--texte-2); line-height: 1.45; }
+    .retard { color: var(--danger); font-weight: 500; }
+    .avance { color: var(--texte-2); }
+    .zone-filtres { display: flex; gap: var(--e2); margin: 0 0 var(--e4);
                     flex-wrap: wrap; align-items: center; justify-content: space-between; }
-    #filtres { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
-    .barre-actions { display: flex; gap: var(--sp-2); align-items: center; margin-left: auto; }
-    #filtres button { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 20px; padding: 6px 14px; cursor: pointer; font-size: 0.8rem; }
-    #filtres button.actif { background: var(--amber); color: #14120f; border-color: var(--amber); }
-    #meta { color: var(--muted); font-size: var(--fs-sm); margin: var(--sp-2) 0; }
+    .barre-actions { display: flex; gap: var(--e2); align-items: center; margin-left: auto; }
+    .btn-export { min-height: var(--cible-min); border: 1px solid var(--bordure-forte);
+                  background: var(--surface); color: var(--texte-2); font-size: var(--t-sm);
+                  padding: 0 var(--e3); }
+    .btn-export:hover { background: var(--surface-3); color: var(--texte); }
+    #meta { color: var(--texte-2); font-size: var(--t-sm); margin-bottom: var(--e3); }
+    #entete-impression { display: none; }
 
-    /* Puce de statut : la couleur ne porte jamais seule le sens, le libellé
-       du bouton et le badge de la ligne l'accompagnent toujours. */
-    .puce { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-    .puce.urgent { background: var(--danger); }
-    .puce.cette_semaine { background: var(--amber); }
-    .puce.a_surveiller { background: var(--info); }
-    .puce.pas_prioritaire { background: var(--faint); }
-    #filtres button { display: inline-flex; align-items: center; gap: var(--sp-2); }
-    .case { font-size: 1.1rem; color: var(--faint); }
-
-    /* Sous 768px la table passe en cartes : une ligne = un bloc lisible,
-       plutôt qu'un défilement horizontal pénible au doigt. */
+    /* Sous 768px, une ligne devient une carte lisible au doigt */
     @media (max-width: 767px) {
-      .table-wrap { padding: 0; background: none; border: none; }
+      .table-wrap { background: none; border: none; overflow: visible; }
       table, tbody, tr, td { display: block; width: 100%; }
-      /* Intitulés repris par data-libelle sur chaque cellule */
       thead { display: none; }
-      tbody tr {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--r-md);
-        padding: var(--sp-3);
-        margin-bottom: var(--sp-3);
-        box-shadow: var(--shadow-1);
-      }
-      tbody td {
-        display: flex;
-        justify-content: space-between;
-        gap: var(--sp-3);
-        align-items: baseline;
-        padding: var(--sp-1) 0;
-        border: none;
-        white-space: normal;
-        text-align: right;
-      }
-      tbody td::before {
-        content: attr(data-libelle);
-        font-size: var(--fs-xs);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--muted);
-        text-align: left;
-        flex: 0 0 44%;
-      }
-      tbody td:first-child { justify-content: flex-start; padding-bottom: var(--sp-2); }
+      tbody tr { background: var(--surface); border: 1px solid var(--bordure);
+                 border-radius: var(--r-md); padding: var(--e3); margin-bottom: var(--e2); }
+      tbody td { display: flex; justify-content: space-between; gap: var(--e3);
+                 padding: 3px 0; border: none; white-space: normal; text-align: right; }
+      tbody td::before { content: attr(data-libelle); font-size: var(--t-xs);
+                         color: var(--texte-3); text-align: left; flex: 0 0 42%; }
+      tbody td:first-child { justify-content: flex-start; padding-bottom: var(--e2); }
       tbody td:first-child::before { content: none; }
-      /* Le nom du client est le titre de la carte : pleine largeur, aligné à
-         gauche, sans césure au milieu d'un mot. */
-      tbody td[data-libelle="Client"] {
-        flex-direction: column; align-items: flex-start; text-align: left;
-        padding-bottom: var(--sp-2); margin-bottom: var(--sp-1);
-        border-bottom: 1px solid var(--border);
-      }
+      tbody td[data-libelle="Client"] { flex-direction: column; align-items: flex-start;
+        text-align: left; padding-bottom: var(--e2); margin-bottom: var(--e1);
+        border-bottom: 1px solid var(--bordure); }
       tbody td[data-libelle="Client"]::before { flex: none; margin-bottom: 2px; }
-      tbody td[data-libelle="Client"] strong { font-size: 1rem; }
-      td.produits { flex-direction: column; align-items: flex-start; text-align: left; }
+      tbody td[data-libelle="Client"] strong { font-size: var(--t-md); }
+      td.produits { flex-direction: column; align-items: flex-start; text-align: left; max-width: none; }
       td.produits::before { flex: none; margin-bottom: 2px; }
       tbody td > * { min-width: 0; max-width: 100%; overflow-wrap: break-word; }
     }
-    #filtres .btn-export {
-      border-color: var(--pill-border); color: var(--amber);
-      font-weight: 600; background: transparent;
-    }
-    #filtres .btn-export:hover { background: var(--tint-amber); border-color: var(--amber); }
-    #entete-impression { display: none; }
 
-    /* ---- Impression : feuille A4 paysage, encre économisée, filtre en titre ---- */
+    /* Impression : A4 paysage, noir sur blanc, filtre rappelé en titre */
     @media print {
       @page { size: A4 landscape; margin: 10mm; }
-      /* Rendu clair quel que soit le thème choisi à l'écran */
-      :root, :root[data-theme="dark"] {
-        --card: #fff; --card2: #fff; --bg: #fff; --text: #000;
-        --muted: #444; --border: #bbb; --amber: #a8620d;
-      }
-      body { background: #fff !important; color: #000 !important; }
-      header, #filtres, #meta, .btn-retour, .btn-theme { display: none !important; }
-      main { max-width: none !important; padding: 0 !important; gap: 0 !important; }
-      .table-wrap { overflow: visible !important; background: none; padding: 0; border-radius: 0; }
-
-      #entete-impression {
-        display: flex; align-items: center; gap: 12px;
-        border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 10px;
-      }
-      #entete-impression img { height: 40px; filter: invert(1); flex-shrink: 0; }
-      #entete-impression > div { min-width: 0; }
-      #entete-impression h2 { font-size: 14pt; color: #000; margin: 0; }
-      #entete-impression p { font-size: 9pt; color: #444; margin: 2px 0 0; }
-
-      /* Largeurs fixes pour tenir dans la largeur d'une A4 paysage */
-      table { font-size: 8.5pt; width: 100%; table-layout: fixed; }
-      thead { display: table-header-group; }  /* en-têtes répétés à chaque page */
+      :root { --surface: #fff; --fond: #fff; --texte: #000; --texte-2: #333;
+              --texte-3: #555; --bordure: #ccc; }
+      body { background: #fff !important; }
+      .zone-filtres, #meta, .menu-mobile { display: none !important; }
+      .table-wrap { border: none; overflow: visible; }
+      #entete-impression { display: flex; align-items: center; gap: var(--e3);
+                           border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 10px; }
+      #entete-impression img { height: 38px; }
+      #entete-impression h2 { font-size: 13pt; }
+      #entete-impression p { font-size: 8.5pt; color: #444; }
+      table { font-size: 8.5pt; table-layout: fixed; }
+      thead { display: table-header-group; }
       tr { page-break-inside: avoid; }
-      th, td { padding: 4px 6px; border-bottom: 1px solid #ccc; color: #000; white-space: normal; }
-      td { overflow-wrap: break-word; }   /* les titres ne coupent qu'aux espaces */
+      th, td { padding: 4px 6px; white-space: normal; }
+      td { overflow-wrap: break-word; }
       th:nth-child(1),  td:nth-child(1)  { width: 8%; }
       th:nth-child(2),  td:nth-child(2)  { width: 19%; }
       th:nth-child(3),  td:nth-child(3)  { width: 9%; }
@@ -137,48 +80,16 @@
       th:nth-child(6),  td:nth-child(6)  { width: 9%; }
       th:nth-child(7),  td:nth-child(7)  { width: 6%; }
       th:nth-child(8),  td:nth-child(8)  { width: 8%; }
-      th:nth-child(9),  td:nth-child(9)  { width: 19%; }
+      th:nth-child(9),  td:nth-child(9)  { width: 19%; font-size: 7pt; }
       th:nth-child(10), td:nth-child(10) { width: 5%; text-align: center; font-size: 12pt; }
-      th { color: #000; border-bottom: 1.5px solid #000; }
-      td.produits { max-width: none; font-size: 7pt; color: #333; line-height: 1.25; }
-      tbody tr, tbody tr:hover, tbody tr:hover td { background: none !important; cursor: default; }
-      /* Badges lisibles en noir et blanc */
-      .badge { color: #000 !important; background: none !important; border: 1px solid #000;
-               padding: 1px 6px; font-size: 7.5pt; }
-      .retard { color: #000; font-weight: 700; }
-      .avance { color: #444; font-weight: 400; }
-      /* Case à cocher pour le suivi papier */
+      tbody tr:hover { background: none !important; }
+      .badge { border: 1px solid #000; background: none !important; color: #000 !important; }
       .case-suivi { display: table-cell !important; }
     }
     .case-suivi { display: none; }
   </style>
 </head>
 <body>
-  <header>
-    <div class="brand">
-      <img src="logo.png" alt="Le Gué des Moines">
-      <h1>Clients à relancer<small>Le Gué des Moines</small></h1>
-    </div>
-    <nav class="actions-entete" aria-label="Navigation principale">
-      <a href="/" class="btn-retour">
-        <svg class="ico" aria-hidden="true"><use href="#i-retour"/></svg>Commande
-      </a>
-      <a href="/pilotage.html" class="btn-pdf">
-        <svg class="ico" aria-hidden="true"><use href="#i-pilotage"/></svg>Pilotage
-      </a>
-      <button class="btn-theme" id="btn-theme" aria-label="Basculer entre thème clair et sombre">
-        <svg class="ico i-soleil" aria-hidden="true"><use href="#i-soleil"/></svg>
-        <svg class="ico i-lune" aria-hidden="true"><use href="#i-lune"/></svg>
-      </button>
-    </nav>
-  </header>
-  <script>
-    document.getElementById('btn-theme').addEventListener('click', () => {
-      const t = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
-      localStorage.setItem('lgdm-theme', t);
-      document.documentElement.dataset.theme = t;
-    });
-  </script>
 
   <main style="max-width: 1100px;">
     <p id="meta">Chargement de l'analyse… (jusqu'à 2 min au premier chargement)</p>
@@ -230,6 +141,7 @@
   </main>
 
   <script>
+    monterCoquille({ titre: 'Clients à relancer', actif: '/relances.html' });
     const LABELS = { urgent: 'Urgent', cette_semaine: 'Cette semaine', a_surveiller: 'À surveiller', pas_prioritaire: 'Pas prioritaire' };
     let clients = [];
 

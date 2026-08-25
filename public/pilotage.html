@@ -4,261 +4,167 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LGDM — Pilotage</title>
-  <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'dark';</script>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'light';</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <script src="icons.js" defer></script>
-  <script src="ui.js" defer></script>
+  <script src="icons.js"></script>
+  <script src="ui.js"></script>
+  <script src="shell.js"></script>
   <style>
-    main { max-width: 1200px; }
-    .tabs { display: flex; gap: 6px; margin: 14px 0; flex-wrap: wrap; }
-    .tabs button { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 20px; padding: 8px 16px; cursor: pointer; font-size: 0.85rem; }
-    .tabs button.actif { background: var(--amber); color: #14120f; border-color: var(--amber); }
-    .tabs button:hover:not(.actif) { border-color: var(--amber); }
-    .kpi-grid { display: flex; gap: 10px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
-    .kpi { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; flex: 1 0 130px; min-width: 130px; transition: border-color 0.2s, transform 0.15s; }
-    .kpi:hover { border-color: var(--pill-border); transform: translateY(-1px); }
-    .kpi .val { font-size: 1.5rem; font-weight: 700; color: var(--dark); white-space: nowrap;
-                font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
-    .kpi .lbl { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
-    .kpi .ico { font-size: 1.2rem; }
-    .kpi.hero { background: var(--header-bg); flex: 1 0 170px; }
-    .kpi.hero .val { color: #fff; font-size: 2rem; }
-    .kpi.hero .lbl { color: rgba(255,255,255,0.75); }
-    .kpi.hero.amber { background: var(--amber); }
-    .kpi.hero.amber .val { color: #fff; }
-    .kpi.hero.amber .lbl { color: rgba(255,255,255,0.85); }
-    .hero-grid { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-    .hero-grid .kpi { padding: 20px 14px; }
-    h2.section { font-size: 1rem; margin: 18px 0 8px; }
-    .alerte { background: var(--tint-amber); border-left: 4px solid var(--amber); padding: 10px 12px; border-radius: 6px; margin-bottom: 6px; font-size: 0.85rem; }
-    .alerte.incomplete { border-color: var(--danger); background: var(--tint-danger); }
-    #map { height: 65vh; border-radius: var(--radius); }
-    .filtres-carte { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
-    .filtres-carte button { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 16px; padding: 5px 12px; cursor: pointer; font-size: 0.8rem; }
-    .filtres-carte button.actif { background: var(--amber); color: #14120f; border-color: var(--amber); }
-    .filtres-carte button:hover:not(.actif) { border-color: var(--amber); }
-    .filtres-carte input[type="date"] { width: auto; padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.8rem; }
-    .filtres-carte span { display: inline-flex; align-items: center; gap: 5px; font-size: 0.8rem; color: var(--muted); }
-    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-    .cal-head { font-size: 0.7rem; color: var(--muted); text-align: center; padding: 4px 0; text-transform: uppercase; }
-    .cal-jour { background: var(--card); border-radius: 8px; min-height: 74px; padding: 6px; font-size: 0.75rem; }
-    .cal-jour.vide { background: transparent; }
-    .cal-jour.aujourdhui { outline: 2px solid var(--amber); }
-    .cal-jour .n { color: var(--muted); font-size: 0.7rem; }
-    .cal-badge { background: var(--amber); color: #14120f; border-radius: 8px; padding: 1px 7px; font-size: 0.72rem; display: inline-block; margin-top: 4px; }
-    .cal-badge.confirme { background: var(--ok); color: #14120f; }
-    .cal-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-    .cal-nav button { border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 8px; padding: 4px 12px; cursor: pointer; }
-    .tournee { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; font-size: 0.85rem; }
-    .tournee .head { font-family: 'Oswald', sans-serif; text-transform: uppercase; letter-spacing: 0.05em;
-                     font-size: 1rem; color: var(--dark); display: flex; align-items: center;
-                     gap: 10px; flex-wrap: wrap; margin-bottom: 6px;
-                     display: flex; align-items: baseline; gap: var(--sp-2); }
-    .tournee .head .ico { align-self: center; color: var(--amber-strong); }
-    .tournee .meta { color: var(--muted); font-size: 0.78rem; margin-bottom: 10px; }
-    .tournee .actions { margin-left: auto; display: flex; gap: 6px; }
-    .tournee .actions button { border: 1px solid var(--pill-border); background: transparent; color: var(--amber);
-                               border-radius: 999px; padding: 5px 12px; font-size: 0.72rem; font-weight: 600;
-                               text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; }
-    .tournee .actions button:hover { background: var(--tint-amber); border-color: var(--amber); }
-    /* Arrêts : un tableau compact, lisible en un coup d'œil au volant */
-    .arrets { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-    .arrets th { font-size: 0.68rem; text-transform: uppercase; color: var(--muted); text-align: left;
-                 padding: 4px 8px; border-bottom: 1px solid var(--border); }
-    .arrets td { padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
-    .arrets tr:last-child td { border-bottom: none; }
-    .arrets .num { font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 700; color: var(--amber);
-                   width: 30px; text-align: center; }
-    .arrets .heure { font-weight: 600; white-space: nowrap; width: 58px; }
-    .arrets .cli { font-weight: 600; color: var(--dark); }
-    .arrets .adr { color: var(--muted); font-size: 0.74rem; }
-    .arrets .prod { color: var(--muted); font-size: 0.74rem; }
-    .arrets .km { color: var(--muted); font-size: 0.74rem; white-space: nowrap; text-align: right; }
-    .arrets .canal { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--amber); font-weight: 600; }
-    .depot-ligne { color: var(--muted); font-size: 0.76rem; padding: 6px 8px; }
-    .case-fait { display: none; }
-    .tournee-alerte { color: var(--danger); font-weight: 600; font-size: 0.76rem; }
-    .chart-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 14px; }
-    .chart-box h3 { font-size: 0.85rem; margin-bottom: 8px; color: var(--muted); }
-    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
-    .table-liste { width: 100%; border-collapse: collapse; font-size: 0.8rem; background: var(--card); border-radius: var(--radius); overflow: hidden; }
-    .table-liste tbody tr { transition: background 0.12s; }
-    .table-liste tbody tr:hover { background: var(--tint-amber); }
-    .table-liste th, .table-liste td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; }
-    .table-liste th { font-size: 0.7rem; text-transform: uppercase; color: var(--muted); }
+    /* Styles propres au pilotage. Les composants communs — cartes, KPI, badges,
+       boutons, tableaux, filtres — viennent de style.css : rien n'est redéfini
+       ici pour garantir que tous les écrans partagent le même langage visuel. */
+
+    /* --- Onglets de vue --- */
+    .tabs { margin-bottom: var(--e5); }
+
+    /* --- Alertes --- */
+    .alerte.zone, .alerte.volume { background: var(--info-doux); border-left-color: var(--info); }
+    .alerte.zone .ico, .alerte.volume .ico { color: var(--info); }
+    .alerte.tournee_chargee { background: var(--alerte-doux); border-left-color: var(--alerte); }
+
+    /* --- Carte --- */
+    #map { height: 62vh; min-height: 380px; border-radius: var(--r-lg);
+           border: 1px solid var(--bordure); z-index: 1; }
+    .marqueur-depot { display: grid; place-items: center; color: var(--accent); }
+
+    /* --- Calendrier --- */
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--e1); }
+    .cal-grid > * { min-width: 0; }
+    .cal-head { font-size: var(--t-xs); color: var(--texte-3); text-align: center;
+                padding: var(--e1) 0; text-transform: uppercase; letter-spacing: 0.04em; }
+    .cal-jour { background: var(--surface); border: 1px solid var(--bordure);
+                border-radius: var(--r-sm); min-height: 76px; padding: var(--e2);
+                font-size: var(--t-xs); overflow: hidden; }
+    .cal-jour.vide { background: transparent; border-color: transparent; }
+    .cal-jour.aujourdhui { border-color: var(--accent); }
+    .cal-jour .n { color: var(--texte-3); font-size: var(--t-xs); font-weight: 500; }
+    .cal-badge { display: inline-block; margin-top: var(--e1); padding: 0 var(--e2);
+                 border-radius: var(--r-sm); font-size: var(--t-xs); font-weight: 500;
+                 background: var(--alerte-doux); color: var(--alerte); }
+    .cal-badge.confirme { background: var(--ok-doux); color: var(--ok); }
+    .cal-nav { display: flex; align-items: center; gap: var(--e3); margin-bottom: var(--e3); }
+    .cal-nav strong { font-size: var(--t-lg); font-weight: 600; text-transform: capitalize; }
+    @media (max-width: 480px) {
+      .cal-jour { min-height: 56px; padding: var(--e1); font-size: 0.65rem; }
+      .cal-jour > div:last-child { display: none; }
+    }
+
+    /* --- Tournées --- */
+    .tournee { background: var(--surface); border: 1px solid var(--bordure);
+               border-radius: var(--r-lg); padding: var(--e5); margin-bottom: var(--e4);
+               box-shadow: var(--ombre-1); }
+    .tournee .head { display: flex; align-items: center; gap: var(--e2); flex-wrap: wrap;
+                     font-size: var(--t-lg); font-weight: 600; margin-bottom: var(--e2); }
+    .tournee .head .ico { color: var(--texte-3); }
+    .tournee .meta { color: var(--texte-2); font-size: var(--t-sm); margin-bottom: var(--e4);
+                     display: flex; align-items: center; gap: var(--e1); flex-wrap: wrap; }
+    .tournee .meta .ico { color: var(--texte-3); }
+    .tournee-alerte { display: inline-flex; align-items: center; gap: var(--e1);
+                      background: var(--danger-doux); color: var(--danger);
+                      border-radius: var(--r-sm); padding: 2px var(--e2);
+                      font-size: var(--t-xs); font-weight: 500; }
+    .tournee .actions { display: flex; gap: var(--e2); flex-wrap: wrap; margin-bottom: var(--e4); }
+    .tournee .actions button { min-height: var(--cible-min); padding: 0 var(--e3);
+      border: 1px solid var(--bordure-forte); background: var(--surface);
+      color: var(--texte-2); font-size: var(--t-sm); }
+    .tournee .actions button:hover { background: var(--surface-3); color: var(--texte); }
+
+    .arrets { width: 100%; border-collapse: collapse; font-size: var(--t-sm); }
+    .arrets th { text-align: left; padding: var(--e2) var(--e3); background: var(--surface-2);
+                 border-bottom: 1px solid var(--bordure); font-size: var(--t-xs);
+                 font-weight: 500; color: var(--texte-2); white-space: nowrap; }
+    .arrets td { padding: var(--e3); border-bottom: 1px solid var(--bordure); vertical-align: top; }
+    .arrets tbody tr:last-child td { border-bottom: none; }
+    .arrets .num { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--accent-texte); }
+    .arrets .heure { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .arrets .cli { font-weight: 600; }
+    .arrets .adr { color: var(--texte-2); font-size: var(--t-xs); }
+    .arrets .prod { color: var(--texte-2); }
+    .arrets .prod .ico { color: var(--texte-3); }
+    .arrets .canal { font-size: var(--t-xs); color: var(--texte-3); text-transform: uppercase;
+                     letter-spacing: 0.04em; }
+    .arrets .km { color: var(--texte-3); font-size: var(--t-xs); text-align: right;
+                  white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .depot-ligne { color: var(--texte-3); font-size: var(--t-xs); font-style: normal; }
+    .depot-ligne .ico { color: var(--texte-3); }
+    .case-fait { width: 28px; }
+
+    /* --- Graphiques --- */
+    .chart-box { background: var(--surface); border: 1px solid var(--bordure);
+                 border-radius: var(--r-lg); padding: var(--e5); margin-bottom: var(--e4); }
+    .chart-box h3 { font-size: var(--t-md); font-weight: 600; color: var(--texte);
+                    margin-bottom: var(--e4); }
+    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                   gap: var(--e4); }
     .chart-wrap { position: relative; height: 260px; }
     .chart-wrap.haut { height: 340px; }
     .chart-wrap.bas { height: 180px; }
+
+    /* --- Tableau clients : en-tête triable --- */
     #tbl-clients thead th[data-tri] { cursor: pointer; user-select: none; white-space: nowrap; }
-    #tbl-clients thead th[data-tri]:hover { color: var(--dark); }
-    #tbl-clients thead th { position: sticky; top: 0; background: var(--card); z-index: 1; }
+    #tbl-clients thead th[data-tri]:hover { color: var(--texte); }
+    #tbl-clients thead th { position: sticky; top: 0; z-index: 1; }
     #tbl-clients td { white-space: nowrap; }
-    #tbl-clients td:first-child { white-space: normal; min-width: 160px; }
-    button, select, input { color: var(--text); }
+    #tbl-clients td:first-child { white-space: normal; min-width: 170px; font-weight: 500; }
 
-    /* Réservé aux lecteurs d'écran */
-    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden;
-               clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+    /* --- Vues --- */
+    .vue { display: none; }
+    .vue.active { display: block; animation: apparait var(--v-normal) var(--courbe); }
+    #meta-pilotage { color: var(--texte-2); font-size: var(--t-sm);
+                     display: flex; align-items: center; gap: var(--e2); flex-wrap: wrap; }
 
-    /* Puces de statut : toujours accompagnées d'un libellé, jamais seules */
-    .puce { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-    .puce.confirme { background: var(--ok); }
-    .puce.attente  { background: var(--amber); }
-    .puce.ko       { background: var(--danger); }
-    .legende { display: inline-flex; align-items: center; gap: var(--sp-1); font-size: var(--fs-xs); color: var(--muted); }
-    .etat { display: inline-flex; align-items: center; gap: var(--sp-1); white-space: nowrap; }
-    .etat.ok { color: var(--ok); } .etat.att { color: var(--amber-strong); } .etat.ko { color: var(--danger); }
-    .avertissement { display: inline-flex; align-items: center; gap: var(--sp-1); font-size: var(--fs-xs); color: var(--danger); }
-    .vide { display: flex; align-items: center; gap: var(--sp-2); color: var(--muted); font-size: var(--fs-sm); }
-    .case { font-size: 1.15rem; color: var(--faint); }
-    .lien-action { display: inline-flex; align-items: center; gap: 4px; color: var(--amber-strong);
-                   white-space: nowrap; text-decoration: none; font-weight: 600; }
-    .lien-action:hover { text-decoration: underline; }
-    .marqueur-depot { display: grid; place-items: center; color: var(--amber); }
-
-    .kpi-ico { color: var(--amber-strong); display: flex; justify-content: center; margin-bottom: 2px; }
-    .kpi-evo { font-size: var(--fs-xs); font-weight: 700; }
-    .kpi-evo.hausse { color: var(--ok); } .kpi-evo.baisse { color: var(--danger); }
-
-    /* Onglets et filtres : cibles tactiles confortables sur tablette */
-    .tabs button, .filtres-carte button, #filtres button {
-      display: inline-flex; align-items: center; gap: var(--sp-2);
-      min-height: 40px; font-weight: 600;
-    }
-
-    /* Tableau clients : passage en cartes sous 768px plutôt qu'un long
-       défilement horizontal, difficile à manipuler au doigt. */
+    /* --- Cartes sous 768px : un défilement latéral est impraticable au doigt --- */
     @media (max-width: 767px) {
-      #tbl-clients thead { display: none; }
+      .arrets, .arrets tbody, .arrets tr, .arrets td,
       #tbl-clients, #tbl-clients tbody, #tbl-clients tr, #tbl-clients td { display: block; width: 100%; }
-      #tbl-clients tr {
-        background: var(--card2); border: 1px solid var(--border);
-        border-radius: var(--r-md); padding: var(--sp-3); margin-bottom: var(--sp-3);
-      }
-      #tbl-clients td {
-        display: flex; justify-content: space-between; gap: var(--sp-3);
-        padding: var(--sp-1) 0; border: none; white-space: normal; text-align: right;
-      }
-      #tbl-clients td::before {
-        content: attr(data-libelle); font-size: var(--fs-xs); text-transform: uppercase;
-        letter-spacing: 0.05em; color: var(--muted); text-align: left; flex: 0 0 42%;
-      }
-      #tbl-clients td:first-child {
-        justify-content: flex-start; font-weight: 600; font-size: 1rem;
-        padding-bottom: var(--sp-2); margin-bottom: var(--sp-1);
-        border-bottom: 1px solid var(--border); overflow-wrap: break-word;
-      }
-      #tbl-clients td:first-child::before { content: none; }
-    }
-
-    /* Calendrier : les 7 colonnes doivent pouvoir se comprimer sans déborder */
-    .cal-grid > * { min-width: 0; }
-    .cal-jour { overflow: hidden; }
-    @media (max-width: 480px) {
-      .cal-jour { min-height: 58px; padding: 4px 2px; font-size: 0.65rem; }
-      .cal-head { font-size: 0.58rem; }
-      .cal-badge { padding: 0 5px; font-size: 0.62rem; }
-      .cal-jour > div:last-child { display: none; }  /* noms de clients illisibles à cette taille */
-    }
-
-    /* Feuille de route : une carte par arrêt sous 768px. Le chauffeur consulte
-       sur téléphone dans le camion, un défilement latéral y est impraticable. */
-    @media (max-width: 767px) {
-      .arrets, .arrets tbody, .arrets tr, .arrets td { display: block; width: 100%; }
-      /* Les intitulés sont repris par data-libelle sur chaque cellule :
-         l'en-tête peut donc être retiré du flux sans perte d'information. */
-      .arrets thead { display: none; }
-      .arrets tr { border: 1px solid var(--border); border-radius: var(--r-md);
-                   background: var(--card2); padding: var(--sp-3); margin-bottom: var(--sp-2); }
-      .arrets td { display: flex; justify-content: space-between; gap: var(--sp-3);
-                   padding: 3px 0; border: none; text-align: right; white-space: normal; }
-      .arrets td::before { content: attr(data-libelle); font-size: var(--fs-xs);
-                           text-transform: uppercase; letter-spacing: 0.05em;
-                           color: var(--muted); text-align: left; flex: 0 0 38%; }
+      .arrets thead, #tbl-clients thead { display: none; }
+      .arrets tr, #tbl-clients tr { background: var(--surface); border: 1px solid var(--bordure);
+        border-radius: var(--r-md); padding: var(--e3); margin-bottom: var(--e2); }
+      .arrets td, #tbl-clients td { display: flex; justify-content: space-between; gap: var(--e3);
+        padding: 3px 0; border: none; text-align: right; white-space: normal; }
+      .arrets td::before, #tbl-clients td::before {
+        content: attr(data-libelle); font-size: var(--t-xs); color: var(--texte-3);
+        text-align: left; flex: 0 0 38%; }
       .arrets td.num, .arrets td.client { justify-content: flex-start; text-align: left; }
+      .arrets td.num::before, .arrets td.client::before { content: none; }
       .arrets td.client { flex-direction: column; align-items: flex-start; }
       .arrets td > div { min-width: 0; max-width: 100%; overflow-wrap: break-word; }
-      .arrets td.num::before, .arrets td.client::before { content: none; }
-      .arrets td.num { font-family: var(--police-titre); font-size: 1.1rem; color: var(--amber-strong); }
       .arrets td.case-fait { display: none; }
-      .arrets tr:has(.depot-ligne) { background: none; border: none; padding: 0; }
       .arrets td.depot-ligne { justify-content: flex-start; text-align: left; }
       .arrets td.depot-ligne::before { content: none; }
+      .arrets tr:has(.depot-ligne) { background: none; border: none; padding: 0; }
+      #tbl-clients td:first-child { justify-content: flex-start; font-size: var(--t-md);
+        padding-bottom: var(--e2); margin-bottom: var(--e1);
+        border-bottom: 1px solid var(--bordure); overflow-wrap: break-word; }
+      #tbl-clients td:first-child::before { content: none; }
+      .chart-box { padding: var(--e4); }
     }
 
-    .vue { display: none; }
-    .vue.active { display: block; animation: apparait 0.25s ease; }
-    #meta-pilotage { color: var(--muted); font-size: 0.78rem; margin: 6px 0; }
-
-    /* ---- Feuille de route imprimable ---- */
-    #entete-route { display: none; }
+    /* --- Impression : feuille de route seule, en noir sur blanc --- */
     @media print {
-      @page { size: A4 landscape; margin: 9mm; }
-      :root, :root[data-theme="dark"] {
-        --card: #fff; --card2: #fff; --bg: #fff; --text: #000;
-        --muted: #444; --border: #bbb; --amber: #a8620d; --dark: #000;
-      }
-      body { background: #fff !important; color: #000 !important; }
-      header, .tabs, #meta-pilotage, #filtres-jour, .tournee .actions { display: none !important; }
-      main { max-width: none !important; padding: 0 !important; }
-      /* N'imprime que la tournée demandée */
-      body.impression-tournee .tournee { display: none !important; }
-      body.impression-tournee .tournee.a-imprimer { display: block !important; }
-      #entete-route { display: flex; align-items: center; gap: 12px; border-bottom: 2px solid #000;
-                      padding-bottom: 6px; margin-bottom: 10px; }
-      #entete-route img { height: 40px; filter: invert(1); }
-      #entete-route h2 { font-size: 13pt; margin: 0; color: #000; }
-      #entete-route p { font-size: 9pt; color: #444; margin: 2px 0 0; }
-      .tournee { border: none; padding: 0; page-break-after: always; }
-      .tournee:last-of-type { page-break-after: auto; }
-      /* L'en-tête de la feuille reprend déjà ces informations */
-      .tournee .head, .tournee .meta { display: none !important; }
-      .arrets { font-size: 8.5pt; table-layout: fixed; width: 100%; }
+      @page { size: A4 portrait; margin: 12mm; }
+      :root { --surface: #fff; --fond: #fff; --texte: #000; --texte-2: #333;
+              --texte-3: #555; --bordure: #ccc; }
+      body { background: #fff !important; }
+      .tabs, #meta-pilotage, #filtres-jour, .menu-mobile, .tournee .actions { display: none !important; }
+      .tournee { border: none; box-shadow: none; padding: 0; page-break-inside: avoid; }
+      #entete-route { display: flex; align-items: center; gap: var(--e3);
+                      border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 10px; }
+      #entete-route img { height: 38px; }
+      .arrets { font-size: 9pt; }
+      .arrets thead { display: table-header-group; }
       .arrets tr { page-break-inside: avoid; }
-      .arrets th, .arrets td { border-bottom: 1px solid #ccc; color: #000; padding: 5px 6px;
-                               overflow-wrap: break-word; }
-      .arrets .num, .arrets .cli { color: #000; }
-      .arrets .adr, .arrets .prod, .arrets .km { color: #333; font-size: 7.5pt; }
-      .arrets th:nth-child(1), .arrets td:nth-child(1) { width: 4%; }
-      .arrets th:nth-child(2), .arrets td:nth-child(2) { width: 4%; }
-      .arrets th:nth-child(3), .arrets td:nth-child(3) { width: 7%; }
-      .arrets th:nth-child(4), .arrets td:nth-child(4) { width: 42%; }
-      .arrets th:nth-child(5), .arrets td:nth-child(5) { width: 12%; }
-      .arrets th:nth-child(6), .arrets td:nth-child(6) { width: 21%; }
-      .arrets th:nth-child(7), .arrets td:nth-child(7) { width: 10%; }
-      .case-fait { display: table-cell !important; text-align: center; font-size: 13pt; }
-    }</style>
+      .case-fait { display: table-cell !important; }
+      .case { font-size: 12pt; }
+    }
+    #entete-route { display: none; }
+  </style>
 </head>
 <body>
-  <header>
-    <div class="brand">
-      <img src="logo.png" alt="Le Gué des Moines">
-      <h1>Pilotage<small>Le Gué des Moines</small></h1>
-    </div>
-    <nav class="actions-entete" aria-label="Navigation principale">
-      <a href="/" class="btn-retour">
-        <svg class="ico" aria-hidden="true"><use href="#i-retour"/></svg>Commande
-      </a>
-      <a href="/relances.html" class="btn-pdf">
-        <svg class="ico" aria-hidden="true"><use href="#i-relances"/></svg>Relances
-      </a>
-      <button class="btn-theme" id="btn-theme" aria-label="Basculer entre thème clair et sombre">
-        <svg class="ico i-soleil" aria-hidden="true"><use href="#i-soleil"/></svg>
-        <svg class="ico i-lune" aria-hidden="true"><use href="#i-lune"/></svg>
-      </button>
-    </nav>
-  </header>
-  <script>
-    document.getElementById('btn-theme').addEventListener('click', () => {
-      const t = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
-      localStorage.setItem('lgdm-theme', t);
-      location.reload(); // recharge pour redessiner les graphiques aux couleurs du thème
-    });
-  </script>
 
   <main>
     <div id="entete-route">
@@ -473,6 +379,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script>
+    monterCoquille({ titre: 'Pilotage', actif: '/pilotage.html' });
     let D = null, map = null, markersLayer = null, calMois = new Date();
     // Couleurs pilotées par le thème (variables CSS)
     const CSSV = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -831,10 +738,10 @@
     let chartsFaits = false;
     function renderStats() {
       if (chartsFaits) return; chartsFaits = true;
-      Chart.defaults.color = CSSV('--muted');
-      Chart.defaults.borderColor = CSSV('--grid');
+      Chart.defaults.color = CSSV('--texte-2');
+      Chart.defaults.borderColor = CSSV('--grille');
       Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
-      const or = CSSV('--s1'), dk = CSSV('--s2'), gr = CSSV('--s6'), bl = CSSV('--s3'), vt = CSSV('--s4');
+      const or = CSSV('--g1'), dk = CSSV('--g2'), gr = CSSV('--g3'), bl = CSSV('--g5'), vt = CSSV('--g4');
       new Chart(document.getElementById('ch-semaines'), {
         type: 'bar',
         data: { labels: D.stats.commandesParSemaine.map(x => x.semaine.slice(5)), datasets: [{ label: 'Commandes', data: D.stats.commandesParSemaine.map(x => x.nb), backgroundColor: or }] },
@@ -859,7 +766,7 @@
 
     // ---- Canaux : couleurs et surcharge manuelle (stockée dans le navigateur) ----
     const CANAUX = ['CHR', 'GMS', 'Distributeurs', 'Cavistes', 'Associations', 'Autres pros', 'Non catégorisé'];
-    const COUL_CANAL = { get CHR() { return CSSV('--s1'); }, get GMS() { return CSSV('--s2'); }, get Distributeurs() { return CSSV('--s3'); }, get Cavistes() { return CSSV('--s5'); }, get Associations() { return CSSV('--s4'); }, get 'Autres pros'() { return CSSV('--s6'); }, get 'Non catégorisé'() { return CSSV('--muted'); } };
+    const COUL_CANAL = { get CHR() { return CSSV('--g1'); }, get GMS() { return CSSV('--g2'); }, get Distributeurs() { return CSSV('--g3'); }, get Cavistes() { return CSSV('--g5'); }, get Associations() { return CSSV('--g4'); }, get 'Autres pros'() { return CSSV('--g6'); }, get 'Non catégorisé'() { return CSSV('--texte-3'); } };
     const OVR_KEY = 'lgdm-canaux';
     let canalOvr = {};
     try { canalOvr = JSON.parse(localStorage.getItem(OVR_KEY) ?? '{}'); } catch {}
@@ -1051,9 +958,9 @@
         data: {
           labels: ts.map((t, i) => new Date(t.jour).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · T' + (ts.filter(x => x.jour === t.jour).indexOf(t) + 1)),
           datasets: [
-            { type: 'bar', label: 'CA HT', data: ts.map(t => t.caHT ?? 0), backgroundColor: CSSV('--s1'), yAxisID: 'y' },
-            { type: 'bar', label: 'Litres', data: ts.map(t => t.litres), backgroundColor: CSSV('--s3'), yAxisID: 'y2' },
-            { type: 'line', label: 'Arrêts', data: ts.map(t => t.nbLivraisons), borderColor: CSSV('--s2'), pointRadius: 3, yAxisID: 'y3' },
+            { type: 'bar', label: 'CA HT', data: ts.map(t => t.caHT ?? 0), backgroundColor: CSSV('--g1'), yAxisID: 'y' },
+            { type: 'bar', label: 'Litres', data: ts.map(t => t.litres), backgroundColor: CSSV('--g3'), yAxisID: 'y2' },
+            { type: 'line', label: 'Arrêts', data: ts.map(t => t.nbLivraisons), borderColor: CSSV('--g2'), pointRadius: 3, yAxisID: 'y3' },
           ],
         },
         options: {
@@ -1162,7 +1069,7 @@
         type: 'line',
         data: {
           labels: mois.map(m => m.slice(2).split('-').reverse().join('/')),
-          datasets: [{ label: 'CA HT', data: serie, borderColor: CSSV('--s4'), backgroundColor: 'rgba(46,204,113,0.12)', fill: true, tension: 0.3, pointRadius: 2 }],
+          datasets: [{ label: 'CA HT', data: serie, borderColor: CSSV('--g1'), backgroundColor: 'rgba(255,153,0,0.10)', fill: true, tension: 0.3, pointRadius: 2 }],
         },
         options: {
           maintainAspectRatio: false,
@@ -1178,7 +1085,7 @@
         type: 'bar',
         data: {
           labels: top.map(c => c.nom.length > 24 ? c.nom.slice(0, 24) + '…' : c.nom),
-          datasets: [{ data: top.map(c => c.ca), backgroundColor: CSSV('--s4') }],
+          datasets: [{ data: top.map(c => c.ca), backgroundColor: CSSV('--g1') }],
         },
         options: {
           indexAxis: 'y', maintainAspectRatio: false,
@@ -1199,8 +1106,8 @@
         data: {
           labels: p.map((c, i) => String(i + 1)),
           datasets: [
-            { type: 'bar', label: 'CA HT', data: p.map(c => c.ca), backgroundColor: CSSV('--s2'), yAxisID: 'y' },
-            { type: 'line', label: '% cumulé', data: cumulPct, borderColor: CSSV('--s1'), pointRadius: 2, tension: 0.3, yAxisID: 'y2' },
+            { type: 'bar', label: 'CA HT', data: p.map(c => c.ca), backgroundColor: CSSV('--g2'), yAxisID: 'y' },
+            { type: 'line', label: '% cumulé', data: cumulPct, borderColor: CSSV('--g1'), pointRadius: 2, tension: 0.3, yAxisID: 'y2' },
           ],
         },
         options: {

@@ -3,45 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#0D0D0D">
+  <meta name="theme-color" content="#F7F7F8">
   <title>Prise de commande — Le Gué des Moines</title>
-  <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'dark';</script>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'light';</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <script src="icons.js" defer></script>
+  <script src="icons.js"></script>
+  <script src="ui.js"></script>
+  <script src="shell.js"></script>
 </head>
 <body>
-  <header>
-    <div class="brand">
-      <img src="logo.png" alt="">
-      <h1>Prise de commande<small>Le Gué des Moines</small></h1>
-    </div>
-    <nav class="actions-entete" aria-label="Navigation principale">
-      <a href="/pilotage.html" class="btn-pdf">
-        <svg class="ico" aria-hidden="true"><use href="#i-pilotage"/></svg>Pilotage
-      </a>
-      <a href="/relances.html" class="btn-pdf">
-        <svg class="ico" aria-hidden="true"><use href="#i-relances"/></svg>Relances
-      </a>
-      <a href="/api/commandes-pdf" target="_blank" rel="noopener" id="btn-pdf" class="btn-pdf">
-        <svg class="ico" aria-hidden="true"><use href="#i-pdf"/></svg>PDF
-      </a>
-      <button class="btn-theme" id="btn-theme" aria-label="Basculer entre thème clair et sombre">
-        <svg class="ico i-soleil" aria-hidden="true"><use href="#i-soleil"/></svg>
-        <svg class="ico i-lune" aria-hidden="true"><use href="#i-lune"/></svg>
-      </button>
-    </nav>
-  </header>
-
-  <main>
+  <main class="etroit">
     <!-- Étape 1 : sélection du client -->
     <section id="section-client" aria-labelledby="titre-client">
-      <h2 id="titre-client">
-        <svg class="ico" aria-hidden="true"><use href="#i-clients"/></svg>Client
-      </h2>
-      <label for="champ-client">Rechercher un client</label>
+      <div>
+        <h2 id="titre-client">Client</h2>
+        <p class="carte-soustitre">Sélectionnez le client pour charger sa grille tarifaire.</p>
+      </div>
+      <div>
+        <label for="champ-client">Rechercher un client</label>
+        <!-- le champ est inséré ici par app.js -->
+      </div>
       <p id="msg-statut-client" role="status" aria-live="polite"></p>
       <button id="btn-derniere-commande" class="secondary" style="display:none">
         <svg class="ico" aria-hidden="true"><use href="#i-horloge"/></svg>
@@ -51,9 +35,7 @@
 
     <!-- Étape 2 : lignes de produit -->
     <section id="section-produits" style="display:none" aria-labelledby="titre-produits">
-      <h2 id="titre-produits">
-        <svg class="ico" aria-hidden="true"><use href="#i-colis"/></svg>Produits
-      </h2>
+      <h2 id="titre-produits">Produits</h2>
       <div id="info-gamme" style="display:none">
         <span class="info-gamme-txt"></span>
         <button type="button" id="btn-toutes-gammes">Afficher toute la gamme</button>
@@ -66,22 +48,20 @@
 
     <!-- Note de livraison -->
     <section id="section-note" style="display:none" aria-labelledby="titre-note">
-      <h2 id="titre-note">
-        <svg class="ico" aria-hidden="true"><use href="#i-camion"/></svg>Note de livraison
-      </h2>
-      <label for="note-livraison">Instructions pour le livreur</label>
-      <textarea id="note-livraison" rows="3" aria-describedby="aide-note"
-                placeholder="Horaire, accès, code portail…"></textarea>
-      <p id="aide-note" style="font-size:var(--fs-xs);color:var(--muted)">
-        Cette note apparaît sur le bon de livraison.
-      </p>
+      <h2 id="titre-note">Note de livraison</h2>
+      <div>
+        <label for="note-livraison">Instructions pour le livreur</label>
+        <textarea id="note-livraison" rows="3" aria-describedby="aide-note"
+                  placeholder="Horaire, accès, code portail…"></textarea>
+        <p id="aide-note" class="carte-soustitre" style="margin-top:var(--e2)">
+          Cette note apparaît sur le bon de livraison.
+        </p>
+      </div>
     </section>
 
     <!-- Envoi -->
     <section id="section-envoi" style="display:none">
-      <button id="btn-envoyer" class="primary">
-        <svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Envoyer la commande
-      </button>
+      <button id="btn-envoyer" class="primary">Envoyer la commande</button>
       <p id="msg-statut" role="status" aria-live="polite"></p>
     </section>
   </main>
@@ -92,21 +72,15 @@
       <svg class="ico ico-xl modal-ico" aria-hidden="true"><use href="#i-check"/></svg>
       <h2 id="modal-titre">Commande envoyée</h2>
       <p id="modal-detail"></p>
-      <button id="btn-nouvelle-commande" class="primary">
-        <svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg>Nouvelle commande
-      </button>
+      <button id="btn-nouvelle-commande" class="primary">Nouvelle commande</button>
     </div>
   </div>
 
   <script>
-    document.getElementById('btn-theme').addEventListener('click', () => {
-      const t = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
-      localStorage.setItem('lgdm-theme', t);
-      document.documentElement.dataset.theme = t;
-      document.querySelector('meta[name="theme-color"]')
-        .setAttribute('content', t === 'light' ? '#F7F4EF' : '#0D0D0D');
+    document.addEventListener('DOMContentLoaded', () => {
+      monterCoquille({ titre: 'Prise de commande', actif: '/' });
     });
   </script>
-  <script src="app.js"></script>
+  <script src="app.js" defer></script>
 </body>
 </html>

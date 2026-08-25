@@ -126,7 +126,7 @@ async function chargerClients() {
       btnDerniereCommande.style.display = 'flex';
     }, 'champ-client');
 
-    sectionClient.insertBefore(clientSearchSelect, msgStatutClient);
+    document.querySelector('label[for="champ-client"]').after(clientSearchSelect);
 
     // Pré-sélection depuis l'URL (?client=ID) — utilisé par la liste de relances
     const preId = new URLSearchParams(location.search).get('client');
@@ -168,7 +168,7 @@ async function chargerAdresses(idClient) {
         opt.textContent = a.complete || [a.ligne1, a.ligne2, a.ligne3, a.ligne4].filter(Boolean).join(', ');
         selectAdresse.appendChild(opt);
       });
-      sectionClient.appendChild(selectAdresse);
+      clientSearchSelect.after(selectAdresse);
     }
   } catch {}
 }
