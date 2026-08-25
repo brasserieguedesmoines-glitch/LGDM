@@ -1021,6 +1021,10 @@ const historiqueCommandes = [];
 
 // Récupère toutes les commandes d'un état donné (paginé)
 // Filtre exact envoyé par l'app EasyBeer sur la liste des commandes
+// Au-delà de ce délai sans commande, un client n'est plus « en retard » mais
+// perdu : le relancer comme un client actif noie les vraies relances.
+const SEUIL_PERDU_JOURS = parseInt(process.env.SEUIL_PERDU_JOURS ?? '365');
+
 const FILTRE_COMMANDES = {
   etats: [], etatsPaiement: [], typesPaiement: [], typesLivraison: [],
   idsClientsTypes: [], idsClientsTournees: [], idsCommerciaux: [],
@@ -1242,12 +1246,18 @@ async function analyserClientsInterne(req) {
       else if (joursEcart >= -7) priorite = 'cette_semaine';
       else if (joursEcart >= -14) priorite = 'a_surveiller';
     }
+    // Un client sans commande depuis plus d'un an n'est pas « en retard » :
+    // il ne commande plus. Il sort des relances courantes et rejoint une
+    // catégorie à part, consultable pour une opération de reconquête.
+    const joursDepuisDerniere = Math.floor((maintenant - dateDerniere) / JOUR);
+    if (joursDepuisDerniere > SEUIL_PERDU_JOURS) priorite = 'perdu';
 
     clients.push({
       idClient,
       nom: info.nom,
       nbCommandes: cmds.length,
       dateDerniereCommande: new Date(dateDerniere).toISOString().slice(0, 10),
+      joursDepuisDerniere,
       frequenceMoyenneJours: freqMoyenne,
       dateProchaineEstimee: dateProchaine ? new Date(dateProchaine).toISOString().slice(0, 10) : null,
       joursRetard: joursEcart,
@@ -1259,7 +1269,7 @@ async function analyserClientsInterne(req) {
   }
 
   // Tri : urgent d'abord, puis par retard décroissant
-  const ordre = { urgent: 0, cette_semaine: 1, a_surveiller: 2, pas_prioritaire: 3 };
+  const ordre = { urgent: 0, cette_semaine: 1, a_surveiller: 2, pas_prioritaire: 3, perdu: 4 };
   clients.sort((a, b) => (ordre[a.priorite] - ordre[b.priorite]) || ((b.joursRetard ?? -999) - (a.joursRetard ?? -999)));
 
   // Enrichit les clients prioritaires avec produits/volume de leur dernière commande
@@ -1269,7 +1279,7 @@ async function analyserClientsInterne(req) {
   // les urgents du moins en retard au plus ancien — les clients perdus en dernier.
   const ordreEnrichissement = { cette_semaine: 0, a_surveiller: 1, urgent: 2 };
   const prioritaires = clients
-    .filter(c => c.priorite !== 'pas_prioritaire')
+    .filter(c => c.priorite !== 'pas_prioritaire' && c.priorite !== 'perdu')
     .sort((a, b) => (ordreEnrichissement[a.priorite] - ordreEnrichissement[b.priorite])
                     || ((a.joursRetard ?? 0) - (b.joursRetard ?? 0)))
     .slice(0, 60);
@@ -1287,7 +1297,12 @@ async function analyserClientsInterne(req) {
   if (!clients.length) {
     throw Object.assign(new Error('Analyse des relances vide — données EasyBeer incomplètes'), { status: 503 });
   }
-  relancesCache = { generePour: new Date().toISOString(), nbCommandesAnalysees: toutes.length, clients };
+  relancesCache = {
+    generePour: new Date().toISOString(),
+    nbCommandesAnalysees: toutes.length,
+    seuilPerduJours: SEUIL_PERDU_JOURS,
+    clients,
+  };
   relancesCacheExpiry = Date.now() + 30 * 60 * 1000;
   return relancesCache;
 }
