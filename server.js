@@ -1176,7 +1176,10 @@ async function enParallele(items, concurrence, fn) {
 // Il n'est fiable que sur la fiche détaillée : la grille tarifaire renvoie
 // actif:true pour des clients pourtant désactivés dans EasyBeer. Une fiche =
 // un appel API, d'où le découpage en lots pour tenir dans la limite Vercel.
-const CLIENTS_PAR_LOT = 40;
+// 15 clients par lot : à froid cela représente ~18 s d'appels EasyBeer, ce qui
+// tient sous le délai maximal d'un appel interne. Avec des lots plus gros, une
+// page froide expirait systématiquement et le filtre ne s'appliquait jamais.
+const CLIENTS_PAR_LOT = 15;
 app.get('/api/cache/clients-actifs/p/:page', async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.params.page) || 1);
@@ -1201,22 +1204,32 @@ app.get('/api/cache/clients-actifs/p/:page', async (req, res) => {
 
 // Ensemble des clients désactivés dans EasyBeer. En cas d'indisponibilité on
 // renvoie null : mieux vaut ne rien filtrer que vider la liste des relances.
-async function chargerClientsInactifs(req, budgetMs = 60 * 1000) {
+async function chargerClientsInactifs(req, budgetMs = 75 * 1000) {
   const t0 = Date.now();
   const inactifs = new Set();
-  let page = 1, suite = true, aucuneReponse = true;
-  while (suite && page <= 30 && Date.now() - t0 < budgetMs) {
-    const pages = [page, page + 1, page + 2, page + 3];
-    const lots = await enParallele(pages, 4, p => fetchInterne(req, `/api/cache/clients-actifs/p/${p}`));
-    for (const r of lots) {
-      if (!r || r.erreur || !r.clients) { suite = false; break; }
-      aucuneReponse = false;
+  let nbPages = 3;
+  try {
+    nbPages = Math.ceil((await getAllClients()).length / CLIENTS_PAR_LOT);
+  } catch { /* repli : on tentera les premières pages */ }
+
+  // Un échec de page n'interrompt pas la boucle : les déploiements vident le
+  // cache CDN, une page froide peut expirer. On prend ce qui répond et le cache
+  // se remplit page après page — le filtre se complète aux visites suivantes.
+  const pages = Array.from({ length: Math.min(nbPages, 40) }, (_, i) => i + 1);
+  let reussies = 0;
+  await enParallele(pages, 5, async (p) => {
+    if (Date.now() - t0 > budgetMs) return null;
+    try {
+      const r = await fetchInterne(req, `/api/cache/clients-actifs/p/${p}`, 30000);
+      if (!r?.clients) return null;
+      reussies++;
       for (const c of r.clients) if (c.actif === false) inactifs.add(c.id);
-      if (!r.complete) { suite = false; break; }
-    }
-    page += 4;
-  }
-  return aucuneReponse ? null : inactifs;
+    } catch { /* page indisponible : ignorée */ }
+    return null;
+  });
+  if (!reussies) return null;
+  console.log(`clients inactifs : ${inactifs.size} sur ${reussies}/${pages.length} pages`);
+  return inactifs;
 }
 
 // Rassemble les pages par lots parallèles ; s'arrête sur une page incomplète
