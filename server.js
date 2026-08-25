@@ -590,6 +590,30 @@ app.get('/api/debug-commande/:idClient', async (req, res) => {
   res.json({ typeClient, idClientType, results });
 });
 
+// --- Debug temporaire : compare l'indicateur actif grille vs fiche détaillée ---
+app.get('/api/debug-actifs', async (req, res) => {
+  try {
+    await getAllClients();
+    const ids = String(req.query.ids ?? '').split(',').map(x => parseInt(x)).filter(Boolean);
+    const lignes = [];
+    for (const id of ids) {
+      const type = clientTypeMap.get(id);
+      let grilleActif = null, nom = null;
+      try {
+        const g = await getGrilleByType(type);
+        const c = g.clients.find(x => x.modeleClient.idClient === id);
+        grilleActif = c?.modeleClient?.actif ?? null;
+        nom = c?.modeleClient?.nom ?? null;
+      } catch {}
+      let detailActif = null;
+      try { detailActif = (await easybeerGet(`/parametres/client/detail/${id}`))?.actif ?? null; } catch (e) { detailActif = 'err'; }
+      lignes.push({ id, nom: (nom ?? '').slice(0, 32), grilleActif, detailActif });
+    }
+    res.set('Cache-Control', 'no-store');
+    res.json(lignes);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // --- Debug temporaire : champs disponibles sur une fiche client ---
 app.get('/api/debug-client/:idClient', async (req, res) => {
   const out = {};
