@@ -1081,10 +1081,6 @@ const historiqueCommandes = [];
 
 // Récupère toutes les commandes d'un état donné (paginé)
 // Filtre exact envoyé par l'app EasyBeer sur la liste des commandes
-// Au-delà de ce délai sans commande, un client n'est plus « en retard » mais
-// perdu : le relancer comme un client actif noie les vraies relances.
-const SEUIL_PERDU_JOURS = parseInt(process.env.SEUIL_PERDU_JOURS ?? '365');
-
 const FILTRE_COMMANDES = {
   etats: [], etatsPaiement: [], typesPaiement: [], typesLivraison: [],
   idsClientsTypes: [], idsClientsTournees: [], idsCommerciaux: [],
@@ -1176,6 +1172,53 @@ async function enParallele(items, concurrence, fn) {
   return resultats;
 }
 
+// Indicateur « actif » des clients, par lots mis en cache.
+// Il n'est fiable que sur la fiche détaillée : la grille tarifaire renvoie
+// actif:true pour des clients pourtant désactivés dans EasyBeer. Une fiche =
+// un appel API, d'où le découpage en lots pour tenir dans la limite Vercel.
+const CLIENTS_PAR_LOT = 40;
+app.get('/api/cache/clients-actifs/p/:page', async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.params.page) || 1);
+    const tous = await getAllClients();
+    const debut = (page - 1) * CLIENTS_PAR_LOT;
+    const lot = tous.slice(debut, debut + CLIENTS_PAR_LOT);
+    const clients = [];
+    for (const c of lot) {
+      try {
+        const d = await easybeerGet(`/parametres/client/detail/${c.id}`);
+        clients.push({ id: c.id, actif: d?.actif !== false && d?.supprime !== true });
+      } catch {
+        clients.push({ id: c.id, actif: null }); // inconnu : on ne l'exclut pas
+      }
+    }
+    res.set('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800');
+    res.json({ page, complete: debut + CLIENTS_PAR_LOT < tous.length, clients });
+  } catch (err) {
+    res.status(err.status ?? 502).json({ error: err.message });
+  }
+});
+
+// Ensemble des clients désactivés dans EasyBeer. En cas d'indisponibilité on
+// renvoie null : mieux vaut ne rien filtrer que vider la liste des relances.
+async function chargerClientsInactifs(req, budgetMs = 60 * 1000) {
+  const t0 = Date.now();
+  const inactifs = new Set();
+  let page = 1, suite = true, aucuneReponse = true;
+  while (suite && page <= 30 && Date.now() - t0 < budgetMs) {
+    const pages = [page, page + 1, page + 2, page + 3];
+    const lots = await enParallele(pages, 4, p => fetchInterne(req, `/api/cache/clients-actifs/p/${p}`));
+    for (const r of lots) {
+      if (!r || r.erreur || !r.clients) { suite = false; break; }
+      aucuneReponse = false;
+      for (const c of r.clients) if (c.actif === false) inactifs.add(c.id);
+      if (!r.complete) { suite = false; break; }
+    }
+    page += 4;
+  }
+  return aucuneReponse ? null : inactifs;
+}
+
 // Rassemble les pages par lots parallèles ; s'arrête sur une page incomplète
 // (fin de liste) ou quand le budget de temps est épuisé.
 async function chargerCommandes(req, budgetMs = 150 * 1000, maxPages = 60) {
@@ -1235,15 +1278,19 @@ async function analyserClientsInterne(req) {
   try {
     clientsActifs = new Set((await fetchInterne(req, '/api/clients')).map(c => c.id));
   } catch (e) {
-    console.warn('relances: liste clients indisponible, filtre des désactivés ignoré —', e.message);
+    console.warn('relances: liste clients indisponible, filtre des supprimés ignoré —', e.message);
   }
+  // Clients désactivés dans EasyBeer : c'est ce statut qui fait foi pour savoir
+  // qui ne commande plus, et non l'ancienneté de la dernière commande.
+  const inactifs = await chargerClientsInactifs(req);
   // Exclut devis, annulées, comptes internes et clients particuliers de l'analyse
   const typesParticuliers = await getIdsTypesParticuliers();
   toutes = toutes.filter(c =>
     !c.estDevis && !c.estAnnulee &&
     !estCompteInterne(c.client?.nom) &&
     !typesParticuliers.has(clientTypeMap.get(c.client?.idClient)) &&
-    (!clientsActifs || clientsActifs.has(c.client?.idClient))
+    (!clientsActifs || clientsActifs.has(c.client?.idClient)) &&
+    (!inactifs || !inactifs.has(c.client?.idClient))
   );
 
   // Groupe par client
@@ -1306,11 +1353,7 @@ async function analyserClientsInterne(req) {
       else if (joursEcart >= -7) priorite = 'cette_semaine';
       else if (joursEcart >= -14) priorite = 'a_surveiller';
     }
-    // Un client sans commande depuis plus d'un an n'est pas « en retard » :
-    // il ne commande plus. Il sort des relances courantes et rejoint une
-    // catégorie à part, consultable pour une opération de reconquête.
     const joursDepuisDerniere = Math.floor((maintenant - dateDerniere) / JOUR);
-    if (joursDepuisDerniere > SEUIL_PERDU_JOURS) priorite = 'perdu';
 
     clients.push({
       idClient,
@@ -1329,7 +1372,7 @@ async function analyserClientsInterne(req) {
   }
 
   // Tri : urgent d'abord, puis par retard décroissant
-  const ordre = { urgent: 0, cette_semaine: 1, a_surveiller: 2, pas_prioritaire: 3, perdu: 4 };
+  const ordre = { urgent: 0, cette_semaine: 1, a_surveiller: 2, pas_prioritaire: 3 };
   clients.sort((a, b) => (ordre[a.priorite] - ordre[b.priorite]) || ((b.joursRetard ?? -999) - (a.joursRetard ?? -999)));
 
   // Enrichit les clients prioritaires avec produits/volume de leur dernière commande
@@ -1339,7 +1382,7 @@ async function analyserClientsInterne(req) {
   // les urgents du moins en retard au plus ancien — les clients perdus en dernier.
   const ordreEnrichissement = { cette_semaine: 0, a_surveiller: 1, urgent: 2 };
   const prioritaires = clients
-    .filter(c => c.priorite !== 'pas_prioritaire' && c.priorite !== 'perdu')
+    .filter(c => c.priorite !== 'pas_prioritaire')
     .sort((a, b) => (ordreEnrichissement[a.priorite] - ordreEnrichissement[b.priorite])
                     || ((a.joursRetard ?? 0) - (b.joursRetard ?? 0)))
     .slice(0, 60);
@@ -1360,7 +1403,7 @@ async function analyserClientsInterne(req) {
   relancesCache = {
     generePour: new Date().toISOString(),
     nbCommandesAnalysees: toutes.length,
-    seuilPerduJours: SEUIL_PERDU_JOURS,
+    nbInactifsExclus: inactifs ? inactifs.size : null,
     clients,
   };
   relancesCacheExpiry = Date.now() + 30 * 60 * 1000;

@@ -23,7 +23,6 @@
     .badge.cette_semaine { background: #e8a020; }
     .badge.a_surveiller { background: #2980b9; }
     .badge.pas_prioritaire { background: #95a5a6; }
-    .badge.perdu { background: #5d6d7e; }
     .retard { color: #c0392b; font-weight: 600; }
     .avance { color: #27ae60; }
     #filtres { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
@@ -117,7 +116,6 @@
       <button data-f="cette_semaine">🟠 Cette semaine</button>
       <button data-f="a_surveiller">🔵 À surveiller</button>
       <button data-f="pas_prioritaire">⚪ Pas prioritaire</button>
-      <button data-f="perdu">💤 Ne commande plus</button>
       <span style="flex:1"></span>
       <button id="btn-imprimer" class="btn-export">🖨️ Imprimer</button>
       <button id="btn-csv" class="btn-export">⬇️ Export CSV</button>
@@ -153,8 +151,7 @@
   </main>
 
   <script>
-    const LABELS = { urgent: 'Urgent', cette_semaine: 'Cette semaine', a_surveiller: 'À surveiller',
-                     pas_prioritaire: 'Pas prioritaire', perdu: 'Ne commande plus' };
+    const LABELS = { urgent: 'Urgent', cette_semaine: 'Cette semaine', a_surveiller: 'À surveiller', pas_prioritaire: 'Pas prioritaire' };
     let clients = [];
 
     function fmtDate(d) {
@@ -170,11 +167,7 @@
       filtreCourant = filtre;
       const tbody = document.getElementById('tbody');
       tbody.innerHTML = '';
-      // « Tous » = la liste de travail : les clients qui ne commandent plus en
-      // sont exclus, ils restent consultables via leur propre filtre.
-      const list = filtre === 'tous'
-        ? clients.filter(c => c.priorite !== 'perdu')
-        : clients.filter(c => c.priorite === filtre);
+      const list = filtre === 'tous' ? clients : clients.filter(c => c.priorite === filtre);
       for (const c of list) {
         const tr = document.createElement('tr');
         tr.title = 'Créer une commande pour ' + c.nom;
@@ -191,7 +184,7 @@
           <td>${fmtDate(c.dateDerniereCommande)}</td>
           <td>${c.frequenceMoyenneJours != null ? c.frequenceMoyenneJours + ' j' : '—'}</td>
           <td>${fmtDate(c.dateProchaineEstimee)}</td>
-          <td>${c.priorite === 'perdu' ? `<span class="retard">${c.joursDepuisDerniere} j sans commande</span>` : ecart}</td>
+          <td>${ecart}</td>
           <td>${c.volumeMoyen || '—'}</td>
           <td>${c.montantMoyenHT ? c.montantMoyenHT.toFixed(2) + ' €' : '—'}</td>
           <td class="produits" title="${(c.produitsHabituels ?? []).join(' · ')}">${(c.produitsHabituels ?? []).join(', ') || '—'}</td>
@@ -207,12 +200,10 @@
       }
       listeAffichee = list;
       const nomFiltre = filtre === 'tous' ? 'toutes priorités' : LABELS[filtre];
-      const perdus = clients.filter(c => c.priorite === 'perdu').length;
       document.getElementById('meta').innerHTML =
-        `${list.length} client(s) affiché(s) — analyse générée le ${new Date(window._genere).toLocaleString('fr-FR')}`
-        + (filtre === 'tous' && perdus
-            ? ` · <span style="color:var(--muted)">${perdus} client(s) sans commande depuis plus de `
-              + `${Math.round((window._seuil ?? 365) / 30)} mois, masqués</span>`
+        `${list.length} client(s) affiché(s) sur ${clients.length} — analyse générée le ${new Date(window._genere).toLocaleString('fr-FR')}`
+        + (window._inactifs
+            ? ` · <span style="color:var(--muted)">${window._inactifs} client(s) désactivé(s) dans EasyBeer, exclus</span>`
             : '');
       // Entête repris sur la version imprimée
       document.getElementById('imp-filtre').textContent = nomFiltre;
@@ -259,7 +250,7 @@
         if (data.error) throw new Error(data.error);
         clients = data.clients ?? [];
         window._genere = data.generePour;
-        window._seuil = data.seuilPerduJours;
+        window._inactifs = data.nbInactifsExclus;
         document.getElementById('filtres').style.display = 'flex';
         document.getElementById('wrap').style.display = 'block';
         render('tous');
