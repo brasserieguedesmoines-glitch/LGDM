@@ -239,6 +239,7 @@
     <!-- Tournées -->
     <div class="vue" id="vue-tournees">
       <div class="filtres-carte" id="filtres-jour"></div>
+      <div class="filtres-carte" id="filtres-decoupe" style="margin-top:var(--e2)"></div>
       <div id="tournees-liste"></div>
     </div>
 
@@ -495,7 +496,7 @@
     function dessinerTournees(jour) {
       if (!map) return;
       coucheTournees.clearLayers();
-      const ts = (D.tournees ?? []).filter(t => jour === 'tous' || t.jour === jour);
+      const ts = tourneesActives().filter(t => jour === 'tous' || t.jour === jour);
       const bounds = [];
       ts.forEach((t, i) => {
         const couleur = COUL_TOURNEE[i % COUL_TOURNEE.length];
@@ -640,11 +641,54 @@
       return bits.join(' · ') || '—';
     }
     let jourTournees = 'tous';
+    let varTournees = 'auto';
+
+    // Tournées de la variante choisie : « auto » laisse le serveur décider du
+    // nombre (son plan par défaut), 1/2/3 imposent le découpage du jour. Un
+    // jour qui n'a pas la variante demandée (deux arrêts ne se scindent pas en
+    // trois) retombe sur son plan par défaut. Les réponses plus anciennes, sans
+    // champ variante, sont rendues telles quelles.
+    function tourneesActives() {
+      const ts = D.tournees ?? [];
+      if (!ts.length || ts[0].variante === undefined) return ts;
+      const parJour = new Map();
+      for (const t of ts) {
+        if (!parJour.has(t.jour)) parJour.set(t.jour, []);
+        parJour.get(t.jour).push(t);
+      }
+      const res = [];
+      for (const [, arr] of parJour) {
+        let sel = varTournees === 'auto'
+          ? arr.filter(t => t.parDefaut)
+          : arr.filter(t => t.variante === +varTournees);
+        if (!sel.length) sel = arr.filter(t => t.parDefaut);
+        res.push(...sel);
+      }
+      return res.sort((a, b) => a.jour.localeCompare(b.jour) || a.numero - b.numero);
+    }
 
     function renderTournees() {
       const el = document.getElementById('tournees-liste');
       const filtres = document.getElementById('filtres-jour');
-      const ts = D.tournees ?? [];
+      const decoupe = document.getElementById('filtres-decoupe');
+      const ts = tourneesActives();
+      if ((D.tournees ?? []).some(t => t.variante !== undefined) && !decoupe.dataset.pret) {
+        decoupe.innerHTML = `<span class="intitule-grp">Découpage :</span>`
+          + `<button data-v="auto" class="actif">Auto</button>`
+          + `<button data-v="1">1 tournée</button>`
+          + `<button data-v="2">2 tournées</button>`
+          + `<button data-v="3">3 tournées</button>`;
+        decoupe.dataset.pret = '1';
+        decoupe.addEventListener('click', e => {
+          const b = e.target.closest('button[data-v]'); if (!b) return;
+          decoupe.querySelectorAll('button').forEach(x => x.classList.remove('actif'));
+          b.classList.add('actif');
+          varTournees = b.dataset.v;
+          renderTournees();
+          renderTournesChart();
+        });
+        menuMobile('#filtres-decoupe', 'data-v', 'Nombre de tournées par jour');
+      }
       if (!ts.length) {
         filtres.innerHTML = '';
         el.innerHTML = '<p style="color:var(--muted)">Aucune tournée à proposer — les livraisons doivent avoir une date et une adresse géolocalisée.</p>';
@@ -955,7 +999,7 @@
 
     // ---- Équilibre des tournées ----
     function renderTournesChart() {
-      const ts = D.tournees ?? [];
+      const ts = tourneesActives();
       chTournees?.destroy();
       if (!ts.length) return;
       chTournees = new Chart(document.getElementById('ch-tournees'), {

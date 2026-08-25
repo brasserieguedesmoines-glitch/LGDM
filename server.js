@@ -1862,6 +1862,22 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
   const ilYA6Mois = debutAujourdhui - 182 * JOUR;
   const clientsActifs = new Set(valides.filter(c => (c.dateCreation ?? 0) >= ilYA6Mois).map(c => c.client?.idClient)).size;
 
+  // --- Canal de vente par client : type EasyBeer d'abord, mots-clés du nom sinon.
+  // Résolu AVANT le calcul des tournées : l'exclusion des canaux non livrés
+  // (distributeurs, associations) se fait sur l.canal, qui restait indéfini ici
+  // quand cette résolution arrivait après — ces clients entraient donc dans les
+  // feuilles de route alors que nous ne les livrons pas.
+  const typesTous = await mesurer('getTypesClient', () => getTypesClient().catch(() => []));
+  const libelleType = new Map(typesTous.map(t => [t.idClientType, (t.libelle ?? '').toLowerCase()]));
+  let typeParClient = new Map();
+  try {
+    const listeClients = await mesurer('api/clients', () => fetchInterne(req, '/api/clients'));
+    typeParClient = new Map(listeClients.map(c => [c.id, c.idClientType]));
+  } catch {}
+  const canalDe = (idClient, nom) =>
+    canalParLibelleEtNom(libelleType.get(typeParClient.get(idClient) ?? clientTypeMap.get(idClient)), nom);
+  for (const l of livraisons) l.canal = canalDe(l.client.id, l.client.nom);
+
   // Tournées : une journée = un ou plusieurs circuits au départ de la brasserie,
   // découpés en secteurs géographiques puis ordonnés (plus proche voisin + 2-opt)
   jalon('kpi');
@@ -1972,14 +1988,25 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
     // On part d'une seule tournée : la cible de 2 par jour traduit le volume
     // habituel, pas une obligation. Scinder deux arrêts en deux tournées n'a
     // aucun sens ; on n'ajoute une tournée que si la précédente ne tient pas.
-    let meilleur = null;
-    for (let nb = 1; nb <= Math.min(ROUTE.maxTournees, pts.length); nb++) {
+    const meilleurPour = (nb) => {
+      let m = null;
       for (const groupes of [decouperParCreneau(pts, nb), decouperEnTournees(pts, nb)]) {
         if (!groupes.length) continue;
         const e = evaluer(groupes);
-        if (!meilleur || e.score < meilleur.score) meilleur = e;
+        if (!m || e.score < m.score) m = e;
       }
-      if (meilleur?.parfait) break;
+      return m;
+    };
+    // Plan retenu par défaut : on part d'une tournée et on n'en ajoute que si
+    // la précédente ne tient pas. Les plans à nombre imposé (1, 2 ou 3) sont
+    // aussi calculés : l'écran de tournées laisse choisir le découpage.
+    let meilleur = null;
+    const variantes = new Map();
+    for (let nb = 1; nb <= Math.min(ROUTE.maxTournees, pts.length); nb++) {
+      const e = meilleurPour(nb);
+      if (!e) continue;
+      variantes.set(nb, e);
+      if (!meilleur || (!meilleur.parfait && e.score < meilleur.score)) meilleur = e;
     }
 
     // Si le plafond de 3 tournées ne permet pas de tenir les contraintes, on
@@ -2004,9 +2031,15 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
       }));
       diagnosticsJour.push({ jour, nbArrets: pts.length, nbTournees: meilleur.plans.length, nbNecessaire, impossibles });
     }
-    const plans = meilleur.plans;
+    const nbAuto = meilleur.plans.length;
 
-    plans.forEach((plan, idx) => {
+    // Chaque variante (1, 2 ou 3 tournées) est émise : le front n'affiche que
+    // celle choisie, « auto » correspondant à nbAuto. Les alertes ne portent
+    // que sur le plan par défaut.
+    for (const [nbDemande, e] of variantes) {
+      const plans = e.plans;
+      const parDefaut = nbDemande === nbAuto;
+      plans.forEach((plan, idx) => {
       const { ordre, sim } = plan;
       const heureDepart = departPour(ordre);
       const arrets = sim.etapes.map((e, i) => ({
@@ -2030,12 +2063,14 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
         heureArrivee: enHHMM(e.arrivee),
         horsCreneau: e.arrivee > fenetreDe(e.l).fin + 0.5,
       }));
-      if (sim.hors.length) {
+      if (sim.hors.length && parDefaut) {
         tourneesHorsCreneau.push({ jour, numero: idx + 1, hors: sim.hors.length });
       }
       tournees.push({
         jour,
         numero: idx + 1,
+        variante: nbDemande,
+        parDefaut,
         nbTourneesDuJour: plans.length,
         nom: plans.length > 1 ? `Tournée ${idx + 1}` : 'Tournée du jour',
         depart: DEPOT,
@@ -2058,9 +2093,10 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
         futs: arrets.reduce((a, x) => a + x.futs, 0),
         caHT: Math.round(arrets.reduce((a, x) => a + x.totalHT, 0)),
       });
-    });
+      });
+    }
   }
-  tournees.sort((a, b) => a.jour.localeCompare(b.jour) || a.numero - b.numero);
+  tournees.sort((a, b) => a.jour.localeCompare(b.jour) || a.variante - b.variante || a.numero - b.numero);
   chrono.push({ nom: 'calcul tournees', ms: Date.now() - tCalculTournees });
   jalon('tournees');
   const tStats = Date.now();
@@ -2071,6 +2107,7 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
     if (!l.produits.length) alertes.push({ type: 'incomplete', message: `Commande n°${l.numero} (${l.client.nom}) sans produits détectés` });
   }
   for (const t of tournees) {
+    if (!t.parDefaut) continue;   // les variantes non retenues n'alertent pas
     if (t.depassementDuree) alertes.push({
       type: 'tournee_chargee',
       message: `${t.nom} du ${t.jour} : ${Math.floor(t.dureeEstimeeMin / 60)} h ${String(t.dureeEstimeeMin % 60).padStart(2, '0')}`
@@ -2141,17 +2178,6 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
   const commandesParSemaine = [...parSemaine.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(-12)
     .map(([semaine, nb]) => ({ semaine, nb }));
 
-  // --- Canal de vente par client : type EasyBeer d'abord, mots-clés du nom sinon ---
-  const typesTous = await mesurer('getTypesClient', () => getTypesClient().catch(() => []));
-  const libelleType = new Map(typesTous.map(t => [t.idClientType, (t.libelle ?? '').toLowerCase()]));
-  let typeParClient = new Map();
-  try {
-    const listeClients = await mesurer('api/clients', () => fetchInterne(req, '/api/clients'));
-    typeParClient = new Map(listeClients.map(c => [c.id, c.idClientType]));
-  } catch {}
-  const canalDe = (idClient, nom) =>
-    canalParLibelleEtNom(libelleType.get(typeParClient.get(idClient) ?? clientTypeMap.get(idClient)), nom);
-
   // Historique léger de toutes les commandes : sert aux comparaisons de périodes côté client
   const commandesLight = valides.map(c => ({
     t: c.dateCreation ?? c.dateLivraisonPrevue ?? null,
@@ -2161,9 +2187,6 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
     canal: canalDe(c.client?.idClient, c.client?.nom),
     ht: Math.round((c.totalHT ?? 0) * 100) / 100,
   })).filter(c => c.t);
-
-  // Canal aussi sur les livraisons enrichies (croisement produit × canal, filtres)
-  for (const l of livraisons) l.canal = canalDe(l.client.id, l.client.nom);
 
   // --- Analyse clients : CA cumulé, fréquence, tendance, statut ---
   const moisCle = t => new Date(t).toISOString().slice(0, 7);
