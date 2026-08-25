@@ -96,7 +96,7 @@
     /* --- Graphiques --- */
     .chart-box { background: var(--surface); border: 1px solid var(--bordure);
                  border-radius: var(--r-lg); padding: var(--e5); margin-bottom: var(--e4); }
-    .chart-box h3 { font-size: var(--t-md); font-weight: 600; color: var(--texte);
+    .chart-box h3 { font-size: var(--t-md); font-weight: 700; color: var(--texte);
                     margin-bottom: var(--e4); }
     .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
                    gap: var(--e4); }
@@ -108,6 +108,8 @@
     #tbl-clients thead th[data-tri] { cursor: pointer; user-select: none; white-space: nowrap; }
     #tbl-clients thead th[data-tri]:hover { color: var(--texte); }
     #tbl-clients thead th { position: sticky; top: 0; z-index: 1; }
+    /* La liste défile dans la carte, mais la barre reste invisible hors survol */
+    #wrap-clients { max-height: 64vh; overflow-y: auto; }
     #tbl-clients td { white-space: nowrap; }
     #tbl-clients td:first-child { white-space: normal; min-width: 170px; font-weight: 500; }
 
@@ -119,6 +121,8 @@
 
     /* --- Cartes sous 768px : un défilement latéral est impraticable au doigt --- */
     @media (max-width: 767px) {
+      .table-wrap, #wrap-clients { background: none; border: none;
+        max-height: none; overflow: visible; }
       .arrets, .arrets tbody, .arrets tr, .arrets td,
       #tbl-clients, #tbl-clients tbody, #tbl-clients tr, #tbl-clients td { display: block; width: 100%; }
       .arrets thead, #tbl-clients thead { display: none; }
@@ -276,7 +280,7 @@
       </div>
       <div class="chart-box">
         <h3>Performance par canal (période)</h3>
-        <div style="overflow-x:auto">
+        <div class="table-wrap">
           <table class="table-liste"><thead><tr>
             <th>Canal</th><th>CA HT</th><th>% du CA</th><th>Commandes</th><th>Clients</th><th>Panier moyen</th><th>Cmd / client</th>
           </tr></thead><tbody id="tbody-canaux"></tbody></table>
@@ -284,7 +288,7 @@
       </div>
       <div class="chart-box">
         <h3>Produits × canal (livraisons à venir)</h3>
-        <div style="overflow-x:auto"><table class="table-liste" id="tbl-prod-canal"><thead></thead><tbody></tbody></table></div>
+        <div class="table-wrap"><table class="table-liste" id="tbl-prod-canal"><thead></thead><tbody></tbody></table></div>
         <p style="font-size:0.72rem;color:var(--muted);margin-top:6px">Basé sur le contenu des livraisons planifiées (l'historique produit complet n'est pas disponible).</p>
       </div>
 
@@ -338,7 +342,7 @@
             <button data-st="inactif" class="st-filtre"><i class="puce ko"></i>Inactifs</button>
           </div>
         </div>
-        <div style="overflow-x:auto;max-height:60vh">
+        <div class="table-wrap" id="wrap-clients">
           <table class="table-liste" id="tbl-clients">
             <thead><tr>
               <th data-tri="nom">Client</th>
@@ -367,7 +371,7 @@
         <button data-f="alivrer" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-camion"/></svg>À livrer</button>
         <button data-f="livrees" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Livrées</button>
       </div>
-      <div style="overflow-x:auto">
+      <div class="table-wrap">
         <table class="table-liste">
           <thead><tr><th>N°</th><th>Client</th><th>Livraison</th><th>État</th><th>Litres</th><th>33cL</th><th>75cL</th><th>Fûts</th><th>Total HT</th></tr></thead>
           <tbody id="liste-tbody"></tbody>

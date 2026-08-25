@@ -21,9 +21,9 @@
   --surface-3: #F2F2F4;           /* survols */
   --bordure: #E8E8EB;             /* 1px très légère */
   --bordure-forte: #D8D8DD;
-  --texte: #18181B;               /* anthracite */
-  --texte-2: #52525B;             /* secondaire, 7.4:1 */
-  --texte-3: #8A8A93;             /* tertiaire, 4.6:1 — jamais porteur seul */
+  --texte: #0B0B0E;               /* anthracite profond, 18:1 */
+  --texte-2: #46464E;             /* secondaire, 9:1 */
+  --texte-3: #6E6E78;             /* tertiaire, 5.6:1 — jamais porteur seul */
 
   /* --- États : fonds très clairs, texte soutenu --- */
   --ok: #15803D;      --ok-doux: #ECFDF3;
@@ -84,9 +84,9 @@
   --surface-3: #26262B;
   --bordure: #26262B;
   --bordure-forte: #35353C;
-  --texte: #EDEDEF;
-  --texte-2: #A1A1AA;
-  --texte-3: #7C7C86;
+  --texte: #FAFAFA;
+  --texte-2: #C0C0C8;
+  --texte-3: #93939D;
 
   --ok: #4ADE80;      --ok-doux: rgba(74,222,128,0.12);
   --alerte: #FBBF6E;  --alerte-doux: rgba(251,191,110,0.12);
@@ -140,7 +140,22 @@ body {
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 
-h1, h2, h3 { font-weight: 600; letter-spacing: -0.011em; line-height: 1.3; text-wrap: balance; }
+h1, h2, h3 { font-weight: 700; letter-spacing: -0.014em; line-height: 1.3; text-wrap: balance; color: var(--texte); }
+
+/* --- Défilement discret ---------------------------------------------------
+   Les barres natives de Chrome sur Linux/Windows sont larges et grises : elles
+   coupaient visuellement les cartes. On garde le défilement (l'information
+   reste atteignable) mais la barre devient fine et de la couleur du fond,
+   visible seulement au survol de la zone concernée. */
+* { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+*:hover, *:focus-within { scrollbar-color: var(--bordure-forte) transparent; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: transparent; border-radius: var(--r-full); }
+::-webkit-scrollbar-corner { background: transparent; }
+:hover::-webkit-scrollbar-thumb, :focus-within::-webkit-scrollbar-thumb {
+  background: var(--bordure-forte);
+}
 
 /* ==========================  COQUILLE  ================================== */
 .app { display: flex; min-height: 100dvh; }
@@ -269,12 +284,14 @@ section { display: flex; flex-direction: column; gap: var(--e4); }
 
 .carte-titre, h2 {
   font-size: var(--t-lg);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--texte);
   display: flex;
   align-items: center;
   gap: var(--e2);
 }
+/* Titre de bloc dans une carte : gras, avec de l'air avant le contenu */
+.carte h3, section h3 { font-size: var(--t-md); font-weight: 700; margin-bottom: var(--e3); }
 h2 .ico { color: var(--texte-3); }
 .carte-soustitre { font-size: var(--t-sm); color: var(--texte-2); }
 
@@ -492,30 +509,41 @@ select, .search-select input[type="text"] { padding-right: 32px; }
   background: var(--surface-2);
   border-bottom: 1px solid var(--bordure);
   font-size: var(--t-xs);
-  font-weight: 500;
+  font-weight: 600;
   color: var(--texte-2);
+  letter-spacing: 0.01em;
   white-space: nowrap;
 }
+.table-liste th, .table-wrap th { padding: var(--e3); }
 .table-liste td, .table-wrap td {
   padding: var(--e3);
   border-bottom: 1px solid var(--bordure);
   color: var(--texte);
   vertical-align: middle;
 }
+/* Une ligne de tableau reste sur une ligne : les cellules courtes (montants,
+   écarts, dates) ne doivent jamais se replier sur trois lignes. */
+.table-liste td, .table-wrap td { white-space: nowrap; }
+.table-liste td:first-child, .table-wrap td:first-child {
+  white-space: normal; font-weight: 600; color: var(--texte);
+}
 .table-liste tbody tr, .table-wrap tbody tr { transition: background var(--v-rapide) var(--courbe); }
 .table-liste tbody tr:hover, .table-wrap tbody tr:hover { background: var(--surface-2); }
 .table-liste tbody tr:last-child td, .table-wrap tbody tr:last-child td { border-bottom: none; }
 .table-wrap {
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   background: var(--surface);
   border: 1px solid var(--bordure);
   border-radius: var(--r-lg);
 }
+.table-wrap > table { width: 100%; }
 
 /* ====================  BARRES DE FILTRES  ============================== */
 .filtres-carte, #filtres, .tabs {
   display: flex;
   gap: var(--e2);
+  row-gap: var(--e3);
   flex-wrap: wrap;
   align-items: center;
 }
