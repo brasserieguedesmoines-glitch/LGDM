@@ -588,3 +588,66 @@ button.primary .loader { border-color: rgba(20,18,15,0.3); border-top-color: #14
   header, .btn-pdf, .btn-retour, .btn-theme { display: none !important; }
   body { background: #fff !important; color: #000 !important; }
 }
+
+/* ====================  MENUS DÉROULANTS SUR TÉLÉPHONE  ================== */
+/* Une rangée de puces se replie sur trois ou quatre lignes sous 768 px et
+   repousse le contenu utile hors de l'écran. On la remplace par un menu natif
+   qui tient sur une ligne, puis on rétablit les puces dès la tablette. */
+.menu-mobile { display: none; }
+.menu-mobile select {
+  min-height: var(--cible);
+  font-weight: 600;
+  background: var(--card2);
+  border-color: var(--pill-border);
+}
+
+@media (max-width: 767px) {
+  .menu-mobile { display: block; margin-bottom: var(--sp-3); }
+  .a-replier { display: none !important; }
+
+  /* Commandes secondaires regroupées derrière un bouton */
+  .actions-repliees { position: relative; }
+  .btn-plus {
+    display: inline-flex; align-items: center; gap: var(--sp-2);
+    min-height: var(--cible);
+    background: transparent;
+    border: 1px solid var(--pill-border);
+    border-radius: var(--r-full);
+    color: var(--amber-strong);
+    font-size: var(--fs-sm);
+    padding: 0 var(--sp-4);
+  }
+  .panneau-actions {
+    position: absolute; right: 0; top: calc(100% + 6px); z-index: 30;
+    display: flex; flex-direction: column; gap: var(--sp-2);
+    background: var(--card2);
+    border: 1px solid var(--border-fort);
+    border-radius: var(--r-md);
+    padding: var(--sp-2);
+    box-shadow: var(--shadow-3);
+    min-width: 210px;
+  }
+  .panneau-actions[hidden] { display: none; }
+  .panneau-actions > * { width: 100%; justify-content: flex-start; }
+}
+
+@media (min-width: 768px) {
+  .actions-repliees { display: contents; }   /* les boutons reprennent leur place */
+  .btn-plus { display: none; }
+  .panneau-actions { display: contents; }
+}
+
+/* Groupes de filtres et champ de recherche */
+.grp-filtre { display: flex; gap: var(--sp-2); flex-wrap: wrap; align-items: center; }
+.intitule-grp { font-size: var(--fs-xs); color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.champ-recherche { flex: 1 0 180px; min-height: var(--cible-min); font-size: var(--fs-sm); }
+.plage-dates { display: inline-flex; align-items: center; gap: var(--sp-2);
+               font-size: var(--fs-sm); color: var(--muted); flex-wrap: wrap; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden;
+           clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+@media (max-width: 767px) {
+  /* La plage de dates passe sous le menu de période, sur toute la largeur */
+  .plage-dates { flex: 1 0 100%; }
+  .plage-dates input[type="date"] { flex: 1; }
+}

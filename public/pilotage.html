@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="icons.js" defer></script>
+  <script src="ui.js" defer></script>
   <style>
     main { max-width: 1200px; }
     .tabs { display: flex; gap: 6px; margin: 14px 0; flex-wrap: wrap; }
@@ -336,17 +337,22 @@
 
       <!-- Période + comparaison -->
       <div class="filtres-carte" id="filtres-periode">
-        <button data-mode="semaine">Semaine</button>
-        <button data-mode="mois" class="actif">Mois</button>
-        <button data-mode="trim">Trimestre</button>
-        <button data-mode="annee">Année</button>
-        <button data-mode="12m">12 mois</button>
-        <button data-mode="tout">Tout</button>
-        <span>du <input type="date" id="per-d1"> au <input type="date" id="per-d2"></span>
-        <span style="margin-left:auto;color:var(--muted);font-size:0.78rem">Comparer :</span>
-        <button data-cmp="prec" class="actif cmp-btn">Période préc.</button>
-        <button data-cmp="an" class="cmp-btn">Année préc.</button>
-        <button data-cmp="off" class="cmp-btn">Sans</button>
+        <div class="grp-filtre" id="grp-periode">
+          <button data-mode="semaine">Semaine</button>
+          <button data-mode="mois" class="actif">Mois</button>
+          <button data-mode="trim">Trimestre</button>
+          <button data-mode="annee">Année</button>
+          <button data-mode="12m">12 mois</button>
+          <button data-mode="tout">Tout</button>
+        </div>
+        <span class="plage-dates">du <input type="date" id="per-d1" aria-label="Date de début">
+          au <input type="date" id="per-d2" aria-label="Date de fin"></span>
+        <div class="grp-filtre" id="grp-comparaison">
+          <span class="intitule-grp">Comparer&nbsp;:</span>
+          <button data-cmp="prec" class="actif cmp-btn">Période préc.</button>
+          <button data-cmp="an" class="cmp-btn">Année préc.</button>
+          <button data-cmp="off" class="cmp-btn">Sans</button>
+        </div>
       </div>
 
       <!-- Filtre canal transverse -->
@@ -417,12 +423,14 @@
       <div class="chart-box">
         <h3>Détail par client</h3>
         <div class="filtres-carte">
-          <input type="search" id="rech-client" placeholder="Rechercher un client…"
-                 style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:0.82rem;flex:1 0 180px">
-          <button data-st="tous" class="actif st-filtre">Tous</button>
-          <button data-st="actif" class="st-filtre"><i class="puce confirme"></i>Actifs</button>
-          <button data-st="risque" class="st-filtre"><i class="puce attente"></i>À relancer</button>
-          <button data-st="inactif" class="st-filtre"><i class="puce ko"></i>Inactifs</button>
+          <label class="sr-only" for="rech-client">Rechercher un client</label>
+          <input type="search" id="rech-client" class="champ-recherche" placeholder="Rechercher un client…">
+          <div class="grp-filtre" id="grp-statut">
+            <button data-st="tous" class="actif st-filtre">Tous</button>
+            <button data-st="actif" class="st-filtre"><i class="puce confirme"></i>Actifs</button>
+            <button data-st="risque" class="st-filtre"><i class="puce attente"></i>À relancer</button>
+            <button data-st="inactif" class="st-filtre"><i class="puce ko"></i>Inactifs</button>
+          </div>
         </div>
         <div style="overflow-x:auto;max-height:60vh">
           <table class="table-liste" id="tbl-clients">
@@ -495,6 +503,9 @@
       document.getElementById('squelette-chargement')?.remove();
       meta.removeAttribute('aria-busy');
       document.getElementById('tabs').style.display = 'flex';
+      menuMobile('#tabs', 'data-vue', 'Choisir une vue');
+      menuMobile('#filtres-carte', 'data-p', 'Période affichée sur la carte');
+      menuMobile('#filtres-liste', 'data-f', 'Filtrer les commandes');
       renderOverview(); renderCalendrier(); renderTournees(); renderListe();
     }).catch(e => {
       document.getElementById('squelette-chargement')?.remove();
@@ -741,6 +752,7 @@
           jourTournees = b.dataset.j;
           renderTournees();
         });
+        menuMobile('#filtres-jour', 'data-j', 'Choisir un jour de tournée');
       }
 
       const liste = jourTournees === 'tous' ? ts : ts.filter(t => t.jour === jourTournees);
@@ -1090,6 +1102,10 @@
         canalFiltre = b.dataset.c;
         renderKPIStats(); renderCanaux(); renderClients();
       });
+      menuMobile('#grp-periode', 'data-mode', 'Période analysée');
+      menuMobile('#grp-comparaison', 'data-cmp', 'Comparer à');
+      menuMobile('#filtres-canal', 'data-c', 'Filtrer par canal de vente');
+      menuMobile('#grp-statut', 'data-st', 'Filtrer par statut client');
     }
 
     // ---- Analyse clients ----
