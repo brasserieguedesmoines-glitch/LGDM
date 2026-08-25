@@ -1165,12 +1165,21 @@ async function analyserClientsInterne(req) {
     throw Object.assign(new Error('Aucune commande récupérée depuis EasyBeer'), { status: 503 });
   }
   let toutes = toutes0;
-  // Exclut devis, annulées et clients particuliers de l'analyse
+  // Clients encore au fichier EasyBeer : la liste exclut les fiches supprimées
+  // ou désactivées. Sans ce filtre on relançait des clients qui n'existent plus.
+  let clientsActifs = null;
+  try {
+    clientsActifs = new Set((await fetchInterne(req, '/api/clients')).map(c => c.id));
+  } catch (e) {
+    console.warn('relances: liste clients indisponible, filtre des désactivés ignoré —', e.message);
+  }
+  // Exclut devis, annulées, comptes internes et clients particuliers de l'analyse
   const typesParticuliers = await getIdsTypesParticuliers();
   toutes = toutes.filter(c =>
     !c.estDevis && !c.estAnnulee &&
     !estCompteInterne(c.client?.nom) &&
-    !typesParticuliers.has(clientTypeMap.get(c.client?.idClient))
+    !typesParticuliers.has(clientTypeMap.get(c.client?.idClient)) &&
+    (!clientsActifs || clientsActifs.has(c.client?.idClient))
   );
 
   // Groupe par client
@@ -1729,7 +1738,13 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
   const tournees = [];
   const parJour = new Map();
   const nonLivres = [];
-  for (const l of livraisons.filter(l => l.lat && l.lng && l.dateLivraison)) {
+  // Une feuille de route ne concerne que ce qui reste à livrer. Les journées
+  // déjà passées sont faites, et une date aberrante (faute de saisie) ne doit
+  // pas générer de tournée fantôme : les deux étaient comptées jusqu'ici.
+  const limiteDateValide = debutAujourdhui + 365 * JOUR;
+  for (const l of livraisons.filter(l =>
+        l.lat && l.lng && l.dateLivraison &&
+        l.dateLivraison >= debutAujourdhui && l.dateLivraison <= limiteDateValide)) {
     if (ROUTE.canauxNonLivres.includes(l.canal)) { nonLivres.push(l); continue; }
     const j = new Date(l.dateLivraison).toISOString().slice(0, 10);
     if (!parJour.has(j)) parJour.set(j, []);
@@ -1961,9 +1976,8 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
       });
     }
   }
-  const dansUnAn = debutAujourdhui + 365 * JOUR;
   for (const l of livraisons) {
-    if (l.dateLivraison && l.dateLivraison > dansUnAn) {
+    if (l.dateLivraison && l.dateLivraison > limiteDateValide) {
       alertes.push({
         type: 'incomplete',
         message: `Commande n°${l.numero} (${l.client.nom}) : date de livraison au `
