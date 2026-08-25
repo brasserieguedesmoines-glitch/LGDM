@@ -168,16 +168,36 @@
       :root { --surface: #fff; --fond: #fff; --texte: #000; --texte-2: #333;
               --texte-3: #555; --bordure: #ccc; }
       body { background: #fff !important; }
-      .tabs, #meta-pilotage, #filtres-jour, .menu-mobile, .tournee .actions { display: none !important; }
-      .tournee { border: none; box-shadow: none; padding: 0; page-break-inside: avoid; }
-      #entete-route { display: flex; align-items: center; gap: var(--e3);
-                      border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 10px; }
-      #entete-route img { height: 38px; }
-      .arrets { font-size: 9pt; }
+      .tabs, #meta-pilotage, #filtres-jour, #filtres-decoupe, .menu-mobile,
+      .tournee .actions, .sidebar, .voile-sidebar, .entete { display: none !important; }
+      .zone, main { padding: 0 !important; margin: 0 !important; gap: 0 !important; }
+      .tournee { border: none; box-shadow: none; padding: 0; margin: 0; page-break-inside: avoid; }
+      /* Une feuille de route = une page : seule la tournée choisie s'imprime */
+      body.impression-tournee .vue, body.impression-tournee #alertes,
+      body.impression-tournee #squelette-chargement { display: none !important; }
+      body.impression-tournee #vue-tournees { display: block !important; }
+      body.impression-tournee .tournee { display: none; }
+      body.impression-tournee .tournee.a-imprimer { display: block; }
+      /* L'en-tête de la feuille reprend déjà titre et totaux : pas de doublon */
+      body.impression-tournee .tournee .head,
+      body.impression-tournee .tournee .meta { display: none !important; }
+      /* !important : la règle écran « display:none » est déclarée après ce bloc */
+      #entete-route { display: flex !important; align-items: center; gap: var(--e3);
+                      border-bottom: 2px solid #000; padding-bottom: 4px; margin-bottom: 6px; }
+      #entete-route img { height: 30px; }
+      #entete-route h2 { font-size: 12pt; }
+      #entete-route p { font-size: 8pt; color: #444; }
+      .tournee .head { font-size: 10.5pt; margin-bottom: 2px; }
+      .tournee .meta { font-size: 8pt; margin-bottom: 4px; }
+      .arrets { font-size: 8pt; }
+      .arrets th { padding: 2px 4px; font-size: 7pt; }
+      .arrets td { padding: 3px 4px; }
+      .arrets .adr { font-size: 7.5pt; }
+      .arrets .km { font-size: 7pt; }
       .arrets thead { display: table-header-group; }
       .arrets tr { page-break-inside: avoid; }
-      .case-fait { display: table-cell !important; }
-      .case { font-size: 12pt; }
+      .case-fait { display: table-cell !important; width: 20px; }
+      .case { font-size: 10pt; }
     }
     #entete-route { display: none; }
   </style>
