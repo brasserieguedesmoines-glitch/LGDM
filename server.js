@@ -590,6 +590,33 @@ app.get('/api/debug-commande/:idClient', async (req, res) => {
   res.json({ typeClient, idClientType, results });
 });
 
+// --- Debug temporaire : champs disponibles sur une fiche client ---
+app.get('/api/debug-client/:idClient', async (req, res) => {
+  const out = {};
+  try {
+    const d = await easybeerGet(`/parametres/client/detail/${req.params.idClient}`);
+    out.clesDetail = Object.keys(d ?? {});
+    // Tout ce qui ressemble à un indicateur d'activité
+    out.champsBooleens = Object.fromEntries(
+      Object.entries(d ?? {}).filter(([, v]) => typeof v === 'boolean'));
+    out.type = d?.type ?? null;
+    out.etat = d?.etat ?? null;
+    out.statut = d?.statut ?? null;
+  } catch (e) { out.detailErr = e.message; }
+  try {
+    const type = clientTypeMap.get(parseInt(req.params.idClient));
+    if (type) {
+      const g = await getGrilleByType(type);
+      const c = g.clients.find(x => x.modeleClient.idClient === parseInt(req.params.idClient));
+      out.clesModeleClient = c ? Object.keys(c.modeleClient) : null;
+      out.modeleClientBooleens = c ? Object.fromEntries(
+        Object.entries(c.modeleClient).filter(([, v]) => typeof v === 'boolean')) : null;
+    } else out.grilleErr = 'type inconnu';
+  } catch (e) { out.grilleErr = e.message; }
+  res.set('Cache-Control', 'no-store');
+  res.json(out);
+});
+
 // --- Clients ---
 app.get('/api/clients', async (req, res) => {
   try {
