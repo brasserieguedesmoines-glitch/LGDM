@@ -105,6 +105,8 @@
                   white-space: nowrap; font-variant-numeric: tabular-nums; }
     /* Sélection d'arrêts : retirer ou déplacer un point de livraison */
     .sel-arret { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+    .badge-urgent { border: none; cursor: pointer; margin-left: var(--e1); min-height: 22px; }
+    .badge-urgent:hover { text-decoration: line-through; }
     .barre-arrets[hidden] { display: none; }
     .barre-arrets { display: flex; align-items: center; gap: var(--e2); flex-wrap: wrap;
                     margin-top: var(--e3); padding: var(--e2) var(--e3);
@@ -865,7 +867,7 @@
                   <td class="num" data-libelle="Arrêt">${a.ordre}</td>
                   <td class="heure" data-libelle="Heure" style="${a.horsCreneau ? 'color:var(--danger)' : ''}">${a.heureArrivee}${a.horsCreneau ? ' ' + ico('alerte') : ''}</td>
                   <td class="client" data-libelle="Client">
-                    <div class="cli">${a.client}</div>
+                    <div class="cli">${a.client}${a.urgent ? ` <button type="button" class="badge urgent badge-urgent" title="Retirer l'urgence">Urgent ×</button>` : ''}</div>
                     <div class="adr">${(a.adresse || '—').replace(/,\s*France\s*$/i, '')} · Commande n°${a.numero}${a.etat ? ' — ' + a.etat : ''}</div>
                   </td>
                   <td class="prod" data-libelle="Créneau">${a.canal ? `<span class="canal">${a.canal}</span> ` : ''}${a.creneau}</td>
@@ -877,6 +879,7 @@
           </table>
           <div class="barre-arrets" hidden>
             <span class="nb-sel"></span>
+            <button data-mod="urgent" title="Passe les arrêts cochés en tête de la première tournée">Urgent — livrer en premier</button>
             <button data-mod="retirer">Retirer de la tournée</button>
             ${liste.filter(x => x !== t).map(x =>
               `<button data-mod="deplacer" data-vers="${ts.indexOf(x)}">Déplacer vers ${x.nom}</button>`).join('')}
@@ -905,6 +908,14 @@
           barre.querySelector('.nb-sel').textContent = `${n} arrêt${n > 1 ? 's' : ''} sélectionné${n > 1 ? 's' : ''} :`;
         });
         carte.addEventListener('click', e => {
+          const bu = e.target.closest('.badge-urgent');
+          if (bu) {
+            const tr = bu.closest('tr');
+            const idx = [...tr.parentNode.querySelectorAll('tr')].indexOf(tr) - 1; // ligne de départ dépôt
+            const a = t.arrets[idx];
+            if (a) { delete a.urgent; renderTournees(); }
+            return;
+          }
           const b = e.target.closest('button[data-mod]'); if (!b) return;
           if (b.dataset.mod === 'reintegrer') {
             const a = t.retires.splice(parseInt(b.dataset.k), 1)[0];
@@ -916,6 +927,13 @@
           t.arrets = t.arrets.filter((_, i) => !sel.includes(i));
           if (b.dataset.mod === 'retirer') {
             t.retires = (t.retires ?? []).concat(pris);
+          } else if (b.dataset.mod === 'urgent') {
+            // Livrer en premier : en tête de la première tournée affichée,
+            // dans l'ordre où ils étaient cochés.
+            const premiere = liste[0];
+            pris.forEach(a => { a.urgent = true; });
+            premiere.arrets.unshift(...pris);
+            if (premiere !== t) replanifier(premiere);
           } else {
             const cible = ts[parseInt(b.dataset.vers)];
             pris.forEach(a => insererAuMieux(cible, a));
