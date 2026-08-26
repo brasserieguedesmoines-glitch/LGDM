@@ -105,6 +105,9 @@
                   white-space: nowrap; font-variant-numeric: tabular-nums; }
     /* Sélection d'arrêts : retirer ou déplacer un point de livraison */
     .sel-arret { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+    .lbl-depart { display: inline-flex; align-items: center; gap: var(--e2); }
+    .h-depart { width: auto; min-height: 28px; padding: 0 var(--e2);
+                font-size: var(--t-sm); font-weight: 600; }
     .badge-urgent { border: none; cursor: pointer; margin-left: var(--e1); min-height: 22px; }
     .badge-urgent:hover { text-decoration: line-through; }
     .barre-arrets[hidden] { display: none; }
@@ -221,6 +224,7 @@
       .case-fait { display: table-cell !important; width: 20px; }
       .case { font-size: 10pt; }
       .barre-arrets, .retires { display: none !important; }
+      .h-depart { border: none; padding: 0; min-height: 0; font-size: inherit; }
       .sel-arret { accent-color: #000; }
     }
     #entete-route { display: none; }
@@ -846,7 +850,10 @@
             </span>
           </div>
           <div class="meta">
-            Départ ${t.heureDepart} · retour ${t.heureRetour} ·
+            <label class="lbl-depart">Départ
+              <input type="time" class="h-depart" value="${t.heureDepart}" step="300"
+                     aria-label="Heure de départ de la ${t.nom}">
+            </label> · retour ${t.heureRetour} ·
             <strong style="color:${trop ? 'var(--danger)' : 'var(--ok)'}">${hhmm(t.dureeEstimeeMin)}</strong>
             ${trop ? '(au-delà des 4 h)' : '(dans les 4 h)'} ·
             ${t.kmEstimes} km en ${hhmm(t.roulageMin)} de route${t.vitesseMoyenne ? ` (${t.vitesseMoyenne} km/h moyens, circulation prise en compte)` : ''}${t.attenteMin > 5 ? ` · ⏳ ${t.attenteMin} min d'attente` : ''} ·
@@ -902,6 +909,12 @@
         const cochees = () => [...carte.querySelectorAll('.sel-arret')]
           .map((c, i) => c.checked ? i : -1).filter(i => i >= 0);
         carte.addEventListener('change', e => {
+          if (e.target.classList.contains('h-depart')) {
+            if (!e.target.value) return;
+            t.heureDepart = e.target.value;
+            replanifier(t); renderTournees(); renderTournesChart();
+            return;
+          }
           if (!e.target.classList.contains('sel-arret')) return;
           const n = cochees().length;
           barre.hidden = !n;
