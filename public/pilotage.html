@@ -887,13 +887,13 @@
           <div class="barre-arrets" hidden>
             <span class="nb-sel"></span>
             <button data-mod="urgent" title="Garantit les arrêts cochés dans la première tournée, à la meilleure place du circuit">Urgent — passer en Tournée 1</button>
-            <button data-mod="retirer">Retirer de la tournée</button>
+            <button data-mod="retirer" title="Sort l'arrêt du circuit sans rien changer à la commande dans EasyBeer">Retirer de la tournée</button>
             ${liste.filter(x => x !== t).map(x =>
               `<button data-mod="deplacer" data-vers="${ts.indexOf(x)}">Déplacer vers ${x.nom}</button>`).join('')}
           </div>
           ${(t.retires ?? []).length ? `
           <div class="retires">
-            <span class="intitule-grp">Retirés de la tournée :</span>
+            <span class="intitule-grp">Retirés de la tournée (commandes intactes dans EasyBeer) :</span>
             ${t.retires.map((a, k) => `<span class="retire">${a.client}
               <button data-mod="reintegrer" data-k="${k}" aria-label="Réintégrer ${a.client}">Réintégrer</button></span>`).join('')}
           </div>` : ''}
