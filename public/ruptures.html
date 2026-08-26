@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#F7F7F8">
+  <title>Ruptures — Le Gué des Moines</title>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'light';</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="icons.js"></script>
+  <script src="ui.js"></script>
+  <script src="shell.js"></script>
+  <style>
+    .attente { background: var(--surface); border: 1px solid var(--bordure);
+               border-radius: var(--r-lg); padding: var(--e4) var(--e5);
+               margin-bottom: var(--e4); box-shadow: var(--ombre-1); }
+    .attente .haut { display: flex; align-items: center; gap: var(--e3); flex-wrap: wrap; }
+    .attente .nom { font-weight: 700; font-size: var(--t-lg); }
+    .attente .date { color: var(--texte-3); font-size: var(--t-sm); }
+    .attente .actions { margin-left: auto; display: flex; gap: var(--e2); flex-wrap: wrap; }
+    .attente .actions button { min-height: var(--cible-min); padding: 0 var(--e4);
+      font-size: var(--t-sm); border: 1px solid var(--bordure-forte);
+      background: var(--surface); color: var(--texte); }
+    .attente .actions .declencher { background: var(--accent); border-color: var(--accent);
+      color: var(--sur-accent); font-weight: 600; }
+    .attente .actions .declencher:hover { background: var(--accent-fonce); }
+    .attente .actions .suppr { color: var(--danger); }
+    .attente .actions .suppr:hover { background: var(--danger-doux); }
+    .attente ul { list-style: none; margin-top: var(--e3); display: flex;
+                  flex-direction: column; gap: var(--e1); }
+    .attente li { font-size: var(--t-sm); color: var(--texte-2); display: flex; gap: var(--e2); }
+    .attente li strong { color: var(--texte); font-weight: 600; min-width: 3.5em; text-align: right; }
+    .attente .note { margin-top: var(--e2); font-size: var(--t-sm); color: var(--texte-3); font-style: italic; }
+    .attente .statut { margin-top: var(--e2); font-size: var(--t-sm); min-height: 1.3em; }
+    .attente .statut.error { color: var(--danger); }
+    .attente .statut.ok { color: var(--ok); }
+    .vide-page { display: flex; flex-direction: column; align-items: center; gap: var(--e3);
+                 padding: var(--e8) var(--e5); color: var(--texte-2); text-align: center; }
+    .vide-page .ico { width: 32px; height: 32px; color: var(--texte-3); }
+  </style>
+</head>
+<body>
+  <main class="etroit">
+    <section>
+      <div>
+        <h2>Commandes en attente de stock</h2>
+        <p class="carte-soustitre">
+          Mises en attente depuis la prise de commande (bouton « Mettre en attente »).
+          Rien n'est envoyé à EasyBeer tant que vous ne déclenchez pas la commande.
+          La liste est conservée sur cet appareil.
+        </p>
+      </div>
+      <div id="liste"></div>
+    </section>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      monterCoquille({ titre: 'Ruptures', actif: '/ruptures.html' });
+      render();
+    });
+
+    const CLE = 'lgdm-ruptures';
+    const lire = () => { try { return JSON.parse(localStorage.getItem(CLE)) ?? []; } catch { return []; } };
+    const ecrire = f => localStorage.setItem(CLE, JSON.stringify(f));
+    const fmtD = t => new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    function render() {
+      const el = document.getElementById('liste');
+      const file = lire();
+      if (!file.length) {
+        el.innerHTML = `<div class="vide-page">${ico('check', { classe: 'ico' })}
+          <p>Aucune commande en attente.<br>Sur la prise de commande, « Mettre en attente (rupture) »
+          garde la commande ici jusqu'au retour du stock.</p></div>`;
+        return;
+      }
+      el.innerHTML = file.map(e => `
+        <article class="attente" data-id="${e.id}">
+          <div class="haut">
+            <span class="nom">${e.commande.nomClient || 'Client inconnu'}</span>
+            <span class="date">${ico('horloge')} en attente depuis le ${fmtD(e.creeLe)}</span>
+            <span class="actions">
+              <button class="declencher">${ico('check')} Déclencher la commande</button>
+              <button class="suppr" title="Abandonne la mise en attente (rien n'existe dans EasyBeer)">Supprimer</button>
+            </span>
+          </div>
+          <ul>${e.commande.lignes.map(l =>
+            `<li><strong>${l.quantite} ×</strong> ${l.libelle} ${l.contenant ?? ''}</li>`).join('')}
+          </ul>
+          ${e.commande.commentaire ? `<p class="note">« ${e.commande.commentaire} »</p>` : ''}
+          <p class="statut" role="status"></p>
+        </article>`).join('');
+    }
+
+    document.getElementById('liste').addEventListener('click', async (ev) => {
+      const art = ev.target.closest('.attente'); if (!art) return;
+      const id = parseInt(art.dataset.id);
+      const statut = art.querySelector('.statut');
+
+      if (ev.target.closest('.suppr')) {
+        if (!confirm('Supprimer cette commande en attente ? (rien n\'existe dans EasyBeer)')) return;
+        ecrire(lire().filter(e => e.id !== id));
+        render();
+        return;
+      }
+
+      const btn = ev.target.closest('.declencher'); if (!btn) return;
+      const entree = lire().find(e => e.id === id); if (!entree) return;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loader"></span> Envoi en cours…';
+      statut.className = 'statut'; statut.textContent = '';
+      try {
+        const res = await fetch('/api/commande', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(entree.commande),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+        ecrire(lire().filter(e => e.id !== id));
+        const ref = data.map?.numero ?? data.map?.id ?? data.reference ?? data.idCommande ?? data.id ?? '';
+        statut.className = 'statut ok';
+        statut.textContent = `Commande envoyée à EasyBeer${ref ? ' — référence ' + ref : ''}.`;
+        setTimeout(render, 2500);
+      } catch (err) {
+        statut.className = 'statut error';
+        statut.textContent = 'Échec de l\'envoi : ' + err.message + ' — la commande reste en attente.';
+        btn.disabled = false;
+        btn.innerHTML = ico('check') + ' Déclencher la commande';
+      }
+    });
+  </script>
+</body>
+</html>

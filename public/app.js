@@ -376,8 +376,10 @@ async function preRemplirDerniereCommande(idClient) {
 }
 
 // ---- Soumission ----
-btnEnvoyer.addEventListener('click', async () => {
-  if (!currentIdClient) { setStatut('Veuillez choisir un client.', true); return; }
+// Rassemble la commande saisie sous la forme attendue par POST /api/commande.
+// Renvoie null (et affiche l'erreur) si la saisie est incomplète.
+function collecterCommande() {
+  if (!currentIdClient) { setStatut('Veuillez choisir un client.', true); return null; }
 
   const lignes = [];
   let erreur = false;
@@ -395,10 +397,22 @@ btnEnvoyer.addEventListener('click', async () => {
 
   if (erreur || lignes.length === 0) {
     setStatut('Veuillez compléter toutes les lignes ou supprimer les lignes vides.', true);
-    return;
+    return null;
   }
 
-  const commentaire = document.getElementById('note-livraison').value.trim();
+  return {
+    idClient: parseInt(currentIdClient),
+    idClientType: currentIdClientType,
+    nomClient: clientSearchSelect?.querySelector('input')?.value ?? '',
+    lignes,
+    commentaire: document.getElementById('note-livraison').value.trim(),
+    adresseLivraison: selectAdresse ? adressesLivraison[parseInt(selectAdresse.value)] : undefined,
+  };
+}
+
+btnEnvoyer.addEventListener('click', async () => {
+  const commande = collecterCommande();
+  if (!commande) return;
 
   btnEnvoyer.disabled = true;
   btnEnvoyer.setAttribute('aria-busy', 'true');
@@ -409,13 +423,7 @@ btnEnvoyer.addEventListener('click', async () => {
     const result = await apiFetch('/api/commande', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        idClient: parseInt(currentIdClient),
-        idClientType: currentIdClientType,
-        nomClient: clientSearchSelect?.querySelector('input')?.value ?? '',
-        lignes, commentaire,
-        adresseLivraison: selectAdresse ? adressesLivraison[parseInt(selectAdresse.value)] : undefined,
-      }),
+      body: JSON.stringify(commande),
     });
     const ref = result.map?.numero ?? result.map?.id ?? result.reference ?? result.idCommande ?? result.id ?? '';
     modalDetail.textContent = ref ? `Référence : ${ref}` : 'Commande enregistrée avec succès.';
@@ -429,7 +437,25 @@ btnEnvoyer.addEventListener('click', async () => {
   }
 });
 
+// ---- Mise en attente (rupture de stock) ----
+// La commande est gardée dans le navigateur (localStorage), rien ne part vers
+// EasyBeer. Elle se déclenche depuis la page Ruptures quand le stock revient.
+document.getElementById('btn-attente')?.addEventListener('click', () => {
+  const commande = collecterCommande();
+  if (!commande) return;
+  const cle = 'lgdm-ruptures';
+  let file = [];
+  try { file = JSON.parse(localStorage.getItem(cle)) ?? []; } catch {}
+  file.push({ id: Date.now(), creeLe: Date.now(), commande });
+  try { localStorage.setItem(cle, JSON.stringify(file)); }
+  catch { setStatut('Impossible d\'enregistrer la mise en attente sur cet appareil.', true); return; }
+  modalDetail.textContent = `${commande.nomClient} — ${commande.lignes.length} ligne(s) en attente de réapprovisionnement. À déclencher depuis la page Ruptures.`;
+  document.getElementById('modal-titre').textContent = 'Commande mise en attente';
+  modalOverlay.style.display = 'flex';
+});
+
 btnNouvelleCommande.addEventListener('click', () => {
+  document.getElementById('modal-titre').textContent = 'Commande envoyée';
   modalOverlay.style.display = 'none';
   clientSearchSelect?.reset();
   currentIdClient = '';
