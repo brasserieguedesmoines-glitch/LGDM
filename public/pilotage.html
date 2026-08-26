@@ -856,7 +856,7 @@
             </label> · retour ${t.heureRetour} ·
             <strong style="color:${trop ? 'var(--danger)' : 'var(--ok)'}">${hhmm(t.dureeEstimeeMin)}</strong>
             ${trop ? '(au-delà des 4 h)' : '(dans les 4 h)'} ·
-            ${t.kmEstimes} km en ${hhmm(t.roulageMin)} de route${t.vitesseMoyenne ? ` (${t.vitesseMoyenne} km/h moyens, circulation prise en compte)` : ''}${t.attenteMin > 5 ? ` · ⏳ ${t.attenteMin} min d'attente` : ''} ·
+            ${t.kmEstimes} km en ${hhmm(t.roulageMin)} de route${t.attenteMin > 5 ? ` · ⏳ ${t.attenteMin} min d'attente` : ''} ·
             ${ico('goutte')} ${t.litres} L · ${ico('bouteille')} ${t.bouteilles} bouteilles
             · ${ico('fut')} ${t.futs} fûts · ${ico('euro')} ${t.caHT} €
             ${t.modifie ? `<span class="tournee-alerte">${ico('alerte')} ajustée à la main — heures et km réestimés</span>` : ''}
