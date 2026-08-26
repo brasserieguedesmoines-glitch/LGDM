@@ -7,6 +7,7 @@ const PAGES = [
   { href: '/pilotage.html', icone: 'pilotage', libelle: 'Pilotage' },
   { href: '/relances.html', icone: 'relances', libelle: 'Relances' },
   { href: '/ruptures.html', icone: 'horloge',  libelle: 'Ruptures' },
+  { href: '/prospection.html', icone: 'clients', libelle: 'Prospection' },
 ];
 
 function lienSidebar({ href, icone, libelle }, actif) {

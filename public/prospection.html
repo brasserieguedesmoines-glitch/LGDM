@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#F7F7F8">
+  <title>Prospection — Le Gué des Moines</title>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'light';</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="icons.js"></script>
+  <script src="ui.js"></script>
+  <script src="shell.js"></script>
+  <style>
+    /* ---- KPI ---- */
+    .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--e3); margin-bottom: var(--e5); }
+    @media (min-width: 700px)  { .kpi-grid { grid-template-columns: repeat(4, 1fr); } }
+    @media (min-width: 1280px) { .kpi-grid { grid-template-columns: repeat(7, 1fr); } }
+    .kpi { background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--r-md);
+           padding: var(--e3) var(--e4); box-shadow: var(--ombre-1); }
+    .kpi .lbl { font-size: var(--t-xs); font-weight: 500; color: var(--texte-2); }
+    .kpi .val { font-size: var(--t-kpi); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+    .kpi.alerte-kpi .val { color: var(--danger); }
+
+    /* ---- À traiter ---- */
+    #a-traiter { border-left: 3px solid var(--accent); background: var(--accent-doux);
+                 border-radius: var(--r-sm); padding: var(--e3) var(--e4); margin-bottom: var(--e5);
+                 font-size: var(--t-sm); display: flex; flex-wrap: wrap; gap: var(--e1) var(--e4); }
+    #a-traiter strong { color: var(--accent-texte); }
+    #a-traiter button { border: none; background: none; color: var(--accent-texte);
+                        font-weight: 600; text-decoration: underline; font-size: var(--t-sm); min-height: 24px; }
+
+    /* ---- Filtres ---- */
+    .zone-filtres { display: flex; flex-wrap: wrap; gap: var(--e2) var(--e5); align-items: center; margin-bottom: var(--e5); }
+    .zone-filtres select { width: auto; min-height: var(--cible-min); font-size: var(--t-sm); }
+
+    /* ---- Kanban ---- */
+    #kanban { display: flex; gap: var(--e3); overflow-x: auto; padding-bottom: var(--e3);
+              align-items: flex-start; }
+    .col { flex: 0 0 250px; background: var(--surface-2); border: 1px solid var(--bordure);
+           border-radius: var(--r-md); padding: var(--e2); }
+    .col.survol { outline: 2px dashed var(--accent); outline-offset: -2px; }
+    .col-titre { display: flex; align-items: center; gap: var(--e2); padding: var(--e1) var(--e2) var(--e2);
+                 font-size: var(--t-xs); font-weight: 700; text-transform: uppercase;
+                 letter-spacing: 0.05em; color: var(--texte-2); }
+    .col-titre .nb { margin-left: auto; background: var(--surface-3); border-radius: var(--r-full);
+                     padding: 0 var(--e2); font-weight: 600; color: var(--texte-2); }
+    .col[data-st="gagne"] .col-titre { color: var(--ok); }
+    .col[data-st="perdu"] .col-titre { color: var(--texte-3); }
+
+    /* ---- Carte prospect ---- */
+    .pcarte { background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--r-sm);
+              padding: var(--e3); margin-bottom: var(--e2); cursor: grab; box-shadow: var(--ombre-1);
+              transition: box-shadow var(--v-rapide) var(--courbe); }
+    .pcarte:hover { box-shadow: var(--ombre-2); }
+    .pcarte.trainee { opacity: 0.4; }
+    .pcarte .pnom { font-weight: 600; font-size: var(--t-sm); display: flex; align-items: center; gap: var(--e2); }
+    .pcarte .pmeta { font-size: var(--t-xs); color: var(--texte-3); margin-top: 2px; }
+    .pcarte .pbas { display: flex; align-items: center; gap: var(--e2); margin-top: var(--e2);
+                    font-size: var(--t-xs); color: var(--texte-2); flex-wrap: wrap; }
+    .pastille { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .pastille.chaud { background: var(--danger); }
+    .pastille.tiede { background: var(--accent); }
+    .pastille.froid { background: var(--info); }
+    .tag { font-size: 0.6875rem; font-weight: 600; border-radius: var(--r-full); padding: 1px var(--e2); }
+    .tag.retard { background: var(--danger-doux); color: var(--danger); }
+    .tag.auj { background: var(--accent-doux); color: var(--accent-texte); }
+    .tag.sans { background: var(--surface-3); color: var(--texte-3); }
+    .tag.rdv { background: var(--info-doux); color: var(--info); }
+    .resp-puce { margin-left: auto; background: var(--surface-3); border-radius: var(--r-full);
+                 padding: 0 var(--e2); font-weight: 600; }
+
+    /* ---- Table ---- */
+    #vue-liste .table-wrap { margin-top: var(--e4); }
+    #vue-liste td, #vue-liste th { white-space: nowrap; }
+    #vue-liste td:first-child { font-weight: 600; cursor: pointer; }
+
+    /* ---- Relances ---- */
+    .groupe-relance h3 { margin: var(--e5) 0 var(--e3); font-size: var(--t-md); display: flex; gap: var(--e2); align-items: center; }
+    .groupe-relance h3 .nb { color: var(--texte-3); font-weight: 500; }
+    .ligne-rel { display: flex; align-items: center; gap: var(--e3); background: var(--surface);
+                 border: 1px solid var(--bordure); border-radius: var(--r-sm); padding: var(--e3) var(--e4);
+                 margin-bottom: var(--e2); flex-wrap: wrap; }
+    .ligne-rel.retard { border-left: 3px solid var(--danger); }
+    .ligne-rel .qui { font-weight: 600; cursor: pointer; }
+    .ligne-rel .quoi { font-size: var(--t-sm); color: var(--texte-2); }
+    .ligne-rel .btns { margin-left: auto; display: flex; gap: var(--e2); }
+
+    /* ---- Stats ---- */
+    .funnel { display: flex; flex-direction: column; gap: var(--e2); margin: var(--e4) 0 var(--e5); }
+    .funnel .etape { display: grid; grid-template-columns: 130px 1fr 40px; gap: var(--e3);
+                     align-items: center; font-size: var(--t-sm); }
+    .funnel .barre { height: 22px; background: var(--accent); border-radius: var(--r-sm); min-width: 3px; }
+    .funnel .etape:nth-child(even) .barre { background: var(--g2); }
+    .stats-grille { display: grid; gap: var(--e4); grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    .stat-bloc { background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--r-md);
+                 padding: var(--e4); }
+    .stat-bloc h3 { font-size: var(--t-sm); margin-bottom: var(--e3); }
+    .stat-bloc li { display: flex; justify-content: space-between; font-size: var(--t-sm);
+                    color: var(--texte-2); padding: var(--e1) 0; list-style: none; }
+    .stat-bloc li strong { color: var(--texte); }
+
+    /* ---- Fiche (modale) ---- */
+    #fiche-fond { position: fixed; inset: 0; background: rgba(10,10,12,0.45); display: none;
+                  align-items: flex-start; justify-content: center; padding: var(--e5); z-index: 60;
+                  overflow-y: auto; }
+    #fiche-fond[data-ouvert] { display: flex; }
+    #fiche { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--ombre-3);
+             width: min(680px, 100%); padding: var(--e5); margin: var(--e5) 0; }
+    #fiche .haut { display: flex; align-items: flex-start; gap: var(--e3); flex-wrap: wrap; }
+    #fiche h2 { font-size: var(--t-xl); }
+    #fiche .fermer { margin-left: auto; }
+    .fiche-grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: var(--e3); margin: var(--e4) 0; }
+    .fiche-grille label { display: block; font-size: var(--t-xs); font-weight: 600;
+                          color: var(--texte-2); margin-bottom: 2px; }
+    .fiche-grille input, .fiche-grille select { min-height: var(--cible-min); font-size: var(--t-sm); }
+    .actions-rapides { display: flex; flex-wrap: wrap; gap: var(--e2); margin: var(--e4) 0; }
+    .actions-rapides a, .actions-rapides button { display: inline-flex; align-items: center; gap: var(--e2);
+      min-height: var(--cible-min); padding: 0 var(--e3); font-size: var(--t-sm);
+      border: 1px solid var(--bordure-forte); border-radius: var(--r-sm);
+      background: var(--surface); color: var(--texte); text-decoration: none; }
+    .actions-rapides .gagne { background: var(--ok-doux); color: var(--ok); border-color: transparent; font-weight: 600; }
+    .actions-rapides .perdu-b { background: var(--surface-3); color: var(--texte-2); }
+    .prochaine { background: var(--accent-doux); border-radius: var(--r-sm); padding: var(--e3) var(--e4);
+                 display: flex; align-items: center; gap: var(--e3); flex-wrap: wrap; font-size: var(--t-sm); }
+    .prochaine strong { color: var(--accent-texte); }
+    .timeline { margin-top: var(--e4); border-left: 2px solid var(--bordure); padding-left: var(--e4);
+                display: flex; flex-direction: column; gap: var(--e3); max-height: 320px; overflow-y: auto; }
+    .evenement { position: relative; font-size: var(--t-sm); }
+    .evenement::before { content: ''; position: absolute; left: calc(-1 * var(--e4) - 5px); top: 6px;
+                         width: 8px; height: 8px; border-radius: 50%; background: var(--bordure-forte); }
+    .evenement .edate { font-weight: 600; }
+    .evenement .equi { color: var(--texte-3); }
+    .evenement .enote { color: var(--texte-2); }
+    .ajout-note { display: flex; gap: var(--e2); margin-top: var(--e3); flex-wrap: wrap; }
+    .ajout-note select, .ajout-note input[type="text"] { min-height: var(--cible-min); font-size: var(--t-sm); }
+    .ajout-note input[type="text"] { flex: 1 1 200px; }
+
+    /* ---- Ajout rapide ---- */
+    #ajout { display: none; gap: var(--e2); flex-wrap: wrap; background: var(--surface);
+             border: 1px solid var(--bordure); border-radius: var(--r-md); padding: var(--e3);
+             margin-bottom: var(--e4); }
+    #ajout[data-ouvert] { display: flex; }
+    #ajout input, #ajout select { min-height: var(--cible-min); font-size: var(--t-sm); width: auto; flex: 1 1 130px; }
+
+    .note-stockage { font-size: var(--t-xs); color: var(--texte-3); margin-top: var(--e5); }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="kpi-grid" id="kpis"></div>
+    <div id="a-traiter" style="display:none"></div>
+
+    <div class="tabs" id="tabs" role="tablist" style="margin-bottom:var(--e5)">
+      <button data-vue="kanban" class="actif">Pipeline</button>
+      <button data-vue="liste">Liste</button>
+      <button data-vue="relances">À relancer</button>
+      <button data-vue="stats">Statistiques</button>
+    </div>
+
+    <div class="zone-filtres">
+      <div class="grp-filtre" id="filtres-rapides">
+        <button data-f="tous" class="actif">Tous</button>
+        <button data-f="miens">Mes prospects</button>
+        <button data-f="auj">À relancer aujourd'hui</button>
+        <button data-f="retard">En retard</button>
+        <button data-f="chauds">Chauds</button>
+        <button data-f="sans">Sans prochaine action</button>
+        <button data-f="nonassignes">Non assignés</button>
+      </div>
+      <label class="intitule-grp">Commercial
+        <select id="f-resp"><option value="">Tous</option></select>
+      </label>
+      <label class="intitule-grp">Type
+        <select id="f-type"><option value="">Tous</option></select>
+      </label>
+      <label class="intitule-grp">Ville
+        <select id="f-ville"><option value="">Toutes</option></select>
+      </label>
+      <input type="search" id="f-rech" class="champ-recherche" placeholder="Rechercher…" style="flex:0 1 200px">
+      <button class="secondary" id="btn-ajout" style="min-height:var(--cible-min)">+ Nouveau prospect</button>
+    </div>
+
+    <form id="ajout">
+      <input required name="nom" placeholder="Nom de l'établissement *">
+      <select name="type"></select>
+      <input name="ville" placeholder="Ville">
+      <input name="tel" placeholder="Téléphone">
+      <select name="resp"></select>
+      <select name="priorite">
+        <option value="tiede">Tiède</option><option value="chaud">Chaud</option><option value="froid">Froid</option>
+      </select>
+      <select name="potentiel">
+        <option value="moyen">Potentiel moyen</option><option value="fort">Potentiel fort</option><option value="faible">Potentiel faible</option>
+      </select>
+      <button type="submit" class="primary" style="min-height:var(--cible-min)">Ajouter</button>
+    </form>
+
+    <div id="vue-kanban"><div id="kanban"></div></div>
+    <div id="vue-liste" style="display:none">
+      <div class="table-wrap"><table class="table-liste" id="tbl">
+        <thead><tr><th>Prospect</th><th>Type</th><th>Ville</th><th>Téléphone</th><th>Commercial</th>
+        <th>Statut</th><th>Priorité</th><th>Dernier contact</th><th>Prochaine action</th><th>Potentiel</th></tr></thead>
+        <tbody></tbody></table></div>
+    </div>
+    <div id="vue-relances" style="display:none"></div>
+    <div id="vue-stats" style="display:none"></div>
+
+    <p class="note-stockage">
+      Les prospects sont enregistrés dans ce navigateur.
+      <button class="btn-tertiaire" id="btn-export" style="min-height:24px">Exporter (JSON)</button> ·
+      <label class="btn-tertiaire" style="cursor:pointer">Importer<input type="file" id="btn-import" accept=".json" hidden></label>
+    </p>
+  </main>
+
+  <!-- Fiche prospect -->
+  <div id="fiche-fond" role="dialog" aria-modal="true">
+    <div id="fiche"></div>
+  </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    monterCoquille({ titre: 'Prospection', actif: '/prospection.html' });
+    init();
+  });
+
+  // ====================  Données  ====================
+  const CLE = 'lgdm-prospects';
+  const CLE_MOI = 'lgdm-prospect-moi';
+  const STATUTS = [
+    ['contacter', 'À contacter'], ['premier', 'Premier contact'], ['relancer', 'À relancer'],
+    ['interesse', 'Intéressé'], ['rdv', 'RDV / Dégustation'], ['proposition', 'Proposition'],
+    ['negociation', 'Négociation'], ['gagne', 'Gagné'], ['perdu', 'Perdu'],
+  ];
+  const LIB_STATUT = Object.fromEntries(STATUTS);
+  const TYPES = ['Bar', 'Restaurant', 'Caviste', 'Épicerie', 'Hôtel', 'Association', 'Autre'];
+  const EQUIPE_DEFAUT = ['Kyllian', 'Sophie', 'Martial'];
+  const SOURCES = ['Passage terrain', 'Recommandation', 'Instagram', 'Google Maps', 'Salon', 'Ancien contact', 'Inbound', 'Autre'];
+  const MOTIFS = ['Pas intéressé', 'Prix', 'Déjà fournisseur', 'Pas le bon moment', 'Pas de réponse', 'Fermeture', 'Hors cible', 'Autre'];
+  const TYPES_ACTION = ['Appel', 'Email', 'WhatsApp', 'Visite', 'Rendez-vous', 'Dégustation', 'Proposition envoyée', 'Note interne'];
+
+  const lire = () => { try { return JSON.parse(localStorage.getItem(CLE)) ?? []; } catch { return []; } };
+  const ecrire = p => { localStorage.setItem(CLE, JSON.stringify(p)); };
+  let prospects = lire();
+  const sauver = () => { ecrire(prospects); toutRendre(); };
+
+  const AUJ = () => new Date().toISOString().slice(0, 10);
+  const fmtD = d => d ? new Date(d + (d.length === 10 ? 'T12:00' : '')).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—';
+  const joursDepuis = d => d ? Math.floor((Date.now() - new Date(d).getTime()) / 864e5) : null;
+  const actif = p => p.statut !== 'gagne' && p.statut !== 'perdu';
+  const enRetard = p => actif(p) && p.prochaine?.date && p.prochaine.date < AUJ();
+  const aujourdhui = p => actif(p) && p.prochaine?.date === AUJ();
+  const equipe = () => [...new Set([...EQUIPE_DEFAUT, ...prospects.map(p => p.resp).filter(Boolean)])];
+  const moi = () => localStorage.getItem(CLE_MOI) || '';
+
+  // ====================  Filtres  ====================
+  let filtre = 'tous', vue = 'kanban';
+  function visibles() {
+    const fr = document.getElementById('f-resp').value;
+    const ft = document.getElementById('f-type').value;
+    const fv = document.getElementById('f-ville').value;
+    const q = document.getElementById('f-rech').value.trim().toLowerCase();
+    return prospects.filter(p => {
+      if (filtre === 'miens' && p.resp !== moi()) return false;
+      if (filtre === 'auj' && !aujourdhui(p)) return false;
+      if (filtre === 'retard' && !enRetard(p)) return false;
+      if (filtre === 'chauds' && !(actif(p) && p.priorite === 'chaud')) return false;
+      if (filtre === 'sans' && !(actif(p) && !p.prochaine?.date)) return false;
+      if (filtre === 'nonassignes' && p.resp) return false;
+      if (fr && p.resp !== fr) return false;
+      if (ft && p.type !== ft) return false;
+      if (fv && p.ville !== fv) return false;
+      if (q && !`${p.nom} ${p.ville ?? ''} ${p.resp ?? ''}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }
+
+  // ====================  KPI + À traiter  ====================
+  function rendreKpis() {
+    const actifs = prospects.filter(actif);
+    const gagnes = prospects.filter(p => p.statut === 'gagne');
+    const perdus = prospects.filter(p => p.statut === 'perdu');
+    const clos = gagnes.length + perdus.length;
+    const k = [
+      ['Prospects actifs', actifs.length],
+      ["À contacter aujourd'hui", prospects.filter(aujourdhui).length],
+      ['Relances en retard', prospects.filter(enRetard).length, 'alerte'],
+      ['RDV prévus', actifs.filter(p => p.statut === 'rdv').length],
+      ['Prospects chauds', actifs.filter(p => p.priorite === 'chaud').length],
+      ['Clients gagnés', gagnes.length],
+      ['Taux de conversion', clos ? Math.round(gagnes.length / clos * 100) + ' %' : '—'],
+    ];
+    document.getElementById('kpis').innerHTML = k.map(([l, v, a]) =>
+      `<div class="kpi${a && v > 0 ? ' alerte-kpi' : ''}"><div class="lbl">${l}</div><div class="val">${v}</div></div>`).join('');
+
+    const oublies = prospects.filter(p => actif(p) && (joursDepuis(p.dernierContact) ?? 99) > 14 && !p.prochaine?.date);
+    const chaudsSans = prospects.filter(p => actif(p) && p.priorite === 'chaud' && !p.prochaine?.date);
+    const retards = prospects.filter(enRetard);
+    const bloc = document.getElementById('a-traiter');
+    const total = new Set([...oublies, ...chaudsSans, ...retards].map(p => p.id)).size;
+    if (!total) { bloc.style.display = 'none'; }
+    else {
+      bloc.style.display = 'flex';
+      bloc.innerHTML = `<strong>${total} prospect${total > 1 ? 's' : ''} à traiter en priorité :</strong>`
+        + (retards.length ? ` ${retards.length} relance${retards.length > 1 ? 's' : ''} en retard <button data-vaf="retard">voir</button> ·` : '')
+        + (chaudsSans.length ? ` ${chaudsSans.length} chaud${chaudsSans.length > 1 ? 's' : ''} sans prochaine action <button data-vaf="sans">voir</button> ·` : '')
+        + (oublies.length ? ` ${oublies.length} sans contact depuis 14 j` : '');
+    }
+  }
+
+  // ====================  Kanban  ====================
+  function rendreKanban() {
+    const el = document.getElementById('kanban');
+    const vs = visibles();
+    el.innerHTML = STATUTS.map(([st, lib]) => {
+      const cartes = vs.filter(p => p.statut === st);
+      return `<div class="col" data-st="${st}">
+        <div class="col-titre">${lib}<span class="nb">${cartes.length}</span></div>
+        ${cartes.map(carteProspect).join('')}
+      </div>`;
+    }).join('');
+  }
+
+  function carteProspect(p) {
+    const tags = [];
+    if (enRetard(p)) tags.push('<span class="tag retard">Relance en retard</span>');
+    else if (aujourdhui(p)) tags.push('<span class="tag auj">À relancer aujourd’hui</span>');
+    if (actif(p) && p.statut === 'rdv' && p.prochaine?.date) tags.push(`<span class="tag rdv">RDV ${fmtD(p.prochaine.date)}</span>`);
+    if (actif(p) && !p.prochaine?.date) tags.push('<span class="tag sans">Aucune action prévue</span>');
+    return `<div class="pcarte" draggable="true" data-id="${p.id}" role="button" tabindex="0">
+      <div class="pnom"><span class="pastille ${p.priorite ?? 'tiede'}"></span>${p.nom}</div>
+      <div class="pmeta">${[p.type, p.ville].filter(Boolean).join(' · ') || '&nbsp;'}</div>
+      <div class="pbas">
+        ${p.dernierContact ? `Dernier contact : ${fmtD(p.dernierContact)}` : 'Jamais contacté'}
+        ${tags.join('')}
+        ${p.resp ? `<span class="resp-puce">${p.resp}</span>` : ''}
+      </div>
+    </div>`;
+  }
+
+  // Drag & drop natif entre colonnes
+  let idTraine = null;
+  document.getElementById('kanban').addEventListener('dragstart', e => {
+    const c = e.target.closest('.pcarte'); if (!c) return;
+    idTraine = parseInt(c.dataset.id); c.classList.add('trainee');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  document.getElementById('kanban').addEventListener('dragend', () =>
+    document.querySelectorAll('.trainee, .survol').forEach(x => x.classList.remove('trainee', 'survol')));
+  document.getElementById('kanban').addEventListener('dragover', e => {
+    const col = e.target.closest('.col'); if (!col) return;
+    e.preventDefault();
+    document.querySelectorAll('.col.survol').forEach(x => x.classList.remove('survol'));
+    col.classList.add('survol');
+  });
+  document.getElementById('kanban').addEventListener('drop', e => {
+    const col = e.target.closest('.col'); if (!col || idTraine === null) return;
+    e.preventDefault();
+    changerStatut(prospects.find(p => p.id === idTraine), col.dataset.st);
+  });
+  document.getElementById('kanban').addEventListener('click', e => {
+    const c = e.target.closest('.pcarte'); if (c) ouvrirFiche(parseInt(c.dataset.id));
+  });
+
+  function changerStatut(p, st) {
+    if (!p || p.statut === st) return;
+    if (st === 'perdu') { marquerPerdu(p); return; }
+    if (st === 'gagne') { marquerGagne(p); return; }
+    journal(p, 'Note interne', `Statut : ${LIB_STATUT[p.statut]} → ${LIB_STATUT[st]}`);
+    p.statut = st; sauver();
+  }
+  function marquerGagne(p) {
+    journal(p, 'Note interne', 'Prospect gagné — devient client 🎉');
+    p.statut = 'gagne'; p.gagneLe = AUJ(); p.prochaine = null; sauver();
+  }
+  function marquerPerdu(p) {
+    const motif = prompt('Motif de perte :\n' + MOTIFS.map((m, i) => `${i + 1}. ${m}`).join('\n'), '1');
+    if (motif === null) { toutRendre(); return; }
+    p.motifPerte = MOTIFS[parseInt(motif) - 1] ?? motif;
+    journal(p, 'Note interne', 'Prospect perdu — ' + p.motifPerte);
+    p.statut = 'perdu'; p.prochaine = null; sauver();
+  }
+  function journal(p, type, note) {
+    (p.historique ??= []).unshift({ t: Date.now(), qui: moi() || '—', type, note });
+    if (type !== 'Note interne') p.dernierContact = AUJ();
+  }
+
+  // ====================  Liste  ====================
+  function rendreListe() {
+    const tb = document.querySelector('#tbl tbody');
+    tb.innerHTML = visibles().map(p => `<tr data-id="${p.id}">
+      <td data-libelle="Prospect">${p.nom}</td>
+      <td data-libelle="Type">${p.type ?? '—'}</td>
+      <td data-libelle="Ville">${p.ville ?? '—'}</td>
+      <td data-libelle="Téléphone">${p.tel ?? '—'}</td>
+      <td data-libelle="Commercial">${p.resp ?? '—'}</td>
+      <td data-libelle="Statut">${LIB_STATUT[p.statut]}</td>
+      <td data-libelle="Priorité"><span class="pastille ${p.priorite ?? 'tiede'}" style="display:inline-block"></span> ${{ chaud: 'Chaud', tiede: 'Tiède', froid: 'Froid' }[p.priorite] ?? '—'}</td>
+      <td data-libelle="Dernier contact">${fmtD(p.dernierContact)}</td>
+      <td data-libelle="Prochaine action">${p.prochaine ? `${p.prochaine.quoi ?? ''} ${fmtD(p.prochaine.date)}` : '—'}</td>
+      <td data-libelle="Potentiel">${{ fort: 'Fort', moyen: 'Moyen', faible: 'Faible' }[p.potentiel] ?? '—'}</td>
+    </tr>`).join('') || '<tr><td colspan="10" style="color:var(--texte-3)">Aucun prospect ne correspond.</td></tr>';
+    tb.querySelectorAll('tr[data-id]').forEach(tr =>
+      tr.addEventListener('click', () => ouvrirFiche(parseInt(tr.dataset.id))));
+  }
+
+  // ====================  Relances  ====================
+  function rendreRelances() {
+    const el = document.getElementById('vue-relances');
+    const vs = visibles().filter(actif);
+    const demain = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
+    const finSemaine = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
+    const groupes = [
+      ['En retard', vs.filter(enRetard), true],
+      ["Aujourd'hui", vs.filter(aujourdhui)],
+      ['Demain', vs.filter(p => p.prochaine?.date === demain)],
+      ['Cette semaine', vs.filter(p => p.prochaine?.date > demain && p.prochaine.date <= finSemaine)],
+      ['Plus tard', vs.filter(p => p.prochaine?.date > finSemaine)],
+      ['Sans action planifiée', vs.filter(p => !p.prochaine?.date)],
+    ];
+    el.innerHTML = groupes.map(([titre, liste, retard]) => !liste.length ? '' : `
+      <div class="groupe-relance"><h3>${titre} <span class="nb">(${liste.length})</span></h3>
+      ${liste.map(p => `<div class="ligne-rel${retard ? ' retard' : ''}" data-id="${p.id}">
+        <span class="pastille ${p.priorite ?? 'tiede'}"></span>
+        <div><div class="qui">${p.nom}</div>
+          <div class="quoi">${p.prochaine?.quoi ? p.prochaine.quoi + ' — ' : ''}${p.prochaine?.date ? 'prévu le ' + fmtD(p.prochaine.date) : 'aucune action planifiée'}
+          · dernier contact : ${fmtD(p.dernierContact)}</div></div>
+        <div class="btns">
+          ${p.tel ? `<a class="secondary" style="min-height:var(--cible-min);display:inline-flex;align-items:center;padding:0 var(--e3)" href="tel:${p.tel}">Appeler</a>` : ''}
+          <button class="secondary ouvrir" style="min-height:var(--cible-min)">Ouvrir</button>
+        </div></div>`).join('')}</div>`).join('')
+      || '<p style="color:var(--texte-3)">Rien à relancer — tout est à jour.</p>';
+    el.querySelectorAll('.ligne-rel').forEach(l => l.querySelector('.ouvrir')
+      ?.addEventListener('click', () => ouvrirFiche(parseInt(l.dataset.id))));
+  }
+
+  // ====================  Stats  ====================
+  function rendreStats() {
+    const el = document.getElementById('vue-stats');
+    const ordre = ['contacter', 'premier', 'relancer', 'interesse', 'rdv', 'proposition', 'negociation'];
+    const franchi = st => prospects.filter(p => {
+      const i = ordre.indexOf(p.statut);
+      return p.statut === 'gagne' || (i >= 0 && i >= ordre.indexOf(st));
+    }).length;
+    const etapes = [
+      ['Prospects', prospects.length],
+      ['Contactés', prospects.filter(p => p.statut !== 'contacter' || p.dernierContact).length],
+      ['Intéressés', franchi('interesse')],
+      ['RDV', franchi('rdv')],
+      ['Proposition', franchi('proposition')],
+      ['Clients', prospects.filter(p => p.statut === 'gagne').length],
+    ];
+    const max = Math.max(1, ...etapes.map(e => e[1]));
+    const compte = (fn) => {
+      const m = {};
+      prospects.forEach(p => { const k = fn(p); if (k) m[k] = (m[k] ?? 0) + 1; });
+      return Object.entries(m).sort((a, b) => b[1] - a[1]);
+    };
+    const blocListe = (titre, paires) => `<div class="stat-bloc"><h3>${titre}</h3><ul>
+      ${paires.map(([k, v]) => `<li>${k}<strong>${v}</strong></li>`).join('') || '<li>—</li>'}</ul></div>`;
+    const gagnes = prospects.filter(p => p.statut === 'gagne' && p.gagneLe && p.creeLe);
+    const tempsMoyen = gagnes.length
+      ? Math.round(gagnes.reduce((s, p) => s + (new Date(p.gagneLe) - new Date(p.creeLe)) / 864e5, 0) / gagnes.length) : null;
+    el.innerHTML = `
+      <h2 class="section">Funnel de conversion</h2>
+      <div class="funnel">${etapes.map(([l, v]) =>
+        `<div class="etape"><span>${l}</span><div class="barre" style="width:${v / max * 100}%"></div><strong>${v}</strong></div>`).join('')}
+      </div>
+      ${tempsMoyen !== null ? `<p class="carte-soustitre" style="margin-bottom:var(--e4)">Temps moyen de conversion : <strong>${tempsMoyen} jours</strong></p>` : ''}
+      <div class="stats-grille">
+        ${blocListe('Par commercial', compte(p => p.resp))}
+        ${blocListe('Par source', compte(p => p.source))}
+        ${blocListe('Par type d’établissement', compte(p => p.type))}
+        ${blocListe('Motifs de perte', compte(p => p.statut === 'perdu' ? p.motifPerte : null))}
+      </div>`;
+  }
+
+  // ====================  Fiche  ====================
+  let ficheId = null;
+  function ouvrirFiche(id) {
+    ficheId = id;
+    const p = prospects.find(x => x.id === id); if (!p) return;
+    const opt = (liste, val) => liste.map(v => `<option${v === val ? ' selected' : ''}>${v}</option>`).join('');
+    const optPaires = (paires, val) => paires.map(([v, l]) => `<option value="${v}"${v === val ? ' selected' : ''}>${l}</option>`).join('');
+    document.getElementById('fiche').innerHTML = `
+      <div class="haut">
+        <span class="pastille ${p.priorite ?? 'tiede'}" style="margin-top:10px"></span>
+        <div><h2>${p.nom}</h2>
+        <p class="carte-soustitre">${[p.type, p.ville].filter(Boolean).join(' · ')}${p.statut === 'gagne' ? ' · client depuis le ' + fmtD(p.gagneLe) : ''}${p.statut === 'perdu' ? ' · perdu (' + (p.motifPerte ?? '?') + ')' : ''}</p></div>
+        <button class="btn-icone fermer" aria-label="Fermer">${ico('croix')}</button>
+      </div>
+
+      <div class="actions-rapides">
+        ${p.tel ? `<a href="tel:${p.tel}">${ico('telephone')} Appeler</a>
+        <a href="https://wa.me/${p.tel.replace(/\\D/g, '').replace(/^0/, '33')}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+        ${p.email ? `<a href="mailto:${p.email}">${ico('mail')} Email</a>` : ''}
+        ${actif(p) ? `<button class="gagne" data-a="gagne">${ico('check')} Marquer gagné</button>
+        <button class="perdu-b" data-a="perdu">Marquer perdu</button>` : ''}
+        <button data-a="supprimer" class="perdu-b">Supprimer</button>
+      </div>
+
+      ${actif(p) ? `<div class="prochaine">
+        <strong>Prochaine action :</strong>
+        <input type="text" id="pa-quoi" placeholder="Relancer par téléphone…" value="${p.prochaine?.quoi ?? ''}" style="flex:1 1 160px;min-height:var(--cible-min);font-size:var(--t-sm)">
+        <input type="date" id="pa-date" value="${p.prochaine?.date ?? ''}" style="width:auto;min-height:var(--cible-min);font-size:var(--t-sm)">
+        <button class="secondary" data-a="planifier" style="min-height:var(--cible-min)">Planifier</button>
+        ${p.prochaine?.date ? `<button class="secondary" data-a="fait" style="min-height:var(--cible-min)">${ico('check')} Effectué</button>` : ''}
+      </div>` : ''}
+
+      <div class="fiche-grille">
+        <div><label>Statut</label><select data-ch="statut">${optPaires(STATUTS, p.statut)}</select></div>
+        <div><label>Priorité</label><select data-ch="priorite">${optPaires([['chaud', 'Chaud'], ['tiede', 'Tiède'], ['froid', 'Froid']], p.priorite ?? 'tiede')}</select></div>
+        <div><label>Commercial</label><select data-ch="resp"><option value="">Non assigné</option>${opt(equipe(), p.resp)}</select></div>
+        <div><label>Potentiel</label><select data-ch="potentiel">${optPaires([['fort', 'Fort'], ['moyen', 'Moyen'], ['faible', 'Faible']], p.potentiel ?? 'moyen')}</select></div>
+        <div><label>Type</label><select data-ch="type">${opt(TYPES, p.type)}</select></div>
+        <div><label>Source</label><select data-ch="source"><option value=""></option>${opt(SOURCES, p.source)}</select></div>
+        <div><label>Ville</label><input data-ch="ville" value="${p.ville ?? ''}"></div>
+        <div><label>Adresse</label><input data-ch="adresse" value="${p.adresse ?? ''}"></div>
+        <div><label>Contact</label><input data-ch="contact" value="${p.contact ?? ''}"></div>
+        <div><label>Téléphone</label><input data-ch="tel" value="${p.tel ?? ''}"></div>
+        <div><label>Email</label><input data-ch="email" value="${p.email ?? ''}"></div>
+        <div><label>Site / réseaux</label><input data-ch="web" value="${p.web ?? ''}"></div>
+      </div>
+
+      <h3 style="font-size:var(--t-md)">Historique</h3>
+      <div class="ajout-note">
+        <select id="note-type">${TYPES_ACTION.map(t => `<option>${t}</option>`).join('')}</select>
+        <input type="text" id="note-texte" placeholder="Note… (Entrée pour ajouter)">
+        <button class="secondary" data-a="noter" style="min-height:var(--cible-min)">Ajouter</button>
+      </div>
+      <div class="timeline">
+        ${(p.historique ?? []).map(h => `<div class="evenement">
+          <span class="edate">${new Date(h.t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} — ${h.type}</span>
+          <span class="equi">${h.qui}</span>
+          <div class="enote">${h.note}</div></div>`).join('') || '<p style="color:var(--texte-3);font-size:var(--t-sm)">Aucune interaction enregistrée.</p>'}
+      </div>`;
+    document.getElementById('fiche-fond').dataset.ouvert = '1';
+  }
+  const fermerFiche = () => { delete document.getElementById('fiche-fond').dataset.ouvert; ficheId = null; };
+  document.getElementById('fiche-fond').addEventListener('click', e => {
+    if (e.target.id === 'fiche-fond' || e.target.closest('.fermer')) { fermerFiche(); return; }
+    const p = prospects.find(x => x.id === ficheId); if (!p) return;
+    const b = e.target.closest('button[data-a]'); if (!b) return;
+    const a = b.dataset.a;
+    if (a === 'gagne') { marquerGagne(p); ouvrirFiche(p.id); }
+    if (a === 'perdu') { marquerPerdu(p); ouvrirFiche(p.id); }
+    if (a === 'supprimer') {
+      if (confirm(`Supprimer définitivement ${p.nom} et son historique ?`)) {
+        prospects = prospects.filter(x => x.id !== p.id); sauver(); fermerFiche();
+      }
+    }
+    if (a === 'planifier') {
+      const quoi = document.getElementById('pa-quoi').value.trim();
+      const date = document.getElementById('pa-date').value;
+      if (!date) return;
+      p.prochaine = { quoi, date }; sauver(); ouvrirFiche(p.id);
+    }
+    if (a === 'fait') {
+      journal(p, 'Note interne', `Action effectuée : ${p.prochaine?.quoi || 'relance'}`);
+      p.dernierContact = AUJ(); p.prochaine = null; sauver(); ouvrirFiche(p.id);
+      setTimeout(() => document.getElementById('pa-date')?.focus(), 50);
+    }
+    if (a === 'noter') {
+      const note = document.getElementById('note-texte').value.trim(); if (!note) return;
+      journal(p, document.getElementById('note-type').value, note);
+      sauver(); ouvrirFiche(p.id);
+    }
+  });
+  document.getElementById('fiche-fond').addEventListener('change', e => {
+    const p = prospects.find(x => x.id === ficheId); if (!p) return;
+    const ch = e.target.dataset.ch; if (!ch) return;
+    if (ch === 'statut') { changerStatut(p, e.target.value); ouvrirFiche(p.id); return; }
+    p[ch] = e.target.value || undefined; sauver();
+  });
+  document.getElementById('fiche-fond').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.target.id === 'note-texte') {
+      e.preventDefault(); document.querySelector('#fiche button[data-a="noter"]')?.click();
+    }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') fermerFiche(); });
+
+  // ====================  Ajout / import-export / init  ====================
+  document.getElementById('btn-ajout').addEventListener('click', () => {
+    const f = document.getElementById('ajout');
+    if (f.dataset.ouvert) delete f.dataset.ouvert; else { f.dataset.ouvert = '1'; f.nom.focus(); }
+  });
+  document.getElementById('ajout').addEventListener('submit', e => {
+    e.preventDefault();
+    const f = e.target;
+    prospects.unshift({
+      id: Date.now(), creeLe: AUJ(), statut: 'contacter',
+      nom: f.nom.value.trim(), type: f.type.value, ville: f.ville.value.trim() || undefined,
+      tel: f.tel.value.trim() || undefined, resp: f.resp.value || undefined,
+      priorite: f.priorite.value, potentiel: f.potentiel.value, historique: [],
+    });
+    if (f.resp.value) localStorage.setItem(CLE_MOI, f.resp.value);
+    f.reset(); delete f.dataset.ouvert; sauver();
+  });
+
+  document.getElementById('btn-export').addEventListener('click', () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(prospects, null, 2)], { type: 'application/json' }));
+    a.download = `prospects-gue-des-moines-${AUJ()}.json`; a.click();
+  });
+  document.getElementById('btn-import').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      const importes = JSON.parse(await f.text());
+      if (!Array.isArray(importes)) throw new Error('format inattendu');
+      const ids = new Set(prospects.map(p => p.id));
+      prospects = [...prospects, ...importes.filter(p => !ids.has(p.id))];
+      sauver();
+    } catch (err) { alert('Import impossible : ' + err.message); }
+    e.target.value = '';
+  });
+
+  document.getElementById('tabs').addEventListener('click', e => {
+    const b = e.target.closest('button[data-vue]'); if (!b) return;
+    document.querySelectorAll('#tabs button').forEach(x => x.classList.remove('actif'));
+    b.classList.add('actif'); vue = b.dataset.vue;
+    ['kanban', 'liste', 'relances', 'stats'].forEach(v =>
+      document.getElementById('vue-' + v).style.display = v === vue ? '' : 'none');
+    toutRendre();
+  });
+  document.getElementById('filtres-rapides').addEventListener('click', e => {
+    const b = e.target.closest('button[data-f]'); if (!b) return;
+    document.querySelectorAll('#filtres-rapides button').forEach(x => x.classList.remove('actif'));
+    b.classList.add('actif'); filtre = b.dataset.f; toutRendre();
+  });
+  document.getElementById('a-traiter').addEventListener('click', e => {
+    const b = e.target.closest('button[data-vaf]'); if (!b) return;
+    document.querySelector(`#filtres-rapides button[data-f="${b.dataset.vaf}"]`)?.click();
+  });
+  ['f-resp', 'f-type', 'f-ville'].forEach(id =>
+    document.getElementById(id).addEventListener('change', toutRendre));
+  document.getElementById('f-rech').addEventListener('input', toutRendre);
+
+  function majSelects() {
+    const remplir = (id, valeurs, garde) => {
+      const s = document.getElementById(id); const v = s.value;
+      s.innerHTML = `<option value="">${garde}</option>` + valeurs.map(x => `<option>${x}</option>`).join('');
+      s.value = v;
+    };
+    remplir('f-resp', equipe(), 'Tous');
+    remplir('f-type', TYPES, 'Tous');
+    remplir('f-ville', [...new Set(prospects.map(p => p.ville).filter(Boolean))].sort(), 'Toutes');
+    const fa = document.getElementById('ajout');
+    fa.type.innerHTML = TYPES.map(t => `<option>${t}</option>`).join('');
+    fa.resp.innerHTML = '<option value="">Commercial…</option>' + equipe().map(x => `<option>${x}</option>`).join('');
+  }
+
+  function toutRendre() {
+    majSelects(); rendreKpis();
+    if (vue === 'kanban') rendreKanban();
+    if (vue === 'liste') rendreListe();
+    if (vue === 'relances') rendreRelances();
+    if (vue === 'stats') rendreStats();
+  }
+  function init() { toutRendre(); menuMobile('#filtres-rapides', 'data-f', 'Filtre rapide'); }
+  </script>
+</body>
+</html>
