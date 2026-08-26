@@ -879,7 +879,7 @@
           </table>
           <div class="barre-arrets" hidden>
             <span class="nb-sel"></span>
-            <button data-mod="urgent" title="Passe les arrêts cochés en tête de la première tournée">Urgent — livrer en premier</button>
+            <button data-mod="urgent" title="Garantit les arrêts cochés dans la première tournée, à la meilleure place du circuit">Urgent — passer en Tournée 1</button>
             <button data-mod="retirer">Retirer de la tournée</button>
             ${liste.filter(x => x !== t).map(x =>
               `<button data-mod="deplacer" data-vers="${ts.indexOf(x)}">Déplacer vers ${x.nom}</button>`).join('')}
@@ -928,11 +928,11 @@
           if (b.dataset.mod === 'retirer') {
             t.retires = (t.retires ?? []).concat(pris);
           } else if (b.dataset.mod === 'urgent') {
-            // Livrer en premier : en tête de la première tournée affichée,
-            // dans l'ordre où ils étaient cochés.
+            // Urgent = garanti dans la première tournée (donc livré dans la
+            // matinée), mais inséré au meilleur endroit du circuit : la
+            // position exacte reste dictée par l'optimisation du temps.
             const premiere = liste[0];
-            pris.forEach(a => { a.urgent = true; });
-            premiere.arrets.unshift(...pris);
+            pris.forEach(a => { a.urgent = true; insererAuMieux(premiere, a); });
             if (premiere !== t) replanifier(premiere);
           } else {
             const cible = ts[parseInt(b.dataset.vers)];
