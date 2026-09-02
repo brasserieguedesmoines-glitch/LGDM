@@ -337,26 +337,16 @@ function ajouterLigne(valeurInitiale = '', labelInitial = '') {
 
 btnAjouterLigne.addEventListener('click', () => ajouterLigne());
 
-// ---- Lecture d'une commande sur photo ----
-// L'image est réduite côté navigateur (une photo de téléphone fait 5-10 Mo,
-// 1600 px suffisent largement à lire un bon), envoyée au serveur qui interroge
-// l'IA de vision, puis les lignes reconnues sont ajoutées comme si elles
-// venaient de la dernière commande. Rien n'est envoyé tant que rien n'est validé.
+// ---- Lecture d'une commande sur image ----
+// Tout se passe dans le navigateur : le texte est extrait par OCR (moteur
+// Tesseract chargé au premier usage) puis rapproché du tarif du client.
+// Aucun appel serveur, aucun coût. Les lignes reconnues complètent la saisie
+// en cours ; rien n'est envoyé à EasyBeer tant que la commande n'est pas validée.
 const btnPhoto = document.getElementById('btn-photo');
 const fichierPhoto = document.getElementById('fichier-photo');
 const msgPhoto = document.getElementById('msg-photo');
 
 btnPhoto?.addEventListener('click', () => fichierPhoto.click());
-
-async function compresserImage(fichier, maxPx = 1600) {
-  const bmp = await createImageBitmap(fichier);
-  const ratio = Math.min(1, maxPx / Math.max(bmp.width, bmp.height));
-  const cv = document.createElement('canvas');
-  cv.width = Math.round(bmp.width * ratio);
-  cv.height = Math.round(bmp.height * ratio);
-  cv.getContext('2d').drawImage(bmp, 0, 0, cv.width, cv.height);
-  return cv.toDataURL('image/jpeg', 0.85).split(',')[1];
-}
 
 fichierPhoto?.addEventListener('change', async () => {
   const fichier = fichierPhoto.files[0];
@@ -365,19 +355,17 @@ fichierPhoto?.addEventListener('change', async () => {
 
   btnPhoto.disabled = true;
   btnPhoto.setAttribute('aria-busy', 'true');
-  msgPhoto.textContent = 'Lecture de la photo en cours…';
+  const avancement = (etape, part) => {
+    msgPhoto.textContent = etape + (part !== null && part !== undefined ? ` ${Math.round(part * 100)} %` : '')
+      + (etape.startsWith('Téléchargement') ? ' (une seule fois, ~10 Mo)' : '');
+  };
   try {
-    const image = await compresserImage(fichier);
-    const { lignes } = await apiFetch('/api/lecture-commande', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        image,
-        mediaType: 'image/jpeg',
-        produits: catalogue.map(p => `${p.libelle} ${p.contenant}`),
-      }),
-    });
-    if (!lignes.length) { msgPhoto.textContent = 'Aucun produit reconnu sur cette image.'; return; }
+    const texte = await lireImageOCR(fichier, avancement);
+    const lignes = analyserTexteOCR(texte, catalogue);
+    if (!lignes.length) {
+      msgPhoto.textContent = 'Aucune ligne de commande reconnue. Les captures d’écran et les textes imprimés donnent les meilleurs résultats ; l’écriture manuscrite est mal reconnue.';
+      return;
+    }
 
     // Ne pas écraser la saisie en cours : on complète, on ne remplace pas
     const inconnues = [];
@@ -398,10 +386,15 @@ fichierPhoto?.addEventListener('change', async () => {
     const premiere = lignesContainer.firstElementChild;
     if (ajoutees && lignesContainer.children.length > 1 && premiere && !premiere._prodSelect?.getValue()) premiere.remove();
 
-    msgPhoto.textContent = `${ajoutees} ligne(s) ajoutée(s) depuis la photo — vérifiez les quantités avant l'envoi.`
-      + (inconnues.length ? ` Non trouvés au tarif : ${inconnues.join(', ')}.` : '');
+    msgPhoto.textContent = ajoutees
+      ? `${ajoutees} ligne(s) ajoutée(s) depuis l'image — vérifiez les produits et les quantités avant l'envoi.`
+        + (inconnues.length ? ` Non reconnus : ${inconnues.slice(0, 4).join(' · ')}.` : '')
+      : `Aucun produit du tarif reconnu. Lignes lues : ${inconnues.slice(0, 4).join(' · ')}`;
   } catch (err) {
-    msgPhoto.textContent = 'Lecture impossible : ' + err.message;
+    // Tesseract rejette parfois avec une chaîne ou un objet sans .message
+    const detail = err?.message || (typeof err === 'string' ? err : '') || 'moteur de lecture indisponible';
+    msgPhoto.textContent = 'Lecture impossible : ' + detail
+      + '. Vérifiez votre connexion — le moteur de lecture est téléchargé au premier usage.';
   } finally {
     btnPhoto.disabled = false;
     btnPhoto.removeAttribute('aria-busy');
