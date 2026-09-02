@@ -337,6 +337,77 @@ function ajouterLigne(valeurInitiale = '', labelInitial = '') {
 
 btnAjouterLigne.addEventListener('click', () => ajouterLigne());
 
+// ---- Lecture d'une commande sur photo ----
+// L'image est réduite côté navigateur (une photo de téléphone fait 5-10 Mo,
+// 1600 px suffisent largement à lire un bon), envoyée au serveur qui interroge
+// l'IA de vision, puis les lignes reconnues sont ajoutées comme si elles
+// venaient de la dernière commande. Rien n'est envoyé tant que rien n'est validé.
+const btnPhoto = document.getElementById('btn-photo');
+const fichierPhoto = document.getElementById('fichier-photo');
+const msgPhoto = document.getElementById('msg-photo');
+
+btnPhoto?.addEventListener('click', () => fichierPhoto.click());
+
+async function compresserImage(fichier, maxPx = 1600) {
+  const bmp = await createImageBitmap(fichier);
+  const ratio = Math.min(1, maxPx / Math.max(bmp.width, bmp.height));
+  const cv = document.createElement('canvas');
+  cv.width = Math.round(bmp.width * ratio);
+  cv.height = Math.round(bmp.height * ratio);
+  cv.getContext('2d').drawImage(bmp, 0, 0, cv.width, cv.height);
+  return cv.toDataURL('image/jpeg', 0.85).split(',')[1];
+}
+
+fichierPhoto?.addEventListener('change', async () => {
+  const fichier = fichierPhoto.files[0];
+  fichierPhoto.value = '';
+  if (!fichier || !catalogue.length) return;
+
+  btnPhoto.disabled = true;
+  btnPhoto.setAttribute('aria-busy', 'true');
+  msgPhoto.textContent = 'Lecture de la photo en cours…';
+  try {
+    const image = await compresserImage(fichier);
+    const { lignes } = await apiFetch('/api/lecture-commande', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        image,
+        mediaType: 'image/jpeg',
+        produits: catalogue.map(p => `${p.libelle} ${p.contenant}`),
+      }),
+    });
+    if (!lignes.length) { msgPhoto.textContent = 'Aucun produit reconnu sur cette image.'; return; }
+
+    // Ne pas écraser la saisie en cours : on complète, on ne remplace pas
+    const inconnues = [];
+    let ajoutees = 0;
+    for (const l of lignes) {
+      const p = l.index !== null ? catalogue[l.index] : null;
+      if (!p) { inconnues.push(l.libelleLu || '?'); continue; }
+      if ((p.gamme ?? 'classique') !== gammeAttendue() && !toutesGammes) { toutesGammes = true; majBandeauGamme(); }
+      const valeur = JSON.stringify({ idProduit: p.idProduit, idContenant: p.idContenant, idLot: p.idLot ?? 1, idStockBouteille: p.idStockBouteille, gtin: p.gtin });
+      ajouterLigne(valeur, `${p.libelle} ${p.contenant}`);
+      const div = lignesContainer.lastElementChild;
+      div.querySelector('input[type="number"]').value = l.quantite;
+      div._qteVierge = false;
+      div._majPacks();
+      ajoutees++;
+    }
+    // Retire une éventuelle première ligne restée vide
+    const premiere = lignesContainer.firstElementChild;
+    if (ajoutees && lignesContainer.children.length > 1 && premiere && !premiere._prodSelect?.getValue()) premiere.remove();
+
+    msgPhoto.textContent = `${ajoutees} ligne(s) ajoutée(s) depuis la photo — vérifiez les quantités avant l'envoi.`
+      + (inconnues.length ? ` Non trouvés au tarif : ${inconnues.join(', ')}.` : '');
+  } catch (err) {
+    msgPhoto.textContent = 'Lecture impossible : ' + err.message;
+  } finally {
+    btnPhoto.disabled = false;
+    btnPhoto.removeAttribute('aria-busy');
+  }
+});
+
 // ---- Pré-remplissage depuis la dernière commande ----
 async function preRemplirDerniereCommande(idClient) {
   setStatut('Chargement de la dernière commande…');

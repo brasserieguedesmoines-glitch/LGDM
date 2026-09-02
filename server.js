@@ -7,7 +7,7 @@ import { dirname, join } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));   // les photos de commandes passent en base64
 app.use(express.static(join(__dirname, 'public')));
 
 const BASE_URL = 'https://api.easybeer.fr';
@@ -2526,6 +2526,73 @@ async function construirePayloadCommande(req, body, natureOperations) {
     return payload;
   }
 }
+
+// --- Lecture d'une commande photographiée (vision IA) ---
+// Reçoit une image (photo de bon papier, capture d'un SMS ou d'un mail) et la
+// liste des produits du tarif ; renvoie les lignes reconnues, rattachées au
+// catalogue par leur index. Nécessite ANTHROPIC_API_KEY dans l'environnement.
+app.post('/api/lecture-commande', async (req, res) => {
+  const cleApi = process.env.ANTHROPIC_API_KEY;
+  if (!cleApi) {
+    return res.status(503).json({ error: "Reconnaissance non configurée : ajoutez la variable d'environnement ANTHROPIC_API_KEY (clé API Anthropic) dans les réglages Vercel du projet." });
+  }
+  const { image, mediaType, produits } = req.body ?? {};
+  if (!image || !Array.isArray(produits) || !produits.length) {
+    return res.status(400).json({ error: 'Image ou liste de produits manquante.' });
+  }
+  if (image.length > 8_000_000) {
+    return res.status(413).json({ error: 'Image trop lourde — reprenez la photo en plus basse résolution.' });
+  }
+
+  const listeProduits = produits.map((p, i) => `${i}. ${p}`).join('\n');
+  const corps = {
+    model: process.env.MODELE_LECTURE ?? 'claude-haiku-4-5-20251001',
+    max_tokens: 1500,
+    system:
+      "Tu lis des commandes de bière pour la brasserie Le Gué des Moines : photos de bons manuscrits, " +
+      "captures d'écran de SMS, WhatsApp, mails ou tableurs. Tu extrais les produits commandés et leurs quantités, " +
+      "puis tu rattaches chaque ligne au catalogue fourni (numéroté). Choisis l'entrée du catalogue la plus proche " +
+      "(nom de bière, contenance 33 cL / 75 cL / fût) ; mets null si aucune ne correspond raisonnablement. " +
+      "La quantité est en nombre de bouteilles ou de fûts ; convertis les cartons si le colisage est écrit " +
+      "(ex. « 4 cartons de 12 » = 48). Réponds UNIQUEMENT avec un objet JSON de la forme " +
+      '{"lignes":[{"index":<n° catalogue ou null>,"libelleLu":"...","quantite":<entier>}]} sans autre texte.',
+    messages: [{
+      role: 'user',
+      content: [
+        { type: 'image', source: { type: 'base64', media_type: mediaType ?? 'image/jpeg', data: image } },
+        { type: 'text', text: `Catalogue du client :\n${listeProduits}\n\nLis la commande sur l'image.` },
+      ],
+    }],
+  };
+
+  try {
+    const { signal, fin } = avecDelai(55_000);
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': cleApi, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify(corps),
+      signal,
+    }).finally(fin);
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      throw new Error(data?.error?.message ?? `API Anthropic : HTTP ${r.status}`);
+    }
+    const texte = (data.content ?? []).filter(b => b.type === 'text').map(b => b.text).join('');
+    const json = texte.match(/\{[\s\S]*\}/)?.[0];
+    if (!json) throw new Error('réponse illisible du modèle');
+    const lignes = (JSON.parse(json).lignes ?? [])
+      .filter(l => Number.isInteger(l.quantite) && l.quantite > 0)
+      .map(l => ({
+        index: Number.isInteger(l.index) && l.index >= 0 && l.index < produits.length ? l.index : null,
+        libelleLu: String(l.libelleLu ?? '').slice(0, 120),
+        quantite: Math.min(l.quantite, 10_000),
+      }));
+    res.json({ lignes });
+  } catch (err) {
+    console.error('lecture-commande:', err.message);
+    res.status(502).json({ error: 'Lecture impossible : ' + err.message });
+  }
+});
 
 // --- Création de commande ---
 app.post('/api/commande', async (req, res) => {

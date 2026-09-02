@@ -44,6 +44,13 @@
       <button id="btn-ajouter-ligne" class="secondary">
         <svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg>Ajouter un produit
       </button>
+      <button id="btn-photo" class="secondary"
+              title="Photographiez un bon de commande ou une capture d'écran : les produits reconnus sont ajoutés automatiquement">
+        <svg class="ico" aria-hidden="true"><use href="#i-photo"/></svg>
+        Ajouter depuis une photo
+      </button>
+      <input type="file" id="fichier-photo" accept="image/*" hidden>
+      <p id="msg-photo" role="status" aria-live="polite" class="carte-soustitre"></p>
     </section>
 
     <!-- Note de livraison -->
