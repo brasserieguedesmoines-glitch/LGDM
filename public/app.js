@@ -369,10 +369,11 @@ fichierPhoto?.addEventListener('change', async () => {
 
     // Ne pas écraser la saisie en cours : on complète, on ne remplace pas
     const inconnues = [];
-    let ajoutees = 0;
+    let ajoutees = 0, aVerifier = 0;
     for (const l of lignes) {
       const p = l.index !== null ? catalogue[l.index] : null;
       if (!p) { inconnues.push(l.libelleLu || '?'); continue; }
+      if (!l.certain) aVerifier++;
       if ((p.gamme ?? 'classique') !== gammeAttendue() && !toutesGammes) { toutesGammes = true; majBandeauGamme(); }
       const valeur = JSON.stringify({ idProduit: p.idProduit, idContenant: p.idContenant, idLot: p.idLot ?? 1, idStockBouteille: p.idStockBouteille, gtin: p.gtin });
       ajouterLigne(valeur, `${p.libelle} ${p.contenant}`);
@@ -386,10 +387,14 @@ fichierPhoto?.addEventListener('change', async () => {
     const premiere = lignesContainer.firstElementChild;
     if (ajoutees && lignesContainer.children.length > 1 && premiere && !premiere._prodSelect?.getValue()) premiere.remove();
 
+    const certaines = ajoutees - aVerifier;
     msgPhoto.textContent = ajoutees
-      ? `${ajoutees} ligne(s) ajoutée(s) depuis l'image — vérifiez les produits et les quantités avant l'envoi.`
-        + (inconnues.length ? ` Non reconnus : ${inconnues.slice(0, 4).join(' · ')}.` : '')
-      : `Aucun produit du tarif reconnu. Lignes lues : ${inconnues.slice(0, 4).join(' · ')}`;
+      ? `${ajoutees} ligne(s) ajoutée(s) depuis le fichier.`
+        + (certaines ? ` ${certaines} identifiée(s) par code-barres.` : '')
+        + (aVerifier ? ` ${aVerifier} déduite(s) du libellé — vérifiez le format (33 ou 75 cL).` : '')
+        + ' Contrôlez les quantités avant l’envoi.'
+        + (inconnues.length ? ` Non reconnus : ${inconnues.slice(0, 3).join(' · ')}.` : '')
+      : `Aucun produit du tarif reconnu. Lignes lues : ${inconnues.slice(0, 3).join(' · ')}`;
   } catch (err) {
     // Tesseract rejette parfois avec une chaîne ou un objet sans .message
     const detail = err?.message || (typeof err === 'string' ? err : '') || 'moteur de lecture indisponible';
