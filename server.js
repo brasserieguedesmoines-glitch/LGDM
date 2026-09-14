@@ -2594,6 +2594,114 @@ app.post('/api/lecture-commande', async (req, res) => {
   }
 });
 
+// ===========================================================================
+//  Données partagées de l'équipe (prospects, commandes en attente…)
+// ===========================================================================
+// Ces données n'existent pas dans EasyBeer : elles nous appartiennent. Elles
+// étaient jusqu'ici dans le navigateur de chaque appareil, donc invisibles des
+// collègues. On les range dans un Redis (Upstash, offert par Vercel), un hash
+// par espace et un champ par enregistrement : deux personnes qui modifient
+// deux fiches différentes ne se marchent jamais dessus.
+//
+// Sans magasin configuré, les routes répondent « non configuré » et le
+// navigateur retombe sur son stockage local : aucune régression.
+
+const ESPACES = new Set(['prospects', 'ruptures']);
+const REDIS_URL = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL ?? '';
+const REDIS_TOKEN = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN ?? '';
+const redisActif = () => !!(REDIS_URL && REDIS_TOKEN);
+
+async function redis(...commande) {
+  const { signal, fin } = avecDelai(10_000);
+  const r = await fetch(REDIS_URL, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${REDIS_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(commande),
+    signal,
+  }).finally(fin);
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok || data.error) throw new Error(data.error ?? `Redis HTTP ${r.status}`);
+  return data.result;
+}
+
+const cleEspace = e => `lgdm:${e}`;
+
+function verifierEspace(req, res) {
+  if (!ESPACES.has(req.params.espace)) {
+    res.status(404).json({ error: 'Espace inconnu' });
+    return false;
+  }
+  if (!redisActif()) {
+    res.status(503).json({ error: 'Base partagée non configurée', configure: false });
+    return false;
+  }
+  return true;
+}
+
+// Lecture de tout un espace
+app.get('/api/donnees/:espace', async (req, res) => {
+  if (!verifierEspace(req, res)) return;
+  try {
+    const plat = await redis('HGETALL', cleEspace(req.params.espace)) ?? [];
+    const items = [];
+    for (let i = 1; i < plat.length; i += 2) {
+      try { items.push(JSON.parse(plat[i])); } catch {}
+    }
+    res.set('Cache-Control', 'no-store');
+    res.json({ configure: true, items });
+  } catch (err) {
+    console.error('GET /api/donnees', err.message);
+    res.status(502).json({ error: err.message });
+  }
+});
+
+// Écriture d'un enregistrement
+app.put('/api/donnees/:espace/:id', async (req, res) => {
+  if (!verifierEspace(req, res)) return;
+  const valeur = JSON.stringify(req.body ?? {});
+  if (valeur.length > 200_000) return res.status(413).json({ error: 'Enregistrement trop volumineux' });
+  try {
+    await redis('HSET', cleEspace(req.params.espace), String(req.params.id), valeur);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('PUT /api/donnees', err.message);
+    res.status(502).json({ error: err.message });
+  }
+});
+
+// Suppression d'un enregistrement
+app.delete('/api/donnees/:espace/:id', async (req, res) => {
+  if (!verifierEspace(req, res)) return;
+  try {
+    await redis('HDEL', cleEspace(req.params.espace), String(req.params.id));
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(502).json({ error: err.message });
+  }
+});
+
+// Reprise du stockage local : envoi groupé, sans écraser ce qui existe déjà
+app.post('/api/donnees/:espace/reprise', async (req, res) => {
+  if (!verifierEspace(req, res)) return;
+  const items = Array.isArray(req.body) ? req.body : [];
+  if (!items.length) return res.json({ ok: true, ajoutes: 0 });
+  try {
+    const cle = cleEspace(req.params.espace);
+    const existants = new Set((await redis('HKEYS', cle)) ?? []);
+    let ajoutes = 0;
+    for (const item of items.slice(0, 500)) {
+      const id = String(item?.id ?? '');
+      if (!id || existants.has(id)) continue;
+      await redis('HSET', cle, id, JSON.stringify(item));
+      ajoutes++;
+    }
+    res.json({ ok: true, ajoutes });
+  } catch (err) {
+    console.error('POST /api/donnees reprise', err.message);
+    res.status(502).json({ error: err.message });
+  }
+});
+
 // --- Création de commande ---
 app.post('/api/commande', async (req, res) => {
   let payload = {};

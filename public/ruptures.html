@@ -13,6 +13,7 @@
   <script src="icons.js"></script>
   <script src="ui.js"></script>
   <script src="shell.js"></script>
+  <script src="donnees.js"></script>
   <style>
     .attente { background: var(--surface); border: 1px solid var(--bordure);
                border-radius: var(--r-lg); padding: var(--e4) var(--e5);
@@ -50,7 +51,7 @@
         <p class="carte-soustitre">
           Mises en attente depuis la prise de commande (bouton « Mettre en attente »).
           Rien n'est envoyé à EasyBeer tant que vous ne déclenchez pas la commande.
-          La liste est conservée sur cet appareil.
+          <span id="mention-stockage">Liste conservée sur cet appareil.</span>
         </p>
       </div>
       <div id="liste"></div>
@@ -61,11 +62,21 @@
     document.addEventListener('DOMContentLoaded', () => {
       monterCoquille({ titre: 'Ruptures', actif: '/ruptures.html' });
       render();
+      magasin.charger().then(() => { render(); majMention(); });
+      magasin.suivre();
     });
 
-    const CLE = 'lgdm-ruptures';
-    const lire = () => { try { return JSON.parse(localStorage.getItem(CLE)) ?? []; } catch { return []; } };
-    const ecrire = f => localStorage.setItem(CLE, JSON.stringify(f));
+    // Partagé avec l'équipe quand la base est configurée, local sinon
+    const magasin = creerMagasin('ruptures', { surChangement: () => render() });
+    const lire = () => magasin.tout();
+
+    function majMention() {
+      const p = document.getElementById('mention-stockage');
+      if (!p) return;
+      p.textContent = magasin.espacePartage
+        ? 'Liste partagée avec l’équipe : une commande mise en attente depuis un autre poste apparaît ici.'
+        : 'Liste conservée sur cet appareil.';
+    }
     const fmtD = t => new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
     function render() {
@@ -102,8 +113,7 @@
 
       if (ev.target.closest('.suppr')) {
         if (!confirm('Supprimer cette commande en attente ? (rien n\'existe dans EasyBeer)')) return;
-        ecrire(lire().filter(e => e.id !== id));
-        render();
+        magasin.supprimer(id);
         return;
       }
 
@@ -120,7 +130,7 @@
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
-        ecrire(lire().filter(e => e.id !== id));
+        magasin.supprimer(id);
         const ref = data.map?.numero ?? data.map?.id ?? data.reference ?? data.idCommande ?? data.id ?? '';
         statut.className = 'statut ok';
         statut.textContent = `Commande envoyée à EasyBeer${ref ? ' — référence ' + ref : ''}.`;

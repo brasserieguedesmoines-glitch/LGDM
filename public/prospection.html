@@ -13,6 +13,7 @@
   <script src="icons.js"></script>
   <script src="ui.js"></script>
   <script src="shell.js"></script>
+  <script src="donnees.js"></script>
   <style>
     /* ---- KPI ---- */
     .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--e3); margin-bottom: var(--e5); }
@@ -242,10 +243,12 @@
   const MOTIFS = ['Pas intéressé', 'Prix', 'Déjà fournisseur', 'Pas le bon moment', 'Pas de réponse', 'Fermeture', 'Hors cible', 'Autre'];
   const TYPES_ACTION = ['Appel', 'Email', 'WhatsApp', 'Visite', 'Rendez-vous', 'Dégustation', 'Proposition envoyée', 'Note interne'];
 
-  const lire = () => { try { return JSON.parse(localStorage.getItem(CLE)) ?? []; } catch { return []; } };
-  const ecrire = p => { localStorage.setItem(CLE, JSON.stringify(p)); };
-  let prospects = lire();
-  const sauver = () => { ecrire(prospects); toutRendre(); };
+  // Partagé avec l'équipe quand la base est configurée, local sinon.
+  const magasin = creerMagasin('prospects', { surChangement: () => toutRendre() });
+  let prospects = magasin.tout();
+  // sauver(p) écrit la fiche modifiée ; sans argument, on se contente de
+  // réafficher (la mutation a déjà été faite sur l'objet du magasin).
+  const sauver = p => { if (p) magasin.enregistrer(p); else toutRendre(); };
 
   const AUJ = () => new Date().toISOString().slice(0, 10);
   const fmtD = d => d ? new Date(d + (d.length === 10 ? 'T12:00' : '')).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—';
@@ -370,18 +373,18 @@
     if (st === 'perdu') { marquerPerdu(p); return; }
     if (st === 'gagne') { marquerGagne(p); return; }
     journal(p, 'Note interne', `Statut : ${LIB_STATUT[p.statut]} → ${LIB_STATUT[st]}`);
-    p.statut = st; sauver();
+    p.statut = st; sauver(p);
   }
   function marquerGagne(p) {
     journal(p, 'Note interne', 'Prospect gagné — devient client 🎉');
-    p.statut = 'gagne'; p.gagneLe = AUJ(); p.prochaine = null; sauver();
+    p.statut = 'gagne'; p.gagneLe = AUJ(); p.prochaine = null; sauver(p);
   }
   function marquerPerdu(p) {
     const motif = prompt('Motif de perte :\n' + MOTIFS.map((m, i) => `${i + 1}. ${m}`).join('\n'), '1');
     if (motif === null) { toutRendre(); return; }
     p.motifPerte = MOTIFS[parseInt(motif) - 1] ?? motif;
     journal(p, 'Note interne', 'Prospect perdu — ' + p.motifPerte);
-    p.statut = 'perdu'; p.prochaine = null; sauver();
+    p.statut = 'perdu'; p.prochaine = null; sauver(p);
   }
   function journal(p, type, note) {
     (p.historique ??= []).unshift({ t: Date.now(), qui: moi() || '—', type, note });
@@ -549,31 +552,31 @@
     if (a === 'perdu') { marquerPerdu(p); ouvrirFiche(p.id); }
     if (a === 'supprimer') {
       if (confirm(`Supprimer définitivement ${p.nom} et son historique ?`)) {
-        prospects = prospects.filter(x => x.id !== p.id); sauver(); fermerFiche();
+        magasin.supprimer(p.id); fermerFiche();
       }
     }
     if (a === 'planifier') {
       const quoi = document.getElementById('pa-quoi').value.trim();
       const date = document.getElementById('pa-date').value;
       if (!date) return;
-      p.prochaine = { quoi, date }; sauver(); ouvrirFiche(p.id);
+      p.prochaine = { quoi, date }; sauver(p); ouvrirFiche(p.id);
     }
     if (a === 'fait') {
       journal(p, 'Note interne', `Action effectuée : ${p.prochaine?.quoi || 'relance'}`);
-      p.dernierContact = AUJ(); p.prochaine = null; sauver(); ouvrirFiche(p.id);
+      p.dernierContact = AUJ(); p.prochaine = null; sauver(p); ouvrirFiche(p.id);
       setTimeout(() => document.getElementById('pa-date')?.focus(), 50);
     }
     if (a === 'noter') {
       const note = document.getElementById('note-texte').value.trim(); if (!note) return;
       journal(p, document.getElementById('note-type').value, note);
-      sauver(); ouvrirFiche(p.id);
+      sauver(p); ouvrirFiche(p.id);
     }
   });
   document.getElementById('fiche-fond').addEventListener('change', e => {
     const p = prospects.find(x => x.id === ficheId); if (!p) return;
     const ch = e.target.dataset.ch; if (!ch) return;
     if (ch === 'statut') { changerStatut(p, e.target.value); ouvrirFiche(p.id); return; }
-    p[ch] = e.target.value || undefined; sauver();
+    p[ch] = e.target.value || undefined; sauver(p);
   });
   document.getElementById('fiche-fond').addEventListener('keydown', e => {
     if (e.key === 'Enter' && e.target.id === 'note-texte') {
@@ -590,14 +593,14 @@
   document.getElementById('ajout').addEventListener('submit', e => {
     e.preventDefault();
     const f = e.target;
-    prospects.unshift({
+    magasin.enregistrer({
       id: Date.now(), creeLe: AUJ(), statut: 'contacter',
       nom: f.nom.value.trim(), type: f.type.value, ville: f.ville.value.trim() || undefined,
       tel: f.tel.value.trim() || undefined, resp: f.resp.value || undefined,
       priorite: f.priorite.value, potentiel: f.potentiel.value, historique: [],
     });
     if (f.resp.value) localStorage.setItem(CLE_MOI, f.resp.value);
-    f.reset(); delete f.dataset.ouvert; sauver();
+    f.reset(); delete f.dataset.ouvert;
   });
 
   document.getElementById('btn-export').addEventListener('click', () => {
@@ -611,8 +614,7 @@
       const importes = JSON.parse(await f.text());
       if (!Array.isArray(importes)) throw new Error('format inattendu');
       const ids = new Set(prospects.map(p => p.id));
-      prospects = [...prospects, ...importes.filter(p => !ids.has(p.id))];
-      sauver();
+      for (const nouveau of importes.filter(p => !ids.has(p.id))) magasin.enregistrer(nouveau);
     } catch (err) { alert('Import impossible : ' + err.message); }
     e.target.value = '';
   });
@@ -653,13 +655,28 @@
   }
 
   function toutRendre() {
+    prospects = magasin.tout();
     majSelects(); rendreKpis();
     if (vue === 'kanban') rendreKanban();
     if (vue === 'liste') rendreListe();
     if (vue === 'relances') rendreRelances();
     if (vue === 'stats') rendreStats();
   }
-  function init() { toutRendre(); menuMobile('#filtres-rapides', 'data-f', 'Filtre rapide'); }
+  function init() {
+    toutRendre();
+    menuMobile('#filtres-rapides', 'data-f', 'Filtre rapide');
+    magasin.charger().then(majMentionStockage);
+    magasin.suivre();
+  }
+
+  function majMentionStockage() {
+    const el = document.querySelector('.note-stockage');
+    if (!el) return;
+    const t = el.childNodes[0];
+    if (t) t.textContent = magasin.espacePartage
+      ? 'Prospects partagés avec l’équipe. '
+      : 'Les prospects sont enregistrés dans ce navigateur. ';
+  }
   </script>
 </body>
 </html>

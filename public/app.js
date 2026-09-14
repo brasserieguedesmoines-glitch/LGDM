@@ -507,17 +507,21 @@ btnEnvoyer.addEventListener('click', async () => {
 });
 
 // ---- Mise en attente (rupture de stock) ----
-// La commande est gardée dans le navigateur (localStorage), rien ne part vers
-// EasyBeer. Elle se déclenche depuis la page Ruptures quand le stock revient.
-document.getElementById('btn-attente')?.addEventListener('click', () => {
+// Rien ne part vers EasyBeer : la commande rejoint la liste des ruptures, d'où
+// elle sera déclenchée quand le stock reviendra. La liste est partagée avec
+// l'équipe si la base est configurée, locale sinon.
+const magasinRuptures = creerMagasin('ruptures');
+magasinRuptures.charger();
+
+document.getElementById('btn-attente')?.addEventListener('click', async () => {
   const commande = collecterCommande();
   if (!commande) return;
-  const cle = 'lgdm-ruptures';
-  let file = [];
-  try { file = JSON.parse(localStorage.getItem(cle)) ?? []; } catch {}
-  file.push({ id: Date.now(), creeLe: Date.now(), commande });
-  try { localStorage.setItem(cle, JSON.stringify(file)); }
-  catch { setStatut('Impossible d\'enregistrer la mise en attente sur cet appareil.', true); return; }
+  try {
+    await magasinRuptures.enregistrer({ id: Date.now(), creeLe: Date.now(), commande });
+  } catch {
+    setStatut('Impossible d’enregistrer la mise en attente.', true);
+    return;
+  }
   modalDetail.textContent = `${commande.nomClient} — ${commande.lignes.length} ligne(s) en attente de réapprovisionnement. À déclencher depuis la page Ruptures.`;
   document.getElementById('modal-titre').textContent = 'Commande mise en attente';
   modalOverlay.style.display = 'flex';
