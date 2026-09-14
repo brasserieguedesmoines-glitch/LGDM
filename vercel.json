@@ -1,5 +1,5 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/server.js" }],
+  "rewrites": [{ "source": "/(.*)", "destination": "/server.js?__chemin=/$1" }],
   "functions": {
     "server.js": { "maxDuration": 300 }
   }

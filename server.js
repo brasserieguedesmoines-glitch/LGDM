@@ -7,6 +7,24 @@ import { dirname, join } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
+
+// Vercel réécrit toutes les requêtes vers /server.js. Selon les versions de la
+// plateforme, la fonction reçoit soit l'URL d'origine, soit littéralement
+// « /server.js » — et dans ce second cas plus aucune route ne correspond, toute
+// l'API répond 404 alors que les pages (servies par le CDN) s'affichent encore.
+// On transmet donc le chemin demandé en paramètre depuis vercel.json et on le
+// rétablit ici. Sans ce paramètre (exécution locale), rien ne change.
+app.use((req, res, next) => {
+  const u = new URL(req.url, 'http://interne');
+  const chemin = u.searchParams.get('__chemin');
+  if (chemin && chemin.startsWith('/')) {
+    u.searchParams.delete('__chemin');
+    const reste = u.searchParams.toString();
+    req.url = chemin + (reste ? `?${reste}` : '');
+  }
+  next();
+});
+
 app.use(express.json({ limit: '10mb' }));   // les photos de commandes passent en base64
 app.use(express.static(join(__dirname, 'public')));
 
