@@ -251,6 +251,9 @@ main {
   gap: var(--e5);
 }
 main.etroit { max-width: 760px; }
+/* Écrans de données (tableaux larges, kanban) : on occupe toute la largeur
+   disponible plutôt que de couper les colonnes au profit de marges vides. */
+main.large { max-width: none; }
 
 .btn-menu { display: none; }
 
