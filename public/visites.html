@@ -52,6 +52,9 @@
     .lieu .echeance { font-weight: 600; }
     .lieu .echeance.dep { color: var(--danger); }
     .lieu .note { margin-top: var(--e2); font-size: var(--t-sm); color: var(--texte-3); font-style: italic; }
+    .lieu .contexte { display: flex; gap: var(--e3); flex-wrap: wrap; margin-top: var(--e2);
+                      font-size: var(--t-xs); color: var(--texte-2); }
+    .lieu .contexte b { color: var(--texte); font-weight: 600; }
     .lieu .actions { margin-left: auto; display: flex; gap: var(--e2); flex-wrap: wrap; }
     .lieu .actions button, .lieu .actions a {
       min-height: var(--cible-min); padding: 0 var(--e3); font-size: var(--t-sm);
@@ -88,10 +91,11 @@
   <main class="etroit">
     <section>
       <div>
-        <h2>Clients à voir sur place</h2>
+        <h2>Clients à relancer en physique</h2>
         <p class="carte-soustitre">
-          Votre liste de visites terrain, tenue à la main : vous ajoutez qui vous voulez voir,
-          vous notez le passage, et vous programmez le suivant.
+          Les clients qu'on ne relance pas au téléphone : gros comptes, travail commercial,
+          présentation de gamme. Ajoutez-les à la main ou depuis la page Relances,
+          notez le passage et programmez le suivant.
           <span id="mention-stockage">Liste conservée sur cet appareil.</span>
         </p>
       </div>
@@ -100,14 +104,14 @@
 
       <form class="ajout" id="ajout">
         <div class="champ-nom">
-          <label for="ch-nom">Ajouter un client ou un lieu</label>
+          <label for="ch-nom">Ajouter un client à relancer en physique</label>
           <input id="ch-nom" name="nom" list="liste-clients" required
                  placeholder="Nom de l'établissement…" autocomplete="off">
           <datalist id="liste-clients"></datalist>
         </div>
         <div class="champ-note">
-          <label for="ch-note">Motif (facultatif)</label>
-          <input id="ch-note" name="note" placeholder="Présenter la NEIPA, revoir le linéaire…">
+          <label for="ch-note">Motif commercial (facultatif)</label>
+          <input id="ch-note" name="note" placeholder="Négocier le linéaire, présenter la gamme…">
         </div>
         <div>
           <label for="ch-quand">À voir le</label>
@@ -170,7 +174,7 @@
   }
 
   const GROUPES = [
-    ['maintenant', 'À voir maintenant'],
+    ['maintenant', 'À relancer maintenant'],
     ['semaine', 'Dans les 7 jours'],
     ['plus-tard', 'Plus tard'],
   ];
@@ -184,7 +188,7 @@
     }
 
     document.getElementById('kpis').innerHTML = [
-      ['À voir maintenant', parGroupe.maintenant.length, true],
+      ['À relancer maintenant', parGroupe.maintenant.length, true],
       ['Dans les 7 jours', parGroupe.semaine.length],
       ['Total suivi', tous.length],
     ].map(([l, v, u]) =>
@@ -193,7 +197,7 @@
     const el = document.getElementById('liste');
     if (!tous.length) {
       el.innerHTML = `<div class="vide-page">${ico('carte', { classe: 'ico' })}
-        <p>Aucune visite programmée.<br>Ajoutez un client ci-dessus pour commencer votre tournée terrain.</p></div>`;
+        <p>Aucun client à relancer en physique.<br>Ajoutez-le ci-dessus, ou depuis la page Relances avec le bouton « Y aller » sur la ligne du client.</p></div>`;
       return;
     }
 
@@ -232,6 +236,7 @@
         </div>
       </div>
       ${v.note ? `<p class="note">« ${v.note} »</p>` : ''}
+      ${contexte(v)}
       <div class="report">
         <span>Retourner voir :</span>
         <button data-jours="7">dans 1 semaine</button>
@@ -241,6 +246,21 @@
                aria-label="Choisir une date de prochaine visite pour ${v.nom}">
       </div>
     </article>`;
+  }
+
+  // Chiffres repris de l'analyse des relances au moment de la bascule : ils
+  // disent pourquoi ce client vaut un deplacement plutot qu'un appel.
+  function contexte(v) {
+    const c = v.contexte;
+    if (!c) return '';
+    const bouts = [];
+    if (c.nbCommandes) bouts.push(`<span><b>${c.nbCommandes}</b> commandes</span>`);
+    if (c.montantMoyenHT) bouts.push(`<span>panier moyen <b>${Math.round(c.montantMoyenHT)} €</b></span>`);
+    if (c.derniereCommande) {
+      const [y, m, d] = c.derniereCommande.split('-');
+      bouts.push(`<span>dernière commande le <b>${d}/${m}/${y}</b></span>`);
+    }
+    return bouts.length ? `<div class="contexte">${bouts.join('')}</div>` : '';
   }
 
   // ---- Actions ----

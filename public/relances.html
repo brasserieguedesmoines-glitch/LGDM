@@ -56,7 +56,7 @@
     }
 
     /* Bouton « écarter » : discret, ne doit pas voler le clic de la ligne */
-    .col-ecarter { width: 74px; white-space: nowrap; }
+    .col-ecarter { width: 104px; white-space: nowrap; }
     .col-ecarter .duo { display: flex; gap: 2px; justify-content: center; }
     .btn-ecarter { border: 1px solid transparent; background: none; color: var(--texte-3);
                    font-size: 16px; line-height: 1; border-radius: var(--r-sm);
@@ -66,6 +66,12 @@
                    font-size: 14px; line-height: 1; border-radius: var(--r-sm);
                    min-height: 26px; min-width: 26px; cursor: pointer; }
     .btn-exclure:hover { background: var(--surface-3); color: var(--texte); border-color: var(--bordure-forte); }
+    .btn-yaller { border: 1px solid transparent; background: none; color: var(--texte-3);
+                  line-height: 1; border-radius: var(--r-sm);
+                  min-height: 26px; min-width: 26px; cursor: pointer;
+                  display: inline-flex; align-items: center; justify-content: center; }
+    .btn-yaller:hover { background: var(--accent-doux); color: var(--accent-texte); border-color: var(--accent-doux); }
+    .btn-yaller .ico { width: 15px; height: 15px; }
     .ligne-barre { display: flex; align-items: center; gap: var(--e3); flex-wrap: wrap; width: 100%; }
     .rang-ecarte { display: flex; align-items: center; gap: var(--e3); flex-wrap: wrap;
                    background: var(--surface); border: 1px solid var(--bordure);
@@ -223,6 +229,35 @@
       return `${t.getUTCFullYear()}-S${String(n).padStart(2, '0')}`;
     }
 
+    // Certains clients se relancent mieux en face à face qu'au téléphone — les
+    // gros comptes, typiquement. On les bascule dans « Y aller » et on les sort
+    // de cette liste : le suivi continue là-bas, avec ses propres échéances.
+    const visites = creerMagasin('visites');
+    visites.charger();
+
+    function basculerEnVisite(c) {
+      const deja = visites.tout().some(v =>
+        (c.idClient && v.idClient === c.idClient) || v.nom.toLowerCase() === c.nom.toLowerCase());
+      if (!deja) {
+        visites.enregistrer({
+          id: Date.now(),
+          nom: c.nom,
+          idClient: c.idClient ?? null,
+          note: 'Relance commerciale en physique',
+          prochaine: null,
+          derniereVisite: null,
+          ajouteLe: Date.now(),
+          contexte: {
+            derniereCommande: c.dateDerniereCommande ?? null,
+            nbCommandes: c.nbCommandes ?? null,
+            montantMoyenHT: c.montantMoyenHT ?? null,
+            priorite: c.priorite ?? null,
+          },
+        });
+      }
+      ecarter(c);   // sort de la liste téléphone, le suivi se fait dans « Y aller »
+    }
+
     // Deux niveaux : écarté pour la semaine en cours, ou exclu durablement.
     const cleEcart = idClient => `${semaineISO()}-${idClient}`;
     const cleExclu = idClient => `perm-${idClient}`;
@@ -350,7 +385,10 @@
               aria-label="Écarter ${c.nom} de la liste cette semaine">&times;</button><button
               type="button" class="btn-exclure"
               title="Exclure durablement — il ne réapparaîtra plus tant que vous ne le réintégrez pas"
-              aria-label="Exclure durablement ${c.nom} de la liste">&#8709;</button></span></td>
+              aria-label="Exclure durablement ${c.nom} de la liste">&#8709;</button><button
+              type="button" class="btn-yaller"
+              title="Relancer en physique — bascule le client dans « Y aller » et le sort de cette liste"
+              aria-label="Relancer ${c.nom} en physique">${ico('carte')}</button></span></td>
           <td data-libelle="Priorité"><span class="badge ${c.priorite}">${LABELS[c.priorite]}</span></td>
           <td data-libelle="Client"><strong>${c.nom}</strong><br><small>${c.nbCommandes} commandes</small></td>
           <td data-libelle="Dernière commande">${fmtDate(c.dateDerniereCommande)}</td>
@@ -364,6 +402,9 @@
         // stopPropagation : sans cela, le clic ouvrirait la prise de commande
         tr.querySelector('.btn-ecarter').addEventListener('click', ev => {
           ev.stopPropagation(); ecarter(c);
+        });
+        tr.querySelector('.btn-yaller').addEventListener('click', ev => {
+          ev.stopPropagation(); basculerEnVisite(c);
         });
         tr.querySelector('.btn-exclure').addEventListener('click', ev => {
           ev.stopPropagation();
