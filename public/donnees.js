@@ -47,6 +47,9 @@ function creerMagasin(espace, { surChangement = () => {} } = {}) {
     let data;
     try { data = await api(''); } catch { return items; }   // hors ligne : on garde le local
     if (!data) return items;                                // base non configurée
+    // Réponse inattendue (proxy, page d'erreur, ancienne version) : on ne
+    // touche à rien plutôt que de casser la page qui nous appelle.
+    if (!Array.isArray(data.items)) return items;
     partage = true;
 
     // Première synchronisation d'un poste qui avait déjà des données à lui

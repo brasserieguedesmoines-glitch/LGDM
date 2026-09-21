@@ -12,6 +12,7 @@
   <script src="icons.js"></script>
   <script src="ui.js"></script>
   <script src="shell.js"></script>
+  <script src="donnees.js"></script>
   <style>
     /* Styles propres aux relances. Cartes, badges, boutons, tableaux et filtres
        viennent de style.css : rien n'est redéfini ici. */
@@ -54,13 +55,29 @@
       tbody td > * { min-width: 0; max-width: 100%; overflow-wrap: break-word; }
     }
 
+    /* Bouton « écarter » : discret, ne doit pas voler le clic de la ligne */
+    .col-ecarter { width: 34px; text-align: center; }
+    .btn-ecarter { border: 1px solid transparent; background: none; color: var(--texte-3);
+                   font-size: 16px; line-height: 1; border-radius: var(--r-sm);
+                   min-height: 26px; min-width: 26px; cursor: pointer; }
+    .btn-ecarter:hover { background: var(--danger-doux); color: var(--danger); border-color: var(--danger-doux); }
+    .barre-ecartes { display: none; align-items: center; gap: var(--e3); flex-wrap: wrap;
+                     background: var(--surface-2); border: 1px solid var(--bordure);
+                     border-radius: var(--r-sm); padding: var(--e2) var(--e3);
+                     margin-bottom: var(--e3); font-size: var(--t-sm); color: var(--texte-2); }
+    .barre-ecartes[data-visible] { display: flex; }
+    .barre-ecartes button { border: 1px solid var(--bordure-forte); background: var(--surface);
+                            color: var(--texte); font-size: var(--t-sm); min-height: 28px;
+                            padding: 0 var(--e3); border-radius: var(--r-sm); }
+    .barre-ecartes button:hover { background: var(--surface-3); }
+
     /* Impression : A4 paysage, noir sur blanc, filtre rappelé en titre */
     @media print {
       @page { size: A4 landscape; margin: 10mm; }
       :root { --surface: #fff; --fond: #fff; --texte: #000; --texte-2: #333;
               --texte-3: #555; --bordure: #ccc; }
       body { background: #fff !important; }
-      .zone-filtres, #meta, .menu-mobile { display: none !important; }
+      .zone-filtres, #meta, .menu-mobile, .barre-ecartes, .col-ecarter { display: none !important; }
       .table-wrap { border: none; overflow: visible; }
       #entete-impression { display: flex; align-items: center; gap: var(--e3);
                            border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 10px; }
@@ -93,6 +110,7 @@
 
   <main style="max-width: 1100px;">
     <p id="meta">Chargement de l'analyse… (jusqu'à 2 min au premier chargement)</p>
+    <div class="barre-ecartes" id="barre-ecartes"></div>
     <div class="zone-filtres" id="zone-filtres" style="display:none">
       <div id="filtres">
       <button data-f="tous" class="actif" aria-pressed="true">Tous</button>
@@ -123,6 +141,7 @@
       <table>
         <thead>
           <tr>
+            <th class="col-ecarter"><span class="sr-only">Écarter de la liste</span></th>
             <th>Priorité</th>
             <th>Client</th>
             <th>Dernière commande</th>
@@ -154,11 +173,54 @@
     let filtreCourant = 'tous';
     let listeAffichee = [];
 
+    // ---- Clients écartés pour la semaine en cours ----
+    // Écarter un client le sort de la liste jusqu'au lundi suivant : la relance
+    // a été faite, ou le client a dit non pour cette fois. La semaine ISO sert
+    // de clé, donc la liste se remet à zéro toute seule au changement de
+    // semaine — aucun ménage à faire. Partagé avec l'équipe quand la base est
+    // configurée : inutile que deux personnes rappellent le même client.
+    const ecartes = creerMagasin('relances', { surChangement: () => render(filtreCourant) });
+
+    function semaineISO(d = new Date()) {
+      const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));   // jeudi de la semaine
+      const debut = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+      const n = Math.ceil(((t - debut) / 86400000 + 1) / 7);
+      return `${t.getUTCFullYear()}-S${String(n).padStart(2, '0')}`;
+    }
+
+    const cleEcart = idClient => `${semaineISO()}-${idClient}`;
+    const estEcarte = c => ecartes.tout().some(e => e.id === cleEcart(c.idClient));
+    const ecartesSemaine = () => ecartes.tout().filter(e => e.semaine === semaineISO());
+
+    function ecarter(c) {
+      ecartes.enregistrer({
+        id: cleEcart(c.idClient), semaine: semaineISO(),
+        idClient: c.idClient, nom: c.nom, masqueLe: Date.now(),
+      });
+    }
+
+    function majBarreEcartes() {
+      const barre = document.getElementById('barre-ecartes');
+      const liste = ecartesSemaine();
+      if (!liste.length) { delete barre.dataset.visible; barre.innerHTML = ''; return; }
+      barre.dataset.visible = '1';
+      const noms = liste.slice(0, 6).map(e => e.nom).join(' · ')
+        + (liste.length > 6 ? ` +${liste.length - 6}` : '');
+      barre.innerHTML = `<span><strong>${liste.length}</strong> client(s) écarté(s) cette semaine</span>`
+        + `<span style="color:var(--texte-3)">${noms}</span>`
+        + `<button id="btn-reafficher" style="margin-left:auto">Tout réafficher</button>`;
+      document.getElementById('btn-reafficher').addEventListener('click', () => {
+        liste.forEach(e => ecartes.supprimer(e.id));
+      });
+    }
+
     function render(filtre) {
       filtreCourant = filtre;
       const tbody = document.getElementById('tbody');
       tbody.innerHTML = '';
-      const list = filtre === 'tous' ? clients : clients.filter(c => c.priorite === filtre);
+      const visibles = clients.filter(c => !estEcarte(c));
+      const list = filtre === 'tous' ? visibles : visibles.filter(c => c.priorite === filtre);
       for (const c of list) {
         const tr = document.createElement('tr');
         tr.title = 'Créer une commande pour ' + c.nom;
@@ -170,6 +232,9 @@
             : `<span class="avance">dans ${-c.joursRetard} j</span>`;
         }
         tr.innerHTML = `
+          <td class="col-ecarter" data-libelle="Écarter"><button type="button" class="btn-ecarter"
+              title="Retirer de la liste jusqu'à la fin de la semaine"
+              aria-label="Écarter ${c.nom} de la liste cette semaine">&times;</button></td>
           <td data-libelle="Priorité"><span class="badge ${c.priorite}">${LABELS[c.priorite]}</span></td>
           <td data-libelle="Client"><strong>${c.nom}</strong><br><small>${c.nbCommandes} commandes</small></td>
           <td data-libelle="Dernière commande">${fmtDate(c.dateDerniereCommande)}</td>
@@ -180,19 +245,27 @@
           <td data-libelle="Montant moyen HT">${c.montantMoyenHT ? c.montantMoyenHT.toFixed(2) + ' €' : '—'}</td>
           <td class="produits" data-libelle="Produits habituels" title="${(c.produitsHabituels ?? []).join(' · ')}">${(c.produitsHabituels ?? []).join(', ') || '—'}</td>
           <td class="case-suivi" data-libelle="Fait"><span class="case">&#9744;</span></td>`;
+        tr.querySelector('.btn-ecarter').addEventListener('click', ev => {
+          ev.stopPropagation();   // sans cela, le clic ouvrirait la prise de commande
+          ecarter(c);
+        });
         tbody.appendChild(tr);
       }
       if (!list.length) {
-        tbody.innerHTML = `<tr><td colspan="10" style="color:var(--texte-3);text-align:center;padding:24px">`
+        tbody.innerHTML = `<tr><td colspan="11" style="color:var(--texte-3);text-align:center;padding:24px">`
           + (clients.length
-              ? 'Aucun client dans cette catégorie — essayez un autre filtre.'
+              ? (ecartesSemaine().length && !visibles.length
+                  ? 'Tous les clients ont été traités cette semaine.'
+                  : 'Aucun client dans cette catégorie — essayez un autre filtre.')
               : 'Aucune donnée d\'analyse disponible.')
           + '</td></tr>';
       }
       listeAffichee = list;
+      majBarreEcartes();
       const nomFiltre = filtre === 'tous' ? 'toutes priorités' : LABELS[filtre];
       document.getElementById('meta').innerHTML =
         `${list.length} client(s) affiché(s) sur ${clients.length} — analyse générée le ${new Date(window._genere).toLocaleString('fr-FR')}`
+        + (ecartesSemaine().length ? ` · ${ecartesSemaine().length} écarté(s) cette semaine` : '')
         + (window._inactifs
             ? ` · <span style="color:var(--texte-3)">${window._inactifs} client(s) désactivé(s) dans EasyBeer, exclus</span>`
             : '');
@@ -238,6 +311,11 @@
       btn.setAttribute('aria-pressed', 'true');
       render(btn.dataset.f);
     });
+
+    // La liste des écartés peut arriver avant ou après l'analyse : chaque
+    // chargement redessine, donc l'ordre n'a pas d'importance.
+    ecartes.charger().then(() => { if (clients.length) render(filtreCourant); });
+    ecartes.suivre();
 
     fetch('/api/relances')
       .then(r => r.json())
