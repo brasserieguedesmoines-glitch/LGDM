@@ -56,11 +56,24 @@
     }
 
     /* Bouton « écarter » : discret, ne doit pas voler le clic de la ligne */
-    .col-ecarter { width: 34px; text-align: center; }
+    .col-ecarter { width: 74px; white-space: nowrap; }
+    .col-ecarter .duo { display: flex; gap: 2px; justify-content: center; }
     .btn-ecarter { border: 1px solid transparent; background: none; color: var(--texte-3);
                    font-size: 16px; line-height: 1; border-radius: var(--r-sm);
                    min-height: 26px; min-width: 26px; cursor: pointer; }
     .btn-ecarter:hover { background: var(--danger-doux); color: var(--danger); border-color: var(--danger-doux); }
+    .btn-exclure { border: 1px solid transparent; background: none; color: var(--texte-3);
+                   font-size: 14px; line-height: 1; border-radius: var(--r-sm);
+                   min-height: 26px; min-width: 26px; cursor: pointer; }
+    .btn-exclure:hover { background: var(--surface-3); color: var(--texte); border-color: var(--bordure-forte); }
+    .ligne-barre { display: flex; align-items: center; gap: var(--e3); flex-wrap: wrap; width: 100%; }
+    .chips-exclus { display: flex; flex-wrap: wrap; gap: var(--e2); width: 100%; margin-top: var(--e2); }
+    .chip-exclu { display: inline-flex; align-items: center; gap: var(--e2);
+                  background: var(--surface); border: 1px solid var(--bordure);
+                  border-radius: var(--r-full); padding: 2px var(--e3); font-size: var(--t-xs); }
+    .chip-exclu button { border: none; background: none; color: var(--accent-texte);
+                         font-weight: 600; font-size: var(--t-xs); min-height: 22px; padding: 0; }
+    .chip-exclu button:hover { text-decoration: underline; }
     .barre-ecartes { display: none; align-items: center; gap: var(--e3); flex-wrap: wrap;
                      background: var(--surface-2); border: 1px solid var(--bordure);
                      border-radius: var(--r-sm); padding: var(--e2) var(--e3);
@@ -189,9 +202,13 @@
       return `${t.getUTCFullYear()}-S${String(n).padStart(2, '0')}`;
     }
 
+    // Deux niveaux : écarté pour la semaine en cours, ou exclu durablement.
     const cleEcart = idClient => `${semaineISO()}-${idClient}`;
-    const estEcarte = c => ecartes.tout().some(e => e.id === cleEcart(c.idClient));
+    const cleExclu = idClient => `perm-${idClient}`;
     const ecartesSemaine = () => ecartes.tout().filter(e => e.semaine === semaineISO());
+    const exclusDurables = () => ecartes.tout().filter(e => e.permanent);
+    const estEcarte = c => ecartes.tout().some(e =>
+      e.id === cleEcart(c.idClient) || e.id === cleExclu(c.idClient));
 
     function ecarter(c) {
       ecartes.enregistrer({
@@ -200,19 +217,60 @@
       });
     }
 
+    function exclure(c) {
+      ecartes.enregistrer({
+        id: cleExclu(c.idClient), permanent: true,
+        idClient: c.idClient, nom: c.nom, exclusLe: Date.now(),
+      });
+      // L'écart hebdomadaire devient inutile s'il existait
+      if (ecartes.tout().some(e => e.id === cleEcart(c.idClient))) ecartes.supprimer(cleEcart(c.idClient));
+    }
+
+    let exclusDeplies = false;
+
     function majBarreEcartes() {
       const barre = document.getElementById('barre-ecartes');
-      const liste = ecartesSemaine();
-      if (!liste.length) { delete barre.dataset.visible; barre.innerHTML = ''; return; }
+      const semaine = ecartesSemaine();
+      const durables = exclusDurables();
+      if (!semaine.length && !durables.length) {
+        delete barre.dataset.visible; barre.innerHTML = ''; return;
+      }
       barre.dataset.visible = '1';
-      const noms = liste.slice(0, 6).map(e => e.nom).join(' · ')
-        + (liste.length > 6 ? ` +${liste.length - 6}` : '');
-      barre.innerHTML = `<span><strong>${liste.length}</strong> client(s) écarté(s) cette semaine</span>`
-        + `<span style="color:var(--texte-3)">${noms}</span>`
-        + `<button id="btn-reafficher" style="margin-left:auto">Tout réafficher</button>`;
-      document.getElementById('btn-reafficher').addEventListener('click', () => {
-        liste.forEach(e => ecartes.supprimer(e.id));
+
+      let html = '';
+      if (semaine.length) {
+        const noms = semaine.slice(0, 6).map(e => e.nom).join(' · ')
+          + (semaine.length > 6 ? ` +${semaine.length - 6}` : '');
+        html += `<div class="ligne-barre">
+          <span><strong>${semaine.length}</strong> écarté(s) cette semaine</span>
+          <span style="color:var(--texte-3)">${noms}</span>
+          <button id="btn-reafficher" style="margin-left:auto">Tout réafficher</button>
+        </div>`;
+      }
+      if (durables.length) {
+        html += `<div class="ligne-barre">
+          <span><strong>${durables.length}</strong> exclu(s) durablement</span>
+          <button id="btn-plier" style="margin-left:auto" aria-expanded="${exclusDeplies}">
+            ${exclusDeplies ? 'Masquer' : 'Gérer la liste'}</button>
+        </div>`;
+        if (exclusDeplies) {
+          html += `<div class="chips-exclus">` + durables.map(e =>
+            `<span class="chip-exclu">${e.nom}
+              <button data-reintegrer="${e.id}" title="Remettre ${e.nom} dans la liste">Réintégrer</button>
+            </span>`).join('') + `</div>`;
+        }
+      }
+      barre.innerHTML = html;
+
+      document.getElementById('btn-reafficher')?.addEventListener('click', () => {
+        semaine.forEach(e => ecartes.supprimer(e.id));
       });
+      document.getElementById('btn-plier')?.addEventListener('click', () => {
+        exclusDeplies = !exclusDeplies;
+        majBarreEcartes();
+      });
+      barre.querySelectorAll('[data-reintegrer]').forEach(b =>
+        b.addEventListener('click', () => ecartes.supprimer(b.dataset.reintegrer)));
     }
 
     function render(filtre) {
@@ -232,9 +290,12 @@
             : `<span class="avance">dans ${-c.joursRetard} j</span>`;
         }
         tr.innerHTML = `
-          <td class="col-ecarter" data-libelle="Écarter"><button type="button" class="btn-ecarter"
-              title="Retirer de la liste jusqu'à la fin de la semaine"
-              aria-label="Écarter ${c.nom} de la liste cette semaine">&times;</button></td>
+          <td class="col-ecarter" data-libelle="Écarter"><span class="duo"><button type="button" class="btn-ecarter"
+              title="Écarter cette semaine — il reviendra lundi prochain"
+              aria-label="Écarter ${c.nom} de la liste cette semaine">&times;</button><button
+              type="button" class="btn-exclure"
+              title="Exclure durablement — il ne réapparaîtra plus tant que vous ne le réintégrez pas"
+              aria-label="Exclure durablement ${c.nom} de la liste">&#8709;</button></span></td>
           <td data-libelle="Priorité"><span class="badge ${c.priorite}">${LABELS[c.priorite]}</span></td>
           <td data-libelle="Client"><strong>${c.nom}</strong><br><small>${c.nbCommandes} commandes</small></td>
           <td data-libelle="Dernière commande">${fmtDate(c.dateDerniereCommande)}</td>
@@ -245,16 +306,22 @@
           <td data-libelle="Montant moyen HT">${c.montantMoyenHT ? c.montantMoyenHT.toFixed(2) + ' €' : '—'}</td>
           <td class="produits" data-libelle="Produits habituels" title="${(c.produitsHabituels ?? []).join(' · ')}">${(c.produitsHabituels ?? []).join(', ') || '—'}</td>
           <td class="case-suivi" data-libelle="Fait"><span class="case">&#9744;</span></td>`;
+        // stopPropagation : sans cela, le clic ouvrirait la prise de commande
         tr.querySelector('.btn-ecarter').addEventListener('click', ev => {
-          ev.stopPropagation();   // sans cela, le clic ouvrirait la prise de commande
-          ecarter(c);
+          ev.stopPropagation(); ecarter(c);
+        });
+        tr.querySelector('.btn-exclure').addEventListener('click', ev => {
+          ev.stopPropagation();
+          if (confirm(`Exclure durablement ${c.nom} de la liste des relances ?\n\n`
+            + `Il ne réapparaîtra plus les semaines suivantes. Vous pourrez le réintégrer `
+            + `à tout moment depuis le bandeau « exclus durablement ».`)) exclure(c);
         });
         tbody.appendChild(tr);
       }
       if (!list.length) {
         tbody.innerHTML = `<tr><td colspan="11" style="color:var(--texte-3);text-align:center;padding:24px">`
           + (clients.length
-              ? (ecartesSemaine().length && !visibles.length
+              ? ((ecartesSemaine().length || exclusDurables().length) && !visibles.length
                   ? 'Tous les clients ont été traités cette semaine.'
                   : 'Aucun client dans cette catégorie — essayez un autre filtre.')
               : 'Aucune donnée d\'analyse disponible.')
@@ -266,6 +333,7 @@
       document.getElementById('meta').innerHTML =
         `${list.length} client(s) affiché(s) sur ${clients.length} — analyse générée le ${new Date(window._genere).toLocaleString('fr-FR')}`
         + (ecartesSemaine().length ? ` · ${ecartesSemaine().length} écarté(s) cette semaine` : '')
+        + (exclusDurables().length ? ` · ${exclusDurables().length} exclu(s) durablement` : '')
         + (window._inactifs
             ? ` · <span style="color:var(--texte-3)">${window._inactifs} client(s) désactivé(s) dans EasyBeer, exclus</span>`
             : '');
