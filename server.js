@@ -2624,7 +2624,7 @@ app.post('/api/lecture-commande', async (req, res) => {
 // Sans magasin configuré, les routes répondent « non configuré » et le
 // navigateur retombe sur son stockage local : aucune régression.
 
-const ESPACES = new Set(['prospects', 'ruptures', 'relances']);
+const ESPACES = new Set(['prospects', 'ruptures', 'relances', 'visites']);
 const REDIS_URL = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL ?? '';
 const REDIS_TOKEN = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN ?? '';
 const redisActif = () => !!(REDIS_URL && REDIS_TOKEN);

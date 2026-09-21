@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#F7F7F8">
+  <title>Y aller — Le Gué des Moines</title>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'light';</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="icons.js"></script>
+  <script src="ui.js"></script>
+  <script src="shell.js"></script>
+  <script src="donnees.js"></script>
+  <style>
+    .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--e3); margin-bottom: var(--e5); }
+    .kpi { background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--r-md);
+           padding: var(--e3) var(--e4); box-shadow: var(--ombre-1); }
+    .kpi .lbl { font-size: var(--t-xs); font-weight: 500; color: var(--texte-2); }
+    .kpi .val { font-size: var(--t-kpi); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+    .kpi.urgent-kpi .val { color: var(--danger); }
+
+    /* Ajout d'un lieu à visiter */
+    .ajout { display: flex; flex-wrap: wrap; gap: var(--e2); align-items: flex-end;
+             background: var(--surface); border: 1px solid var(--bordure);
+             border-radius: var(--r-md); padding: var(--e3) var(--e4); margin-bottom: var(--e5); }
+    .ajout label { display: block; font-size: var(--t-xs); font-weight: 600;
+                   color: var(--texte-2); margin-bottom: 2px; }
+    .ajout input { min-height: var(--cible-min); font-size: var(--t-sm); }
+    .ajout .champ-nom { flex: 1 1 260px; }
+    .ajout .champ-note { flex: 1 1 200px; }
+    .ajout button { min-height: var(--cible-min); flex: 0 0 auto; width: auto; }
+
+    /* Groupes */
+    .groupe { margin-bottom: var(--e6); }
+    .groupe > h2 { font-size: var(--t-md); display: flex; align-items: center;
+                   gap: var(--e2); margin-bottom: var(--e3); }
+    .groupe > h2 .nb { color: var(--texte-3); font-weight: 500; }
+    .groupe.maintenant > h2 { color: var(--danger); }
+
+    /* Carte d'un lieu */
+    .lieu { background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--r-md);
+            padding: var(--e3) var(--e4); margin-bottom: var(--e2); box-shadow: var(--ombre-1); }
+    .groupe.maintenant .lieu { border-left: 3px solid var(--danger); }
+    .lieu .haut { display: flex; align-items: center; gap: var(--e3); flex-wrap: wrap; }
+    .lieu .nom { font-weight: 700; }
+    .lieu .meta { font-size: var(--t-sm); color: var(--texte-2); }
+    .lieu .meta .sep { color: var(--texte-3); margin: 0 var(--e1); }
+    .lieu .jamais { color: var(--texte-3); font-style: italic; }
+    .lieu .echeance { font-weight: 600; }
+    .lieu .echeance.dep { color: var(--danger); }
+    .lieu .note { margin-top: var(--e2); font-size: var(--t-sm); color: var(--texte-3); font-style: italic; }
+    .lieu .actions { margin-left: auto; display: flex; gap: var(--e2); flex-wrap: wrap; }
+    .lieu .actions button, .lieu .actions a {
+      min-height: var(--cible-min); padding: 0 var(--e3); font-size: var(--t-sm);
+      border: 1px solid var(--bordure-forte); border-radius: var(--r-sm);
+      background: var(--surface); color: var(--texte); text-decoration: none;
+      display: inline-flex; align-items: center; gap: var(--e2); }
+    .lieu .actions button:hover, .lieu .actions a:hover { background: var(--surface-3); }
+    .lieu .actions .fait { background: var(--accent); border-color: var(--accent);
+                           color: var(--sur-accent); font-weight: 600; }
+    .lieu .actions .fait:hover { background: var(--accent-fonce); }
+    .lieu .actions .retirer { color: var(--danger); border-color: transparent; }
+    .lieu .actions .retirer:hover { background: var(--danger-doux); }
+    .report { display: flex; gap: var(--e2); flex-wrap: wrap; align-items: center;
+              margin-top: var(--e3); padding-top: var(--e3); border-top: 1px dashed var(--bordure);
+              font-size: var(--t-sm); color: var(--texte-2); }
+    .report button { min-height: 28px; padding: 0 var(--e3); font-size: var(--t-sm);
+                     border: 1px solid var(--bordure); background: var(--surface-2);
+                     color: var(--texte); border-radius: var(--r-sm); }
+    .report button:hover { background: var(--surface-3); }
+    .report input[type="date"] { width: auto; min-height: 28px; font-size: var(--t-sm); }
+
+    .vide-page { display: flex; flex-direction: column; align-items: center; gap: var(--e3);
+                 padding: var(--e8) var(--e5); color: var(--texte-2); text-align: center; }
+    .vide-page .ico { width: 32px; height: 32px; color: var(--texte-3); }
+    .note-stockage { font-size: var(--t-xs); color: var(--texte-3); margin-top: var(--e5); }
+
+    @media print {
+      .ajout, .lieu .actions, .report, .note-stockage, .kpi-grid { display: none !important; }
+      .lieu { break-inside: avoid; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="etroit">
+    <section>
+      <div>
+        <h2>Clients à voir sur place</h2>
+        <p class="carte-soustitre">
+          Votre liste de visites terrain, tenue à la main : vous ajoutez qui vous voulez voir,
+          vous notez le passage, et vous programmez le suivant.
+          <span id="mention-stockage">Liste conservée sur cet appareil.</span>
+        </p>
+      </div>
+
+      <div class="kpi-grid" id="kpis"></div>
+
+      <form class="ajout" id="ajout">
+        <div class="champ-nom">
+          <label for="ch-nom">Ajouter un client ou un lieu</label>
+          <input id="ch-nom" name="nom" list="liste-clients" required
+                 placeholder="Nom de l'établissement…" autocomplete="off">
+          <datalist id="liste-clients"></datalist>
+        </div>
+        <div class="champ-note">
+          <label for="ch-note">Motif (facultatif)</label>
+          <input id="ch-note" name="note" placeholder="Présenter la NEIPA, revoir le linéaire…">
+        </div>
+        <div>
+          <label for="ch-quand">À voir le</label>
+          <input id="ch-quand" name="quand" type="date">
+        </div>
+        <button type="submit" class="primary">Ajouter</button>
+      </form>
+
+      <div id="liste"></div>
+    </section>
+
+    <p class="note-stockage">
+      <button class="btn-tertiaire" id="btn-imprimer" style="min-height:24px">Imprimer la tournée</button>
+    </p>
+  </main>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    monterCoquille({ titre: 'Y aller', actif: '/visites.html' });
+    render();
+    magasin.charger().then(() => { render(); majMention(); });
+    magasin.suivre();
+    chargerClients();
+  });
+
+  // Liste partagée avec l'équipe quand la base est configurée, locale sinon
+  const magasin = creerMagasin('visites', { surChangement: () => render() });
+
+  const AUJ = () => new Date().toISOString().slice(0, 10);
+  const dansJours = n => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+  const fmtD = d => d ? new Date(d + 'T12:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : null;
+  const joursEntre = d => Math.round((new Date(d + 'T12:00') - new Date(AUJ() + 'T12:00')) / 86400000);
+
+  function majMention() {
+    const p = document.getElementById('mention-stockage');
+    p.textContent = magasin.espacePartage
+      ? 'Liste partagée avec l’équipe : chacun voit les visites prévues et les passages déjà faits.'
+      : 'Liste conservée sur cet appareil.';
+  }
+
+  // Les clients EasyBeer alimentent l'autocomplétion, sans être obligatoires :
+  // on peut aussi ajouter un lieu qui n'est pas encore client.
+  let clients = [];
+  async function chargerClients() {
+    try {
+      clients = await (await fetch('/api/clients')).json();
+      if (!Array.isArray(clients)) { clients = []; return; }
+      document.getElementById('liste-clients').innerHTML =
+        clients.map(c => `<option value="${c.nom}">`).join('');
+    } catch { clients = []; }
+  }
+
+  // ---- Classement : ce qui est dû d'abord, le reste ensuite ----
+  function groupeDe(v) {
+    if (!v.prochaine) return 'maintenant';          // aucune date : à voir dès que possible
+    const j = joursEntre(v.prochaine);
+    if (j <= 0) return 'maintenant';
+    if (j <= 7) return 'semaine';
+    return 'plus-tard';
+  }
+
+  const GROUPES = [
+    ['maintenant', 'À voir maintenant'],
+    ['semaine', 'Dans les 7 jours'],
+    ['plus-tard', 'Plus tard'],
+  ];
+
+  function render() {
+    const tous = magasin.tout();
+    const parGroupe = Object.fromEntries(GROUPES.map(([k]) => [k, []]));
+    for (const v of tous) parGroupe[groupeDe(v)].push(v);
+    for (const k of Object.keys(parGroupe)) {
+      parGroupe[k].sort((a, b) => (a.prochaine ?? '0000').localeCompare(b.prochaine ?? '0000'));
+    }
+
+    document.getElementById('kpis').innerHTML = [
+      ['À voir maintenant', parGroupe.maintenant.length, true],
+      ['Dans les 7 jours', parGroupe.semaine.length],
+      ['Total suivi', tous.length],
+    ].map(([l, v, u]) =>
+      `<div class="kpi${u && v > 0 ? ' urgent-kpi' : ''}"><div class="lbl">${l}</div><div class="val">${v}</div></div>`).join('');
+
+    const el = document.getElementById('liste');
+    if (!tous.length) {
+      el.innerHTML = `<div class="vide-page">${ico('carte', { classe: 'ico' })}
+        <p>Aucune visite programmée.<br>Ajoutez un client ci-dessus pour commencer votre tournée terrain.</p></div>`;
+      return;
+    }
+
+    el.innerHTML = GROUPES.map(([cle, titre]) => {
+      const liste = parGroupe[cle];
+      if (!liste.length) return '';
+      return `<div class="groupe ${cle}">
+        <h2>${titre} <span class="nb">(${liste.length})</span></h2>
+        ${liste.map(carte).join('')}
+      </div>`;
+    }).join('');
+  }
+
+  function carte(v) {
+    const j = v.prochaine ? joursEntre(v.prochaine) : null;
+    let echeance;
+    if (!v.prochaine) echeance = `<span class="echeance dep">à programmer</span>`;
+    else if (j < 0) echeance = `<span class="echeance dep">prévue le ${fmtD(v.prochaine)} — ${-j} j de retard</span>`;
+    else if (j === 0) echeance = `<span class="echeance dep">à voir aujourd'hui</span>`;
+    else echeance = `<span class="echeance">le ${fmtD(v.prochaine)} — dans ${j} j</span>`;
+
+    const derniere = v.derniereVisite
+      ? `dernière visite le ${fmtD(v.derniereVisite)} (il y a ${-joursEntre(v.derniereVisite)} j)`
+      : `<span class="jamais">jamais visité</span>`;
+
+    return `<article class="lieu" data-id="${v.id}">
+      <div class="haut">
+        <div>
+          <div class="nom">${v.nom}</div>
+          <div class="meta">${derniere}<span class="sep">·</span>${echeance}</div>
+        </div>
+        <div class="actions">
+          <button class="fait" title="Enregistre le passage d'aujourd'hui">${ico('check')} Visité aujourd'hui</button>
+          ${v.idClient ? `<a href="/?client=${v.idClient}" title="Prendre une commande pour ce client">${ico('colis')} Commander</a>` : ''}
+          <button class="retirer" title="Retirer de la liste">Retirer</button>
+        </div>
+      </div>
+      ${v.note ? `<p class="note">« ${v.note} »</p>` : ''}
+      <div class="report">
+        <span>Retourner voir :</span>
+        <button data-jours="7">dans 1 semaine</button>
+        <button data-jours="14">dans 2 semaines</button>
+        <button data-jours="30">dans 1 mois</button>
+        <input type="date" class="date-libre" value="${v.prochaine ?? ''}"
+               aria-label="Choisir une date de prochaine visite pour ${v.nom}">
+      </div>
+    </article>`;
+  }
+
+  // ---- Actions ----
+  document.getElementById('liste').addEventListener('click', ev => {
+    const art = ev.target.closest('.lieu'); if (!art) return;
+    const v = magasin.tout().find(x => String(x.id) === art.dataset.id); if (!v) return;
+
+    if (ev.target.closest('.retirer')) {
+      if (confirm(`Retirer ${v.nom} de la liste des visites ?`)) magasin.supprimer(v.id);
+      return;
+    }
+    if (ev.target.closest('.fait')) {
+      // Le passage est noté ; la prochaine visite reste à programmer, ce qui
+      // fait remonter la fiche dans « à voir maintenant » tant qu'on n'a pas
+      // choisi une échéance — on ne perd pas le client de vue.
+      magasin.enregistrer({ ...v, derniereVisite: AUJ(), prochaine: null });
+      return;
+    }
+    const report = ev.target.closest('button[data-jours]');
+    if (report) {
+      magasin.enregistrer({ ...v, prochaine: dansJours(parseInt(report.dataset.jours)) });
+    }
+  });
+
+  document.getElementById('liste').addEventListener('change', ev => {
+    if (!ev.target.classList.contains('date-libre')) return;
+    const art = ev.target.closest('.lieu');
+    const v = magasin.tout().find(x => String(x.id) === art.dataset.id); if (!v) return;
+    magasin.enregistrer({ ...v, prochaine: ev.target.value || null });
+  });
+
+  // ---- Ajout ----
+  document.getElementById('ajout').addEventListener('submit', e => {
+    e.preventDefault();
+    const f = e.target;
+    const nom = f.nom.value.trim();
+    if (!nom) return;
+    const connu = clients.find(c => c.nom.toLowerCase() === nom.toLowerCase());
+    if (magasin.tout().some(v => v.nom.toLowerCase() === nom.toLowerCase())) {
+      alert(`${nom} est déjà dans la liste des visites.`);
+      return;
+    }
+    magasin.enregistrer({
+      id: Date.now(),
+      nom: connu?.nom ?? nom,
+      idClient: connu?.id ?? null,
+      note: f.note.value.trim() || undefined,
+      prochaine: f.quand.value || null,
+      derniereVisite: null,
+      ajouteLe: Date.now(),
+    });
+    f.reset();
+    f.nom.focus();
+  });
+
+  document.getElementById('btn-imprimer').addEventListener('click', () => window.print());
+  </script>
+</body>
+</html>
