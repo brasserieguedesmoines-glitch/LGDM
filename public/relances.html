@@ -67,6 +67,25 @@
                    min-height: 26px; min-width: 26px; cursor: pointer; }
     .btn-exclure:hover { background: var(--surface-3); color: var(--texte); border-color: var(--bordure-forte); }
     .ligne-barre { display: flex; align-items: center; gap: var(--e3); flex-wrap: wrap; width: 100%; }
+    .rang-ecarte { display: flex; align-items: center; gap: var(--e3); flex-wrap: wrap;
+                   background: var(--surface); border: 1px solid var(--bordure);
+                   border-radius: var(--r-sm); padding: var(--e2) var(--e4); margin-bottom: var(--e2); }
+    .rang-ecarte .qui { font-weight: 600; }
+    .rang-ecarte .quand { font-size: var(--t-sm); color: var(--texte-3); }
+    .rang-ecarte .badge-type { font-size: 0.6875rem; font-weight: 600; border-radius: var(--r-full);
+                               padding: 1px var(--e2); }
+    .rang-ecarte .badge-type.semaine { background: var(--accent-doux); color: var(--accent-texte); }
+    .rang-ecarte .badge-type.durable { background: var(--surface-3); color: var(--texte-2); }
+    .rang-ecarte button { margin-left: auto; min-height: 30px; padding: 0 var(--e3);
+                          font-size: var(--t-sm); border: 1px solid var(--bordure-forte);
+                          background: var(--surface); color: var(--texte); border-radius: var(--r-sm); }
+    .rang-ecarte button:hover { background: var(--surface-3); }
+    .entete-ecartes { display: flex; align-items: center; gap: var(--e3); flex-wrap: wrap;
+                      margin-bottom: var(--e4); }
+    .entete-ecartes button { min-height: var(--cible-min); padding: 0 var(--e4); font-size: var(--t-sm);
+                             border: 1px solid var(--bordure-forte); background: var(--surface);
+                             color: var(--texte); border-radius: var(--r-sm); }
+    .entete-ecartes button:hover { background: var(--surface-3); }
     .chips-exclus { display: flex; flex-wrap: wrap; gap: var(--e2); width: 100%; margin-top: var(--e2); }
     .chip-exclu { display: inline-flex; align-items: center; gap: var(--e2);
                   background: var(--surface); border: 1px solid var(--bordure);
@@ -131,6 +150,7 @@
       <button data-f="cette_semaine" aria-pressed="false"><i class="puce cette_semaine"></i>Cette semaine</button>
       <button data-f="a_surveiller" aria-pressed="false"><i class="puce a_surveiller"></i>À surveiller</button>
       <button data-f="pas_prioritaire" aria-pressed="false"><i class="puce pas_prioritaire"></i>Pas prioritaire</button>
+      <button data-f="ecartes" aria-pressed="false" id="btn-f-ecartes" style="margin-left:auto"><i class="puce pas_prioritaire"></i>Écartés</button>
       </div>
       <div class="barre-actions">
       <button id="btn-imprimer" class="btn-export">
@@ -150,6 +170,7 @@
         <p id="imp-meta"></p>
       </div>
     </div>
+    <div id="vue-ecartes" style="display:none"></div>
     <div class="table-wrap" style="display:none" id="wrap">
       <table>
         <thead>
@@ -226,7 +247,13 @@
       if (ecartes.tout().some(e => e.id === cleEcart(c.idClient))) ecartes.supprimer(cleEcart(c.idClient));
     }
 
-    let exclusDeplies = false;
+    // Compteur porté par l'onglet : on voit d'un coup d'œil combien sont mis de côté
+    function majCompteurEcartes() {
+      const b = document.getElementById('btn-f-ecartes');
+      if (!b) return;
+      const n = ecartesSemaine().length + exclusDurables().length;
+      b.innerHTML = `<i class="puce pas_prioritaire"></i>Écartés${n ? ` (${n})` : ''}`;
+    }
 
     function majBarreEcartes() {
       const barre = document.getElementById('barre-ecartes');
@@ -237,44 +264,72 @@
       }
       barre.dataset.visible = '1';
 
-      let html = '';
-      if (semaine.length) {
-        const noms = semaine.slice(0, 6).map(e => e.nom).join(' · ')
-          + (semaine.length > 6 ? ` +${semaine.length - 6}` : '');
-        html += `<div class="ligne-barre">
-          <span><strong>${semaine.length}</strong> écarté(s) cette semaine</span>
-          <span style="color:var(--texte-3)">${noms}</span>
-          <button id="btn-reafficher" style="margin-left:auto">Tout réafficher</button>
-        </div>`;
+      // Bandeau volontairement compact : avec cent clients écartés, lister les
+      // noms ici noierait la page. Le détail vit dans la catégorie « Écartés ».
+      const bouts = [];
+      if (semaine.length) bouts.push(`<strong>${semaine.length}</strong> écarté(s) cette semaine`);
+      if (durables.length) bouts.push(`<strong>${durables.length}</strong> exclu(s) durablement`);
+      barre.innerHTML = `<div class="ligne-barre">
+        <span>${bouts.join(' · ')}</span>
+        <button id="btn-voir-ecartes" style="margin-left:auto">Voir la liste</button>
+      </div>`;
+      document.getElementById('btn-voir-ecartes').addEventListener('click', () => {
+        document.querySelector('#filtres button[data-f="ecartes"]').click();
+      });
+    }
+
+    // ---- Vue dédiée : consulter et réintégrer les clients écartés ----
+    function renderEcartes() {
+      const el = document.getElementById('vue-ecartes');
+      const semaine = ecartesSemaine();
+      const durables = exclusDurables();
+      const liste = [
+        ...semaine.map(e => ({ ...e, type: 'semaine' })),
+        ...durables.map(e => ({ ...e, type: 'durable' })),
+      ].sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
+
+      if (!liste.length) {
+        el.innerHTML = `<p style="color:var(--texte-3);text-align:center;padding:24px">`
+          + `Aucun client écarté. Utilisez « &times; » ou « &empty; » sur une ligne pour en retirer.</p>`;
+        return;
       }
-      if (durables.length) {
-        html += `<div class="ligne-barre">
-          <span><strong>${durables.length}</strong> exclu(s) durablement</span>
-          <button id="btn-plier" style="margin-left:auto" aria-expanded="${exclusDeplies}">
-            ${exclusDeplies ? 'Masquer' : 'Gérer la liste'}</button>
-        </div>`;
-        if (exclusDeplies) {
-          html += `<div class="chips-exclus">` + durables.map(e =>
-            `<span class="chip-exclu">${e.nom}
-              <button data-reintegrer="${e.id}" title="Remettre ${e.nom} dans la liste">Réintégrer</button>
-            </span>`).join('') + `</div>`;
-        }
-      }
-      barre.innerHTML = html;
+      el.innerHTML = `<div class="entete-ecartes">
+          <span>${liste.length} client(s) retiré(s) de la liste des relances</span>
+          ${semaine.length ? `<button id="btn-reafficher">Réafficher les ${semaine.length} de cette semaine</button>` : ''}
+        </div>`
+        + liste.map(e => `<div class="rang-ecarte">
+            <span class="badge-type ${e.type}">${e.type === 'semaine' ? 'cette semaine' : 'durable'}</span>
+            <span class="qui">${e.nom}</span>
+            <span class="quand">${e.type === 'semaine'
+              ? 'écarté le ' + new Date(e.masqueLe).toLocaleDateString('fr-FR')
+              : 'exclu le ' + new Date(e.exclusLe).toLocaleDateString('fr-FR')}</span>
+            <button data-reintegrer="${e.id}">Réintégrer</button>
+          </div>`).join('');
 
       document.getElementById('btn-reafficher')?.addEventListener('click', () => {
         semaine.forEach(e => ecartes.supprimer(e.id));
       });
-      document.getElementById('btn-plier')?.addEventListener('click', () => {
-        exclusDeplies = !exclusDeplies;
-        majBarreEcartes();
-      });
-      barre.querySelectorAll('[data-reintegrer]').forEach(b =>
+      el.querySelectorAll('[data-reintegrer]').forEach(b =>
         b.addEventListener('click', () => ecartes.supprimer(b.dataset.reintegrer)));
     }
 
     function render(filtre) {
       filtreCourant = filtre;
+      // La catégorie « Écartés » remplace le tableau par sa propre liste
+      const vueEcartes = filtre === 'ecartes';
+      document.getElementById('vue-ecartes').style.display = vueEcartes ? 'block' : 'none';
+      document.getElementById('wrap').style.display = vueEcartes ? 'none' : 'block';
+      majCompteurEcartes();
+      if (vueEcartes) {
+        listeAffichee = [];   // l'export CSV ne doit pas resservir la liste précédente
+        renderEcartes();
+        // le bandeau ferait doublon avec la liste qu'on est en train de consulter
+        delete document.getElementById('barre-ecartes').dataset.visible;
+        document.getElementById('meta').textContent =
+          `${ecartesSemaine().length + exclusDurables().length} client(s) écarté(s) — `
+          + `les écarts de la semaine tombent lundi prochain, les exclusions durables restent.`;
+        return;
+      }
       const tbody = document.getElementById('tbody');
       tbody.innerHTML = '';
       const visibles = clients.filter(c => !estEcarte(c));
