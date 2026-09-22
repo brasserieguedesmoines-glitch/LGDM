@@ -33,18 +33,30 @@
     .ajout .champ-note { flex: 1 1 200px; }
     .ajout button { min-height: var(--cible-min); flex: 0 0 auto; width: auto; }
 
-    /* Groupes */
-    .groupe { margin-bottom: var(--e6); }
-    .groupe > h2 { font-size: var(--t-md); display: flex; align-items: center;
-                   gap: var(--e2); margin-bottom: var(--e3); }
-    .groupe > h2 .nb { color: var(--texte-3); font-weight: 500; }
-    .groupe.maintenant > h2 { color: var(--danger); }
+    /* Trois colonnes : maintenant · sous une semaine · au-delà.
+       On voit d'un coup d'œil la charge de chaque échéance, et les cartes
+       occupent enfin toute la largeur disponible. */
+    #liste { display: grid; gap: var(--e4); align-items: start;
+             grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); }
+    .colonne { background: var(--surface-2); border: 1px solid var(--bordure);
+               border-radius: var(--r-md); padding: var(--e3); min-width: 0; }
+    .colonne > h2 { font-size: var(--t-xs); font-weight: 700; text-transform: uppercase;
+                    letter-spacing: 0.05em; color: var(--texte-2);
+                    display: flex; align-items: center; gap: var(--e2);
+                    padding: 0 var(--e1) var(--e3); }
+    .colonne > h2 .nb { margin-left: auto; background: var(--surface-3);
+                        border-radius: var(--r-full); padding: 0 var(--e2);
+                        font-weight: 600; color: var(--texte-2); }
+    .colonne.maintenant > h2 { color: var(--danger); }
+    .colonne.maintenant > h2 .nb { background: var(--danger-doux); color: var(--danger); }
+    .colonne .vide-col { font-size: var(--t-sm); color: var(--texte-3);
+                         text-align: center; padding: var(--e5) var(--e3); }
 
     /* Carte d'un lieu */
     .lieu { background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--r-md);
             padding: var(--e3) var(--e4); margin-bottom: var(--e2); box-shadow: var(--ombre-1); }
-    .groupe.maintenant .lieu { border-left: 3px solid var(--danger); }
-    .lieu .haut { display: flex; align-items: center; gap: var(--e3); flex-wrap: wrap; }
+    .colonne.maintenant .lieu { border-left: 3px solid var(--danger); }
+    .lieu .haut { display: flex; flex-direction: column; gap: var(--e1); }
     .lieu .nom { font-weight: 700; }
     .lieu .meta { font-size: var(--t-sm); color: var(--texte-2); }
     .lieu .meta .sep { color: var(--texte-3); margin: 0 var(--e1); }
@@ -55,7 +67,8 @@
     .lieu .contexte { display: flex; gap: var(--e3); flex-wrap: wrap; margin-top: var(--e2);
                       font-size: var(--t-xs); color: var(--texte-2); }
     .lieu .contexte b { color: var(--texte); font-weight: 600; }
-    .lieu .actions { margin-left: auto; display: flex; gap: var(--e2); flex-wrap: wrap; }
+    .lieu .actions { display: flex; gap: var(--e2); flex-wrap: wrap; width: 100%;
+                     margin-top: var(--e3); }
     .lieu .actions button, .lieu .actions a {
       min-height: var(--cible-min); padding: 0 var(--e3); font-size: var(--t-sm);
       border: 1px solid var(--bordure-forte); border-radius: var(--r-sm);
@@ -84,11 +97,13 @@
     @media print {
       .ajout, .lieu .actions, .report, .note-stockage, .kpi-grid { display: none !important; }
       .lieu { break-inside: avoid; box-shadow: none; }
+      #liste { display: block; }
+      .colonne { background: none; border: none; padding: 0; }
     }
   </style>
 </head>
 <body>
-  <main class="etroit">
+  <main class="large">
     <section>
       <div>
         <h2>Clients à relancer en physique</h2>
@@ -175,8 +190,8 @@
 
   const GROUPES = [
     ['maintenant', 'À relancer maintenant'],
-    ['semaine', 'Dans les 7 jours'],
-    ['plus-tard', 'Plus tard'],
+    ['semaine', 'Sous 1 semaine'],
+    ['plus-tard', 'Au-delà d’une semaine'],
   ];
 
   function render() {
@@ -189,7 +204,7 @@
 
     document.getElementById('kpis').innerHTML = [
       ['À relancer maintenant', parGroupe.maintenant.length, true],
-      ['Dans les 7 jours', parGroupe.semaine.length],
+      ['Sous 1 semaine', parGroupe.semaine.length],
       ['Total suivi', tous.length],
     ].map(([l, v, u]) =>
       `<div class="kpi${u && v > 0 ? ' urgent-kpi' : ''}"><div class="lbl">${l}</div><div class="val">${v}</div></div>`).join('');
@@ -201,12 +216,14 @@
       return;
     }
 
+    // Les trois colonnes restent affichées même vides : la place de chaque
+    // échéance ne bouge pas d'une visite à l'autre.
     el.innerHTML = GROUPES.map(([cle, titre]) => {
       const liste = parGroupe[cle];
-      if (!liste.length) return '';
-      return `<div class="groupe ${cle}">
-        <h2>${titre} <span class="nb">(${liste.length})</span></h2>
-        ${liste.map(carte).join('')}
+      return `<div class="colonne ${cle}">
+        <h2>${titre}<span class="nb">${liste.length}</span></h2>
+        ${liste.length ? liste.map(carte).join('')
+          : '<p class="vide-col">Personne pour l’instant</p>'}
       </div>`;
     }).join('');
   }
