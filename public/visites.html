@@ -20,7 +20,11 @@
            padding: var(--e3) var(--e4); box-shadow: var(--ombre-1); }
     .kpi .lbl { font-size: var(--t-xs); font-weight: 500; color: var(--texte-2); }
     .kpi .val { font-size: var(--t-kpi); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+    .kpi { border-top: 3px solid var(--bordure-forte); }
+    .kpi.urgent-kpi { border-top-color: var(--danger); }
     .kpi.urgent-kpi .val { color: var(--danger); }
+    .kpi.semaine-kpi { border-top-color: var(--alerte); }
+    .kpi.semaine-kpi .val { color: var(--alerte); }
 
     /* Ajout d'un lieu à visiter */
     .ajout { display: flex; flex-wrap: wrap; gap: var(--e2); align-items: flex-end;
@@ -38,30 +42,36 @@
        occupent enfin toute la largeur disponible. */
     #liste { display: grid; gap: var(--e4); align-items: start;
              grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); }
-    .colonne { background: var(--surface-2); border: 1px solid var(--bordure);
+    /* Une teinte par échéance : l'œil situe la colonne avant de lire le titre.
+       Rouge = à faire, ambre = imminent, bleu = planifié. */
+    .colonne { --teinte: var(--texte-3); --teinte-doux: var(--surface-3);
+               background: var(--surface-2); border: 1px solid var(--bordure);
+               border-top: 3px solid var(--teinte);
                border-radius: var(--r-md); padding: var(--e3); min-width: 0; }
+    .colonne.maintenant { --teinte: var(--danger); --teinte-doux: var(--danger-doux); }
+    .colonne.semaine    { --teinte: var(--alerte); --teinte-doux: var(--alerte-doux); }
+    .colonne.plus-tard  { --teinte: var(--info); --teinte-doux: var(--info-doux); }
     .colonne > h2 { font-size: var(--t-xs); font-weight: 700; text-transform: uppercase;
                     letter-spacing: 0.05em; color: var(--texte-2);
                     display: flex; align-items: center; gap: var(--e2);
                     padding: 0 var(--e1) var(--e3); }
-    .colonne > h2 .nb { margin-left: auto; background: var(--surface-3);
+    .colonne > h2 { color: var(--teinte); }
+    .colonne > h2 .nb { margin-left: auto; background: var(--teinte-doux);
                         border-radius: var(--r-full); padding: 0 var(--e2);
-                        font-weight: 600; color: var(--texte-2); }
-    .colonne.maintenant > h2 { color: var(--danger); }
-    .colonne.maintenant > h2 .nb { background: var(--danger-doux); color: var(--danger); }
+                        font-weight: 700; color: var(--teinte); }
     .colonne .vide-col { font-size: var(--t-sm); color: var(--texte-3);
                          text-align: center; padding: var(--e5) var(--e3); }
 
     /* Carte d'un lieu */
     .lieu { background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--r-md);
             padding: var(--e3) var(--e4); margin-bottom: var(--e2); box-shadow: var(--ombre-1); }
-    .colonne.maintenant .lieu { border-left: 3px solid var(--danger); }
+    .colonne .lieu { border-left: 3px solid var(--teinte); }
     .lieu .haut { display: flex; flex-direction: column; gap: var(--e1); }
     .lieu .nom { font-weight: 700; }
     .lieu .meta { font-size: var(--t-sm); color: var(--texte-2); }
     .lieu .meta .sep { color: var(--texte-3); margin: 0 var(--e1); }
     .lieu .jamais { color: var(--texte-3); font-style: italic; }
-    .lieu .echeance { font-weight: 600; }
+    .lieu .echeance { font-weight: 600; color: var(--teinte); }
     .lieu .echeance.dep { color: var(--danger); }
     .lieu .note { margin-top: var(--e2); font-size: var(--t-sm); color: var(--texte-3); font-style: italic; }
     .lieu .contexte { display: flex; gap: var(--e3); flex-wrap: wrap; margin-top: var(--e2);
@@ -75,9 +85,9 @@
       background: var(--surface); color: var(--texte); text-decoration: none;
       display: inline-flex; align-items: center; gap: var(--e2); }
     .lieu .actions button:hover, .lieu .actions a:hover { background: var(--surface-3); }
-    .lieu .actions .fait { background: var(--accent); border-color: var(--accent);
-                           color: var(--sur-accent); font-weight: 600; }
-    .lieu .actions .fait:hover { background: var(--accent-fonce); }
+    .lieu .actions .fait { background: var(--ok-doux); border-color: transparent;
+                           color: var(--ok); font-weight: 600; }
+    .lieu .actions .fait:hover { background: var(--ok-doux); border-color: var(--ok); }
     .lieu .actions .retirer { color: var(--danger); border-color: transparent; }
     .lieu .actions .retirer:hover { background: var(--danger-doux); }
     .report { display: flex; gap: var(--e2); flex-wrap: wrap; align-items: center;
@@ -203,11 +213,11 @@
     }
 
     document.getElementById('kpis').innerHTML = [
-      ['À relancer maintenant', parGroupe.maintenant.length, true],
-      ['Sous 1 semaine', parGroupe.semaine.length],
-      ['Total suivi', tous.length],
-    ].map(([l, v, u]) =>
-      `<div class="kpi${u && v > 0 ? ' urgent-kpi' : ''}"><div class="lbl">${l}</div><div class="val">${v}</div></div>`).join('');
+      ['À relancer maintenant', parGroupe.maintenant.length, 'urgent-kpi'],
+      ['Sous 1 semaine', parGroupe.semaine.length, 'semaine-kpi'],
+      ['Total suivi', tous.length, ''],
+    ].map(([l, v, teinte]) =>
+      `<div class="kpi${teinte && v > 0 ? ' ' + teinte : ''}"><div class="lbl">${l}</div><div class="val">${v}</div></div>`).join('');
 
     const el = document.getElementById('liste');
     if (!tous.length) {
