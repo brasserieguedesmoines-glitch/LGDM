@@ -104,16 +104,54 @@
     .vide-page .ico { width: 32px; height: 32px; color: var(--texte-3); }
     .note-stockage { font-size: var(--t-xs); color: var(--texte-3); margin-top: var(--e5); }
 
+    #entete-impression { display: none; }
+
+    /* Impression : la feuille qu'on emporte en tournée.
+       Seule la semaine en cours y figure — ce qui est planifié au-delà n'a
+       rien à faire sur le papier d'aujourd'hui — et tout est resserré sur
+       deux colonnes pour tenir sur une page. */
     @media print {
-      .ajout, .lieu .actions, .report, .note-stockage, .kpi-grid { display: none !important; }
-      .lieu { break-inside: avoid; box-shadow: none; }
-      #liste { display: block; }
-      .colonne { background: none; border: none; padding: 0; }
+      @page { size: A4 portrait; margin: 10mm; }
+      .ajout, .lieu .actions, .report, .note-stockage, .kpi-grid,
+      .carte-soustitre, section > div > h2, .colonne .vide-col,
+      .lieu .contexte { display: none !important; }
+      .colonne.plus-tard { display: none !important; }
+
+      #entete-impression { display: flex; align-items: baseline; gap: 3mm;
+        border-bottom: 1.5pt solid #000; padding-bottom: 1.5mm; margin-bottom: 3mm; }
+      #entete-impression strong { font-size: 13pt; }
+      #entete-impression span { font-size: 8pt; color: #444; }
+
+      section { border: none !important; box-shadow: none !important; padding: 0 !important;
+                gap: 0 !important; background: none !important; }
+      #liste { display: block; columns: 2; column-gap: 8mm; }
+      .colonne { background: none; border: none; padding: 0; margin: 0 0 3mm;
+                 break-inside: auto; }
+      .colonne > h2 { font-size: 8pt; color: #000; padding: 0 0 1mm;
+                      border-bottom: 0.5pt solid #999; margin-bottom: 1mm;
+                      /* jamais un titre seul en bas de colonne */
+                      break-after: avoid; break-inside: avoid; }
+      .colonne > h2 .nb { background: none; color: #444; font-weight: 400; }
+
+      .lieu { break-inside: avoid; box-shadow: none; background: none;
+              border: none !important; border-bottom: 0.4pt solid #ccc !important;
+              border-radius: 0; padding: 1.2mm 0; margin: 0;
+              display: flex; align-items: baseline; gap: 2mm; }
+      .lieu::before { content: '\2610'; font-size: 11pt; line-height: 1; }
+      .lieu .haut { flex-direction: row; align-items: baseline; gap: 2mm;
+                    flex-wrap: wrap; flex: 1; }
+      .lieu .nom { font-size: 9pt; }
+      .lieu .meta, .lieu .jamais, .lieu .echeance { font-size: 7.5pt; color: #444 !important; }
+      .lieu .note { display: inline; margin: 0; font-size: 7.5pt; color: #444; }
     }
   </style>
 </head>
 <body>
   <main class="large">
+    <div id="entete-impression">
+      <strong>Tournée de la semaine</strong>
+      <span>Le Gué des Moines — édité le <span id="date-impression"></span></span>
+    </div>
     <section>
       <div>
         <h2>Clients à relancer en physique</h2>
@@ -149,7 +187,8 @@
     </section>
 
     <p class="note-stockage">
-      <button class="btn-tertiaire" id="btn-imprimer" style="min-height:24px">Imprimer la tournée</button>
+      <button class="btn-tertiaire" id="btn-imprimer" style="min-height:24px"
+              title="N'imprime que les clients à voir cette semaine, sur une seule page">Imprimer la tournée de la semaine</button>
     </p>
   </main>
 
@@ -343,7 +382,11 @@
     f.nom.focus();
   });
 
-  document.getElementById('btn-imprimer').addEventListener('click', () => window.print());
+  document.getElementById('btn-imprimer').addEventListener('click', () => {
+    document.getElementById('date-impression').textContent =
+      new Date().toLocaleDateString('fr-FR');
+    window.print();
+  });
   </script>
 </body>
 </html>
