@@ -298,16 +298,26 @@
       el.innerHTML = '<span class="loader"></span> Lecture de la prospection EasyBeer…';
       return;
     }
-    const enPanne = erreurs.prospects || erreurs.actions;
+    // Trois situations distinctes, et non deux : tout va bien, le planning
+    // n'est pas lisible mais les prospects le sont, ou EasyBeer est en panne.
     const ancien = synchroniseLe && Date.now() - synchroniseLe > 30 * 60000;
-    el.dataset.etat = enPanne ? 'erreur' : ancien ? 'ancien' : 'ok';
-    el.innerHTML = (enPanne
-        ? `${ico('alerte')} EasyBeer indisponible — ${erreurs.prospects ?? erreurs.actions}. `
-          + `Les fiches locales restent consultables et modifiables.`
-        : `${ico('check')} ${prospects.length} prospects EasyBeer`
-          + (locales.tout().length ? ` · ${locales.tout().length} fiche(s) locale(s)` : '')
-          + ` · synchronisé ${synchroniseLe ? 'le ' + new Date(synchroniseLe).toLocaleString('fr-FR') : ''}`)
-      + '<button id="btn-resync">Actualiser</button>';
+    let corps;
+    if (erreurs.prospects) {
+      el.dataset.etat = 'erreur';
+      corps = `${ico('alerte')} EasyBeer indisponible — ${erreurs.prospects}. `
+        + `Les fiches locales restent consultables et modifiables.`;
+    } else if (erreurs.actions) {
+      el.dataset.etat = 'ancien';
+      corps = `${ico('alerte')} ${prospects.length} prospects lus. `
+        + `<b>Le planning des actions n'est pas lisible</b> — les échéances et relances `
+        + `ne peuvent pas être affichées (EasyBeer renvoie une erreur sur cette liste).`;
+    } else {
+      el.dataset.etat = ancien ? 'ancien' : 'ok';
+      corps = `${ico('check')} ${prospects.length} prospects EasyBeer`
+        + (locales.tout().length ? ` · ${locales.tout().length} fiche(s) locale(s)` : '')
+        + ` · synchronisé ${synchroniseLe ? 'le ' + new Date(synchroniseLe).toLocaleString('fr-FR') : ''}`;
+    }
+    el.innerHTML = corps + '<button id="btn-resync">Actualiser</button>';
     document.getElementById('btn-resync').addEventListener('click', charger);
   }
 
@@ -359,6 +369,22 @@
   }
 
   function rendreJour() {
+    // Sans le planning, « 0 relance en retard » serait un mensonge : on dit
+    // ce qu'on ne sait pas plutôt que d'afficher des compteurs rassurants.
+    if (erreurs.actions && !actions.length) {
+      document.getElementById('kpis').innerHTML = '';
+      document.getElementById('listes-jour').innerHTML = `
+        <div class="erreur-bloc">${ico('alerte')}
+          <b>Planning des actions indisponible.</b><br>
+          Les relances et échéances viennent des actions commerciales EasyBeer,
+          dont la liste renvoie une erreur serveur. Les compteurs ne sont pas
+          affichés pour ne pas donner une fausse impression d'agenda vide.<br>
+          <span style="font-size:var(--t-sm)">Détail : ${erreurs.actions}</span><br><br>
+          Les onglets <b>Prospects</b> et <b>Tournées</b> restent pleinement utilisables,
+          et vous pouvez enregistrer des interactions depuis chaque fiche.
+        </div>`;
+      return;
+    }
     const c = categories();
     const k = [
       ['retard', 'Relances en retard', c.retard.length],
