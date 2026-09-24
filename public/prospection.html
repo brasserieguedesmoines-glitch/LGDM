@@ -38,6 +38,8 @@
     .kpi.retard { border-top-color: var(--danger); } .kpi.retard .val { color: var(--danger); }
     .kpi.jour   { border-top-color: var(--alerte); } .kpi.jour .val { color: var(--alerte); }
     .kpi.visite { border-top-color: var(--info); }   .kpi.visite .val { color: var(--info); }
+    .kpi.perdus { border-top-color: var(--texte-3); } .kpi.perdus .val { color: var(--texte-2); }
+    .rang.perdu { opacity: .75; border-left-color: var(--texte-3); }
 
     /* ---- Filtres ---- */
     .filtres { display: flex; flex-wrap: wrap; gap: var(--e2) var(--e3); align-items: flex-end;
@@ -395,8 +397,14 @@
     if (vue === 'tournees') rendreTournees();
   }
 
+  // Non transformés : prospects en échec ou à ne pas contacter. Rangés à part
+  // pour ne plus encombrer les relances, sans rien modifier dans EasyBeer.
+  const PERDUS = new Set(['ECHEC', 'NE_PAS_CONTACTER']);
+  const estPerdu = p => p.source !== 'locale' ? PERDUS.has(p.etatContact ?? '') : p.statutLocal === 'perdu';
+
   function categories() {
-    const liste = agenda().map(p => ({ p, pr: prochaineDe(p) }));
+    const tout = agenda().map(p => ({ p, pr: prochaineDe(p) }));
+    const liste = tout.filter(x => !estPerdu(x.p));
     const parDate = (a, b) => a.pr.date - b.pr.date;
     return {
       // Retards : les plus récents d'abord — une relance d'hier a plus de
@@ -405,6 +413,7 @@
       jour:   liste.filter(x => x.pr && x.pr.date >= AUJ() && x.pr.date < AUJ() + JOUR).sort(parDate),
       visite: liste.filter(x => x.pr && x.pr.date >= AUJ() && x.pr.date < AUJ() + 7 * JOUR).sort(parDate),
       sans:   liste.filter(x => !x.pr && x.p.source !== 'client' && !estClos(x.p)),
+      perdus: tout.filter(x => estPerdu(x.p)).sort((a, b) => a.p.nom.localeCompare(b.p.nom, 'fr')),
     };
   }
 
@@ -431,6 +440,7 @@
       ['jour', "À contacter aujourd'hui", c.jour.length],
       ['visite', 'Prévu sous 7 jours', c.visite.length],
       ['', 'Sans prochaine action', c.sans.length],
+      ['perdus', 'Non transformés', c.perdus.length],
     ];
     document.getElementById('kpis').innerHTML = k.map(([cl, l, v]) =>
       `<button class="kpi ${cl}" data-cat="${cl || 'sans'}">
@@ -467,7 +477,8 @@
       + bloc('jour', "À contacter aujourd'hui", c.jour, 'du')
       + bloc('visite', 'Prévu sous 7 jours', c.visite.filter(x => x.pr.date >= AUJ() + JOUR), '')
       + blocOrph
-      + bloc('sans', 'Prospects actifs sans prochaine action', c.sans, '');
+      + bloc('sans', 'Prospects actifs sans prochaine action', c.sans, '')
+      + bloc('perdus', 'Non transformés — échec ou ne pas contacter', c.perdus, 'perdu');
     document.getElementById('listes-jour').innerHTML = html
       || (erreurs.prospects
           ? `<div class="erreur-bloc">${ico('alerte')} Prospection EasyBeer indisponible : ${erreurs.prospects}</div>`
