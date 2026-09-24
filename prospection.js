@@ -150,13 +150,45 @@ export function monterProspection(app, { easybeerGet, easybeerPost }) {
 
   // --- Actions commerciales (tâches et historique) ---
   // Contrat Swagger : POST avec { filtre, periode } et pagination en query.
+  // Le contrat Swagger décrit « periode » à la fois sur le paramètre et dans le
+  // filtre, avec des dates typées « string » sans format précisé. Plutôt que de
+  // deviner, on essaie les formes plausibles dans l'ordre et on retient celle
+  // qui répond — la forme retenue est ensuite réutilisée sans nouvel essai.
+  const jour = t => new Date(t).toISOString().slice(0, 10);
+  let formeActions = null;
+
+  function formesActions(depuis, jusqua) {
+    return [
+      ['filtre.periode.iso', { filtre: { periode: { dateDebut: jour(depuis), dateFin: jour(jusqua) } } }],
+      ['filtre.periode.type', { filtre: { periode: { type: 'PERIODE_COURANTE' } } }],
+      ['filtre.vide', { filtre: {} }],
+      ['parametre.periode.iso', { filtre: {}, periode: { dateDebut: jour(depuis), dateFin: jour(jusqua) } }],
+    ];
+  }
+
   app.get('/api/prospection/actions', (req, res) => repondre(res, async () => {
     const depuis = Number(req.query.depuis) || Date.now() - 90 * 86400000;
     const jusqua = Number(req.query.jusqua) || Date.now() + 90 * 86400000;
-    const corps = { filtre: {}, periode: { dateDebut: depuis, dateFin: jusqua } };
-    const d = await easybeerPost('/parametres/client/actions?nombreParPage=500&numeroPage=1', corps);
-    res.set('Cache-Control', 'no-store');
-    res.json({ actions: listeDe(d).map(normaliserAction), synchroniseLe: Date.now() });
+    const chemin = '/parametres/client/actions?nombreParPage=500&numeroPage=1';
+    const candidates = formesActions(depuis, jusqua);
+    const ordonnees = formeActions
+      ? [candidates.find(([n]) => n === formeActions), ...candidates.filter(([n]) => n !== formeActions)]
+      : candidates;
+
+    let derniere = null;
+    for (const [nom, corps] of ordonnees.filter(Boolean)) {
+      try {
+        const d = await easybeerPost(chemin, corps);
+        formeActions = nom;
+        res.set('Cache-Control', 'no-store');
+        return res.json({
+          actions: listeDe(d).map(normaliserAction),
+          forme: nom,
+          synchroniseLe: Date.now(),
+        });
+      } catch (e) { derniere = e; }
+    }
+    throw derniere ?? new Error('Aucune forme de requête acceptée pour la liste des actions');
   }));
 
   // --- Enregistrer une action (visite, appel, relance) ---
@@ -261,8 +293,15 @@ export function monterProspection(app, { easybeerGet, easybeerPost }) {
         if (!u) throw new Error('aucun commercial actif');
         return easybeerGet(`/parametres/client-prospect/liste/${u.id}`);
       }],
-      ['actions.liste', () => easybeerPost('/parametres/client/actions?nombreParPage=1&numeroPage=1',
-        { filtre: {}, periode: { dateDebut: Date.now() - 30 * 86400000, dateFin: Date.now() } })],
+      ['actions.liste', async () => {
+        const chemin = '/parametres/client/actions?nombreParPage=1&numeroPage=1';
+        let derniere = null;
+        for (const [nom, corps] of formesActions(Date.now() - 30 * 86400000, Date.now())) {
+          try { const d = await easybeerPost(chemin, corps); formeActions = nom; return d; }
+          catch (e) { derniere = e; }
+        }
+        throw derniere;
+      }],
     ];
     const resultats = {};
     for (const [nom, fn] of essais) {
