@@ -13,10 +13,11 @@
 //   GET  /referentiel/action-client/types                    → 11 types
 //   GET  /referentiel/action-client/etats                    → 5 états
 //   GET  /commande/derniere-commande/{idClient}              → dernière commande
+//   POST /parametres/client/actions (filtre complet, sans période) → 87 actions
+//        (vérifié le 24/09/2026 ; voir FILTRE_ACTIONS pour la forme exigée)
 //
 // Capacités implémentées d'après le contrat Swagger mais NON vérifiées en
 // écriture (aucune écriture n'a été tentée sur les données réelles) :
-//   POST /parametres/client/actions            (liste filtrée des actions)
 //   POST /parametres/client/action/enregistrer (créer / modifier une action)
 //   POST /parametres/prospect/transformer-en-client
 // L'endpoint /api/prospection/diagnostic les exerce à la demande et dit
@@ -44,6 +45,11 @@ const viderCache = prefixe => {
 
 const listeDe = d => Array.isArray(d) ? d : (d?.liste ?? d?.contenu ?? d?.elements ?? []);
 
+// Certains états arrivent sans libellé (A_RECONTACTER, observé en production) :
+// on le reconstitue depuis le code plutôt que d'afficher « statut inconnu ».
+const libelleDe = e => e?.libelle || String(e?.code ?? '')
+  .toLowerCase().replace(/_/g, ' ').replace(/^a /, 'à ').replace(/^./, c => c.toUpperCase());
+
 function normaliserProspect(p) {
   const a = p.adresse ?? {};
   const contact = (p.contacts ?? [])[0] ?? {};
@@ -61,7 +67,7 @@ function normaliserProspect(p) {
     commercial: p.commercial?.denomination ?? p.commercial?.nom ?? '',
     idCommercial: p.commercial?.id ?? p.commercial?.idUtilisateur ?? null,
     etatContact: p.etatContact?.code ?? null,
-    etatContactLibelle: p.etatContact?.libelle ?? '',
+    etatContactLibelle: p.etatContact?.code ? libelleDe(p.etatContact) : '',
     etatContactCouleur: p.etatContact?.couleur ?? null,
     nombreActions: p.nombreActions ?? 0,
     note: typeof p.note === 'string' ? p.note : (p.note?.commentaire ?? ''),
@@ -74,13 +80,24 @@ function normaliserProspect(p) {
   };
 }
 
+// EasyBeer stocke les comptes rendus en HTML (« <p>…</p> ») : on n'envoie au
+// navigateur que du texte, l'aperçu fourni par l'API ou le HTML dépouillé.
+const texteSeul = h => String(h ?? '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]*>/g, '')
+  .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+  .replace(/\s+/g, ' ').trim();
+
 function normaliserAction(a) {
   return {
     idAction: a.idClientAction ?? null,
     idClient: a.idClient ?? null,
-    nomClient: a.nomClient ?? a.raisonSociale ?? '',
+    nomClient: a.client ?? a.nomClient ?? a.raisonSociale ?? '',
+    etatClient: a.etatClient ?? null,          // CLIENT | PROSPECT
+    typeClient: a.typeClient ?? '',
+    tournee: a.tournee ?? '',
+    adresse: a.adresse ?? '',
+    telephone: a.telephoneClient ?? a.mobileClient ?? '',
     libelle: a.libelle ?? '',
-    description: a.description ?? a.commentaire ?? '',
+    description: a.apercu ? texteSeul(a.apercu) : texteSeul(a.description ?? a.commentaire),
     date: a.date ?? null,
     type: a.type?.code ?? null,
     typeLibelle: a.type?.libelle ?? '',
@@ -115,7 +132,8 @@ export function monterProspection(app, { easybeerGet, easybeerPost }) {
   // --- Référentiels : alimentent les filtres et les formulaires ---
   app.get('/api/prospection/referentiels', (req, res) => repondre(res, async () => {
     const [etatsContact, typesAction, etatsAction, utilisateurs] = await Promise.all([
-      enCache('etats-contact', CACHE_MS, () => easybeerGet('/referentiel/client/etats-contact').then(listeDe)),
+      enCache('etats-contact', CACHE_MS, () => easybeerGet('/referentiel/client/etats-contact')
+        .then(d => listeDe(d).map(e => ({ ...e, libelle: libelleDe(e) })))),
       enCache('types-action', CACHE_MS, () => easybeerGet('/referentiel/action-client/types').then(listeDe)),
       enCache('etats-action', CACHE_MS, () => easybeerGet('/referentiel/action-client/etats').then(listeDe)),
       commerciaux(),
@@ -149,46 +167,43 @@ export function monterProspection(app, { easybeerGet, easybeerPost }) {
   }));
 
   // --- Actions commerciales (tâches et historique) ---
-  // Contrat Swagger : POST avec { filtre, periode } et pagination en query.
-  // Le contrat Swagger décrit « periode » à la fois sur le paramètre et dans le
-  // filtre, avec des dates typées « string » sans format précisé. Plutôt que de
-  // deviner, on essaie les formes plausibles dans l'ordre et on retient celle
-  // qui répond — la forme retenue est ensuite réutilisée sans nouvel essai.
-  const jour = t => new Date(t).toISOString().slice(0, 10);
-  let formeActions = null;
+  // Forme vérifiée sur l'API de production le 24/09/2026, après des 500
+  // systématiques : comme pour la liste des commandes, EasyBeer exige que
+  // chaque liste du filtre soit présente (vide) plutôt qu'absente. Toute
+  // période — dans le filtre ou sur le paramètre, datée ou nommée — fait en
+  // revanche échouer la requête : on lit donc toutes les actions et on trie
+  // par date côté serveur. Le volume (une centaine) le permet sans peine.
+  const FILTRE_ACTIONS = {
+    etats: [], idsClientsDistributeurs: [], idsClientsTournees: [], idsClientsTypes: [],
+    priorites: [], types: [], recherche: '',
+  };
+  const PAR_PAGE_ACTIONS = 200;
+  const ACTIONS_MS = 60 * 1000;
 
-  function formesActions(depuis, jusqua) {
-    return [
-      ['filtre.periode.iso', { filtre: { periode: { dateDebut: jour(depuis), dateFin: jour(jusqua) } } }],
-      ['filtre.periode.type', { filtre: { periode: { type: 'PERIODE_COURANTE' } } }],
-      ['filtre.vide', { filtre: {} }],
-      ['parametre.periode.iso', { filtre: {}, periode: { dateDebut: jour(depuis), dateFin: jour(jusqua) } }],
-    ];
+  async function lireActions(maxPages = 10) {
+    const parId = new Map();
+    let total = null;
+    for (let page = 1; page <= maxPages; page++) {
+      const d = await easybeerPost(
+        `/parametres/client/actions?colonneTri=date&nombreParPage=${PAR_PAGE_ACTIONS}&numeroPage=${page}`,
+        { filtre: FILTRE_ACTIONS });
+      total ??= d?.totalElements ?? null;
+      const l = listeDe(d);
+      // Dédoublonnage : protège d'un éventuel recouvrement entre pages.
+      for (const a of l) if (a?.idClientAction && !parId.has(a.idClientAction)) parId.set(a.idClientAction, a);
+      if (l.length < PAR_PAGE_ACTIONS) break;
+    }
+    return { actions: [...parId.values()].map(normaliserAction), total };
   }
 
   app.get('/api/prospection/actions', (req, res) => repondre(res, async () => {
-    const depuis = Number(req.query.depuis) || Date.now() - 90 * 86400000;
-    const jusqua = Number(req.query.jusqua) || Date.now() + 90 * 86400000;
-    const chemin = '/parametres/client/actions?nombreParPage=500&numeroPage=1';
-    const candidates = formesActions(depuis, jusqua);
-    const ordonnees = formeActions
-      ? [candidates.find(([n]) => n === formeActions), ...candidates.filter(([n]) => n !== formeActions)]
-      : candidates;
-
-    let derniere = null;
-    for (const [nom, corps] of ordonnees.filter(Boolean)) {
-      try {
-        const d = await easybeerPost(chemin, corps);
-        formeActions = nom;
-        res.set('Cache-Control', 'no-store');
-        return res.json({
-          actions: listeDe(d).map(normaliserAction),
-          forme: nom,
-          synchroniseLe: Date.now(),
-        });
-      } catch (e) { derniere = e; }
-    }
-    throw derniere ?? new Error('Aucune forme de requête acceptée pour la liste des actions');
+    const { actions, total } = await enCache('actions', ACTIONS_MS, lireActions);
+    res.set('Cache-Control', 'no-store');
+    res.json({
+      actions: actions.sort((a, b) => (a.date ?? 0) - (b.date ?? 0)),
+      total,
+      synchroniseLe: Date.now(),
+    });
   }));
 
   // --- Enregistrer une action (visite, appel, relance) ---
@@ -202,8 +217,11 @@ export function monterProspection(app, { easybeerGet, easybeerPost }) {
     if (!libelle || typeof libelle !== 'string') {
       return res.status(400).json({ error: 'libelle requis' });
     }
+    // Les listes vides reprennent la forme d'une action lue dans EasyBeer :
+    // la lecture échoue sans elles, l'écriture a toutes les chances d'en faire autant.
     const modele = {
       idClient,
+      idsClients: [], idsClientsActions: [], tags: [], fichiers: [],
       libelle: libelle.slice(0, 200),
       description: (description ?? '').slice(0, 2000),
       date: Number(date) || Date.now(),
@@ -213,6 +231,7 @@ export function monterProspection(app, { easybeerGet, easybeerPost }) {
     };
     const d = await easybeerPost('/parametres/client/action/enregistrer', modele);
     viderCache('prospects');   // nombreActions change
+    viderCache('actions');
     res.json({ ok: true, resultat: d ?? null });
   }));
 
@@ -279,43 +298,6 @@ export function monterProspection(app, { easybeerGet, easybeerPost }) {
     });
   }));
 
-  // --- Sonde temporaire (lecture seule) : formes de requête du planning ---
-  app.get('/api/prospection/sonde-actions', async (req, res) => {
-    const now = Date.now();
-    const periodeLibre = { type: 'PERIODE_LIBRE', dateDebut: new Date(now - 90 * 86400000).toISOString(), dateFin: new Date(now + 90 * 86400000).toISOString() };
-    const filtreComplet = {
-      etats: [], idsClientsDistributeurs: [], idsClientsTournees: [], idsClientsTypes: [],
-      priorites: [], types: [], recherche: '',
-    };
-    const indicateur = {
-      periode: { type: 'MOIS_COURANT' }, inclureActionsEnRetard: true,
-      idsClients: [], idsClientsTournees: [], idsClientsTypes: [], idsCommerciaux: [],
-      idsContenants: [], idsContenantsFuts: [], idsEntrepots: [], idsEtapeBrassage: [],
-      idsPackagings: [], idsProduits: [], idsProduitsCategories: [],
-    };
-    const variantes = [
-      ['A liste tri=date p1', '/parametres/client/actions?colonneTri=date&nombreParPage=3&numeroPage=1', { filtre: { ...filtreComplet, periode: periodeLibre }, periode: periodeLibre }],
-      ['B liste tri=date p0', '/parametres/client/actions?colonneTri=date&nombreParPage=3&numeroPage=0', { filtre: { ...filtreComplet, periode: periodeLibre }, periode: periodeLibre }],
-      ['C liste sans query', '/parametres/client/actions', { filtre: { ...filtreComplet, periode: periodeLibre }, periode: periodeLibre }],
-      ['D liste filtre complet sans periode', '/parametres/client/actions?colonneTri=date&nombreParPage=3&numeroPage=1', { filtre: filtreComplet }],
-      ['E liste MOIS_COURANT', '/parametres/client/actions?colonneTri=date&nombreParPage=3&numeroPage=1', { filtre: { ...filtreComplet, periode: { type: 'MOIS_COURANT' } }, periode: { type: 'MOIS_COURANT' } }],
-      ['F planning', '/parametres/client/actions/planning', { filtre: { ...filtreComplet, periode: periodeLibre }, periode: periodeLibre }],
-      ['G indicateur actions-clients', '/indicateur/actions-clients?forceRefresh=false', indicateur],
-    ];
-    const resultats = [];
-    for (const [nom, chemin, corps] of variantes) {
-      try {
-        const d = await easybeerPost(chemin, corps);
-        const l = listeDe(d);
-        resultats.push({ nom, ok: true, cles: Object.keys(d ?? {}).slice(0, 15), elements: l.length, total: d?.totalElements ?? null, exemple: JSON.stringify(l[0] ?? d).slice(0, 900) });
-      } catch (e) {
-        resultats.push({ nom, ok: false, status: e.status ?? null, erreur: String(e.message).slice(0, 200) });
-      }
-    }
-    res.set('Cache-Control', 'no-store');
-    res.json(resultats);
-  });
-
   // --- Diagnostic : dit honnêtement ce qui répond et ce qui ne répond pas ---
   // Aucune écriture n'est tentée ici. Permet de distinguer « implémenté » de
   // « intégration vérifiée » sans avoir à lire le code.
@@ -330,15 +312,9 @@ export function monterProspection(app, { easybeerGet, easybeerPost }) {
         if (!u) throw new Error('aucun commercial actif');
         return easybeerGet(`/parametres/client-prospect/liste/${u.id}`);
       }],
-      ['actions.liste', async () => {
-        const chemin = '/parametres/client/actions?nombreParPage=1&numeroPage=1';
-        let derniere = null;
-        for (const [nom, corps] of formesActions(Date.now() - 30 * 86400000, Date.now())) {
-          try { const d = await easybeerPost(chemin, corps); formeActions = nom; return d; }
-          catch (e) { derniere = e; }
-        }
-        throw derniere;
-      }],
+      ['actions.liste', () => easybeerPost(
+        '/parametres/client/actions?colonneTri=date&nombreParPage=1&numeroPage=1',
+        { filtre: FILTRE_ACTIONS })],
     ];
     const resultats = {};
     for (const [nom, fn] of essais) {

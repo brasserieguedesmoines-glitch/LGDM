@@ -65,6 +65,7 @@
     .rang .sous { font-size: var(--t-sm); color: var(--texte-2); }
     .rang .droite { text-align: right; font-size: var(--t-sm); color: var(--texte-2); white-space: nowrap; }
     .rang .echeance { font-weight: 600; }
+    .rang .quoi { color: var(--texte); }
     .rang .echeance.retard { color: var(--danger); }
     .rang .echeance.du { color: var(--alerte); }
     @media (max-width: 640px) {
@@ -240,6 +241,18 @@
   const fmtD = t => t ? new Date(t).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' }) : '—';
   const jours = t => Math.round((t - AUJ()) / JOUR);
   const norm = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  const echap = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
+
+  // Codes réels des référentiels EasyBeer (/referentiel/action-client/etats et
+  // /referentiel/client/etats-contact) : une action close est FAIT ou
+  // NE_PAS_FAIRE ; un prospect est sorti du cycle une fois validé, en échec,
+  // non qualifié ou à ne pas contacter.
+  const ACTIONS_CLOSES = new Set(['FAIT', 'NE_PAS_FAIRE']);
+  const CONTACTS_CLOS = new Set(['VALIDE', 'ECHEC', 'NON_QUALIFIE', 'NE_PAS_CONTACTER']);
+  const estClos = p => p.source === 'locale'
+    ? ['gagne', 'perdu'].includes(p.statutLocal)
+    : CONTACTS_CLOS.has(p.etatContact ?? '');
+  const villeDe = adr => (String(adr ?? '').match(/\b\d{5}\s+([^,]+)$/) ?? [])[1]?.trim() ?? '';
 
   // --- Filtres conservés au retour depuis une fiche (et partageables) -------
   const CLE_F = 'lgdm-prospection-filtres';
@@ -313,7 +326,8 @@
         + `ne peuvent pas être affichées (EasyBeer renvoie une erreur sur cette liste).`;
     } else {
       el.dataset.etat = ancien ? 'ancien' : 'ok';
-      corps = `${ico('check')} ${prospects.length} prospects EasyBeer`
+      const ouvertes = actions.filter(a => !ACTIONS_CLOSES.has(a.etat)).length;
+      corps = `${ico('check')} ${prospects.length} prospects EasyBeer · ${ouvertes} action(s) ouverte(s)`
         + (locales.tout().length ? ` · ${locales.tout().length} fiche(s) locale(s)` : '')
         + ` · synchronisé ${synchroniseLe ? 'le ' + new Date(synchroniseLe).toLocaleString('fr-FR') : ''}`;
     }
@@ -327,7 +341,7 @@
     const loc = locales.tout().map(l => ({
       idClient: null, source: 'locale', cleLocale: l.id, numero: '',
       nom: l.nom ?? '', ville: l.ville ?? '', adresse: '', type: l.type ?? '',
-      commercial: l.resp ?? '', etatContact: null,
+      commercial: l.resp ?? '', etatContact: null, statutLocal: l.statut ?? '',
       etatContactLibelle: ({ contacter:'À contacter', premier:'Premier contact', relancer:'À relancer',
         interesse:'Intéressé', rdv:'RDV', proposition:'Proposition', negociation:'Négociation',
         gagne:'Gagné', perdu:'Perdu' })[l.statut] ?? '',
@@ -338,6 +352,28 @@
     return [...ext, ...loc];
   }
 
+  // Les actions ouvertes portent aussi sur des clients (relances commerciales).
+  // L'agenda du jour les inclut ; la liste Prospects reste réservée aux prospects.
+  function clientsDesActions() {
+    const connus = new Set(prospects.map(p => p.idClient));
+    const parId = new Map();
+    for (const a of actions) {
+      if (!a.idClient || connus.has(a.idClient) || parId.has(a.idClient)) continue;
+      if (ACTIONS_CLOSES.has(a.etat) || !a.date) continue;
+      parId.set(a.idClient, {
+        idClient: a.idClient, source: 'client', numero: '',
+        nom: a.nomClient || 'Client', ville: villeDe(a.adresse), adresse: a.adresse ?? '',
+        type: a.typeClient ?? '', tournee: a.tournee ?? '', commercial: a.responsable ?? '',
+        etatContact: null, etatContactCouleur: null,
+        etatContactLibelle: a.etatClient === 'CLIENT' ? 'Client' : '',
+        contact: { nom: '', telephone: a.telephone ?? '', email: '' },
+        note: '', nombreActions: 0,
+      });
+    }
+    return [...parId.values()];
+  }
+  const agenda = () => [...tous(), ...clientsDesActions()];
+
   // Prochaine action d'un prospect : la plus proche parmi celles à faire
   function prochaineDe(p) {
     if (p.source === 'locale') {
@@ -345,7 +381,7 @@
         ? { date: new Date(p.prochaine.date + 'T12:00').getTime(), libelle: p.prochaine.quoi ?? 'Relance' }
         : null;
     }
-    const aFaire = actions.filter(a => a.idClient === p.idClient && a.etat !== 'TERMINE' && a.date);
+    const aFaire = actions.filter(a => a.idClient === p.idClient && !ACTIONS_CLOSES.has(a.etat) && a.date);
     if (!aFaire.length) return null;
     const a = aFaire.sort((x, y) => x.date - y.date)[0];
     return { date: a.date, libelle: a.libelle || a.typeLibelle || 'Action', idAction: a.idAction };
@@ -359,12 +395,13 @@
   }
 
   function categories() {
-    const liste = tous().map(p => ({ p, pr: prochaineDe(p) }));
+    const liste = agenda().map(p => ({ p, pr: prochaineDe(p) }));
+    const parDate = (a, b) => a.pr.date - b.pr.date;
     return {
-      retard: liste.filter(x => x.pr && x.pr.date < AUJ()),
-      jour:   liste.filter(x => x.pr && x.pr.date >= AUJ() && x.pr.date < AUJ() + JOUR),
-      visite: liste.filter(x => x.pr && x.pr.date >= AUJ() && x.pr.date < AUJ() + 7 * JOUR),
-      sans:   liste.filter(x => !x.pr && !['GAGNE','PERDU'].includes(x.p.etatContact ?? '')),
+      retard: liste.filter(x => x.pr && x.pr.date < AUJ()).sort(parDate),
+      jour:   liste.filter(x => x.pr && x.pr.date >= AUJ() && x.pr.date < AUJ() + JOUR).sort(parDate),
+      visite: liste.filter(x => x.pr && x.pr.date >= AUJ() && x.pr.date < AUJ() + 7 * JOUR).sort(parDate),
+      sans:   liste.filter(x => !x.pr && x.p.source !== 'client' && !estClos(x.p)),
     };
   }
 
@@ -419,10 +456,11 @@
 
   function rang(p, pr, classe) {
     const j = pr ? jours(pr.date) : null;
+    const quoi = pr?.libelle ? `<span class="quoi">${echap(pr.libelle)}</span> · ` : '';
     const ech = !pr ? '<span class="echeance">aucune action prévue</span>'
-      : j < 0 ? `<span class="echeance retard">${-j} j de retard</span>`
+      : quoi + (j < 0 ? `<span class="echeance retard">${-j} j de retard</span>`
       : j === 0 ? '<span class="echeance du">aujourd’hui</span>'
-      : `<span class="echeance">dans ${j} j</span>`;
+      : `<span class="echeance">dans ${j} j</span>`);
     const cle = p.source === 'locale' ? `L${p.cleLocale}` : `E${p.idClient}`;
     return `<button class="rang ${classe ?? ''}" data-cle="${cle}">
       <span>
@@ -480,14 +518,14 @@
   // --- Fiche ---------------------------------------------------------------
   let ficheCle = null;
   function trouver(cle) {
-    return tous().find(p => (p.source === 'locale' ? `L${p.cleLocale}` : `E${p.idClient}`) === cle);
+    return agenda().find(p => (p.source === 'locale' ? `L${p.cleLocale}` : `E${p.idClient}`) === cle);
   }
 
   async function ouvrirFiche(cle, confirmation) {
     ficheCle = cle;
     const p = trouver(cle); if (!p) return;
     const pr = prochaineDe(p);
-    const hist = p.source === 'easybeer'
+    const hist = p.source !== 'locale'
       ? actions.filter(a => a.idClient === p.idClient).sort((a, b) => (b.date ?? 0) - (a.date ?? 0))
       : (locales.tout().find(l => l.id === p.cleLocale)?.historique ?? [])
           .map(h => ({ date: h.t, libelle: h.type, description: h.note, responsable: h.qui }));
@@ -566,9 +604,9 @@
         <h3>Historique (${hist.length})</h3>
         ${hist.length ? `<div class="chrono">${hist.slice(0, 30).map(h => `
           <div class="evt">
-            <div class="q">${h.libelle || h.typeLibelle || 'Action'}</div>
-            <div class="d">${fmtD(h.date)}${h.responsable ? ' · ' + h.responsable : ''}${h.etatLibelle ? ' · ' + h.etatLibelle : ''}</div>
-            ${h.description ? `<div>${h.description}</div>` : ''}
+            <div class="q">${echap(h.libelle || h.typeLibelle || 'Action')}</div>
+            <div class="d">${fmtD(h.date)}${h.responsable ? ' · ' + echap(h.responsable) : ''}${h.etatLibelle ? ' · ' + echap(h.etatLibelle) : ''}</div>
+            ${h.description ? `<div>${echap(h.description)}</div>` : ''}
           </div>`).join('')}</div>`
           : '<p class="carte-soustitre">Aucune interaction enregistrée.</p>'}
       </div>`;
@@ -637,7 +675,7 @@
           libelle: res,
           description: note,
           date: quand ? new Date(quand + 'T09:00').getTime() : Date.now(),
-          etat: quand ? 'A_FAIRE' : 'TERMINE',
+          etat: quand ? 'A_FAIRE' : 'FAIT',
         }),
       }));
       const cle = ficheCle;
