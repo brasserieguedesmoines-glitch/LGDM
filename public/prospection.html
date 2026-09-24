@@ -122,6 +122,22 @@
     #fiche .tete { display: flex; align-items: flex-start; gap: var(--e3); }
     #fiche h2 { font-size: var(--t-xl); }
     #fiche .fermer { margin-left: auto; }
+    .f-carte { border: 1px solid var(--bordure); border-radius: 12px; padding: var(--e3); margin-top: var(--e3); background: var(--surface-2); }
+    .f-lbl { display: block; font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .05em; color: var(--texte-3); margin-bottom: 4px; font-weight: 600; }
+    .f-statut { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr); gap: var(--e3); align-items: start; }
+    .f-statut b { font-size: var(--t-sm); }
+    .f-statut .etat-ligne { flex-wrap: nowrap; }
+    .f-statut #f-etat-contact { max-width: 100%; min-width: 0; }
+    .f-prochaine { border-left: 4px solid var(--info); }
+    .f-prochaine.retard { border-left-color: var(--danger); }
+    .f-prochaine.retard .f-quand b { color: var(--danger); }
+    .f-quoi { font-weight: 700; }
+    .f-quand { font-size: var(--t-sm); color: var(--texte-2); margin-top: 2px; }
+    .f-prochaine .reporter { margin: var(--e3) 0 0; padding-top: var(--e3); border-top: 1px solid var(--bordure); }
+    #fiche .rapides { margin-top: var(--e3); }
+    .f-notes { font-size: var(--t-sm); line-height: 1.55; background: var(--surface-2); border-left: 3px solid var(--bordure-forte);
+      border-radius: 8px; padding: var(--e3); white-space: normal; overflow-wrap: anywhere; }
+    .f-notes p { margin: 0 0 .5em; }
     .rapides { display: flex; flex-wrap: wrap; gap: var(--e2); margin: var(--e4) 0; }
     .rapides a, .rapides button {
       min-height: var(--cible); padding: 0 var(--e3); font-size: var(--t-sm);
@@ -637,35 +653,43 @@
         <div>
           <h2 id="fiche-titre">${p.nom}</h2>
           <p class="carte-soustitre">
-            ${[p.type, p.ville].filter(Boolean).join(' · ')}
+            ${[p.type, p.ville, p.numero].filter(Boolean).join(' · ')}
             ${p.source === 'locale' ? ' · <span class="marque-locale">fiche locale, non liée à EasyBeer</span>' : ''}
-          </p>
-          <p class="carte-soustitre etat-ligne">
-            ${p.source !== 'locale' && p.idClient && ref.etatsContact.length
-              ? `<label class="sr-only" for="f-etat-contact">État</label>
-                 <span class="etat-pastille"><i style="background:${p.etatContactCouleur ?? 'var(--texte-3)'}"></i></span>
-                 <select id="f-etat-contact">
-                   ${p.etatContact ? '' : `<option value="">${p.source === 'client' ? 'Client — état non renseigné' : '— statut inconnu —'}</option>`}
-                   ${ref.etatsContact.map(e => `<option value="${e.code}" ${e.code === p.etatContact ? 'selected' : ''}>${e.libelle}</option>`).join('')}
-                 </select>`
-              : `<span class="etat-pastille"><i style="background:${p.etatContactCouleur ?? 'var(--texte-3)'}"></i>${p.etatContactLibelle || 'statut inconnu'}</span>`}
-            ${p.commercial ? ' · ' + p.commercial : ''}
-          </p>
-          <p style="margin-top:var(--e2);font-size:var(--t-sm)">
-            <b>Prochaine action :</b> ${pr
-              ? `${pr.libelle} — ${fmtD(pr.date)}${pr.date < AUJ() ? ' <span style="color:var(--danger)">(en retard)</span>' : ''}`
-              : '<span style="color:var(--texte-3)">aucune</span>'}
           </p>
         </div>
         <button class="btn-icone fermer" aria-label="Fermer">${ico('croix')}</button>
       </div>
 
-      <div class="reporter">
-        <span>Recontacter dans</span>
-        ${[[7,'1 semaine'],[14,'2 semaines'],[30,'1 mois']].map(([n,l]) => `<button data-report="${n}">${l}</button>`).join('')}
-        <input type="date" id="r-date" aria-label="Recontacter le">
-        ${reportDe(p) ? '<button data-report="0" class="annuler">Annuler le report</button>' : ''}
+      <div class="f-carte f-statut">
+        <div>
+          <span class="f-lbl">État</span>
+          ${p.source !== 'locale' && p.idClient && ref.etatsContact.length
+            ? `<label class="sr-only" for="f-etat-contact">État</label>
+               <span class="etat-ligne"><span class="etat-pastille"><i style="background:${p.etatContactCouleur ?? 'var(--texte-3)'}"></i></span>
+               <select id="f-etat-contact">
+                 ${p.etatContact ? '' : `<option value="">${p.source === 'client' ? 'Client — non renseigné' : '— statut inconnu —'}</option>`}
+                 ${ref.etatsContact.map(e => `<option value="${e.code}" ${e.code === p.etatContact ? 'selected' : ''}>${e.libelle}</option>`).join('')}
+               </select></span>`
+            : `<b class="etat-pastille"><i style="background:${p.etatContactCouleur ?? 'var(--texte-3)'}"></i>${p.etatContactLibelle || 'statut inconnu'}</b>`}
+        </div>
+        <div><span class="f-lbl">Commercial</span><b>${p.commercial || '—'}</b></div>
+        ${p.tournee ? `<div><span class="f-lbl">Tournée</span><b>${p.tournee}</b></div>` : ''}
       </div>
+
+      <div class="f-carte f-prochaine ${pr && pr.date < AUJ() ? 'retard' : ''}">
+        <span class="f-lbl">Prochaine action</span>
+        ${pr
+          ? `<div class="f-quoi">${echap(pr.libelle)}</div>
+             <div class="f-quand">${fmtD(pr.date)}${pr.date < AUJ() ? ` · <b>${-jours(pr.date)} j de retard</b>` : jours(pr.date) === 0 ? ' · <b>aujourd’hui</b>' : ` · dans ${jours(pr.date)} j`}</div>`
+          : '<div class="f-quand">Aucune action prévue</div>'}
+        <div class="reporter">
+          <span>Recontacter dans</span>
+          ${[[7,'1 semaine'],[14,'2 semaines'],[30,'1 mois']].map(([n,l]) => `<button data-report="${n}">${l}</button>`).join('')}
+          <input type="date" id="r-date" aria-label="Recontacter le">
+          ${reportDe(p) ? '<button data-report="0" class="annuler">Annuler le report</button>' : ''}
+        </div>
+      </div>
+
       <div class="rapides">
         <button class="primaire" id="b-saisir">${ico('check')} Enregistrer une visite</button>
         ${tel ? `<a href="tel:${tel}">${ico('telephone')} Appeler</a>` : ''}
@@ -702,14 +726,13 @@
         <h3>Coordonnées</h3>
         <div class="paires">
           <div><span>Contact</span><b>${p.contact.nom || '—'}</b></div>
-          <div><span>Téléphone</span><b>${tel || '—'}</b></div>
-          <div><span>Email</span><b>${p.contact.email || '—'}</b></div>
+          <div><span>Téléphone</span><b>${tel ? `<a href="tel:${tel}">${tel}</a>` : '—'}</b></div>
+          <div><span>Email</span><b>${p.contact.email ? `<a href="mailto:${p.contact.email}">${p.contact.email}</a>` : '—'}</b></div>
           <div><span>Adresse</span><b>${p.adresse || p.ville || '—'}</b></div>
-          ${p.numero ? `<div><span>N° EasyBeer</span><b>${p.numero}</b></div>` : ''}
-          ${p.tournee ? `<div><span>Tournée</span><b>${p.tournee}</b></div>` : ''}
         </div>
-        ${p.note ? `<p class="carte-soustitre" style="margin-top:var(--e3)">« ${p.note} »</p>` : ''}
       </div>
+
+      ${p.note ? `<div class="bloc"><h3>Notes</h3><div class="f-notes">${String(p.note).replace(/^\s*«\s*|\s*»\s*$/g, '')}</div></div>` : ''}
 
       <div class="bloc" id="bloc-commande"></div>
 
