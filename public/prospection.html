@@ -15,668 +15,756 @@
   <script src="shell.js"></script>
   <script src="donnees.js"></script>
   <style>
-    /* ---- KPI ---- */
-    .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--e3); margin-bottom: var(--e5); }
-    @media (min-width: 700px)  { .kpi-grid { grid-template-columns: repeat(4, 1fr); } }
-    @media (min-width: 1280px) { .kpi-grid { grid-template-columns: repeat(7, 1fr); } }
-    .kpi { background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--r-md);
-           padding: var(--e3) var(--e4); box-shadow: var(--ombre-1); }
+    /* ---- Bandeau de synchronisation ---- */
+    .sync { display: flex; align-items: center; gap: var(--e2); flex-wrap: wrap;
+            font-size: var(--t-sm); padding: var(--e2) var(--e3); border-radius: var(--r-sm);
+            margin-bottom: var(--e4); border: 1px solid var(--bordure); background: var(--surface-2); }
+    .sync[data-etat="ok"]     { border-left: 3px solid var(--ok); }
+    .sync[data-etat="ancien"] { border-left: 3px solid var(--alerte); background: var(--alerte-doux); }
+    .sync[data-etat="erreur"] { border-left: 3px solid var(--danger); background: var(--danger-doux); }
+    .sync button { margin-left: auto; min-height: 28px; padding: 0 var(--e3); font-size: var(--t-sm);
+                   border: 1px solid var(--bordure-forte); background: var(--surface);
+                   color: var(--texte); border-radius: var(--r-sm); }
+
+    /* ---- Compteurs cliquables ---- */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+                gap: var(--e3); margin-bottom: var(--e5); }
+    .kpi { background: var(--surface); border: 1px solid var(--bordure);
+           border-top: 3px solid var(--bordure-forte); border-radius: var(--r-md);
+           padding: var(--e3) var(--e4); text-align: left; cursor: pointer; width: 100%; }
+    .kpi:hover { background: var(--surface-2); }
     .kpi .lbl { font-size: var(--t-xs); font-weight: 500; color: var(--texte-2); }
     .kpi .val { font-size: var(--t-kpi); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
-    .kpi.alerte-kpi .val { color: var(--danger); }
-
-    /* ---- À traiter ---- */
-    #a-traiter { border-left: 3px solid var(--accent); background: var(--accent-doux);
-                 border-radius: var(--r-sm); padding: var(--e3) var(--e4); margin-bottom: var(--e5);
-                 font-size: var(--t-sm); display: flex; flex-wrap: wrap; gap: var(--e1) var(--e4); }
-    #a-traiter strong { color: var(--accent-texte); }
-    #a-traiter button { border: none; background: none; color: var(--accent-texte);
-                        font-weight: 600; text-decoration: underline; font-size: var(--t-sm); min-height: 24px; }
+    .kpi.retard { border-top-color: var(--danger); } .kpi.retard .val { color: var(--danger); }
+    .kpi.jour   { border-top-color: var(--alerte); } .kpi.jour .val { color: var(--alerte); }
+    .kpi.visite { border-top-color: var(--info); }   .kpi.visite .val { color: var(--info); }
 
     /* ---- Filtres ---- */
-    .zone-filtres { display: flex; flex-wrap: wrap; gap: var(--e2) var(--e5); align-items: center; margin-bottom: var(--e5); }
-    .zone-filtres select { width: auto; min-height: var(--cible-min); font-size: var(--t-sm); }
+    .filtres { display: flex; flex-wrap: wrap; gap: var(--e2) var(--e3); align-items: flex-end;
+               margin-bottom: var(--e4); }
+    .filtres label { display: block; font-size: var(--t-xs); font-weight: 600;
+                     color: var(--texte-2); margin-bottom: 2px; }
+    .filtres select, .filtres input { min-height: var(--cible-min); font-size: var(--t-sm); width: auto; }
+    .filtres .rech { flex: 1 1 240px; }
+    .filtres .rech input { width: 100%; }
+    .btn-raz { min-height: var(--cible-min); padding: 0 var(--e3); font-size: var(--t-sm);
+               border: 1px solid var(--bordure-forte); background: var(--surface);
+               color: var(--texte); border-radius: var(--r-sm); }
 
-    /* ---- Kanban ---- */
-    #kanban { display: flex; gap: var(--e3); overflow-x: auto; padding-bottom: var(--e3);
-              align-items: flex-start; }
-    .col { flex: 0 0 250px; background: var(--surface-2); border: 1px solid var(--bordure);
-           border-radius: var(--r-md); padding: var(--e2); }
-    .col.survol { outline: 2px dashed var(--accent); outline-offset: -2px; }
-    .col-titre { display: flex; align-items: center; gap: var(--e2); padding: var(--e1) var(--e2) var(--e2);
-                 font-size: var(--t-xs); font-weight: 700; text-transform: uppercase;
-                 letter-spacing: 0.05em; color: var(--texte-2); }
-    .col-titre .nb { margin-left: auto; background: var(--surface-3); border-radius: var(--r-full);
-                     padding: 0 var(--e2); font-weight: 600; color: var(--texte-2); }
-    .col[data-st="gagne"] .col-titre { color: var(--ok); }
-    .col[data-st="perdu"] .col-titre { color: var(--texte-3); }
+    /* ---- Liste de prospects ---- */
+    .rang { display: grid; gap: var(--e1) var(--e3); align-items: center;
+            grid-template-columns: 1fr auto; width: 100%; text-align: left;
+            background: var(--surface); border: 1px solid var(--bordure);
+            border-left: 3px solid var(--bordure-forte);
+            border-radius: var(--r-sm); padding: var(--e3) var(--e4);
+            margin-bottom: var(--e2); cursor: pointer; }
+    .rang:hover { background: var(--surface-2); }
+    .rang.du     { border-left-color: var(--alerte); }
+    .rang.retard { border-left-color: var(--danger); }
+    .rang .nom { font-weight: 600; }
+    .rang .sous { font-size: var(--t-sm); color: var(--texte-2); }
+    .rang .droite { text-align: right; font-size: var(--t-sm); color: var(--texte-2); white-space: nowrap; }
+    .rang .echeance { font-weight: 600; }
+    .rang .echeance.retard { color: var(--danger); }
+    .rang .echeance.du { color: var(--alerte); }
+    @media (max-width: 640px) {
+      .rang { grid-template-columns: 1fr; }
+      .rang .droite { text-align: left; white-space: normal; }
+    }
 
-    /* ---- Carte prospect ---- */
-    .pcarte { background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--r-sm);
-              padding: var(--e3); margin-bottom: var(--e2); cursor: grab; box-shadow: var(--ombre-1);
-              transition: box-shadow var(--v-rapide) var(--courbe); }
-    .pcarte:hover { box-shadow: var(--ombre-2); }
-    .pcarte.trainee { opacity: 0.4; }
-    .pcarte .pnom { font-weight: 600; font-size: var(--t-sm); display: flex; align-items: center; gap: var(--e2); }
-    .pcarte .pmeta { font-size: var(--t-xs); color: var(--texte-3); margin-top: 2px; }
-    .pcarte .pbas { display: flex; align-items: center; gap: var(--e2); margin-top: var(--e2);
-                    font-size: var(--t-xs); color: var(--texte-2); flex-wrap: wrap; }
-    .pastille { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .pastille.chaud { background: var(--danger); }
-    .pastille.tiede { background: var(--accent); }
-    .pastille.froid { background: var(--info); }
-    .tag { font-size: 0.6875rem; font-weight: 600; border-radius: var(--r-full); padding: 1px var(--e2); }
-    .tag.retard { background: var(--danger-doux); color: var(--danger); }
-    .tag.auj { background: var(--accent-doux); color: var(--accent-texte); }
-    .tag.sans { background: var(--surface-3); color: var(--texte-3); }
-    .tag.rdv { background: var(--info-doux); color: var(--info); }
-    .resp-puce { margin-left: auto; background: var(--surface-3); border-radius: var(--r-full);
-                 padding: 0 var(--e2); font-weight: 600; }
+    .etat-pastille { display: inline-flex; align-items: center; gap: var(--e1);
+                     font-size: var(--t-xs); }
+    .etat-pastille i { width: 8px; height: 8px; border-radius: 50%;
+                       background: var(--texte-3); flex-shrink: 0; }
+    .marque-locale { font-size: 0.6875rem; font-weight: 600; border-radius: var(--r-full);
+                     padding: 1px var(--e2); background: var(--surface-3); color: var(--texte-2); }
 
-    /* ---- Table ---- */
-    #vue-liste .table-wrap { margin-top: var(--e4); }
-    #vue-liste td, #vue-liste th { white-space: nowrap; }
-    #vue-liste td:first-child { font-weight: 600; cursor: pointer; }
+    .vide, .chargement, .erreur-bloc {
+      padding: var(--e6) var(--e4); text-align: center; color: var(--texte-2);
+      border: 1px dashed var(--bordure); border-radius: var(--r-md); }
+    .erreur-bloc { border-style: solid; border-color: var(--danger);
+                   background: var(--danger-doux); color: var(--danger); text-align: left; }
 
-    /* ---- Relances ---- */
-    .groupe-relance h3 { margin: var(--e5) 0 var(--e3); font-size: var(--t-md); display: flex; gap: var(--e2); align-items: center; }
-    .groupe-relance h3 .nb { color: var(--texte-3); font-weight: 500; }
-    .ligne-rel { display: flex; align-items: center; gap: var(--e3); background: var(--surface);
-                 border: 1px solid var(--bordure); border-radius: var(--r-sm); padding: var(--e3) var(--e4);
-                 margin-bottom: var(--e2); flex-wrap: wrap; }
-    .ligne-rel.retard { border-left: 3px solid var(--danger); }
-    .ligne-rel .qui { font-weight: 600; cursor: pointer; }
-    .ligne-rel .quoi { font-size: var(--t-sm); color: var(--texte-2); }
-    .ligne-rel .btns { margin-left: auto; display: flex; gap: var(--e2); }
+    .groupe-t { margin-bottom: var(--e5); }
+    .groupe-t h3 { font-size: var(--t-xs); font-weight: 700; text-transform: uppercase;
+                   letter-spacing: 0.05em; color: var(--texte-2); margin-bottom: var(--e2);
+                   display: flex; gap: var(--e2); align-items: center; }
+    .groupe-t h3 .nb { color: var(--texte-3); font-weight: 500; }
 
-    /* ---- Stats ---- */
-    .funnel { display: flex; flex-direction: column; gap: var(--e2); margin: var(--e4) 0 var(--e5); }
-    .funnel .etape { display: grid; grid-template-columns: 130px 1fr 40px; gap: var(--e3);
-                     align-items: center; font-size: var(--t-sm); }
-    .funnel .barre { height: 22px; background: var(--accent); border-radius: var(--r-sm); min-width: 3px; }
-    .funnel .etape:nth-child(even) .barre { background: var(--g2); }
-    .stats-grille { display: grid; gap: var(--e4); grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-    .stat-bloc { background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--r-md);
-                 padding: var(--e4); }
-    .stat-bloc h3 { font-size: var(--t-sm); margin-bottom: var(--e3); }
-    .stat-bloc li { display: flex; justify-content: space-between; font-size: var(--t-sm);
-                    color: var(--texte-2); padding: var(--e1) 0; list-style: none; }
-    .stat-bloc li strong { color: var(--texte); }
-
-    /* ---- Fiche (modale) ---- */
-    #fiche-fond { position: fixed; inset: 0; background: rgba(10,10,12,0.45); display: none;
-                  align-items: flex-start; justify-content: center; padding: var(--e5); z-index: 60;
-                  overflow-y: auto; }
-    #fiche-fond[data-ouvert] { display: flex; }
-    #fiche { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--ombre-3);
-             width: min(680px, 100%); padding: var(--e5); margin: var(--e5) 0; }
-    #fiche .haut { display: flex; align-items: flex-start; gap: var(--e3); flex-wrap: wrap; }
+    /* ---- Fiche ---- */
+    #fond { position: fixed; inset: 0; background: rgba(10,10,12,0.45); display: none;
+            justify-content: flex-end; z-index: 60; }
+    #fond[data-ouvert] { display: flex; }
+    #fiche { background: var(--surface); width: min(560px, 100%); height: 100dvh;
+             overflow-y: auto; padding: var(--e5); box-shadow: var(--ombre-3); }
+    #fiche .tete { display: flex; align-items: flex-start; gap: var(--e3); }
     #fiche h2 { font-size: var(--t-xl); }
     #fiche .fermer { margin-left: auto; }
-    .fiche-grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                    gap: var(--e3); margin: var(--e4) 0; }
-    .fiche-grille label { display: block; font-size: var(--t-xs); font-weight: 600;
-                          color: var(--texte-2); margin-bottom: 2px; }
-    .fiche-grille input, .fiche-grille select { min-height: var(--cible-min); font-size: var(--t-sm); }
-    .actions-rapides { display: flex; flex-wrap: wrap; gap: var(--e2); margin: var(--e4) 0; }
-    .actions-rapides a, .actions-rapides button { display: inline-flex; align-items: center; gap: var(--e2);
-      min-height: var(--cible-min); padding: 0 var(--e3); font-size: var(--t-sm);
+    .rapides { display: flex; flex-wrap: wrap; gap: var(--e2); margin: var(--e4) 0; }
+    .rapides a, .rapides button {
+      min-height: var(--cible); padding: 0 var(--e3); font-size: var(--t-sm);
       border: 1px solid var(--bordure-forte); border-radius: var(--r-sm);
-      background: var(--surface); color: var(--texte); text-decoration: none; }
-    .actions-rapides .gagne { background: var(--ok-doux); color: var(--ok); border-color: transparent; font-weight: 600; }
-    .actions-rapides .perdu-b { background: var(--surface-3); color: var(--texte-2); }
-    .prochaine { background: var(--accent-doux); border-radius: var(--r-sm); padding: var(--e3) var(--e4);
-                 display: flex; align-items: center; gap: var(--e3); flex-wrap: wrap; font-size: var(--t-sm); }
-    .prochaine strong { color: var(--accent-texte); }
-    .timeline { margin-top: var(--e4); border-left: 2px solid var(--bordure); padding-left: var(--e4);
-                display: flex; flex-direction: column; gap: var(--e3); max-height: 320px; overflow-y: auto; }
-    .evenement { position: relative; font-size: var(--t-sm); }
-    .evenement::before { content: ''; position: absolute; left: calc(-1 * var(--e4) - 5px); top: 6px;
-                         width: 8px; height: 8px; border-radius: 50%; background: var(--bordure-forte); }
-    .evenement .edate { font-weight: 600; }
-    .evenement .equi { color: var(--texte-3); }
-    .evenement .enote { color: var(--texte-2); }
-    .ajout-note { display: flex; gap: var(--e2); margin-top: var(--e3); flex-wrap: wrap; }
-    .ajout-note select, .ajout-note input[type="text"] { min-height: var(--cible-min); font-size: var(--t-sm); }
-    .ajout-note input[type="text"] { flex: 1 1 200px; }
+      background: var(--surface); color: var(--texte); text-decoration: none;
+      display: inline-flex; align-items: center; gap: var(--e2); }
+    .rapides .primaire { background: var(--accent); border-color: var(--accent);
+                         color: var(--sur-accent); font-weight: 600; }
+    .bloc { border-top: 1px solid var(--bordure); padding-top: var(--e4); margin-top: var(--e4); }
+    .bloc h3 { font-size: var(--t-sm); margin-bottom: var(--e3); }
+    .paires { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: var(--e3); }
+    .paires div span { display: block; font-size: var(--t-xs); color: var(--texte-2); }
+    .paires div b { font-weight: 600; }
+    .chrono { display: flex; flex-direction: column; gap: var(--e3);
+              border-left: 2px solid var(--bordure); padding-left: var(--e4); }
+    .evt { position: relative; font-size: var(--t-sm); }
+    .evt::before { content: ''; position: absolute; left: calc(-1 * var(--e4) - 5px); top: 6px;
+                   width: 8px; height: 8px; border-radius: 50%; background: var(--bordure-forte); }
+    .evt .q { font-weight: 600; }
+    .evt .d { color: var(--texte-3); font-size: var(--t-xs); }
 
-    /* ---- Ajout rapide ---- */
-    #ajout { display: none; gap: var(--e2); flex-wrap: wrap; background: var(--surface);
-             border: 1px solid var(--bordure); border-radius: var(--r-md); padding: var(--e3);
-             margin-bottom: var(--e4); }
-    #ajout[data-ouvert] { display: flex; }
-    #ajout input, #ajout select { min-height: var(--cible-min); font-size: var(--t-sm); width: auto; flex: 1 1 130px; }
+    /* ---- Saisie rapide d'une interaction ---- */
+    #saisie { display: none; flex-direction: column; gap: var(--e3); margin-top: var(--e3); }
+    #saisie[data-ouvert] { display: flex; }
+    #saisie .ligne { display: flex; gap: var(--e2); flex-wrap: wrap; align-items: flex-end; }
+    #saisie select, #saisie input { min-height: var(--cible-min); font-size: var(--t-sm); }
+    #saisie .note { flex: 1 1 100%; }
+    .msg { font-size: var(--t-sm); min-height: 1.3em; }
+    .msg.ok { color: var(--ok); } .msg.ko { color: var(--danger); }
 
-    .note-stockage { font-size: var(--t-xs); color: var(--texte-3); margin-top: var(--e5); }
+    /* ---- Tournées ---- */
+    .secteur { background: var(--surface-2); border: 1px solid var(--bordure);
+               border-radius: var(--r-md); padding: var(--e3); margin-bottom: var(--e3); }
+    .secteur h3 { font-size: var(--t-sm); display: flex; gap: var(--e2); align-items: center;
+                  margin-bottom: var(--e2); }
+    .secteur h3 .nb { margin-left: auto; color: var(--texte-3); font-weight: 500; font-size: var(--t-xs); }
+    .arret { display: flex; align-items: center; gap: var(--e2); background: var(--surface);
+             border: 1px solid var(--bordure); border-radius: var(--r-sm);
+             padding: var(--e2) var(--e3); margin-bottom: var(--e1); font-size: var(--t-sm); }
+    .arret .poignee { cursor: grab; color: var(--texte-3); }
+    .arret .ville { color: var(--texte-2); font-size: var(--t-xs); }
+    .arret .fin { margin-left: auto; display: flex; gap: var(--e2); }
+    .arret .fin a, .arret .fin button { min-height: 28px; padding: 0 var(--e2); font-size: var(--t-xs);
+      border: 1px solid var(--bordure); border-radius: var(--r-sm);
+      background: var(--surface); color: var(--texte); text-decoration: none;
+      display: inline-flex; align-items: center; }
+    .arret.faite { opacity: 0.55; }
+    .arret.faite .nom { text-decoration: line-through; }
+
+    @media print {
+      .tabs, .filtres, .sync, .kpi-grid, .rapides, #saisie { display: none !important; }
+    }
   </style>
 </head>
 <body>
   <main class="large">
-    <div class="kpi-grid" id="kpis"></div>
-    <div id="a-traiter" style="display:none"></div>
-
-    <div class="tabs" id="tabs" role="tablist" style="margin-bottom:var(--e5)">
-      <button data-vue="kanban" class="actif">Pipeline</button>
-      <button data-vue="liste">Liste</button>
-      <button data-vue="relances">À relancer</button>
-      <button data-vue="stats">Statistiques</button>
+    <div class="tabs" id="tabs" role="tablist">
+      <button data-vue="aujourdhui" class="actif">Aujourd'hui</button>
+      <button data-vue="prospects">Prospects</button>
+      <button data-vue="tournees">Tournées</button>
     </div>
 
-    <div class="zone-filtres">
-      <div class="grp-filtre" id="filtres-rapides">
-        <button data-f="tous" class="actif">Tous</button>
-        <button data-f="miens">Mes prospects</button>
-        <button data-f="auj">À relancer aujourd'hui</button>
-        <button data-f="retard">En retard</button>
-        <button data-f="chauds">Chauds</button>
-        <button data-f="sans">Sans prochaine action</button>
-        <button data-f="nonassignes">Non assignés</button>
+    <div class="sync" id="sync" data-etat="ok">Chargement…</div>
+
+    <!-- ============ AUJOURD'HUI ============ -->
+    <div class="vue" id="vue-aujourdhui">
+      <div class="kpi-grid" id="kpis"></div>
+      <div id="listes-jour"></div>
+    </div>
+
+    <!-- ============ PROSPECTS ============ -->
+    <div class="vue" id="vue-prospects" style="display:none">
+      <div class="filtres" id="filtres">
+        <div class="rech">
+          <label for="f-q">Rechercher</label>
+          <input type="search" id="f-q" placeholder="Établissement, contact, ville…">
+        </div>
+        <div><label for="f-etat">Statut</label><select id="f-etat"><option value="">Tous</option></select></div>
+        <div><label for="f-com">Commercial</label><select id="f-com"><option value="">Tous</option></select></div>
+        <div><label for="f-ville">Ville</label><select id="f-ville"><option value="">Toutes</option></select></div>
+        <div><label for="f-type">Catégorie</label><select id="f-type"><option value="">Toutes</option></select></div>
+        <div><label for="f-tri">Tri</label><select id="f-tri">
+          <option value="nom">Nom</option>
+          <option value="echeance">Échéance</option>
+          <option value="ville">Ville</option>
+        </select></div>
+        <button class="btn-raz" id="btn-raz">Réinitialiser</button>
       </div>
-      <label class="intitule-grp">Commercial
-        <select id="f-resp"><option value="">Tous</option></select>
-      </label>
-      <label class="intitule-grp">Type
-        <select id="f-type"><option value="">Tous</option></select>
-      </label>
-      <label class="intitule-grp">Ville
-        <select id="f-ville"><option value="">Toutes</option></select>
-      </label>
-      <input type="search" id="f-rech" class="champ-recherche" placeholder="Rechercher…" style="flex:0 1 200px">
-      <button class="secondary" id="btn-ajout" style="min-height:var(--cible-min)">+ Nouveau prospect</button>
+      <p id="compte" class="carte-soustitre" style="margin-bottom:var(--e3)"></p>
+      <div id="liste-prospects"></div>
+      <div style="text-align:center;margin-top:var(--e4)">
+        <button class="secondary" id="btn-plus" style="display:none">Afficher 50 de plus</button>
+      </div>
     </div>
 
-    <form id="ajout">
-      <input required name="nom" placeholder="Nom de l'établissement *">
-      <select name="type"></select>
-      <input name="ville" placeholder="Ville">
-      <input name="tel" placeholder="Téléphone">
-      <select name="resp"></select>
-      <select name="priorite">
-        <option value="tiede">Tiède</option><option value="chaud">Chaud</option><option value="froid">Froid</option>
-      </select>
-      <select name="potentiel">
-        <option value="moyen">Potentiel moyen</option><option value="fort">Potentiel fort</option><option value="faible">Potentiel faible</option>
-      </select>
-      <button type="submit" class="primary" style="min-height:var(--cible-min)">Ajouter</button>
-    </form>
-
-    <div id="vue-kanban"><div id="kanban"></div></div>
-    <div id="vue-liste" style="display:none">
-      <div class="table-wrap"><table class="table-liste" id="tbl">
-        <thead><tr><th>Prospect</th><th>Type</th><th>Ville</th><th>Téléphone</th><th>Commercial</th>
-        <th>Statut</th><th>Priorité</th><th>Dernier contact</th><th>Prochaine action</th><th>Potentiel</th></tr></thead>
-        <tbody></tbody></table></div>
+    <!-- ============ TOURNÉES ============ -->
+    <div class="vue" id="vue-tournees" style="display:none">
+      <div class="filtres">
+        <div><label for="t-date">Date</label><input type="date" id="t-date"></div>
+        <div><label for="t-com">Commercial</label><select id="t-com"><option value="">—</option></select></div>
+        <div><label for="t-ville">Secteur</label><select id="t-ville"><option value="">Tous</option></select></div>
+        <button class="btn-raz" id="t-vider">Vider la sélection</button>
+      </div>
+      <p class="carte-soustitre" style="margin-bottom:var(--e3)">
+        Les prospects sont regroupés par commune. C'est un regroupement géographique,
+        pas un calcul d'itinéraire optimal : l'ordre des arrêts reste le vôtre.
+      </p>
+      <div id="tournee-sel"></div>
+      <div id="tournee-dispo"></div>
     </div>
-    <div id="vue-relances" style="display:none"></div>
-    <div id="vue-stats" style="display:none"></div>
-
-    <p class="note-stockage">
-      Les prospects sont enregistrés dans ce navigateur.
-      <button class="btn-tertiaire" id="btn-export" style="min-height:24px">Exporter (JSON)</button> ·
-      <label class="btn-tertiaire" style="cursor:pointer">Importer<input type="file" id="btn-import" accept=".json" hidden></label>
-    </p>
   </main>
 
-  <!-- Fiche prospect -->
-  <div id="fiche-fond" role="dialog" aria-modal="true">
-    <div id="fiche"></div>
-  </div>
+  <div id="fond" role="dialog" aria-modal="true" aria-labelledby="fiche-titre"><div id="fiche"></div></div>
 
   <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    monterCoquille({ titre: 'Prospection', actif: '/prospection.html' });
-    init();
+  // ==========================================================================
+  //  Source de référence : EasyBeer.
+  //  Les fiches saisies dans l'ancien module local sont conservées et
+  //  affichées, marquées « locale » tant qu'elles ne sont pas rapprochées.
+  //  Aucun email ni message n'est envoyé automatiquement.
+  // ==========================================================================
+  let ref = { etatsContact: [], typesAction: [], etatsAction: [], utilisateurs: [] };
+  let prospects = [];          // EasyBeer
+  let actions = [];            // EasyBeer
+  let erreurs = { prospects: null, actions: null };
+  let synchroniseLe = null;
+  let vue = 'aujourdhui';
+  let limite = 50;
+
+  // Chaque magasin redessine la vue qui l'affiche : sans cela, ajouter un
+  // arrêt ou modifier une fiche locale ne se voyait qu'au rechargement.
+  const locales = creerMagasin('prospects', { surChangement: () => rendre() });
+  const tournee = creerMagasin('visites', {
+    surChangement: () => { if (vue === 'tournees') rendreTournees(); } });
+
+  const AUJ = () => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); };
+  const JOUR = 86400000;
+  const fmtD = t => t ? new Date(t).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' }) : '—';
+  const jours = t => Math.round((t - AUJ()) / JOUR);
+  const norm = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+
+  // --- Filtres conservés au retour depuis une fiche (et partageables) -------
+  const CLE_F = 'lgdm-prospection-filtres';
+  function lireFiltres() {
+    const url = new URLSearchParams(location.hash.slice(1));
+    if ([...url.keys()].length) return Object.fromEntries(url);
+    try { return JSON.parse(sessionStorage.getItem(CLE_F)) ?? {}; } catch { return {}; }
+  }
+  function ecrireFiltres(f) {
+    const propres = Object.fromEntries(Object.entries(f).filter(([, v]) => v));
+    try { sessionStorage.setItem(CLE_F, JSON.stringify(propres)); } catch {}
+    const h = new URLSearchParams(propres).toString();
+    history.replaceState(null, '', h ? '#' + h : location.pathname);
+  }
+  const filtresCourants = () => ({
+    q: document.getElementById('f-q').value.trim(),
+    etat: document.getElementById('f-etat').value,
+    com: document.getElementById('f-com').value,
+    ville: document.getElementById('f-ville').value,
+    type: document.getElementById('f-type').value,
+    tri: document.getElementById('f-tri').value,
   });
 
-  // ====================  Données  ====================
-  const CLE = 'lgdm-prospects';
-  const CLE_MOI = 'lgdm-prospect-moi';
-  const STATUTS = [
-    ['contacter', 'À contacter'], ['premier', 'Premier contact'], ['relancer', 'À relancer'],
-    ['interesse', 'Intéressé'], ['rdv', 'RDV / Dégustation'], ['proposition', 'Proposition'],
-    ['negociation', 'Négociation'], ['gagne', 'Gagné'], ['perdu', 'Perdu'],
-  ];
-  const LIB_STATUT = Object.fromEntries(STATUTS);
-  const TYPES = ['Bar', 'Restaurant', 'Caviste', 'Épicerie', 'Hôtel', 'Association', 'Autre'];
-  const EQUIPE_DEFAUT = ['Kyllian', 'Sophie', 'Martial'];
-  const SOURCES = ['Passage terrain', 'Recommandation', 'Instagram', 'Google Maps', 'Salon', 'Ancien contact', 'Inbound', 'Autre'];
-  const MOTIFS = ['Pas intéressé', 'Prix', 'Déjà fournisseur', 'Pas le bon moment', 'Pas de réponse', 'Fermeture', 'Hors cible', 'Autre'];
-  const TYPES_ACTION = ['Appel', 'Email', 'WhatsApp', 'Visite', 'Rendez-vous', 'Dégustation', 'Proposition envoyée', 'Note interne'];
+  // --- Chargement ----------------------------------------------------------
+  async function charger() {
+    majSync('chargement');
+    const [r1, r2, r3] = await Promise.allSettled([
+      fetch('/api/prospection/referentiels').then(verifier),
+      fetch('/api/prospection/prospects').then(verifier),
+      fetch('/api/prospection/actions').then(verifier),
+    ]);
+    if (r1.status === 'fulfilled') ref = r1.value;
+    if (r2.status === 'fulfilled') {
+      prospects = r2.value.prospects ?? [];
+      synchroniseLe = r2.value.synchroniseLe ?? Date.now();
+      erreurs.prospects = null;
+    } else erreurs.prospects = r2.reason.message;
+    if (r3.status === 'fulfilled') { actions = r3.value.actions ?? []; erreurs.actions = null; }
+    else erreurs.actions = r3.reason.message;
 
-  // Partagé avec l'équipe quand la base est configurée, local sinon.
-  const magasin = creerMagasin('prospects', { surChangement: () => toutRendre() });
-  let prospects = magasin.tout();
-  // sauver(p) écrit la fiche modifiée ; sans argument, on se contente de
-  // réafficher (la mutation a déjà été faite sur l'objet du magasin).
-  const sauver = p => { if (p) magasin.enregistrer(p); else toutRendre(); };
-
-  const AUJ = () => new Date().toISOString().slice(0, 10);
-  const fmtD = d => d ? new Date(d + (d.length === 10 ? 'T12:00' : '')).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—';
-  const joursDepuis = d => d ? Math.floor((Date.now() - new Date(d).getTime()) / 864e5) : null;
-  const actif = p => p.statut !== 'gagne' && p.statut !== 'perdu';
-  const enRetard = p => actif(p) && p.prochaine?.date && p.prochaine.date < AUJ();
-  const aujourdhui = p => actif(p) && p.prochaine?.date === AUJ();
-  const equipe = () => [...new Set([...EQUIPE_DEFAUT, ...prospects.map(p => p.resp).filter(Boolean)])];
-  const moi = () => localStorage.getItem(CLE_MOI) || '';
-
-  // ====================  Filtres  ====================
-  let filtre = 'tous', vue = 'kanban';
-  function visibles() {
-    const fr = document.getElementById('f-resp').value;
-    const ft = document.getElementById('f-type').value;
-    const fv = document.getElementById('f-ville').value;
-    const q = document.getElementById('f-rech').value.trim().toLowerCase();
-    return prospects.filter(p => {
-      if (filtre === 'miens' && p.resp !== moi()) return false;
-      if (filtre === 'auj' && !aujourdhui(p)) return false;
-      if (filtre === 'retard' && !enRetard(p)) return false;
-      if (filtre === 'chauds' && !(actif(p) && p.priorite === 'chaud')) return false;
-      if (filtre === 'sans' && !(actif(p) && !p.prochaine?.date)) return false;
-      if (filtre === 'nonassignes' && p.resp) return false;
-      if (fr && p.resp !== fr) return false;
-      if (ft && p.type !== ft) return false;
-      if (fv && p.ville !== fv) return false;
-      if (q && !`${p.nom} ${p.ville ?? ''} ${p.resp ?? ''}`.toLowerCase().includes(q)) return false;
-      return true;
-    });
+    remplirSelects();
+    appliquerFiltresSauvegardes();
+    majSync();
+    rendre();
+  }
+  async function verifier(r) {
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error ?? `HTTP ${r.status}`);
+    return d;
   }
 
-  // ====================  KPI + À traiter  ====================
-  function rendreKpis() {
-    const actifs = prospects.filter(actif);
-    const gagnes = prospects.filter(p => p.statut === 'gagne');
-    const perdus = prospects.filter(p => p.statut === 'perdu');
-    const clos = gagnes.length + perdus.length;
-    const k = [
-      ['Prospects actifs', actifs.length],
-      ["À contacter aujourd'hui", prospects.filter(aujourdhui).length],
-      ['Relances en retard', prospects.filter(enRetard).length, 'alerte'],
-      ['RDV prévus', actifs.filter(p => p.statut === 'rdv').length],
-      ['Prospects chauds', actifs.filter(p => p.priorite === 'chaud').length],
-      ['Clients gagnés', gagnes.length],
-      ['Taux de conversion', clos ? Math.round(gagnes.length / clos * 100) + ' %' : '—'],
-    ];
-    document.getElementById('kpis').innerHTML = k.map(([l, v, a]) =>
-      `<div class="kpi${a && v > 0 ? ' alerte-kpi' : ''}"><div class="lbl">${l}</div><div class="val">${v}</div></div>`).join('');
-
-    const oublies = prospects.filter(p => actif(p) && (joursDepuis(p.dernierContact) ?? 99) > 14 && !p.prochaine?.date);
-    const chaudsSans = prospects.filter(p => actif(p) && p.priorite === 'chaud' && !p.prochaine?.date);
-    const retards = prospects.filter(enRetard);
-    const bloc = document.getElementById('a-traiter');
-    const total = new Set([...oublies, ...chaudsSans, ...retards].map(p => p.id)).size;
-    if (!total) { bloc.style.display = 'none'; }
-    else {
-      bloc.style.display = 'flex';
-      bloc.innerHTML = `<strong>${total} prospect${total > 1 ? 's' : ''} à traiter en priorité :</strong>`
-        + (retards.length ? ` ${retards.length} relance${retards.length > 1 ? 's' : ''} en retard <button data-vaf="retard">voir</button> ·` : '')
-        + (chaudsSans.length ? ` ${chaudsSans.length} chaud${chaudsSans.length > 1 ? 's' : ''} sans prochaine action <button data-vaf="sans">voir</button> ·` : '')
-        + (oublies.length ? ` ${oublies.length} sans contact depuis 14 j` : '');
+  function majSync(etat) {
+    const el = document.getElementById('sync');
+    if (etat === 'chargement') {
+      el.dataset.etat = 'ok';
+      el.innerHTML = '<span class="loader"></span> Lecture de la prospection EasyBeer…';
+      return;
     }
+    const enPanne = erreurs.prospects || erreurs.actions;
+    const ancien = synchroniseLe && Date.now() - synchroniseLe > 30 * 60000;
+    el.dataset.etat = enPanne ? 'erreur' : ancien ? 'ancien' : 'ok';
+    el.innerHTML = (enPanne
+        ? `${ico('alerte')} EasyBeer indisponible — ${erreurs.prospects ?? erreurs.actions}. `
+          + `Les fiches locales restent consultables et modifiables.`
+        : `${ico('check')} ${prospects.length} prospects EasyBeer`
+          + (locales.tout().length ? ` · ${locales.tout().length} fiche(s) locale(s)` : '')
+          + ` · synchronisé ${synchroniseLe ? 'le ' + new Date(synchroniseLe).toLocaleString('fr-FR') : ''}`)
+      + '<button id="btn-resync">Actualiser</button>';
+    document.getElementById('btn-resync').addEventListener('click', charger);
   }
 
-  // ====================  Kanban  ====================
-  function rendreKanban() {
-    const el = document.getElementById('kanban');
-    const vs = visibles();
-    el.innerHTML = STATUTS.map(([st, lib]) => {
-      const cartes = vs.filter(p => p.statut === st);
-      return `<div class="col" data-st="${st}">
-        <div class="col-titre">${lib}<span class="nb">${cartes.length}</span></div>
-        ${cartes.map(carteProspect).join('')}
-      </div>`;
-    }).join('');
+  // --- Modèle unifié : EasyBeer + fiches locales ---------------------------
+  function tous() {
+    const ext = prospects.map(p => ({ ...p, source: 'easybeer' }));
+    const loc = locales.tout().map(l => ({
+      idClient: null, source: 'locale', cleLocale: l.id, numero: '',
+      nom: l.nom ?? '', ville: l.ville ?? '', adresse: '', type: l.type ?? '',
+      commercial: l.resp ?? '', etatContact: null,
+      etatContactLibelle: ({ contacter:'À contacter', premier:'Premier contact', relancer:'À relancer',
+        interesse:'Intéressé', rdv:'RDV', proposition:'Proposition', negociation:'Négociation',
+        gagne:'Gagné', perdu:'Perdu' })[l.statut] ?? '',
+      contact: { nom: l.contact ?? '', telephone: l.tel ?? '', email: l.email ?? '' },
+      note: l.note ?? '', nombreActions: (l.historique ?? []).length,
+      prochaine: l.prochaine ?? null,
+    }));
+    return [...ext, ...loc];
   }
 
-  function carteProspect(p) {
-    const tags = [];
-    if (enRetard(p)) tags.push('<span class="tag retard">Relance en retard</span>');
-    else if (aujourdhui(p)) tags.push('<span class="tag auj">À relancer aujourd’hui</span>');
-    if (actif(p) && p.statut === 'rdv' && p.prochaine?.date) tags.push(`<span class="tag rdv">RDV ${fmtD(p.prochaine.date)}</span>`);
-    if (actif(p) && !p.prochaine?.date) tags.push('<span class="tag sans">Aucune action prévue</span>');
-    return `<div class="pcarte" draggable="true" data-id="${p.id}" role="button" tabindex="0">
-      <div class="pnom"><span class="pastille ${p.priorite ?? 'tiede'}"></span>${p.nom}</div>
-      <div class="pmeta">${[p.type, p.ville].filter(Boolean).join(' · ') || '&nbsp;'}</div>
-      <div class="pbas">
-        ${p.dernierContact ? `Dernier contact : ${fmtD(p.dernierContact)}` : 'Jamais contacté'}
-        ${tags.join('')}
-        ${p.resp ? `<span class="resp-puce">${p.resp}</span>` : ''}
-      </div>
-    </div>`;
+  // Prochaine action d'un prospect : la plus proche parmi celles à faire
+  function prochaineDe(p) {
+    if (p.source === 'locale') {
+      return p.prochaine?.date
+        ? { date: new Date(p.prochaine.date + 'T12:00').getTime(), libelle: p.prochaine.quoi ?? 'Relance' }
+        : null;
+    }
+    const aFaire = actions.filter(a => a.idClient === p.idClient && a.etat !== 'TERMINE' && a.date);
+    if (!aFaire.length) return null;
+    const a = aFaire.sort((x, y) => x.date - y.date)[0];
+    return { date: a.date, libelle: a.libelle || a.typeLibelle || 'Action', idAction: a.idAction };
   }
 
-  // Drag & drop natif entre colonnes
-  let idTraine = null;
-  document.getElementById('kanban').addEventListener('dragstart', e => {
-    const c = e.target.closest('.pcarte'); if (!c) return;
-    idTraine = parseInt(c.dataset.id); c.classList.add('trainee');
-    e.dataTransfer.effectAllowed = 'move';
-  });
-  document.getElementById('kanban').addEventListener('dragend', () =>
-    document.querySelectorAll('.trainee, .survol').forEach(x => x.classList.remove('trainee', 'survol')));
-  document.getElementById('kanban').addEventListener('dragover', e => {
-    const col = e.target.closest('.col'); if (!col) return;
-    e.preventDefault();
-    document.querySelectorAll('.col.survol').forEach(x => x.classList.remove('survol'));
-    col.classList.add('survol');
-  });
-  document.getElementById('kanban').addEventListener('drop', e => {
-    const col = e.target.closest('.col'); if (!col || idTraine === null) return;
-    e.preventDefault();
-    changerStatut(prospects.find(p => p.id === idTraine), col.dataset.st);
-  });
-  document.getElementById('kanban').addEventListener('click', e => {
-    const c = e.target.closest('.pcarte'); if (c) ouvrirFiche(parseInt(c.dataset.id));
-  });
-
-  function changerStatut(p, st) {
-    if (!p || p.statut === st) return;
-    if (st === 'perdu') { marquerPerdu(p); return; }
-    if (st === 'gagne') { marquerGagne(p); return; }
-    journal(p, 'Note interne', `Statut : ${LIB_STATUT[p.statut]} → ${LIB_STATUT[st]}`);
-    p.statut = st; sauver(p);
-  }
-  function marquerGagne(p) {
-    journal(p, 'Note interne', 'Prospect gagné — devient client 🎉');
-    p.statut = 'gagne'; p.gagneLe = AUJ(); p.prochaine = null; sauver(p);
-  }
-  function marquerPerdu(p) {
-    const motif = prompt('Motif de perte :\n' + MOTIFS.map((m, i) => `${i + 1}. ${m}`).join('\n'), '1');
-    if (motif === null) { toutRendre(); return; }
-    p.motifPerte = MOTIFS[parseInt(motif) - 1] ?? motif;
-    journal(p, 'Note interne', 'Prospect perdu — ' + p.motifPerte);
-    p.statut = 'perdu'; p.prochaine = null; sauver(p);
-  }
-  function journal(p, type, note) {
-    (p.historique ??= []).unshift({ t: Date.now(), qui: moi() || '—', type, note });
-    if (type !== 'Note interne') p.dernierContact = AUJ();
+  // --- Rendu ---------------------------------------------------------------
+  function rendre() {
+    if (vue === 'aujourdhui') rendreJour();
+    if (vue === 'prospects') rendreListe();
+    if (vue === 'tournees') rendreTournees();
   }
 
-  // ====================  Liste  ====================
-  function rendreListe() {
-    const tb = document.querySelector('#tbl tbody');
-    tb.innerHTML = visibles().map(p => `<tr data-id="${p.id}">
-      <td data-libelle="Prospect">${p.nom}</td>
-      <td data-libelle="Type">${p.type ?? '—'}</td>
-      <td data-libelle="Ville">${p.ville ?? '—'}</td>
-      <td data-libelle="Téléphone">${p.tel ?? '—'}</td>
-      <td data-libelle="Commercial">${p.resp ?? '—'}</td>
-      <td data-libelle="Statut">${LIB_STATUT[p.statut]}</td>
-      <td data-libelle="Priorité"><span class="pastille ${p.priorite ?? 'tiede'}" style="display:inline-block"></span> ${{ chaud: 'Chaud', tiede: 'Tiède', froid: 'Froid' }[p.priorite] ?? '—'}</td>
-      <td data-libelle="Dernier contact">${fmtD(p.dernierContact)}</td>
-      <td data-libelle="Prochaine action">${p.prochaine ? `${p.prochaine.quoi ?? ''} ${fmtD(p.prochaine.date)}` : '—'}</td>
-      <td data-libelle="Potentiel">${{ fort: 'Fort', moyen: 'Moyen', faible: 'Faible' }[p.potentiel] ?? '—'}</td>
-    </tr>`).join('') || '<tr><td colspan="10" style="color:var(--texte-3)">Aucun prospect ne correspond.</td></tr>';
-    tb.querySelectorAll('tr[data-id]').forEach(tr =>
-      tr.addEventListener('click', () => ouvrirFiche(parseInt(tr.dataset.id))));
-  }
-
-  // ====================  Relances  ====================
-  function rendreRelances() {
-    const el = document.getElementById('vue-relances');
-    const vs = visibles().filter(actif);
-    const demain = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
-    const finSemaine = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
-    const groupes = [
-      ['En retard', vs.filter(enRetard), true],
-      ["Aujourd'hui", vs.filter(aujourdhui)],
-      ['Demain', vs.filter(p => p.prochaine?.date === demain)],
-      ['Cette semaine', vs.filter(p => p.prochaine?.date > demain && p.prochaine.date <= finSemaine)],
-      ['Plus tard', vs.filter(p => p.prochaine?.date > finSemaine)],
-      ['Sans action planifiée', vs.filter(p => !p.prochaine?.date)],
-    ];
-    el.innerHTML = groupes.map(([titre, liste, retard]) => !liste.length ? '' : `
-      <div class="groupe-relance"><h3>${titre} <span class="nb">(${liste.length})</span></h3>
-      ${liste.map(p => `<div class="ligne-rel${retard ? ' retard' : ''}" data-id="${p.id}">
-        <span class="pastille ${p.priorite ?? 'tiede'}"></span>
-        <div><div class="qui">${p.nom}</div>
-          <div class="quoi">${p.prochaine?.quoi ? p.prochaine.quoi + ' — ' : ''}${p.prochaine?.date ? 'prévu le ' + fmtD(p.prochaine.date) : 'aucune action planifiée'}
-          · dernier contact : ${fmtD(p.dernierContact)}</div></div>
-        <div class="btns">
-          ${p.tel ? `<a class="secondary" style="min-height:var(--cible-min);display:inline-flex;align-items:center;padding:0 var(--e3)" href="tel:${p.tel}">Appeler</a>` : ''}
-          <button class="secondary ouvrir" style="min-height:var(--cible-min)">Ouvrir</button>
-        </div></div>`).join('')}</div>`).join('')
-      || '<p style="color:var(--texte-3)">Rien à relancer — tout est à jour.</p>';
-    el.querySelectorAll('.ligne-rel').forEach(l => l.querySelector('.ouvrir')
-      ?.addEventListener('click', () => ouvrirFiche(parseInt(l.dataset.id))));
-  }
-
-  // ====================  Stats  ====================
-  function rendreStats() {
-    const el = document.getElementById('vue-stats');
-    const ordre = ['contacter', 'premier', 'relancer', 'interesse', 'rdv', 'proposition', 'negociation'];
-    const franchi = st => prospects.filter(p => {
-      const i = ordre.indexOf(p.statut);
-      return p.statut === 'gagne' || (i >= 0 && i >= ordre.indexOf(st));
-    }).length;
-    const etapes = [
-      ['Prospects', prospects.length],
-      ['Contactés', prospects.filter(p => p.statut !== 'contacter' || p.dernierContact).length],
-      ['Intéressés', franchi('interesse')],
-      ['RDV', franchi('rdv')],
-      ['Proposition', franchi('proposition')],
-      ['Clients', prospects.filter(p => p.statut === 'gagne').length],
-    ];
-    const max = Math.max(1, ...etapes.map(e => e[1]));
-    const compte = (fn) => {
-      const m = {};
-      prospects.forEach(p => { const k = fn(p); if (k) m[k] = (m[k] ?? 0) + 1; });
-      return Object.entries(m).sort((a, b) => b[1] - a[1]);
+  function categories() {
+    const liste = tous().map(p => ({ p, pr: prochaineDe(p) }));
+    return {
+      retard: liste.filter(x => x.pr && x.pr.date < AUJ()),
+      jour:   liste.filter(x => x.pr && x.pr.date >= AUJ() && x.pr.date < AUJ() + JOUR),
+      visite: liste.filter(x => x.pr && x.pr.date >= AUJ() && x.pr.date < AUJ() + 7 * JOUR),
+      sans:   liste.filter(x => !x.pr && !['GAGNE','PERDU'].includes(x.p.etatContact ?? '')),
     };
-    const blocListe = (titre, paires) => `<div class="stat-bloc"><h3>${titre}</h3><ul>
-      ${paires.map(([k, v]) => `<li>${k}<strong>${v}</strong></li>`).join('') || '<li>—</li>'}</ul></div>`;
-    const gagnes = prospects.filter(p => p.statut === 'gagne' && p.gagneLe && p.creeLe);
-    const tempsMoyen = gagnes.length
-      ? Math.round(gagnes.reduce((s, p) => s + (new Date(p.gagneLe) - new Date(p.creeLe)) / 864e5, 0) / gagnes.length) : null;
-    el.innerHTML = `
-      <h2 class="section">Funnel de conversion</h2>
-      <div class="funnel">${etapes.map(([l, v]) =>
-        `<div class="etape"><span>${l}</span><div class="barre" style="width:${v / max * 100}%"></div><strong>${v}</strong></div>`).join('')}
-      </div>
-      ${tempsMoyen !== null ? `<p class="carte-soustitre" style="margin-bottom:var(--e4)">Temps moyen de conversion : <strong>${tempsMoyen} jours</strong></p>` : ''}
-      <div class="stats-grille">
-        ${blocListe('Par commercial', compte(p => p.resp))}
-        ${blocListe('Par source', compte(p => p.source))}
-        ${blocListe('Par type d’établissement', compte(p => p.type))}
-        ${blocListe('Motifs de perte', compte(p => p.statut === 'perdu' ? p.motifPerte : null))}
-      </div>`;
   }
 
-  // ====================  Fiche  ====================
-  let ficheId = null;
-  function ouvrirFiche(id) {
-    ficheId = id;
-    const p = prospects.find(x => x.id === id); if (!p) return;
-    const opt = (liste, val) => liste.map(v => `<option${v === val ? ' selected' : ''}>${v}</option>`).join('');
-    const optPaires = (paires, val) => paires.map(([v, l]) => `<option value="${v}"${v === val ? ' selected' : ''}>${l}</option>`).join('');
+  function rendreJour() {
+    const c = categories();
+    const k = [
+      ['retard', 'Relances en retard', c.retard.length],
+      ['jour', "À contacter aujourd'hui", c.jour.length],
+      ['visite', 'Prévu sous 7 jours', c.visite.length],
+      ['', 'Sans prochaine action', c.sans.length],
+    ];
+    document.getElementById('kpis').innerHTML = k.map(([cl, l, v]) =>
+      `<button class="kpi ${cl}" data-cat="${cl || 'sans'}">
+         <span class="lbl">${l}</span><span class="val">${v}</span></button>`).join('');
+    document.querySelectorAll('.kpi').forEach(b => b.addEventListener('click', () => {
+      document.getElementById('bloc-' + b.dataset.cat)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }));
+
+    const bloc = (id, titre, liste, classe) => !liste.length ? '' : `
+      <div class="groupe-t" id="bloc-${id}">
+        <h3>${titre} <span class="nb">(${liste.length})</span></h3>
+        ${liste.slice(0, 40).map(x => rang(x.p, x.pr, classe)).join('')}
+        ${liste.length > 40 ? `<p class="carte-soustitre">+${liste.length - 40} autres — voir l'onglet Prospects</p>` : ''}
+      </div>`;
+
+    const html = bloc('retard', 'Relances en retard', c.retard, 'retard')
+      + bloc('jour', "À contacter aujourd'hui", c.jour, 'du')
+      + bloc('visite', 'Prévu sous 7 jours', c.visite.filter(x => x.pr.date >= AUJ() + JOUR), '')
+      + bloc('sans', 'Prospects actifs sans prochaine action', c.sans, '');
+    document.getElementById('listes-jour').innerHTML = html
+      || (erreurs.prospects
+          ? `<div class="erreur-bloc">${ico('alerte')} Prospection EasyBeer indisponible : ${erreurs.prospects}</div>`
+          : `<div class="vide">${ico('check')}<p>Rien à traiter aujourd'hui.</p></div>`);
+    brancherRangs();
+  }
+
+  function rang(p, pr, classe) {
+    const j = pr ? jours(pr.date) : null;
+    const ech = !pr ? '<span class="echeance">aucune action prévue</span>'
+      : j < 0 ? `<span class="echeance retard">${-j} j de retard</span>`
+      : j === 0 ? '<span class="echeance du">aujourd’hui</span>'
+      : `<span class="echeance">dans ${j} j</span>`;
+    const cle = p.source === 'locale' ? `L${p.cleLocale}` : `E${p.idClient}`;
+    return `<button class="rang ${classe ?? ''}" data-cle="${cle}">
+      <span>
+        <span class="nom">${p.nom}</span>
+        ${p.source === 'locale' ? '<span class="marque-locale">locale</span>' : ''}
+        <span class="sous">${[p.ville, p.type, p.contact.nom].filter(Boolean).join(' · ') || '—'}</span>
+      </span>
+      <span class="droite">
+        ${ech}<br>
+        <span class="etat-pastille"><i style="background:${p.etatContactCouleur ?? 'var(--texte-3)'}"></i>${p.etatContactLibelle || 'statut inconnu'}</span>
+        ${p.commercial ? ' · ' + p.commercial : ''}
+      </span>
+    </button>`;
+  }
+
+  function brancherRangs() {
+    document.querySelectorAll('.rang').forEach(b =>
+      b.addEventListener('click', () => ouvrirFiche(b.dataset.cle)));
+  }
+
+  // --- Liste filtrée -------------------------------------------------------
+  function filtrer() {
+    const f = filtresCourants();
+    ecrireFiltres(f);
+    const q = norm(f.q);
+    let l = tous().map(p => ({ p, pr: prochaineDe(p) }));
+    if (q) l = l.filter(({ p }) => norm(`${p.nom} ${p.ville} ${p.contact.nom}`).includes(q));
+    if (f.etat) l = l.filter(({ p }) => p.etatContact === f.etat);
+    if (f.com) l = l.filter(({ p }) => p.commercial === f.com);
+    if (f.ville) l = l.filter(({ p }) => p.ville === f.ville);
+    if (f.type) l = l.filter(({ p }) => p.type === f.type);
+    const cmp = { nom: (a,b) => a.p.nom.localeCompare(b.p.nom,'fr'),
+      ville: (a,b) => (a.p.ville||'').localeCompare(b.p.ville||'','fr') || a.p.nom.localeCompare(b.p.nom,'fr'),
+      echeance: (a,b) => (a.pr?.date ?? Infinity) - (b.pr?.date ?? Infinity) };
+    return l.sort(cmp[f.tri] ?? cmp.nom);
+  }
+
+  function rendreListe() {
+    const l = filtrer();
+    const el = document.getElementById('liste-prospects');
+    document.getElementById('compte').textContent =
+      `${l.length} prospect(s) — ${prospects.length} depuis EasyBeer, ${locales.tout().length} fiche(s) locale(s)`;
+    if (erreurs.prospects && !prospects.length) {
+      el.innerHTML = `<div class="erreur-bloc">${ico('alerte')} ${erreurs.prospects}<br>
+        Les fiches locales restent utilisables ci-dessous.</div>`;
+    } else el.innerHTML = '';
+    el.innerHTML += l.length
+      ? l.slice(0, limite).map(x => rang(x.p, x.pr, x.pr && x.pr.date < AUJ() ? 'retard' : '')).join('')
+      : `<div class="vide"><p>Aucun prospect ne correspond à ces critères.</p></div>`;
+    const plus = document.getElementById('btn-plus');
+    plus.style.display = l.length > limite ? 'inline-flex' : 'none';
+    brancherRangs();
+  }
+
+  // --- Fiche ---------------------------------------------------------------
+  let ficheCle = null;
+  function trouver(cle) {
+    return tous().find(p => (p.source === 'locale' ? `L${p.cleLocale}` : `E${p.idClient}`) === cle);
+  }
+
+  async function ouvrirFiche(cle, confirmation) {
+    ficheCle = cle;
+    const p = trouver(cle); if (!p) return;
+    const pr = prochaineDe(p);
+    const hist = p.source === 'easybeer'
+      ? actions.filter(a => a.idClient === p.idClient).sort((a, b) => (b.date ?? 0) - (a.date ?? 0))
+      : (locales.tout().find(l => l.id === p.cleLocale)?.historique ?? [])
+          .map(h => ({ date: h.t, libelle: h.type, description: h.note, responsable: h.qui }));
+
+    const tel = p.contact.telephone;
+    const maps = p.adresse || `${p.nom} ${p.ville}`;
     document.getElementById('fiche').innerHTML = `
-      <div class="haut">
-        <span class="pastille ${p.priorite ?? 'tiede'}" style="margin-top:10px"></span>
-        <div><h2>${p.nom}</h2>
-        <p class="carte-soustitre">${[p.type, p.ville].filter(Boolean).join(' · ')}${p.statut === 'gagne' ? ' · client depuis le ' + fmtD(p.gagneLe) : ''}${p.statut === 'perdu' ? ' · perdu (' + (p.motifPerte ?? '?') + ')' : ''}</p></div>
+      <div class="tete">
+        <div>
+          <h2 id="fiche-titre">${p.nom}</h2>
+          <p class="carte-soustitre">
+            ${[p.type, p.ville].filter(Boolean).join(' · ')}
+            ${p.source === 'locale' ? ' · <span class="marque-locale">fiche locale, non liée à EasyBeer</span>' : ''}
+          </p>
+          <p class="carte-soustitre">
+            <span class="etat-pastille"><i style="background:${p.etatContactCouleur ?? 'var(--texte-3)'}"></i>${p.etatContactLibelle || 'statut inconnu'}</span>
+            ${p.commercial ? ' · ' + p.commercial : ''}
+          </p>
+          <p style="margin-top:var(--e2);font-size:var(--t-sm)">
+            <b>Prochaine action :</b> ${pr
+              ? `${pr.libelle} — ${fmtD(pr.date)}${pr.date < AUJ() ? ' <span style="color:var(--danger)">(en retard)</span>' : ''}`
+              : '<span style="color:var(--texte-3)">aucune</span>'}
+          </p>
+        </div>
         <button class="btn-icone fermer" aria-label="Fermer">${ico('croix')}</button>
       </div>
 
-      <div class="actions-rapides">
-        ${p.tel ? `<a href="tel:${p.tel}">${ico('telephone')} Appeler</a>
-        <a href="https://wa.me/${p.tel.replace(/\\D/g, '').replace(/^0/, '33')}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
-        ${p.email ? `<a href="mailto:${p.email}">${ico('mail')} Email</a>` : ''}
-        ${actif(p) ? `<button class="gagne" data-a="gagne">${ico('check')} Marquer gagné</button>
-        <button class="perdu-b" data-a="perdu">Marquer perdu</button>` : ''}
-        <button data-a="supprimer" class="perdu-b">Supprimer</button>
+      <div class="rapides">
+        <button class="primaire" id="b-saisir">${ico('check')} Enregistrer une visite</button>
+        ${tel ? `<a href="tel:${tel}">${ico('telephone')} Appeler</a>` : ''}
+        ${p.contact.email ? `<a href="mailto:${p.contact.email}">${ico('mail')} Email</a>` : ''}
+        <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(maps)}"
+           target="_blank" rel="noopener">${ico('carte')} Itinéraire</a>
+        ${p.idClient ? `<a href="/?client=${p.idClient}">${ico('colis')} Commander</a>` : ''}
+        ${p.idClient && /^PR/i.test(p.numero ?? '') ? `<button id="b-convertir">${ico('clients')} Transformer en client</button>` : ''}
       </div>
 
-      ${actif(p) ? `<div class="prochaine">
-        <strong>Prochaine action :</strong>
-        <input type="text" id="pa-quoi" placeholder="Relancer par téléphone…" value="${p.prochaine?.quoi ?? ''}" style="flex:1 1 160px;min-height:var(--cible-min);font-size:var(--t-sm)">
-        <input type="date" id="pa-date" value="${p.prochaine?.date ?? ''}" style="width:auto;min-height:var(--cible-min);font-size:var(--t-sm)">
-        <button class="secondary" data-a="planifier" style="min-height:var(--cible-min)">Planifier</button>
-        ${p.prochaine?.date ? `<button class="secondary" data-a="fait" style="min-height:var(--cible-min)">${ico('check')} Effectué</button>` : ''}
-      </div>` : ''}
+      <form id="saisie">
+        <div class="ligne">
+          <div><label class="sr-only" for="s-type">Type</label>
+            <select id="s-type">${ref.typesAction.map(t => `<option value="${t.code}">${t.libelle}</option>`).join('')
+              || '<option value="VISITE">Visite</option>'}</select></div>
+          <div><label class="sr-only" for="s-res">Résultat</label>
+            <select id="s-res">
+              <option value="Visite effectuée">Visite effectuée</option>
+              <option value="Intéressé">Intéressé</option>
+              <option value="À rappeler">À rappeler</option>
+              <option value="Absent">Absent</option>
+              <option value="Pas intéressé">Pas intéressé</option>
+            </select></div>
+          <div><label class="sr-only" for="s-quand">Prochaine action le</label>
+            <input type="date" id="s-quand" title="Prochaine action (facultatif)"></div>
+          <button type="submit" class="primary" style="min-height:var(--cible-min);width:auto">Enregistrer</button>
+        </div>
+        <div class="note"><label class="sr-only" for="s-note">Note</label>
+          <input type="text" id="s-note" placeholder="Note courte (facultatif)"></div>
+        <p class="msg" id="s-msg" role="status"></p>
+      </form>
 
-      <div class="fiche-grille">
-        <div><label>Statut</label><select data-ch="statut">${optPaires(STATUTS, p.statut)}</select></div>
-        <div><label>Priorité</label><select data-ch="priorite">${optPaires([['chaud', 'Chaud'], ['tiede', 'Tiède'], ['froid', 'Froid']], p.priorite ?? 'tiede')}</select></div>
-        <div><label>Commercial</label><select data-ch="resp"><option value="">Non assigné</option>${opt(equipe(), p.resp)}</select></div>
-        <div><label>Potentiel</label><select data-ch="potentiel">${optPaires([['fort', 'Fort'], ['moyen', 'Moyen'], ['faible', 'Faible']], p.potentiel ?? 'moyen')}</select></div>
-        <div><label>Type</label><select data-ch="type">${opt(TYPES, p.type)}</select></div>
-        <div><label>Source</label><select data-ch="source"><option value=""></option>${opt(SOURCES, p.source)}</select></div>
-        <div><label>Ville</label><input data-ch="ville" value="${p.ville ?? ''}"></div>
-        <div><label>Adresse</label><input data-ch="adresse" value="${p.adresse ?? ''}"></div>
-        <div><label>Contact</label><input data-ch="contact" value="${p.contact ?? ''}"></div>
-        <div><label>Téléphone</label><input data-ch="tel" value="${p.tel ?? ''}"></div>
-        <div><label>Email</label><input data-ch="email" value="${p.email ?? ''}"></div>
-        <div><label>Site / réseaux</label><input data-ch="web" value="${p.web ?? ''}"></div>
+      <div class="bloc">
+        <h3>Coordonnées</h3>
+        <div class="paires">
+          <div><span>Contact</span><b>${p.contact.nom || '—'}</b></div>
+          <div><span>Téléphone</span><b>${tel || '—'}</b></div>
+          <div><span>Email</span><b>${p.contact.email || '—'}</b></div>
+          <div><span>Adresse</span><b>${p.adresse || p.ville || '—'}</b></div>
+          ${p.numero ? `<div><span>N° EasyBeer</span><b>${p.numero}</b></div>` : ''}
+          ${p.tournee ? `<div><span>Tournée</span><b>${p.tournee}</b></div>` : ''}
+        </div>
+        ${p.note ? `<p class="carte-soustitre" style="margin-top:var(--e3)">« ${p.note} »</p>` : ''}
       </div>
 
-      <h3 style="font-size:var(--t-md)">Historique</h3>
-      <div class="ajout-note">
-        <select id="note-type">${TYPES_ACTION.map(t => `<option>${t}</option>`).join('')}</select>
-        <input type="text" id="note-texte" placeholder="Note… (Entrée pour ajouter)">
-        <button class="secondary" data-a="noter" style="min-height:var(--cible-min)">Ajouter</button>
-      </div>
-      <div class="timeline">
-        ${(p.historique ?? []).map(h => `<div class="evenement">
-          <span class="edate">${new Date(h.t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} — ${h.type}</span>
-          <span class="equi">${h.qui}</span>
-          <div class="enote">${h.note}</div></div>`).join('') || '<p style="color:var(--texte-3);font-size:var(--t-sm)">Aucune interaction enregistrée.</p>'}
+      <div class="bloc" id="bloc-commande"></div>
+
+      <div class="bloc">
+        <h3>Historique (${hist.length})</h3>
+        ${hist.length ? `<div class="chrono">${hist.slice(0, 30).map(h => `
+          <div class="evt">
+            <div class="q">${h.libelle || h.typeLibelle || 'Action'}</div>
+            <div class="d">${fmtD(h.date)}${h.responsable ? ' · ' + h.responsable : ''}${h.etatLibelle ? ' · ' + h.etatLibelle : ''}</div>
+            ${h.description ? `<div>${h.description}</div>` : ''}
+          </div>`).join('')}</div>`
+          : '<p class="carte-soustitre">Aucune interaction enregistrée.</p>'}
       </div>`;
-    document.getElementById('fiche-fond').dataset.ouvert = '1';
+
+    if (confirmation) {
+      const p2 = document.createElement('p');
+      p2.className = 'msg ok'; p2.setAttribute('role', 'status');
+      p2.textContent = confirmation;
+      document.querySelector('#fiche .rapides').after(p2);
+    }
+    document.getElementById('fond').dataset.ouvert = '1';
+    document.querySelector('#fiche .fermer').addEventListener('click', fermerFiche);
+    document.getElementById('b-saisir').addEventListener('click', () => {
+      const f = document.getElementById('saisie');
+      if (f.dataset.ouvert) delete f.dataset.ouvert; else { f.dataset.ouvert = '1'; document.getElementById('s-note').focus(); }
+    });
+    document.getElementById('saisie').addEventListener('submit', e => { e.preventDefault(); enregistrer(p); });
+    document.getElementById('b-convertir')?.addEventListener('click', () => convertir(p));
+
+    if (p.idClient) chargerDerniereCommande(p.idClient);
+    else document.getElementById('bloc-commande').innerHTML =
+      '<h3>EasyBeer</h3><p class="carte-soustitre">Fiche non liée : aucune donnée commerciale disponible.</p>';
   }
-  const fermerFiche = () => { delete document.getElementById('fiche-fond').dataset.ouvert; ficheId = null; };
-  document.getElementById('fiche-fond').addEventListener('click', e => {
-    if (e.target.id === 'fiche-fond' || e.target.closest('.fermer')) { fermerFiche(); return; }
-    const p = prospects.find(x => x.id === ficheId); if (!p) return;
-    const b = e.target.closest('button[data-a]'); if (!b) return;
-    const a = b.dataset.a;
-    if (a === 'gagne') { marquerGagne(p); ouvrirFiche(p.id); }
-    if (a === 'perdu') { marquerPerdu(p); ouvrirFiche(p.id); }
-    if (a === 'supprimer') {
-      if (confirm(`Supprimer définitivement ${p.nom} et son historique ?`)) {
-        magasin.supprimer(p.id); fermerFiche();
-      }
+
+  async function chargerDerniereCommande(id) {
+    const el = document.getElementById('bloc-commande');
+    el.innerHTML = '<h3>EasyBeer</h3><p class="carte-soustitre"><span class="loader"></span> Lecture…</p>';
+    try {
+      const d = await verifier(await fetch('/api/prospection/derniere-commande/' + id));
+      el.innerHTML = '<h3>EasyBeer</h3>' + (d.idCommande
+        ? `<div class="paires">
+             <div><span>Dernière commande</span><b>${fmtD(d.date)}</b></div>
+             ${d.numero ? `<div><span>N°</span><b>${d.numero}</b></div>` : ''}
+             ${d.totalHT ? `<div><span>Montant HT</span><b>${Math.round(d.totalHT)} €</b></div>` : ''}
+           </div>`
+        : '<p class="carte-soustitre">Aucune commande enregistrée — prospect jamais converti.</p>');
+    } catch (e) {
+      el.innerHTML = `<h3>EasyBeer</h3><p class="carte-soustitre" style="color:var(--danger)">
+        Donnée indisponible : ${e.message}</p>`;
     }
-    if (a === 'planifier') {
-      const quoi = document.getElementById('pa-quoi').value.trim();
-      const date = document.getElementById('pa-date').value;
-      if (!date) return;
-      p.prochaine = { quoi, date }; sauver(p); ouvrirFiche(p.id);
+  }
+
+  async function enregistrer(p) {
+    const msg = document.getElementById('s-msg');
+    const type = document.getElementById('s-type').value;
+    const res = document.getElementById('s-res').value;
+    const note = document.getElementById('s-note').value.trim();
+    const quand = document.getElementById('s-quand').value;
+    msg.className = 'msg'; msg.textContent = 'Enregistrement…';
+
+    if (p.source === 'locale') {
+      const l = locales.tout().find(x => x.id === p.cleLocale);
+      (l.historique ??= []).unshift({ t: Date.now(), qui: '—', type, note: [res, note].filter(Boolean).join(' — ') });
+      l.dernierContact = new Date().toISOString().slice(0, 10);
+      if (quand) l.prochaine = { quoi: res, date: quand };
+      await locales.enregistrer(l);
+      rendre();
+      ouvrirFiche(ficheCle, 'Interaction enregistrée sur la fiche locale.');
+      return;
     }
-    if (a === 'fait') {
-      journal(p, 'Note interne', `Action effectuée : ${p.prochaine?.quoi || 'relance'}`);
-      p.dernierContact = AUJ(); p.prochaine = null; sauver(p); ouvrirFiche(p.id);
-      setTimeout(() => document.getElementById('pa-date')?.focus(), 50);
+    try {
+      await verifier(await fetch('/api/prospection/action', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idClient: p.idClient, type,
+          libelle: res,
+          description: note,
+          date: quand ? new Date(quand + 'T09:00').getTime() : Date.now(),
+          etat: quand ? 'A_FAIRE' : 'TERMINE',
+        }),
+      }));
+      const cle = ficheCle;
+      await charger();
+      ouvrirFiche(cle, quand
+        ? 'Interaction enregistrée dans EasyBeer, prochaine action programmée.'
+        : 'Interaction enregistrée dans EasyBeer.');
+    } catch (e) {
+      msg.className = 'msg ko';
+      msg.textContent = 'Échec de l’enregistrement : ' + e.message + ' — rien n’a été écrit.';
     }
-    if (a === 'noter') {
-      const note = document.getElementById('note-texte').value.trim(); if (!note) return;
-      journal(p, document.getElementById('note-type').value, note);
-      sauver(p); ouvrirFiche(p.id);
+  }
+
+  // La conversion est explicite, confirmée, et son résultat est vérifié côté
+  // serveur avant d'être annoncé ici.
+  async function convertir(p) {
+    if (!confirm(`Transformer ${p.nom} en client dans EasyBeer ?\n\n`
+      + `Sa fiche, son historique d'actions et ses coordonnées sont conservés. `
+      + `Un numéro client remplacera le numéro de prospect ${p.numero}.`)) return;
+    const b = document.getElementById('b-convertir');
+    b.disabled = true; b.innerHTML = '<span class="loader"></span> Transformation…';
+    try {
+      const d = await verifier(await fetch('/api/prospection/transformer-en-client', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idClient: p.idClient }),
+      }));
+      const cle = ficheCle;
+      await charger();
+      ouvrirFiche(cle, d.dejaClient
+        ? `Déjà client dans EasyBeer (${d.numero}) — rien n'a été modifié.`
+        : d.confirme
+          ? `Transformé en client — numéro ${d.numeroApres}.`
+          : `Transformation envoyée à EasyBeer ; le numéro client n'a pas pu être relu.`);
+    } catch (e) {
+      b.disabled = false; b.innerHTML = 'Transformer en client';
+      alert('Transformation impossible : ' + e.message + '\n\nRien n’a été modifié.');
     }
-  });
-  document.getElementById('fiche-fond').addEventListener('change', e => {
-    const p = prospects.find(x => x.id === ficheId); if (!p) return;
-    const ch = e.target.dataset.ch; if (!ch) return;
-    if (ch === 'statut') { changerStatut(p, e.target.value); ouvrirFiche(p.id); return; }
-    p[ch] = e.target.value || undefined; sauver(p);
-  });
-  document.getElementById('fiche-fond').addEventListener('keydown', e => {
-    if (e.key === 'Enter' && e.target.id === 'note-texte') {
-      e.preventDefault(); document.querySelector('#fiche button[data-a="noter"]')?.click();
-    }
-  });
+  }
+
+  const fermerFiche = () => { delete document.getElementById('fond').dataset.ouvert; ficheCle = null; };
+  document.getElementById('fond').addEventListener('click', e => { if (e.target.id === 'fond') fermerFiche(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') fermerFiche(); });
 
-  // ====================  Ajout / import-export / init  ====================
-  document.getElementById('btn-ajout').addEventListener('click', () => {
-    const f = document.getElementById('ajout');
-    if (f.dataset.ouvert) delete f.dataset.ouvert; else { f.dataset.ouvert = '1'; f.nom.focus(); }
-  });
-  document.getElementById('ajout').addEventListener('submit', e => {
-    e.preventDefault();
-    const f = e.target;
-    magasin.enregistrer({
-      id: Date.now(), creeLe: AUJ(), statut: 'contacter',
-      nom: f.nom.value.trim(), type: f.type.value, ville: f.ville.value.trim() || undefined,
-      tel: f.tel.value.trim() || undefined, resp: f.resp.value || undefined,
-      priorite: f.priorite.value, potentiel: f.potentiel.value, historique: [],
-    });
-    if (f.resp.value) localStorage.setItem(CLE_MOI, f.resp.value);
-    f.reset(); delete f.dataset.ouvert;
-  });
+  // --- Tournées ------------------------------------------------------------
+  function rendreTournees() {
+    const sel = tournee.tout();
+    const selIds = new Set(sel.map(s => s.idClient).filter(Boolean));
+    const ville = document.getElementById('t-ville').value;
 
-  document.getElementById('btn-export').addEventListener('click', () => {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(prospects, null, 2)], { type: 'application/json' }));
-    a.download = `prospects-gue-des-moines-${AUJ()}.json`; a.click();
-  });
-  document.getElementById('btn-import').addEventListener('change', async e => {
-    const f = e.target.files[0]; if (!f) return;
-    try {
-      const importes = JSON.parse(await f.text());
-      if (!Array.isArray(importes)) throw new Error('format inattendu');
-      const ids = new Set(prospects.map(p => p.id));
-      for (const nouveau of importes.filter(p => !ids.has(p.id))) magasin.enregistrer(nouveau);
-    } catch (err) { alert('Import impossible : ' + err.message); }
-    e.target.value = '';
-  });
+    document.getElementById('tournee-sel').innerHTML = !sel.length ? '' : `
+      <div class="groupe-t"><h3>Arrêts retenus <span class="nb">(${sel.length})</span></h3>
+        ${sel.map((s, i) => `<div class="arret" data-id="${s.id}">
+          <span class="poignee" title="Glisser pour réordonner">${ico('liste')}</span>
+          <span><span class="nom">${i + 1}. ${s.nom}</span>
+            <span class="ville">${s.ville ?? ''}${s.note ? ' — ' + s.note : ''}</span></span>
+          <span class="fin">
+            <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s.adresse || s.nom)}"
+               target="_blank" rel="noopener">Itinéraire</a>
+            <button data-act="fait">${s.derniereVisite ? 'Refaire' : 'Fait'}</button>
+            <button data-act="oter">Ôter</button>
+          </span></div>`).join('')}
+      </div>`;
 
+    const parVille = new Map();
+    for (const p of tous()) {
+      if (p.source !== 'easybeer' || selIds.has(p.idClient)) continue;
+      if (ville && p.ville !== ville) continue;
+      const k = p.ville || 'Sans commune';
+      if (!parVille.has(k)) parVille.set(k, []);
+      parVille.get(k).push(p);
+    }
+    document.getElementById('tournee-dispo').innerHTML =
+      [...parVille.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, 20)
+        .map(([v, l]) => `<div class="secteur">
+          <h3>${v}<span class="nb">${l.length} prospect(s)</span></h3>
+          ${l.slice(0, 12).map(p => `<div class="arret">
+            <span><span class="nom">${p.nom}</span>
+              <span class="ville">${p.etatContactLibelle || ''}</span></span>
+            <span class="fin"><button data-ajout="${p.idClient}">Ajouter</button></span></div>`).join('')}
+        </div>`).join('') || '<div class="vide"><p>Aucun prospect géolocalisé disponible.</p></div>';
+
+    document.querySelectorAll('[data-ajout]').forEach(b => b.addEventListener('click', () => {
+      const p = prospects.find(x => x.idClient === +b.dataset.ajout);
+      tournee.enregistrer({
+        id: Date.now(), nom: p.nom, idClient: p.idClient, ville: p.ville, adresse: p.adresse,
+        note: document.getElementById('t-date').value
+          ? 'Tournée du ' + fmtD(new Date(document.getElementById('t-date').value + 'T12:00').getTime()) : 'Prospection',
+        prochaine: document.getElementById('t-date').value || null,
+        derniereVisite: null, ajouteLe: Date.now(),
+      });
+    }));
+    document.querySelectorAll('.arret [data-act]').forEach(b => b.addEventListener('click', () => {
+      const id = b.closest('.arret').dataset.id;
+      const s = tournee.tout().find(x => String(x.id) === id); if (!s) return;
+      if (b.dataset.act === 'oter') tournee.supprimer(s.id);
+      else tournee.enregistrer({ ...s, derniereVisite: new Date().toISOString().slice(0, 10), prochaine: null });
+    }));
+  }
+
+  // --- Sélecteurs et filtres ----------------------------------------------
+  function remplirSelects() {
+    const set = (id, valeurs, garde) => {
+      const s = document.getElementById(id); const v = s.value;
+      s.innerHTML = `<option value="">${garde}</option>` +
+        valeurs.map(x => typeof x === 'string'
+          ? `<option value="${x}">${x}</option>`
+          : `<option value="${x.v}">${x.l}</option>`).join('');
+      s.value = v;
+    };
+    set('f-etat', ref.etatsContact.map(e => ({ v: e.code, l: e.libelle })), 'Tous');
+    const coms = [...new Set(prospects.map(p => p.commercial).filter(Boolean))].sort();
+    set('f-com', coms, 'Tous');
+    set('t-com', coms, '—');
+    const villes = [...new Set(tous().map(p => p.ville).filter(Boolean))].sort();
+    set('f-ville', villes, 'Toutes');
+    set('t-ville', villes, 'Tous');
+    set('f-type', [...new Set(prospects.map(p => p.type).filter(Boolean))].sort(), 'Toutes');
+  }
+
+  function appliquerFiltresSauvegardes() {
+    const f = lireFiltres();
+    for (const [cle, id] of [['q','f-q'],['etat','f-etat'],['com','f-com'],['ville','f-ville'],['type','f-type'],['tri','f-tri']]) {
+      if (f[cle] !== undefined) document.getElementById(id).value = f[cle];
+    }
+  }
+
+  // --- Navigation ----------------------------------------------------------
   document.getElementById('tabs').addEventListener('click', e => {
     const b = e.target.closest('button[data-vue]'); if (!b) return;
     document.querySelectorAll('#tabs button').forEach(x => x.classList.remove('actif'));
     b.classList.add('actif'); vue = b.dataset.vue;
-    ['kanban', 'liste', 'relances', 'stats'].forEach(v =>
+    ['aujourdhui','prospects','tournees'].forEach(v =>
       document.getElementById('vue-' + v).style.display = v === vue ? '' : 'none');
-    toutRendre();
+    rendre();
   });
-  document.getElementById('filtres-rapides').addEventListener('click', e => {
-    const b = e.target.closest('button[data-f]'); if (!b) return;
-    document.querySelectorAll('#filtres-rapides button').forEach(x => x.classList.remove('actif'));
-    b.classList.add('actif'); filtre = b.dataset.f; toutRendre();
+  ['f-q','f-etat','f-com','f-ville','f-type','f-tri'].forEach(id =>
+    document.getElementById(id).addEventListener(id === 'f-q' ? 'input' : 'change', () => { limite = 50; rendreListe(); }));
+  document.getElementById('btn-raz').addEventListener('click', () => {
+    ['f-q','f-etat','f-com','f-ville','f-type'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('f-tri').value = 'nom'; limite = 50; rendreListe();
   });
-  document.getElementById('a-traiter').addEventListener('click', e => {
-    const b = e.target.closest('button[data-vaf]'); if (!b) return;
-    document.querySelector(`#filtres-rapides button[data-f="${b.dataset.vaf}"]`)?.click();
+  document.getElementById('btn-plus').addEventListener('click', () => { limite += 50; rendreListe(); });
+  document.getElementById('t-ville').addEventListener('change', rendreTournees);
+  document.getElementById('t-vider').addEventListener('click', () => {
+    if (confirm('Vider la sélection de tournée ?')) tournee.tout().slice().forEach(s => tournee.supprimer(s.id));
   });
-  ['f-resp', 'f-type', 'f-ville'].forEach(id =>
-    document.getElementById(id).addEventListener('change', toutRendre));
-  document.getElementById('f-rech').addEventListener('input', toutRendre);
 
-  function majSelects() {
-    const remplir = (id, valeurs, garde) => {
-      const s = document.getElementById(id); const v = s.value;
-      s.innerHTML = `<option value="">${garde}</option>` + valeurs.map(x => `<option>${x}</option>`).join('');
-      s.value = v;
-    };
-    remplir('f-resp', equipe(), 'Tous');
-    remplir('f-type', TYPES, 'Tous');
-    remplir('f-ville', [...new Set(prospects.map(p => p.ville).filter(Boolean))].sort(), 'Toutes');
-    const fa = document.getElementById('ajout');
-    fa.type.innerHTML = TYPES.map(t => `<option>${t}</option>`).join('');
-    fa.resp.innerHTML = '<option value="">Commercial…</option>' + equipe().map(x => `<option>${x}</option>`).join('');
-  }
-
-  function toutRendre() {
-    prospects = magasin.tout();
-    majSelects(); rendreKpis();
-    if (vue === 'kanban') rendreKanban();
-    if (vue === 'liste') rendreListe();
-    if (vue === 'relances') rendreRelances();
-    if (vue === 'stats') rendreStats();
-  }
-  function init() {
-    toutRendre();
-    menuMobile('#filtres-rapides', 'data-f', 'Filtre rapide');
-    magasin.charger().then(majMentionStockage);
-    magasin.suivre();
-  }
-
-  function majMentionStockage() {
-    const el = document.querySelector('.note-stockage');
-    if (!el) return;
-    const t = el.childNodes[0];
-    if (t) t.textContent = magasin.espacePartage
-      ? 'Prospects partagés avec l’équipe. '
-      : 'Les prospects sont enregistrés dans ce navigateur. ';
-  }
+  document.addEventListener('DOMContentLoaded', () => {
+    monterCoquille({ titre: 'Prospection', actif: '/prospection.html' });
+    locales.charger().then(rendre);
+    tournee.charger().then(() => { if (vue === 'tournees') rendreTournees(); });
+    charger();
+  });
   </script>
 </body>
 </html>

@@ -4,6 +4,7 @@ import fetch from 'node-fetch';
 import PDFDocument from 'pdfkit';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { monterProspection } from './prospection.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -2611,6 +2612,9 @@ app.post('/api/lecture-commande', async (req, res) => {
     res.status(502).json({ error: 'Lecture impossible : ' + err.message });
   }
 });
+
+// --- Module de prospection (connecteur EasyBeer isolé) ---
+monterProspection(app, { easybeerGet, easybeerPost });
 
 // ===========================================================================
 //  Données partagées de l'équipe (prospects, commandes en attente…)
