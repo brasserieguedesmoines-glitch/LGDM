@@ -33,6 +33,8 @@
            border-top: 3px solid var(--bordure-forte); border-radius: var(--r-md);
            padding: var(--e3) var(--e4); text-align: left; cursor: pointer; width: 100%; }
     .kpi:hover { background: var(--surface-2); }
+    .etat-ligne { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    #f-etat-contact { width: auto; min-height: 32px; padding: 2px 8px; font-weight: 600; }
     .kpi.actif { background: var(--surface-2); outline: 2px solid var(--accent, var(--alerte)); outline-offset: -2px; }
     .kpi-grid:has(.actif) .kpi:not(.actif) { opacity: .55; }
     .filtre-actif { display: flex; align-items: center; gap: var(--e2); font-size: var(--t-sm); color: var(--texte-2); margin-bottom: var(--e3); }
@@ -636,8 +638,15 @@
             ${[p.type, p.ville].filter(Boolean).join(' · ')}
             ${p.source === 'locale' ? ' · <span class="marque-locale">fiche locale, non liée à EasyBeer</span>' : ''}
           </p>
-          <p class="carte-soustitre">
-            <span class="etat-pastille"><i style="background:${p.etatContactCouleur ?? 'var(--texte-3)'}"></i>${p.etatContactLibelle || 'statut inconnu'}</span>
+          <p class="carte-soustitre etat-ligne">
+            ${p.source === 'easybeer' && ref.etatsContact.length
+              ? `<label class="sr-only" for="f-etat-contact">État</label>
+                 <span class="etat-pastille"><i style="background:${p.etatContactCouleur ?? 'var(--texte-3)'}"></i></span>
+                 <select id="f-etat-contact">
+                   ${p.etatContact ? '' : '<option value="">— statut inconnu —</option>'}
+                   ${ref.etatsContact.map(e => `<option value="${e.code}" ${e.code === p.etatContact ? 'selected' : ''}>${e.libelle}</option>`).join('')}
+                 </select>`
+              : `<span class="etat-pastille"><i style="background:${p.etatContactCouleur ?? 'var(--texte-3)'}"></i>${p.etatContactLibelle || 'statut inconnu'}</span>`}
             ${p.commercial ? ' · ' + p.commercial : ''}
           </p>
           <p style="margin-top:var(--e2);font-size:var(--t-sm)">
@@ -727,6 +736,7 @@
     });
     document.getElementById('saisie').addEventListener('submit', e => { e.preventDefault(); enregistrer(p); });
     document.getElementById('b-convertir')?.addEventListener('click', () => convertir(p));
+    document.getElementById('f-etat-contact')?.addEventListener('change', e => changerEtat(p, e.target));
     const reporter = async date => {
       if (date === null) await reports.supprimer(cleDe(p));
       else await reports.enregistrer({ id: cleDe(p), nom: p.nom, date, le: Date.now() });
@@ -800,6 +810,30 @@
     } catch (e) {
       msg.className = 'msg ko';
       msg.textContent = 'Échec de l’enregistrement : ' + e.message + ' — rien n’a été écrit.';
+    }
+  }
+
+  // Changement d'état écrit dans EasyBeer ; en cas d'échec, le sélecteur
+  // revient à l'état précédent et rien n'est modifié à l'écran.
+  async function changerEtat(p, sel) {
+    const avant = p.etatContact ?? '';
+    const etat = sel.value; if (!etat) return;
+    sel.disabled = true;
+    try {
+      const d = await verifier(await fetch('/api/prospection/etat-contact', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idClient: p.idClient, etat }),
+      }));
+      const e = d.etatContact ?? ref.etatsContact.find(x => x.code === etat) ?? {};
+      const cible = prospects.find(x => x.idClient === p.idClient);
+      if (cible) Object.assign(cible, { etatContact: e.code ?? etat, etatContactLibelle: e.libelle ?? '', etatContactCouleur: e.couleur ?? null });
+      rendre();
+      ouvrirFiche(ficheCle, d.confirme === false
+        ? 'Demande envoyée à EasyBeer, mais l’état relu diffère — vérifiez dans EasyBeer.'
+        : `État changé dans EasyBeer : ${e.libelle ?? etat}.`);
+    } catch (err) {
+      sel.value = avant; sel.disabled = false;
+      alert('Changement d’état impossible : ' + err.message + '\n\nRien n’a été modifié.');
     }
   }
 

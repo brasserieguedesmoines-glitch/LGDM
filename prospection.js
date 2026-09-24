@@ -250,9 +250,29 @@ export function monterProspection(app, { easybeerGet, easybeerPost }) {
       });
     } catch (e) {
       // Un prospect n'a par définition jamais commandé : ce n'est pas une panne.
-      if (e.status === 404) return res.json({ idCommande: null });
+      // EasyBeer répond alors 404 ou un corps vide (JSON illisible).
+      if (e.status === 404 || e instanceof SyntaxError) return res.json({ idCommande: null });
       throw e;
     }
+  }));
+
+  // --- Changer l'état de contact d'un prospect ---
+  // Route dédiée d'EasyBeer (GET /parametres/prospect/etat-contact/{id}/{etat}) :
+  // elle ne touche qu'à l'état, pas au reste de la fiche. L'état demandé est
+  // contrôlé contre le référentiel, et le résultat relu dans la réponse.
+  app.post('/api/prospection/etat-contact', (req, res) => repondre(res, async () => {
+    const id = Number(req.body?.idClient);
+    const etat = String(req.body?.etat ?? '');
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'idClient requis' });
+    const etats = await enCache('etats-contact-codes', CACHE_MS, async () =>
+      listeDe(await easybeerGet('/referentiel/client/etats-contact')).map(e => e.code));
+    if (!etats.includes(etat)) return res.status(400).json({ error: `État inconnu : ${etat}` });
+
+    const d = await easybeerGet(`/parametres/prospect/etat-contact/${id}/${encodeURIComponent(etat)}`);
+    const obtenu = d?.etatContact?.code ?? null;
+    viderCache('prospects');
+    res.json({ ok: true, idClient: id, etat: obtenu ?? etat, confirme: obtenu === etat,
+      etatContact: d?.etatContact ? { code: obtenu, libelle: libelleDe(d.etatContact), couleur: d.etatContact.couleur ?? null } : null });
   }));
 
   // --- Transformation prospect → client -----------------------------------
