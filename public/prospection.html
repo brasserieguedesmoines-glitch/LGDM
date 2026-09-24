@@ -399,7 +399,9 @@
     }
     return [...parId.values()];
   }
-  const agenda = () => [...tous(), ...clientsDesActions()];
+  // État changé depuis la fiche d'un client (hors liste des prospects).
+  const etatsClients = new Map();
+  const agenda = () => [...tous(), ...clientsDesActions().map(c => ({ ...c, ...(etatsClients.get(c.idClient) ?? {}) }))];
 
   // Prochaine action d'un prospect : la plus proche parmi celles à faire
   function prochaineDe(p) {
@@ -639,11 +641,11 @@
             ${p.source === 'locale' ? ' · <span class="marque-locale">fiche locale, non liée à EasyBeer</span>' : ''}
           </p>
           <p class="carte-soustitre etat-ligne">
-            ${p.source === 'easybeer' && ref.etatsContact.length
+            ${p.source !== 'locale' && p.idClient && ref.etatsContact.length
               ? `<label class="sr-only" for="f-etat-contact">État</label>
                  <span class="etat-pastille"><i style="background:${p.etatContactCouleur ?? 'var(--texte-3)'}"></i></span>
                  <select id="f-etat-contact">
-                   ${p.etatContact ? '' : '<option value="">— statut inconnu —</option>'}
+                   ${p.etatContact ? '' : `<option value="">${p.source === 'client' ? 'Client — état non renseigné' : '— statut inconnu —'}</option>`}
                    ${ref.etatsContact.map(e => `<option value="${e.code}" ${e.code === p.etatContact ? 'selected' : ''}>${e.libelle}</option>`).join('')}
                  </select>`
               : `<span class="etat-pastille"><i style="background:${p.etatContactCouleur ?? 'var(--texte-3)'}"></i>${p.etatContactLibelle || 'statut inconnu'}</span>`}
@@ -826,7 +828,8 @@
       }));
       const e = d.etatContact ?? ref.etatsContact.find(x => x.code === etat) ?? {};
       const cible = prospects.find(x => x.idClient === p.idClient);
-      if (cible) Object.assign(cible, { etatContact: e.code ?? etat, etatContactLibelle: e.libelle ?? '', etatContactCouleur: e.couleur ?? null });
+      const maj = { etatContact: e.code ?? etat, etatContactLibelle: e.libelle ?? '', etatContactCouleur: e.couleur ?? null };
+      if (cible) Object.assign(cible, maj); else etatsClients.set(p.idClient, maj);
       rendre();
       ouvrirFiche(ficheCle, d.confirme === false
         ? 'Demande envoyée à EasyBeer, mais l’état relu diffère — vérifiez dans EasyBeer.'
