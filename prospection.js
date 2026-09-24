@@ -279,6 +279,43 @@ export function monterProspection(app, { easybeerGet, easybeerPost }) {
     });
   }));
 
+  // --- Sonde temporaire (lecture seule) : formes de requête du planning ---
+  app.get('/api/prospection/sonde-actions', async (req, res) => {
+    const now = Date.now();
+    const periodeLibre = { type: 'PERIODE_LIBRE', dateDebut: new Date(now - 90 * 86400000).toISOString(), dateFin: new Date(now + 90 * 86400000).toISOString() };
+    const filtreComplet = {
+      etats: [], idsClientsDistributeurs: [], idsClientsTournees: [], idsClientsTypes: [],
+      priorites: [], types: [], recherche: '',
+    };
+    const indicateur = {
+      periode: { type: 'MOIS_COURANT' }, inclureActionsEnRetard: true,
+      idsClients: [], idsClientsTournees: [], idsClientsTypes: [], idsCommerciaux: [],
+      idsContenants: [], idsContenantsFuts: [], idsEntrepots: [], idsEtapeBrassage: [],
+      idsPackagings: [], idsProduits: [], idsProduitsCategories: [],
+    };
+    const variantes = [
+      ['A liste tri=date p1', '/parametres/client/actions?colonneTri=date&nombreParPage=3&numeroPage=1', { filtre: { ...filtreComplet, periode: periodeLibre }, periode: periodeLibre }],
+      ['B liste tri=date p0', '/parametres/client/actions?colonneTri=date&nombreParPage=3&numeroPage=0', { filtre: { ...filtreComplet, periode: periodeLibre }, periode: periodeLibre }],
+      ['C liste sans query', '/parametres/client/actions', { filtre: { ...filtreComplet, periode: periodeLibre }, periode: periodeLibre }],
+      ['D liste filtre complet sans periode', '/parametres/client/actions?colonneTri=date&nombreParPage=3&numeroPage=1', { filtre: filtreComplet }],
+      ['E liste MOIS_COURANT', '/parametres/client/actions?colonneTri=date&nombreParPage=3&numeroPage=1', { filtre: { ...filtreComplet, periode: { type: 'MOIS_COURANT' } }, periode: { type: 'MOIS_COURANT' } }],
+      ['F planning', '/parametres/client/actions/planning', { filtre: { ...filtreComplet, periode: periodeLibre }, periode: periodeLibre }],
+      ['G indicateur actions-clients', '/indicateur/actions-clients?forceRefresh=false', indicateur],
+    ];
+    const resultats = [];
+    for (const [nom, chemin, corps] of variantes) {
+      try {
+        const d = await easybeerPost(chemin, corps);
+        const l = listeDe(d);
+        resultats.push({ nom, ok: true, cles: Object.keys(d ?? {}).slice(0, 15), elements: l.length, total: d?.totalElements ?? null, exemple: JSON.stringify(l[0] ?? d).slice(0, 900) });
+      } catch (e) {
+        resultats.push({ nom, ok: false, status: e.status ?? null, erreur: String(e.message).slice(0, 200) });
+      }
+    }
+    res.set('Cache-Control', 'no-store');
+    res.json(resultats);
+  });
+
   // --- Diagnostic : dit honnêtement ce qui répond et ce qui ne répond pas ---
   // Aucune écriture n'est tentée ici. Permet de distinguer « implémenté » de
   // « intégration vérifiée » sans avoir à lire le code.
