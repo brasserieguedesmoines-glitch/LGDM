@@ -26,6 +26,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// Routes de débogage fermées : publiques, elles laissaient lire (voire
+// rejouer) les données EasyBeer sans aucune authentification.
+app.use('/api', (req, res, next) =>
+  /^\/debug-/.test(req.path) ? res.status(404).json({ error: 'Introuvable' }) : next());
+
 app.use(express.json({ limit: '10mb' }));   // les photos de commandes passent en base64
 app.use(express.static(join(__dirname, 'public')));
 
