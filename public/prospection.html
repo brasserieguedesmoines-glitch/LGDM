@@ -67,6 +67,13 @@
     .rang .sous { font-size: var(--t-sm); color: var(--texte-2); }
     .rang .droite { text-align: right; font-size: var(--t-sm); color: var(--texte-2); white-space: nowrap; }
     .rang .echeance { font-weight: 600; }
+    .reporter { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e2);
+      margin: var(--e3) 0; font-size: var(--t-sm); color: var(--texte-2); }
+    .reporter button { min-height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--bordure);
+      background: var(--surface-2); color: var(--texte); font-weight: 600; cursor: pointer; }
+    .reporter button:hover { border-color: var(--accent, var(--alerte)); }
+    .reporter input { min-height: 34px; width: auto; }
+    .reporter .annuler { color: var(--danger); }
     .rang .quoi { color: var(--texte); display: inline-block; max-width: 34ch; overflow: hidden;
       text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
     .rang .echeance.retard { color: var(--danger); }
@@ -75,6 +82,10 @@
       .rang { grid-template-columns: 1fr; }
       .rang .droite { text-align: left; white-space: normal; }
     }
+    .rang { cursor: pointer; }
+    .rang .reporter { grid-column: 1 / -1; margin: var(--e1) 0 0; padding-top: var(--e2);
+      border-top: 1px solid var(--bordure); cursor: default; }
+    .kpi.plustard { border-top-color: var(--info); }
 
     .etat-pastille { display: inline-flex; align-items: center; gap: var(--e1);
                      font-size: var(--t-xs); }
@@ -236,6 +247,12 @@
   // Chaque magasin redessine la vue qui l'affiche : sans cela, ajouter un
   // arrêt ou modifier une fiche locale ne se voyait qu'au rechargement.
   const locales = creerMagasin('prospects', { surChangement: () => rendre() });
+  // « Recontacter sous N jours » : report décidé en interne, partagé entre
+  // les postes. Il prime sur l'action EasyBeer et sort la fiche des
+  // « Non transformés » ; rien n'est écrit dans EasyBeer.
+  const reports = creerMagasin('reports', { surChangement: () => rendre() });
+  const cleDe = p => p.source === 'locale' ? `L${p.cleLocale}` : `E${p.idClient}`;
+  const reportDe = p => reports.tout().find(r => r.id === cleDe(p));
   const tournee = creerMagasin('visites', {
     surChangement: () => { if (vue === 'tournees') rendreTournees(); } });
 
@@ -379,6 +396,8 @@
 
   // Prochaine action d'un prospect : la plus proche parmi celles à faire
   function prochaineDe(p) {
+    const r = reportDe(p);
+    if (r) return { date: r.date, libelle: 'Recontacter', report: true };
     if (p.source === 'locale') {
       return p.prochaine?.date
         ? { date: new Date(p.prochaine.date + 'T12:00').getTime(), libelle: p.prochaine.quoi ?? 'Relance' }
@@ -400,7 +419,7 @@
   // Non transformés : prospects en échec ou à ne pas contacter. Rangés à part
   // pour ne plus encombrer les relances, sans rien modifier dans EasyBeer.
   const PERDUS = new Set(['ECHEC', 'NE_PAS_CONTACTER']);
-  const estPerdu = p => p.source !== 'locale' ? PERDUS.has(p.etatContact ?? '') : p.statutLocal === 'perdu';
+  const estPerdu = p => reportDe(p) ? false : p.source !== 'locale' ? PERDUS.has(p.etatContact ?? '') : p.statutLocal === 'perdu';
 
   function categories() {
     const tout = agenda().map(p => ({ p, pr: prochaineDe(p) }));
@@ -411,7 +430,8 @@
       // chances d'être encore utile qu'une relance oubliée depuis un an.
       retard: liste.filter(x => x.pr && x.pr.date < AUJ()).sort((a, b) => parDate(b, a)),
       jour:   liste.filter(x => x.pr && x.pr.date >= AUJ() && x.pr.date < AUJ() + JOUR).sort(parDate),
-      visite: liste.filter(x => x.pr && x.pr.date >= AUJ() && x.pr.date < AUJ() + 7 * JOUR).sort(parDate),
+      visite: liste.filter(x => x.pr && x.pr.date >= AUJ() && x.pr.date < AUJ() + 8 * JOUR).sort(parDate),
+      plustard: liste.filter(x => x.pr && x.pr.date >= AUJ() + 8 * JOUR).sort(parDate),
       sans:   liste.filter(x => !x.pr && x.p.source !== 'client' && !estClos(x.p)),
       perdus: tout.filter(x => estPerdu(x.p)).sort((a, b) => a.p.nom.localeCompare(b.p.nom, 'fr')),
     };
@@ -439,6 +459,7 @@
       ['retard', 'Relances en retard', c.retard.length],
       ['jour', "À contacter aujourd'hui", c.jour.length],
       ['visite', 'Prévu sous 7 jours', c.visite.length],
+      ['plustard', 'Plus tard', c.plustard.length],
       ['', 'Sans prochaine action', c.sans.length],
       ['perdus', 'Non transformés', c.perdus.length],
     ];
@@ -476,6 +497,7 @@
     const html = bloc('retard', 'Relances en retard', c.retard, 'retard')
       + bloc('jour', "À contacter aujourd'hui", c.jour, 'du')
       + bloc('visite', 'Prévu sous 7 jours', c.visite.filter(x => x.pr.date >= AUJ() + JOUR), '')
+      + bloc('plustard', 'À recontacter plus tard', c.plustard, '')
       + blocOrph
       + bloc('sans', 'Prospects actifs sans prochaine action', c.sans, '')
       + bloc('perdus', 'Non transformés — échec ou ne pas contacter', c.perdus, 'perdu');
@@ -494,7 +516,7 @@
       : j === 0 ? '<span class="echeance du">aujourd’hui</span>'
       : `<span class="echeance">dans ${j} j</span>`);
     const cle = p.source === 'locale' ? `L${p.cleLocale}` : `E${p.idClient}`;
-    return `<button class="rang ${classe ?? ''}" data-cle="${cle}">
+    return `<div class="rang ${classe ?? ''}" data-cle="${cle}" role="button" tabindex="0">
       <span>
         <span class="nom">${p.nom}</span>
         ${p.source === 'locale' ? '<span class="marque-locale">locale</span>' : ''}
@@ -505,12 +527,40 @@
         <span class="etat-pastille"><i style="background:${p.etatContactCouleur ?? 'var(--texte-3)'}"></i>${p.etatContactLibelle || 'statut inconnu'}</span>
         ${p.commercial ? ' · ' + p.commercial : ''}
       </span>
-    </button>`;
+      ${barreReport(p, cle)}
+    </div>`;
   }
 
+  // Boutons « Recontacter » directement sur la ligne, comme sur « Y aller ».
+  function barreReport(p, cle) {
+    const r = reportDe(p);
+    return `<span class="reporter">
+      <span>Recontacter :</span>
+      <button data-rep="7" data-cle="${cle}">dans 1 semaine</button>
+      <button data-rep="14" data-cle="${cle}">dans 2 semaines</button>
+      <button data-rep="30" data-cle="${cle}">dans 1 mois</button>
+      <input type="date" data-cle="${cle}" aria-label="Recontacter le"
+        value="${r ? new Date(r.date).toLocaleDateString('sv-SE') : ''}">
+      ${r ? `<button data-rep="0" data-cle="${cle}" class="annuler">Annuler</button>` : ''}
+    </span>`;
+  }
+  async function reporterCle(cle, date) {
+    const p = trouver(cle); if (!p) return;
+    if (date === null) await reports.supprimer(cle);
+    else await reports.enregistrer({ id: cle, nom: p.nom, date, le: Date.now() });
+  }
   function brancherRangs() {
-    document.querySelectorAll('.rang').forEach(b =>
-      b.addEventListener('click', () => ouvrirFiche(b.dataset.cle)));
+    document.querySelectorAll('.rang[data-cle]').forEach(b => {
+      b.addEventListener('click', e => { if (!e.target.closest('.reporter')) ouvrirFiche(b.dataset.cle); });
+      b.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target === b) ouvrirFiche(b.dataset.cle); });
+    });
+    document.querySelectorAll('.rang [data-rep]').forEach(b => b.addEventListener('click', () => {
+      const n = +b.dataset.rep;
+      reporterCle(b.dataset.cle, n ? AUJ() + n * JOUR : null);
+    }));
+    document.querySelectorAll('.rang .reporter input').forEach(i => i.addEventListener('change', () => {
+      if (i.value) reporterCle(i.dataset.cle, new Date(i.value + 'T09:00').getTime());
+    }));
   }
 
   // --- Liste filtrée -------------------------------------------------------
@@ -585,6 +635,12 @@
         <button class="btn-icone fermer" aria-label="Fermer">${ico('croix')}</button>
       </div>
 
+      <div class="reporter">
+        <span>Recontacter dans</span>
+        ${[[7,'1 semaine'],[14,'2 semaines'],[30,'1 mois']].map(([n,l]) => `<button data-report="${n}">${l}</button>`).join('')}
+        <input type="date" id="r-date" aria-label="Recontacter le">
+        ${reportDe(p) ? '<button data-report="0" class="annuler">Annuler le report</button>' : ''}
+      </div>
       <div class="rapides">
         <button class="primaire" id="b-saisir">${ico('check')} Enregistrer une visite</button>
         ${tel ? `<a href="tel:${tel}">${ico('telephone')} Appeler</a>` : ''}
@@ -657,6 +713,18 @@
     });
     document.getElementById('saisie').addEventListener('submit', e => { e.preventDefault(); enregistrer(p); });
     document.getElementById('b-convertir')?.addEventListener('click', () => convertir(p));
+    const reporter = async date => {
+      if (date === null) await reports.supprimer(cleDe(p));
+      else await reports.enregistrer({ id: cleDe(p), nom: p.nom, date, le: Date.now() });
+      ouvrirFiche(cle, date === null ? 'Report annulé.' : `À recontacter le ${fmtD(date)}.`);
+    };
+    document.querySelectorAll('[data-report]').forEach(b => b.addEventListener('click', () => {
+      const n = +b.dataset.report;
+      reporter(n ? AUJ() + n * JOUR : null);
+    }));
+    document.getElementById('r-date').addEventListener('change', e => {
+      if (e.target.value) reporter(new Date(e.target.value + 'T09:00').getTime());
+    });
 
     if (p.idClient) chargerDerniereCommande(p.idClient);
     else document.getElementById('bloc-commande').innerHTML =
@@ -858,6 +926,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     monterCoquille({ titre: 'Prospection', actif: '/prospection.html' });
     locales.charger().then(rendre);
+    reports.charger().then(rendre); reports.suivre(30_000);
     tournee.charger().then(() => { if (vue === 'tournees') rendreTournees(); });
     charger();
   });
