@@ -65,7 +65,8 @@
     .rang .sous { font-size: var(--t-sm); color: var(--texte-2); }
     .rang .droite { text-align: right; font-size: var(--t-sm); color: var(--texte-2); white-space: nowrap; }
     .rang .echeance { font-weight: 600; }
-    .rang .quoi { color: var(--texte); }
+    .rang .quoi { color: var(--texte); display: inline-block; max-width: 34ch; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
     .rang .echeance.retard { color: var(--danger); }
     .rang .echeance.du { color: var(--alerte); }
     @media (max-width: 640px) {
@@ -365,7 +366,7 @@
         nom: a.nomClient || 'Client', ville: villeDe(a.adresse), adresse: a.adresse ?? '',
         type: a.typeClient ?? '', tournee: a.tournee ?? '', commercial: a.responsable ?? '',
         etatContact: null, etatContactCouleur: null,
-        etatContactLibelle: a.etatClient === 'CLIENT' ? 'Client' : '',
+        etatContactLibelle: ({ CLIENT: 'Client', PROSPECT: 'Prospect' })[a.etatClient] ?? '',
         contact: { nom: '', telephone: a.telephone ?? '', email: '' },
         note: '', nombreActions: 0,
       });
@@ -398,7 +399,9 @@
     const liste = agenda().map(p => ({ p, pr: prochaineDe(p) }));
     const parDate = (a, b) => a.pr.date - b.pr.date;
     return {
-      retard: liste.filter(x => x.pr && x.pr.date < AUJ()).sort(parDate),
+      // Retards : les plus récents d'abord — une relance d'hier a plus de
+      // chances d'être encore utile qu'une relance oubliée depuis un an.
+      retard: liste.filter(x => x.pr && x.pr.date < AUJ()).sort((a, b) => parDate(b, a)),
       jour:   liste.filter(x => x.pr && x.pr.date >= AUJ() && x.pr.date < AUJ() + JOUR).sort(parDate),
       visite: liste.filter(x => x.pr && x.pr.date >= AUJ() && x.pr.date < AUJ() + 7 * JOUR).sort(parDate),
       sans:   liste.filter(x => !x.pr && x.p.source !== 'client' && !estClos(x.p)),
@@ -443,9 +446,27 @@
         ${liste.length > 40 ? `<p class="carte-soustitre">+${liste.length - 40} autres — voir l'onglet Prospects</p>` : ''}
       </div>`;
 
+    // Actions ouvertes sans fiche rattachée (tâches générales) : sans elles,
+    // elles n'apparaîtraient nulle part.
+    const orphelines = actions.filter(a => !a.idClient && !ACTIONS_CLOSES.has(a.etat))
+      .sort((a, b) => (b.date ?? 0) - (a.date ?? 0));
+    const blocOrph = !orphelines.length ? '' : `
+      <div class="groupe-t" id="bloc-orphelines">
+        <h3>Actions sans fiche rattachée <span class="nb">(${orphelines.length})</span></h3>
+        ${orphelines.map(a => {
+          const j = a.date ? jours(a.date) : null;
+          return `<div class="rang ${j !== null && j < 0 ? 'retard' : ''}" style="cursor:default">
+            <span><span class="nom">${echap(a.libelle || a.typeLibelle || 'Action')}</span>
+              <span class="sous">${echap(a.description || '—')}</span></span>
+            <span class="droite">${j === null ? '' : j < 0 ? `<span class="echeance retard">${-j} j de retard</span>`
+              : `<span class="echeance">${fmtD(a.date)}</span>`}<br>${echap(a.responsable)}</span>
+          </div>`; }).join('')}
+      </div>`;
+
     const html = bloc('retard', 'Relances en retard', c.retard, 'retard')
       + bloc('jour', "À contacter aujourd'hui", c.jour, 'du')
       + bloc('visite', 'Prévu sous 7 jours', c.visite.filter(x => x.pr.date >= AUJ() + JOUR), '')
+      + blocOrph
       + bloc('sans', 'Prospects actifs sans prochaine action', c.sans, '');
     document.getElementById('listes-jour').innerHTML = html
       || (erreurs.prospects
@@ -456,7 +477,7 @@
 
   function rang(p, pr, classe) {
     const j = pr ? jours(pr.date) : null;
-    const quoi = pr?.libelle ? `<span class="quoi">${echap(pr.libelle)}</span> · ` : '';
+    const quoi = pr?.libelle ? `<span class="quoi" title="${echap(pr.libelle)}">${echap(pr.libelle)}</span> · ` : '';
     const ech = !pr ? '<span class="echeance">aucune action prévue</span>'
       : quoi + (j < 0 ? `<span class="echeance retard">${-j} j de retard</span>`
       : j === 0 ? '<span class="echeance du">aujourd’hui</span>'
