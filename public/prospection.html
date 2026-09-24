@@ -315,7 +315,7 @@
   function tous() {
     const ext = prospects.map(p => ({ ...p, source: 'easybeer' }));
     const loc = locales.tout().map(l => ({
-      idClient: null, source: 'locale', cleLocale: l.id,
+      idClient: null, source: 'locale', cleLocale: l.id, numero: '',
       nom: l.nom ?? '', ville: l.ville ?? '', adresse: '', type: l.type ?? '',
       commercial: l.resp ?? '', etatContact: null,
       etatContactLibelle: ({ contacter:'À contacter', premier:'Premier contact', relancer:'À relancer',
@@ -496,6 +496,7 @@
         <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(maps)}"
            target="_blank" rel="noopener">${ico('carte')} Itinéraire</a>
         ${p.idClient ? `<a href="/?client=${p.idClient}">${ico('colis')} Commander</a>` : ''}
+        ${p.idClient && /^PR/i.test(p.numero ?? '') ? `<button id="b-convertir">${ico('clients')} Transformer en client</button>` : ''}
       </div>
 
       <form id="saisie">
@@ -559,6 +560,7 @@
       if (f.dataset.ouvert) delete f.dataset.ouvert; else { f.dataset.ouvert = '1'; document.getElementById('s-note').focus(); }
     });
     document.getElementById('saisie').addEventListener('submit', e => { e.preventDefault(); enregistrer(p); });
+    document.getElementById('b-convertir')?.addEventListener('click', () => convertir(p));
 
     if (p.idClient) chargerDerniereCommande(p.idClient);
     else document.getElementById('bloc-commande').innerHTML =
@@ -620,6 +622,32 @@
     } catch (e) {
       msg.className = 'msg ko';
       msg.textContent = 'Échec de l’enregistrement : ' + e.message + ' — rien n’a été écrit.';
+    }
+  }
+
+  // La conversion est explicite, confirmée, et son résultat est vérifié côté
+  // serveur avant d'être annoncé ici.
+  async function convertir(p) {
+    if (!confirm(`Transformer ${p.nom} en client dans EasyBeer ?\n\n`
+      + `Sa fiche, son historique d'actions et ses coordonnées sont conservés. `
+      + `Un numéro client remplacera le numéro de prospect ${p.numero}.`)) return;
+    const b = document.getElementById('b-convertir');
+    b.disabled = true; b.innerHTML = '<span class="loader"></span> Transformation…';
+    try {
+      const d = await verifier(await fetch('/api/prospection/transformer-en-client', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idClient: p.idClient }),
+      }));
+      const cle = ficheCle;
+      await charger();
+      ouvrirFiche(cle, d.dejaClient
+        ? `Déjà client dans EasyBeer (${d.numero}) — rien n'a été modifié.`
+        : d.confirme
+          ? `Transformé en client — numéro ${d.numeroApres}.`
+          : `Transformation envoyée à EasyBeer ; le numéro client n'a pas pu être relu.`);
+    } catch (e) {
+      b.disabled = false; b.innerHTML = 'Transformer en client';
+      alert('Transformation impossible : ' + e.message + '\n\nRien n’a été modifié.');
     }
   }
 

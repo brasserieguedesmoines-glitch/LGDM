@@ -204,6 +204,49 @@ export function monterProspection(app, { easybeerGet, easybeerPost }) {
     }
   }));
 
+  // --- Transformation prospect → client -----------------------------------
+  // Règles, volontairement strictes parce que c'est la seule écriture qui
+  // change la nature d'une fiche :
+  //   1. On ne transforme que par identifiant EasyBeer : jamais sur la
+  //      ressemblance d'un nom d'établissement.
+  //   2. Un prospect se reconnaît à son numéro préfixé « PR » ; un client
+  //      porte « CL ». Une fiche déjà cliente est renvoyée telle quelle sans
+  //      rien écrire — réessayer est donc sans danger.
+  //   3. On relit la fiche complète et on la renvoie intégralement plutôt que
+  //      de fabriquer un objet partiel, qui écraserait les champs absents.
+  //   4. Rien n'est supprimé ni propagé : l'historique d'actions reste attaché
+  //      au même idClient.
+  const estProspect = numero => /^PR/i.test(String(numero ?? ''));
+
+  app.post('/api/prospection/transformer-en-client', (req, res) => repondre(res, async () => {
+    const id = Number(req.body?.idClient);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'idClient requis' });
+
+    const fiche = await easybeerGet(`/parametres/client/detail/${id}`);
+    if (!fiche?.idClient) {
+      return res.status(404).json({ error: 'Fiche introuvable dans EasyBeer' });
+    }
+    if (!estProspect(fiche.numero)) {
+      // Idempotence : déjà client, on ne réécrit rien.
+      return res.json({ dejaClient: true, numero: fiche.numero, nom: fiche.nom });
+    }
+
+    await easybeerPost('/parametres/prospect/transformer-en-client', fiche);
+    viderCache('prospects');
+
+    // On relit pour renvoyer le numéro client réellement attribué, plutôt que
+    // d'affirmer un résultat que l'on n'a pas vérifié.
+    const apres = await easybeerGet(`/parametres/client/detail/${id}`).catch(() => null);
+    res.json({
+      ok: true,
+      idClient: id,
+      nom: fiche.nom,
+      numeroAvant: fiche.numero,
+      numeroApres: apres?.numero ?? null,
+      confirme: apres ? !estProspect(apres.numero) : null,
+    });
+  }));
+
   // --- Diagnostic : dit honnêtement ce qui répond et ce qui ne répond pas ---
   // Aucune écriture n'est tentée ici. Permet de distinguer « implémenté » de
   // « intégration vérifiée » sans avoir à lire le code.
