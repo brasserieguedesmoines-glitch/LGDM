@@ -33,6 +33,11 @@
            border-top: 3px solid var(--bordure-forte); border-radius: var(--r-md);
            padding: var(--e3) var(--e4); text-align: left; cursor: pointer; width: 100%; }
     .kpi:hover { background: var(--surface-2); }
+    .kpi.actif { background: var(--surface-2); outline: 2px solid var(--accent, var(--alerte)); outline-offset: -2px; }
+    .kpi-grid:has(.actif) .kpi:not(.actif) { opacity: .55; }
+    .filtre-actif { display: flex; align-items: center; gap: var(--e2); font-size: var(--t-sm); color: var(--texte-2); margin-bottom: var(--e3); }
+    .filtre-actif button { min-height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--bordure);
+      background: var(--surface-2); color: var(--texte); font-weight: 600; cursor: pointer; }
     .kpi .lbl { font-size: var(--t-xs); font-weight: 500; color: var(--texte-2); }
     .kpi .val { font-size: var(--t-kpi); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
     .kpi.retard { border-top-color: var(--danger); } .kpi.retard .val { color: var(--danger); }
@@ -437,6 +442,9 @@
     };
   }
 
+  // Catégorie isolée par un clic sur un compteur (re-clic : tout afficher).
+  let catActive = null;
+
   function rendreJour() {
     // Sans le planning, « 0 relance en retard » serait un mensonge : on dit
     // ce qu'on ne sait pas plutôt que d'afficher des compteurs rassurants.
@@ -464,17 +472,20 @@
       ['perdus', 'Non transformés', c.perdus.length],
     ];
     document.getElementById('kpis').innerHTML = k.map(([cl, l, v]) =>
-      `<button class="kpi ${cl}" data-cat="${cl || 'sans'}">
+      `<button class="kpi ${cl} ${catActive === (cl || 'sans') ? 'actif' : ''}" data-cat="${cl || 'sans'}"
+         aria-pressed="${catActive === (cl || 'sans')}">
          <span class="lbl">${l}</span><span class="val">${v}</span></button>`).join('');
     document.querySelectorAll('.kpi').forEach(b => b.addEventListener('click', () => {
-      document.getElementById('bloc-' + b.dataset.cat)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      catActive = catActive === b.dataset.cat ? null : b.dataset.cat;
+      rendreJour();
     }));
 
-    const bloc = (id, titre, liste, classe) => !liste.length ? '' : `
+    const max = catActive ? 1000 : 40;
+    const bloc = (id, titre, liste, classe) => (!liste.length || (catActive && catActive !== id)) ? '' : `
       <div class="groupe-t" id="bloc-${id}">
         <h3>${titre} <span class="nb">(${liste.length})</span></h3>
-        ${liste.slice(0, 40).map(x => rang(x.p, x.pr, classe)).join('')}
-        ${liste.length > 40 ? `<p class="carte-soustitre">+${liste.length - 40} autres — voir l'onglet Prospects</p>` : ''}
+        ${liste.slice(0, max).map(x => rang(x.p, x.pr, classe)).join('')}
+        ${liste.length > max ? `<p class="carte-soustitre">+${liste.length - max} autres — voir l'onglet Prospects</p>` : ''}
       </div>`;
 
     // Actions ouvertes sans fiche rattachée (tâches générales) : sans elles,
@@ -496,15 +507,19 @@
 
     const html = bloc('retard', 'Relances en retard', c.retard, 'retard')
       + bloc('jour', "À contacter aujourd'hui", c.jour, 'du')
-      + bloc('visite', 'Prévu sous 7 jours', c.visite.filter(x => x.pr.date >= AUJ() + JOUR), '')
+      + bloc('visite', 'Prévu sous 7 jours', catActive ? c.visite : c.visite.filter(x => x.pr.date >= AUJ() + JOUR), '')
       + bloc('plustard', 'À recontacter plus tard', c.plustard, '')
-      + blocOrph
+      + (catActive ? '' : blocOrph)
       + bloc('sans', 'Prospects actifs sans prochaine action', c.sans, '')
       + bloc('perdus', 'Non transformés — échec ou ne pas contacter', c.perdus, 'perdu');
-    document.getElementById('listes-jour').innerHTML = html
+    const bandeauFiltre = catActive ? `<p class="filtre-actif">Catégorie isolée —
+      <button id="tout-voir">Tout afficher</button></p>` : '';
+    document.getElementById('listes-jour').innerHTML = bandeauFiltre + (html
+      || (catActive ? '<div class="vide"><p>Aucune fiche dans cette catégorie.</p></div>' : '')
       || (erreurs.prospects
           ? `<div class="erreur-bloc">${ico('alerte')} Prospection EasyBeer indisponible : ${erreurs.prospects}</div>`
-          : `<div class="vide">${ico('check')}<p>Rien à traiter aujourd'hui.</p></div>`);
+          : `<div class="vide">${ico('check')}<p>Rien à traiter aujourd'hui.</p></div>`));
+    document.getElementById('tout-voir')?.addEventListener('click', () => { catActive = null; rendreJour(); });
     brancherRangs();
   }
 
