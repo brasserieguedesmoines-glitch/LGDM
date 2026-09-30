@@ -148,7 +148,11 @@ const grillesCache = new Map(); // idClientType → { data, expiry }
 async function getGrilleByType(idClientType) {
   const cached = grillesCache.get(idClientType);
   if (cached && Date.now() < cached.expiry) return cached.data;
-  const data = await easybeerGet(`/parametres/grille-tarifaire/matrice/client?idClientType=${idClientType}`);
+  // La grille CHR (la plus fournie) dépasse le délai standard de 20 s :
+  // sans ce délai étendu, tous les CHR disparaissaient de la prise de commande.
+  const chemin = `/parametres/grille-tarifaire/matrice/client?idClientType=${idClientType}`;
+  const data = await easybeerGet(chemin, 90000)
+    .catch(e => e.status === 504 ? easybeerGet(chemin, 90000) : Promise.reject(e));
   grillesCache.set(idClientType, { data, expiry: Date.now() + 60 * 60 * 1000 });
   return data;
 }
@@ -213,7 +217,7 @@ async function getAllClients() {
   if (allClientsCache && Date.now() < allClientsCacheExpiry) return allClientsCache;
   const types = await getTypesClient();
   const allClients = new Map(); // idClient → { id, nom }
-  clientTypeMap.clear();
+  const echecs = [];
   // Chargement séquentiel pour éviter le rate limit EasyBeer (10 req/s)
   for (const t of types) {
     try {
@@ -225,10 +229,17 @@ async function getAllClients() {
           clientTypeMap.set(id, t.idClientType);
         }
       }
-    } catch {}
+    } catch (e) {
+      // Une grille illisible ne doit plus faire disparaître un canal entier
+      // en silence : on le signale et on ne garde pas la liste longtemps.
+      echecs.push(t.libelle ?? t.idClientType);
+      console.error(`getAllClients: grille ${t.libelle ?? t.idClientType} illisible —`, e.message);
+    }
   }
-  allClientsCache = [...allClients.values()].sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
-  allClientsCacheExpiry = Date.now() + 60 * 60 * 1000;
+  const liste = [...allClients.values()].sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
+  liste.echecs = echecs;
+  allClientsCache = liste;
+  allClientsCacheExpiry = Date.now() + (echecs.length ? 2 * 60 * 1000 : 60 * 60 * 1000);
   return allClientsCache;
 }
 
@@ -686,7 +697,10 @@ app.get('/api/clients', async (req, res) => {
     const types = await getTypesClient().catch(() => []);
     const libelleType = new Map(types.map(t => [t.idClientType, t.libelle]));
     // Cache CDN Vercel : évite de refaire ~10 appels EasyBeer à chaque visite
-    res.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+    // Liste incomplète : ni cache CDN long, ni version périmée resservie.
+    res.set('Cache-Control', clients.echecs?.length
+      ? 'no-store' : 'public, s-maxage=3600, stale-while-revalidate=86400');
+    if (clients.echecs?.length) res.set('X-Clients-Incomplets', encodeURIComponent(clients.echecs.join(', ')));
     res.json(clients.map(c => {
       const idClientType = clientTypeMap.get(c.id);
       return { ...c, idClientType, canal: canalParLibelleEtNom(libelleType.get(idClientType), c.nom) };
