@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#F7F7F8">
+  <title>Commandes pro — Le Gué des Moines</title>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'light';</script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="icons.js"></script>
+  <script src="ui.js"></script>
+  <script src="shell.js"></script>
+  <style>
+    .onglets { display: flex; gap: 8px; margin-bottom: var(--e4); flex-wrap: wrap; }
+    .onglets button { min-height: 36px; padding: 0 14px; border-radius: var(--r-md); border: 1px solid var(--bordure);
+      background: var(--surface); color: var(--texte); font-weight: 600; cursor: pointer; }
+    .onglets button[aria-pressed="true"] { background: var(--accent-doux); border-color: var(--accent); color: var(--accent-texte); }
+    .cmd { background: var(--surface); border: 1px solid var(--bordure); border-left: 4px solid var(--alerte);
+      border-radius: var(--r-md); padding: var(--e4); margin-bottom: var(--e3); }
+    .cmd.validee { border-left-color: var(--ok); } .cmd.refusee { border-left-color: var(--danger); }
+    .cmd .t { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .cmd h3 { font-size: var(--t-lg); }
+    .meta { font-size: var(--t-sm); color: var(--texte-2); }
+    .cmd table { width: 100%; border-collapse: collapse; margin: var(--e3) 0; font-size: var(--t-sm); }
+    .cmd td { padding: 6px 4px; border-bottom: 1px solid var(--bordure); }
+    .cmd td.n { text-align: right; white-space: nowrap; }
+    .cmd input.q { width: 70px; text-align: center; min-height: 32px; padding: 2px; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .btn { min-height: 38px; padding: 0 14px; border-radius: var(--r-md); border: 1px solid var(--bordure-forte);
+      background: var(--surface); color: var(--texte); font-weight: 600; cursor: pointer; }
+    .btn.ok { background: var(--accent); border-color: var(--accent); color: var(--sur-accent); }
+    .btn.danger { color: var(--danger); }
+    .btn:disabled { opacity: .5; cursor: wait; }
+    .msg { font-size: var(--t-sm); margin-top: 8px; }
+    .msg.ko { color: var(--danger); } .msg.bon { color: var(--ok); }
+    .note { background: var(--surface-2); border-radius: 8px; padding: 8px 10px; font-size: var(--t-sm); margin-top: 8px; }
+    .creer { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: var(--e4); }
+    .creer input { flex: 1; min-width: 220px; }
+    .lien { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--bordure);
+      border-radius: var(--r-md); padding: 10px 14px; margin-bottom: 8px; flex-wrap: wrap; }
+    .lien .nom { font-weight: 600; flex: 1; min-width: 180px; }
+    .lien code { font-size: var(--t-xs); color: var(--texte-2); }
+    .vide { text-align: center; padding: 40px; color: var(--texte-2); }
+    .pastille { font-size: var(--t-xs); font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); }
+  </style>
+</head>
+<body>
+  <main class="large">
+    <div class="onglets" role="group" aria-label="Vues">
+      <button data-v="attente" aria-pressed="true">À valider <span id="n-attente"></span></button>
+      <button data-v="traitees" aria-pressed="false">Traitées</button>
+      <button data-v="liens" aria-pressed="false">Liens clients</button>
+    </div>
+    <div id="vue"></div>
+  </main>
+
+  <script>
+    monterCoquille({ titre: 'Commandes pro', actif: '/commandes-pro.html' });
+    const $ = id => document.getElementById(id);
+    const echap = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
+    const eur = n => (n ?? 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+    const fmt = t => new Date(t).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const urlLien = t => `${location.origin}/pro.html#${t}`;
+    let vue = 'attente', commandes = [], liens = [], clients = null, erreur = null;
+
+    async function api(chemin, opts) {
+      const r = await fetch(chemin, opts);
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error ?? `HTTP ${r.status}`);
+      return d;
+    }
+    async function charger() {
+      try {
+        [commandes, liens] = await Promise.all([api('/api/pro-admin/commandes'), api('/api/pro-admin/liens')]);
+        erreur = null;
+      } catch (e) { erreur = e.message; }
+      rendre();
+    }
+
+    function rendre() {
+      const attente = commandes.filter(c => c.statut === 'a_valider' || c.statut === 'envoi');
+      $('n-attente').textContent = attente.length ? `(${attente.length})` : '';
+      document.querySelectorAll('.onglets button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === vue)));
+      if (erreur) { $('vue').innerHTML = `<div class="vide">Données indisponibles : ${echap(erreur)}</div>`; return; }
+      if (vue === 'liens') return rendreLiens();
+      const l = vue === 'attente' ? attente : commandes.filter(c => c.statut === 'validee' || c.statut === 'refusee');
+      $('vue').innerHTML = l.length ? l.map(carte).join('')
+        : `<div class="vide">${vue === 'attente' ? 'Aucune commande en attente.' : 'Aucune commande traitée.'}</div>`;
+      brancher();
+    }
+
+    function carte(c) {
+      const modifiable = c.statut === 'a_valider';
+      return `<div class="cmd ${c.statut}" data-id="${c.id}">
+        <div class="t"><div><h3>${echap(c.nom)}</h3>
+          <div class="meta">Reçue le ${fmt(c.recuLe)}${c.dateSouhaitee ? ` · livraison souhaitée le <b>${c.dateSouhaitee.split('-').reverse().join('/')}</b>` : ''}</div></div>
+          <div class="meta">${c.statut === 'validee' ? `✓ Envoyée dans EasyBeer${c.numeroEasyBeer ? ' — n° ' + echap(c.numeroEasyBeer) : ''}`
+            : c.statut === 'refusee' ? 'Refusée' : c.statut === 'envoi' ? 'Envoi en cours…' : ''}</div></div>
+        <table>${c.lignes.map(l => `<tr><td>${echap(l.libelle)} <span class="meta">${echap(l.contenant)}</span></td>
+          <td class="n">${modifiable ? `<input class="q" type="number" min="0" max="500" value="${l.quantite}" data-cle="${l.cle}" aria-label="Quantité">` : l.quantite}</td>
+          <td class="n">${l.prixHT != null ? eur(l.prixHT) : '—'}</td></tr>`).join('')}
+          <tr><td><b>Total HT</b></td><td></td><td class="n"><b>${eur(c.totalHT)}</b></td></tr></table>
+        ${c.commentaire ? `<div class="note">« ${echap(c.commentaire)} »</div>` : ''}
+        ${c.motif ? `<div class="note">Motif : ${echap(c.motif)}</div>` : ''}
+        ${modifiable ? `<div class="actions" style="margin-top:12px">
+          <button class="btn ok" data-a="valider">Valider et envoyer dans EasyBeer</button>
+          <button class="btn danger" data-a="refuser">Refuser</button>
+          <span class="meta">Mettre une quantité à 0 retire la ligne.</span></div>` : ''}
+        <p class="msg" role="status"></p></div>`;
+    }
+
+    function brancher() {
+      document.querySelectorAll('.cmd [data-a]').forEach(b => b.addEventListener('click', async () => {
+        const el = b.closest('.cmd'), id = el.dataset.id, msg = el.querySelector('.msg');
+        let corps = {};
+        if (b.dataset.a === 'valider') {
+          corps.lignes = [...el.querySelectorAll('input.q')].map(i => ({ cle: i.dataset.cle, quantite: Math.floor(Number(i.value) || 0) }));
+          if (!confirm('Envoyer cette commande dans EasyBeer ?')) return;
+        } else {
+          const motif = prompt('Motif du refus (visible par le client, facultatif) :');
+          if (motif === null) return;
+          corps.motif = motif;
+        }
+        el.querySelectorAll('button').forEach(x => x.disabled = true);
+        msg.className = 'msg'; msg.textContent = b.dataset.a === 'valider' ? 'Envoi à EasyBeer…' : 'Enregistrement…';
+        try {
+          await api(`/api/pro-admin/commandes/${id}/${b.dataset.a}`, { method: 'POST',
+            headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) });
+          await charger();
+        } catch (e) {
+          el.querySelectorAll('button').forEach(x => x.disabled = false);
+          msg.className = 'msg ko'; msg.textContent = 'Échec : ' + e.message + ' — la commande reste à valider.';
+        }
+      }));
+    }
+
+    // --- Liens clients ---
+    async function rendreLiens() {
+      const actifs = liens.filter(l => l.actif);
+      $('vue').innerHTML = `
+        <div class="creer">
+          <input list="dl-clients" id="q-client" placeholder="Rechercher un client pour lui créer son lien…" autocomplete="off">
+          <datalist id="dl-clients"></datalist>
+          <button class="btn ok" id="b-creer">Créer le lien</button>
+        </div>
+        <p class="msg" id="m-lien" role="status"></p>
+        <h3 style="margin:var(--e4) 0 var(--e2)">Liens actifs (${actifs.length})</h3>
+        ${actifs.map(l => `<div class="lien" data-t="${l.token}">
+          <span class="nom">${echap(l.nom)} <span class="pastille">${echap(l.canal ?? '')}</span></span>
+          <code>…/pro.html#${l.token.slice(0, 6)}…</code>
+          <button class="btn" data-l="copier">Copier le lien</button>
+          <a class="btn" style="display:inline-flex;align-items:center;text-decoration:none"
+             href="mailto:?subject=${encodeURIComponent('Vos commandes au Gué des Moines')}&body=${encodeURIComponent(`Bonjour,\n\nVoici votre lien personnel pour passer vos commandes au Gué des Moines :\n${urlLien(l.token)}\n\nGardez-le pour vous : il donne accès à vos tarifs.\n\nÀ bientôt !`)}">Envoyer par mail</a>
+          <button class="btn danger" data-l="desactiver">Désactiver</button>
+        </div>`).join('') || '<div class="vide">Aucun lien pour l’instant.</div>'}`;
+
+      document.querySelectorAll('[data-l]').forEach(b => b.addEventListener('click', async () => {
+        const t = b.closest('.lien').dataset.t;
+        if (b.dataset.l === 'copier') {
+          await navigator.clipboard.writeText(urlLien(t)).catch(() => prompt('Copiez le lien :', urlLien(t)));
+          b.textContent = 'Copié ✓'; setTimeout(() => b.textContent = 'Copier le lien', 1500);
+        } else if (confirm('Désactiver ce lien ? Le client ne pourra plus commander avec.')) {
+          await api('/api/pro-admin/liens/' + t, { method: 'DELETE' }).catch(e => alert(e.message));
+          await charger();
+        }
+      }));
+
+      $('b-creer').addEventListener('click', creerLien);
+      $('q-client').addEventListener('keydown', e => { if (e.key === 'Enter') creerLien(); });
+      if (!clients) {
+        $('m-lien').textContent = 'Chargement de la liste des clients…';
+        clients = await api('/api/clients').catch(e => { $('m-lien').textContent = e.message; return null; });
+        if (clients) $('m-lien').textContent = '';
+      }
+      if (clients) $('dl-clients').innerHTML = clients.map(c => `<option value="${echap(c.nom)}">`).join('');
+    }
+
+    async function creerLien() {
+      const nom = $('q-client').value.trim(), m = $('m-lien');
+      const c = clients?.find(x => x.nom === nom);
+      if (!c) { m.className = 'msg ko'; m.textContent = 'Choisissez un client dans la liste.'; return; }
+      try {
+        const l = await api('/api/pro-admin/liens', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idClient: c.id, nom: c.nom, canal: c.canal, idClientType: c.idClientType }) });
+        await navigator.clipboard.writeText(urlLien(l.token)).catch(() => {});
+        await charger();
+        const m2 = $('m-lien');
+        m2.className = 'msg bon'; m2.textContent = `Lien de ${c.nom} prêt et copié : ${urlLien(l.token)}`;
+      } catch (e) { m.className = 'msg ko'; m.textContent = 'Création impossible : ' + e.message; }
+    }
+
+    document.querySelectorAll('.onglets button').forEach(b => b.addEventListener('click', () => { vue = b.dataset.v; rendre(); charger(); }));
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) charger(); });
+    charger();
+    setInterval(() => { if (!document.hidden && vue !== 'liens') charger(); }, 60000);
+  </script>
+</body>
+</html>

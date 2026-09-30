@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <meta name="referrer" content="no-referrer">
+  <title>Commander — Le Gué des Moines</title>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'light';</script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { background: var(--fond); padding-bottom: 110px; }
+    .haut { background: var(--surface); border-bottom: 1px solid var(--bordure); }
+    .haut .in, .page { max-width: 760px; margin: 0 auto; padding: 16px; }
+    .haut .in { display: flex; align-items: center; gap: 12px; }
+    .haut img { width: 44px; }
+    .haut h1 { font-size: var(--t-lg); line-height: 1.2; }
+    .haut p { font-size: var(--t-sm); color: var(--texte-2); }
+    h2 { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--texte-2);
+      margin: 22px 0 8px; font-weight: 700; }
+    .prod { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--bordure);
+      border-radius: var(--r-md); padding: 12px 14px; margin-bottom: 8px; }
+    .prod.choisi { border-color: var(--accent); box-shadow: var(--anneau); }
+    .prod .inf { flex: 1; min-width: 0; }
+    .prod .nom { font-weight: 600; }
+    .prod .prix { font-size: var(--t-sm); color: var(--texte-2); }
+    .pas { display: flex; align-items: center; gap: 6px; }
+    .pas button { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--bordure-forte);
+      background: var(--surface); color: var(--texte); font-size: 20px; font-weight: 600; cursor: pointer; }
+    .pas input { width: 56px; height: 40px; text-align: center; font-weight: 700; padding: 0; }
+    .barre { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--bordure);
+      box-shadow: 0 -4px 16px rgba(0,0,0,.08); }
+    .barre .in { max-width: 760px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+    .barre .tot { flex: 1; font-size: var(--t-sm); color: var(--texte-2); }
+    .barre .tot b { display: block; font-size: var(--t-lg); color: var(--texte); }
+    .principal { min-height: 46px; padding: 0 20px; border: 0; border-radius: var(--r-md); background: var(--accent);
+      color: var(--sur-accent); font-weight: 700; font-size: var(--t-md); cursor: pointer; }
+    .principal:disabled { opacity: .45; cursor: not-allowed; }
+    .carte { background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--r-lg); padding: 16px; margin-top: 12px; }
+    .recap-l { display: flex; justify-content: space-between; gap: 12px; font-size: var(--t-sm); padding: 6px 0;
+      border-bottom: 1px solid var(--bordure); }
+    .champ { margin-top: 14px; }
+    .champ label { display: block; font-size: var(--t-sm); font-weight: 600; margin-bottom: 6px; }
+    .champ input, .champ textarea { width: 100%; }
+    .actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+    .second { min-height: 46px; padding: 0 16px; border-radius: var(--r-md); border: 1px solid var(--bordure-forte);
+      background: var(--surface); color: var(--texte); font-weight: 600; cursor: pointer; }
+    .statut { display: inline-block; font-size: var(--t-xs); font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+    .s-a_valider, .s-envoi { background: var(--alerte-doux); color: var(--alerte); }
+    .s-validee { background: var(--ok-doux); color: var(--ok); }
+    .s-refusee { background: var(--danger-doux); color: var(--danger); }
+    .hist { background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--r-md); padding: 12px 14px; margin-bottom: 8px; font-size: var(--t-sm); }
+    .hist .l1 { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+    .info { text-align: center; padding: 48px 16px; color: var(--texte-2); }
+    .ok-bloc { text-align: center; }
+    .ok-bloc .rond { width: 56px; height: 56px; border-radius: 50%; background: var(--ok-doux); color: var(--ok);
+      display: grid; place-items: center; margin: 8px auto 12px; font-size: 28px; font-weight: 700; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <header class="haut"><div class="in">
+    <img src="logo.png" alt="">
+    <div><h1 id="titre">Le Gué des Moines</h1><p id="sous">Commande en ligne</p></div>
+  </div></header>
+
+  <main class="page">
+    <div id="etat" class="info">Chargement de votre catalogue…</div>
+    <section id="catalogue" hidden></section>
+    <section id="recap" hidden></section>
+    <section id="merci" hidden></section>
+    <section id="historique" hidden></section>
+  </main>
+
+  <div class="barre" id="barre" hidden><div class="in">
+    <div class="tot"><span id="nb">0 article</span><b id="total">0,00 € HT</b></div>
+    <button class="principal" id="b-suite" disabled>Vérifier ma commande</button>
+  </div></div>
+
+  <script>
+    // Le jeton est dans le fragment (#…) : il n'est ni envoyé dans les journaux
+    // des serveurs ni transmis aux sites tiers.
+    const token = location.hash.slice(1);
+    const qte = new Map();          // cle → quantité
+    let produits = [], commandes = [];
+    const eur = n => n.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+    const echap = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
+    const $ = id => document.getElementById(id);
+    const STATUTS = { a_valider: 'Reçue — en cours de vérification', envoi: 'En cours de traitement',
+      validee: 'Validée', refusee: 'Non retenue' };
+
+    async function charger() {
+      if (!token) return erreur('Lien incomplet. Utilisez le lien envoyé par la brasserie.');
+      const r = await fetch('/api/pro/' + encodeURIComponent(token)).catch(() => null);
+      const d = await r?.json().catch(() => ({}));
+      if (!r?.ok) return erreur(d?.error ?? 'Service momentanément indisponible, réessayez plus tard.');
+      produits = d.produits; commandes = d.commandes;
+      $('titre').textContent = d.client;
+      $('sous').textContent = 'Commande en ligne — Le Gué des Moines';
+      $('etat').hidden = true;
+      rendreCatalogue(); rendreHistorique();
+    }
+    function erreur(t) { $('etat').textContent = t; $('etat').hidden = false; }
+
+    // Regroupement par format (bouteille, canette, fût…), lisible sur mobile
+    function rendreCatalogue() {
+      const groupes = new Map();
+      for (const p of produits) {
+        const g = p.contenant || 'Autres';
+        if (!groupes.has(g)) groupes.set(g, []);
+        groupes.get(g).push(p);
+      }
+      $('catalogue').innerHTML = [...groupes].map(([g, l]) => `<h2>${echap(g)}</h2>` + l.map(p => `
+        <div class="prod ${qte.get(p.cle) ? 'choisi' : ''}" data-cle="${p.cle}">
+          <div class="inf"><div class="nom">${echap(p.libelle)}</div>
+            <div class="prix">${p.prixHT != null ? eur(p.prixHT) + ' HT' : 'prix communiqué à la validation'}</div></div>
+          <div class="pas">
+            <button type="button" data-d="-1" aria-label="Retirer un ${echap(p.libelle)}">−</button>
+            <input type="number" min="0" max="500" inputmode="numeric" value="${qte.get(p.cle) ?? 0}" aria-label="Quantité ${echap(p.libelle)}">
+            <button type="button" data-d="1" aria-label="Ajouter un ${echap(p.libelle)}">+</button>
+          </div>
+        </div>`).join('')).join('');
+      $('catalogue').hidden = false; $('barre').hidden = false;
+      $('catalogue').querySelectorAll('.prod').forEach(el => {
+        const cle = el.dataset.cle, inp = el.querySelector('input');
+        const fixer = v => { v = Math.max(0, Math.min(500, Math.floor(Number(v) || 0)));
+          v ? qte.set(cle, v) : qte.delete(cle); inp.value = v; el.classList.toggle('choisi', v > 0); majBarre(); };
+        el.querySelectorAll('[data-d]').forEach(b => b.addEventListener('click', () => fixer((qte.get(cle) ?? 0) + Number(b.dataset.d))));
+        inp.addEventListener('change', () => fixer(inp.value));
+      });
+      majBarre();
+    }
+
+    function lignes() { return produits.filter(p => qte.get(p.cle)).map(p => ({ ...p, quantite: qte.get(p.cle) })); }
+    function majBarre() {
+      const l = lignes();
+      const n = l.reduce((s, x) => s + x.quantite, 0);
+      $('nb').textContent = `${n} article${n > 1 ? 's' : ''}`;
+      $('total').textContent = eur(l.reduce((s, x) => s + (x.prixHT ?? 0) * x.quantite, 0)) + ' HT';
+      $('b-suite').disabled = !n;
+    }
+
+    $('b-suite').addEventListener('click', () => {
+      const l = lignes();
+      const demain = new Date(Date.now() + 86400000).toLocaleDateString('sv-SE');
+      $('recap').innerHTML = `<div class="carte">
+        <h2 style="margin-top:0">Votre commande</h2>
+        ${l.map(x => `<div class="recap-l"><span>${x.quantite} × ${echap(x.libelle)} <small>${echap(x.contenant)}</small></span>
+          <b>${x.prixHT != null ? eur(x.prixHT * x.quantite) : '—'}</b></div>`).join('')}
+        <div class="recap-l" style="border:0"><span>Total HT indicatif</span><b>${$('total').textContent}</b></div>
+        <div class="champ"><label for="date">Livraison souhaitée (facultatif)</label>
+          <input type="date" id="date" min="${demain}"></div>
+        <div class="champ"><label for="com">Commentaire (facultatif)</label>
+          <textarea id="com" rows="3" maxlength="500" placeholder="Horaires de livraison, précision…"></textarea></div>
+        <p style="font-size:var(--t-sm);color:var(--texte-2);margin-top:12px">
+          La brasserie vérifie votre commande avant de la confirmer (stock, date de passage).</p>
+        <div class="actions">
+          <button class="second" id="b-retour">Modifier</button>
+          <button class="principal" id="b-envoyer">Envoyer la commande</button>
+        </div>
+        <p id="err" style="color:var(--danger);font-size:var(--t-sm);margin-top:10px" role="alert"></p>
+      </div>`;
+      $('catalogue').hidden = true; $('barre').hidden = true; $('recap').hidden = false; scrollTo(0, 0);
+      $('b-retour').addEventListener('click', () => { $('recap').hidden = true; $('catalogue').hidden = false; $('barre').hidden = false; });
+      $('b-envoyer').addEventListener('click', envoyer);
+    });
+
+    async function envoyer() {
+      const b = $('b-envoyer'); b.disabled = true; b.textContent = 'Envoi…';
+      const r = await fetch('/api/pro/' + encodeURIComponent(token) + '/commande', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lignes: lignes().map(x => ({ cle: x.cle, quantite: x.quantite })),
+          dateSouhaitee: $('date').value || null, commentaire: $('com').value.trim() }),
+      }).catch(() => null);
+      const d = await r?.json().catch(() => ({}));
+      if (!r?.ok) { b.disabled = false; b.textContent = 'Envoyer la commande';
+        $('err').textContent = (d?.error ?? 'Envoi impossible') + ' — votre commande n’a pas été transmise.'; return; }
+      qte.clear(); commandes.unshift(d.commande);
+      $('recap').hidden = true;
+      $('merci').innerHTML = `<div class="carte ok-bloc"><div class="rond">✓</div>
+        <h2 style="margin:0 0 6px;font-size:var(--t-lg);text-transform:none;letter-spacing:0;color:var(--texte)">Commande reçue, merci !</h2>
+        <p style="color:var(--texte-2);font-size:var(--t-sm)">La brasserie la vérifie et vous la confirme. Vous pouvez suivre son état ci-dessous.</p>
+        <div class="actions" style="justify-content:center"><button class="second" id="b-nouvelle">Passer une autre commande</button></div></div>`;
+      $('merci').hidden = false;
+      $('b-nouvelle').addEventListener('click', () => { $('merci').hidden = true; rendreCatalogue(); });
+      rendreHistorique(); scrollTo(0, 0);
+    }
+
+    function rendreHistorique() {
+      if (!commandes.length) { $('historique').hidden = true; return; }
+      $('historique').innerHTML = '<h2>Mes dernières commandes</h2>' + commandes.map(c => `
+        <div class="hist"><div class="l1"><b>${new Date(c.recuLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}</b>
+          <span class="statut s-${c.statut}">${STATUTS[c.statut] ?? c.statut}</span></div>
+          ${c.lignes.map(l => `${l.quantite} × ${echap(l.libelle)}`).join(' · ')}
+          ${c.motif ? `<div style="margin-top:4px;color:var(--texte-2)">${echap(c.motif)}</div>` : ''}
+        </div>`).join('');
+      $('historique').hidden = false;
+    }
+
+    charger();
+  </script>
+</body>
+</html>

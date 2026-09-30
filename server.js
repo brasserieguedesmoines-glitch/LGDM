@@ -5,6 +5,7 @@ import PDFDocument from 'pdfkit';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { monterProspection } from './prospection.js';
+import { monterAcces, monterPro, JETON_INTERNE } from './acces.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -33,6 +34,7 @@ app.use('/api', (req, res, next) =>
 
 app.use(express.json({ limit: '10mb' }));   // les photos de commandes passent en base64
 app.use(express.static(join(__dirname, 'public')));
+monterAcces(app);   // avant toute route /api : session d'équipe exigée
 
 const BASE_URL = 'https://api.easybeer.fr';
 const AUTH = Buffer.from(
@@ -1107,7 +1109,7 @@ function urlInterne(req, chemin) {
 async function fetchInterne(req, chemin, timeoutMs = 25000) {
   const d = avecDelai(timeoutMs);
   let r;
-  try { r = await fetch(urlInterne(req, chemin), { signal: d.signal }); }
+  try { r = await fetch(urlInterne(req, chemin), { signal: d.signal, headers: { 'x-lgdm-interne': JETON_INTERNE } }); }
   catch (e) { throw Object.assign(new Error(`Cache interne injoignable (${e.name === 'AbortError' ? 'délai dépassé' : e.message})`), { status: 504 }); }
   finally { d.fin(); }
   const data = await r.json().catch(() => ({}));
@@ -2742,6 +2744,9 @@ app.post('/api/donnees/:espace/reprise', async (req, res) => {
     res.status(502).json({ error: err.message });
   }
 });
+
+// --- Espace pro : liens clients et file de commandes à valider ---
+monterPro(app, { redis, redisActif, getProduitsClient, fetchInterne, construirePayloadCommande, easybeerPost });
 
 // --- Création de commande ---
 app.post('/api/commande', async (req, res) => {

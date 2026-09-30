@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Connexion — Le Gué des Moines</title>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'light';</script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { min-height: 100dvh; display: grid; place-items: center; background: var(--fond); padding: 16px; }
+    .boite { width: min(380px, 100%); background: var(--surface); border: 1px solid var(--bordure);
+      border-radius: var(--r-lg); padding: 28px; box-shadow: var(--ombre-1); }
+    .boite img { width: 56px; display: block; margin: 0 auto 12px; }
+    h1 { text-align: center; font-size: var(--t-xl); margin-bottom: 4px; }
+    .sous { text-align: center; color: var(--texte-2); font-size: var(--t-sm); margin-bottom: 20px; }
+    label { font-size: var(--t-sm); font-weight: 600; display: block; margin-bottom: 6px; }
+    input { width: 100%; }
+    button { width: 100%; margin-top: 14px; min-height: 44px; border: 0; border-radius: var(--r-md);
+      background: var(--accent); color: var(--sur-accent); font-weight: 700; font-size: var(--t-md); cursor: pointer; }
+    .msg { color: var(--danger); font-size: var(--t-sm); min-height: 1.4em; margin-top: 10px; text-align: center; }
+  </style>
+</head>
+<body>
+  <form class="boite" id="f">
+    <img src="logo.png" alt="">
+    <h1>Le Gué des Moines</h1>
+    <p class="sous">Espace équipe — tournées &amp; commandes</p>
+    <label for="mdp">Mot de passe</label>
+    <input type="password" id="mdp" autocomplete="current-password" required autofocus>
+    <button type="submit">Se connecter</button>
+    <p class="msg" id="msg" role="alert"></p>
+  </form>
+  <script>
+    const retour = new URLSearchParams(location.search).get('retour');
+    const cible = retour && retour.startsWith('/') && !retour.startsWith('//') ? retour : '/';
+    document.getElementById('f').addEventListener('submit', async e => {
+      e.preventDefault();
+      const msg = document.getElementById('msg');
+      msg.textContent = '';
+      const r = await fetch('/api/auth/connexion', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ motDePasse: document.getElementById('mdp').value }),
+      }).catch(() => null);
+      if (r?.ok) location.href = cible;
+      else msg.textContent = r ? 'Mot de passe incorrect.' : 'Connexion impossible, réessayez.';
+    });
+  </script>
+</body>
+</html>

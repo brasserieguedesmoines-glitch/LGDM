@@ -9,7 +9,30 @@ const PAGES = [
   { href: '/ruptures.html', icone: 'horloge',  libelle: 'Ruptures' },
   { href: '/visites.html', icone: 'carte', libelle: 'Y aller' },
   { href: '/prospection.html', icone: 'clients', libelle: 'Prospection' },
+  { href: '/commandes-pro.html', icone: 'colis', libelle: 'Commandes pro' },
 ];
+
+// Session d'équipe : toute réponse 401 de l'API renvoie vers la connexion,
+// puis ramène à la page d'origine.
+(() => {
+  const natif = window.fetch.bind(window);
+  let redirige = false;
+  window.fetch = async (...args) => {
+    const r = await natif(...args);
+    const url = String(args[0]?.url ?? args[0] ?? '');
+    if (r.status === 401 && /^\/api\//.test(url) && !url.startsWith('/api/auth/') && !redirige) {
+      redirige = true;
+      location.href = '/connexion.html?retour=' + encodeURIComponent(location.pathname + location.search + location.hash);
+    }
+    return r;
+  };
+})();
+
+async function seDeconnecter() {
+  await fetch('/api/auth/deconnexion', { method: 'POST' }).catch(() => {});
+  location.href = '/connexion.html';
+}
+window.seDeconnecter = seDeconnecter;
 
 function lienSidebar({ href, icone, libelle }, actif) {
   return `<a class="sidebar-lien" href="${href}"${actif ? ' aria-current="page"' : ''}>
@@ -32,6 +55,9 @@ function monterCoquille({ titre, actif, actions = '' }) {
     <div class="sidebar-pied">
       <a class="sidebar-lien" href="/api/commandes-pdf" target="_blank" rel="noopener">
         <svg class="ico" aria-hidden="true"><use href="#i-pdf"/></svg>Export PDF
+      </a>
+      <a class="sidebar-lien" href="#" onclick="seDeconnecter();return false">
+        <svg class="ico" aria-hidden="true"><use href="#i-croix"/></svg>Se déconnecter
       </a>
     </div>`;
 
