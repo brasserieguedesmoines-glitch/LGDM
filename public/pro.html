@@ -93,7 +93,11 @@
 
     async function charger() {
       if (!token) return erreur('Lien incomplet. Utilisez le lien envoyé par la brasserie.');
+      // Premier affichage d'un catalogue : il peut être en préparation.
+      const lent = setTimeout(() => $('etat').textContent =
+        'Préparation de votre catalogue et de vos tarifs… (uniquement à la première ouverture)', 3000);
       const r = await fetch('/api/pro/' + encodeURIComponent(token)).catch(() => null);
+      clearTimeout(lent);
       const d = await r?.json().catch(() => ({}));
       if (!r?.ok) return erreur(d?.error ?? 'Service momentanément indisponible, réessayez plus tard.');
       produits = d.produits; commandes = d.commandes;

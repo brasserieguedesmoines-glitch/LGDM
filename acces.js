@@ -115,31 +115,52 @@ export function monterPro(app, d) {
   }
 
   // Catalogue d'un client : sa gamme (CHR/cavistes → classique, GMS → La
-  // Bruguiéroise), avec ses prix HT de grille. Gardé 30 min en mémoire.
+  // Bruguiéroise), avec ses prix HT de grille.
+  // Le calcul est lent (grille du canal : jusqu'à une minute pour les CHR,
+  // puis un prix par produit) : il est gardé 12 h dans la base partagée, donc
+  // commun à toutes les instances, et préparé dès la création du lien.
+  const DUREE_CATALOGUE = 12 * 3600;
   const catalogues = new Map();
-  async function catalogue(req, lien) {
-    const c = catalogues.get(lien.idClient);
-    if (c && Date.now() < c.expire) return c.produits;
+  async function calculerCatalogue(req, lien) {
     const tous = await getProduitsClient(lien.idClient);
     const gamme = lien.canal === 'GMS' ? 'gms' : 'classique';
     const filtres = tous.filter(p => (p.gamme ?? 'classique') === gamme);
     const liste = filtres.length ? filtres : tous;
+    // Prix demandés par paquets de 6 plutôt qu'un par un.
     const produits = [];
-    for (const p of liste) {
-      let prixHT = null;
-      if (p.idStockBouteille && lien.idClientType) {
-        try {
-          const r = await fetchInterne(req, `/api/cache/prix/${p.idStockBouteille}/${lien.idClientType}/${lien.idClient}`);
-          prixHT = typeof r?.prixHT === 'number' ? r.prixHT : null;
-        } catch {}
-      }
-      produits.push({
-        cle: `${p.idProduit}-${p.idContenant}-${p.idLot ?? 1}`,
-        idProduit: p.idProduit, idContenant: p.idContenant, idLot: p.idLot ?? 1,
-        libelle: p.libelle, contenant: p.contenant, prixHT,
-      });
+    for (let i = 0; i < liste.length; i += 6) {
+      produits.push(...await Promise.all(liste.slice(i, i + 6).map(async p => {
+        let prixHT = null;
+        if (p.idStockBouteille && lien.idClientType) {
+          try {
+            const r = await fetchInterne(req, `/api/cache/prix/${p.idStockBouteille}/${lien.idClientType}/${lien.idClient}`);
+            prixHT = typeof r?.prixHT === 'number' ? r.prixHT : null;
+          } catch {}
+        }
+        return {
+          cle: `${p.idProduit}-${p.idContenant}-${p.idLot ?? 1}`,
+          idProduit: p.idProduit, idContenant: p.idContenant, idLot: p.idLot ?? 1,
+          libelle: p.libelle, contenant: p.contenant, prixHT,
+        };
+      })));
     }
+    return produits;
+  }
+  async function catalogue(req, lien, { forcer = false } = {}) {
+    const cle = `lgdm:pro-catalogue:${lien.idClient}`;
+    const m = catalogues.get(lien.idClient);
+    if (!forcer && m && Date.now() < m.expire) return m.produits;
+    if (!forcer) {
+      const v = await redis('GET', cle).catch(() => null);
+      if (v) {
+        const produits = JSON.parse(v);
+        catalogues.set(lien.idClient, { produits, expire: Date.now() + 30 * 60 * 1000 });
+        return produits;
+      }
+    }
+    const produits = await calculerCatalogue(req, lien);
     catalogues.set(lien.idClient, { produits, expire: Date.now() + 30 * 60 * 1000 });
+    if (produits.length) await redis('SET', cle, JSON.stringify(produits), 'EX', DUREE_CATALOGUE).catch(() => {});
     return produits;
   }
 
@@ -206,7 +227,10 @@ export function monterPro(app, d) {
     const { idClient, nom, canal, idClientType } = req.body ?? {};
     if (!Number.isInteger(idClient) || !nom) throw erreur(400, 'idClient et nom requis');
     const existant = (await lireTout(CLE_LIENS)).find(l => l.idClient === idClient && l.actif);
-    if (existant && !req.body?.regenerer) return res.json(existant);
+    if (existant && !req.body?.regenerer) {
+      await catalogue(req, existant).catch(() => {});
+      return res.json(existant);
+    }
     if (existant) await ecrire(CLE_LIENS, existant.token, { ...existant, actif: false, desactiveLe: Date.now() });
     const lien = {
       token: crypto.randomBytes(18).toString('base64url'),
@@ -215,6 +239,8 @@ export function monterPro(app, d) {
       actif: true, creeLe: Date.now(),
     };
     await ecrire(CLE_LIENS, lien.token, lien);
+    // Préparation du catalogue : le client ne subira pas le premier calcul.
+    await catalogue(req, lien, { forcer: true }).catch(e => console.error('pro: catalogue', e.message));
     res.json(lien);
   }));
 
