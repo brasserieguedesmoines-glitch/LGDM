@@ -11,6 +11,7 @@
 // dans une file « à valider », qu'un membre de l'équipe vérifie et envoie.
 
 import crypto from 'crypto';
+import PDFDocument from 'pdfkit';
 
 const COOKIE = 'lgdm_session';
 const DUREE_SESSION = 30 * 86400 * 1000;
@@ -87,7 +88,7 @@ const CLE_LIENS = 'lgdm:pro-liens';
 const CLE_CMD = 'lgdm:pro-commandes';
 
 export function monterPro(app, d) {
-  const { redis, redisActif, getProduitsClient, fetchInterne, construirePayloadCommande, easybeerPost } = d;
+  const { redis, redisActif, getProduitsClient, fetchInterne, construirePayloadCommande, easybeerPost, aDejaCommandeDesFuts } = d;
 
   const lireTout = async cle => {
     const plat = await redis('HGETALL', cle) ?? [];
@@ -144,25 +145,41 @@ export function monterPro(app, d) {
         };
       })));
     }
-    return produits;
+    // Fûts proposés seulement aux clients qui en ont déjà commandé.
+    const futs = await aDejaCommandeDesFuts(req, lien.idClient).catch(() => null);
+    return { produits, futs: futs === true };
   }
-  async function catalogue(req, lien, { forcer = false } = {}) {
+  const estFut = p => /f[uû]t|keg/i.test(`${p.contenant} ${p.libelle}`);
+
+  // Catalogue de base (gardé 12 h), puis filtres appliqués à chaque demande :
+  // fûts réservés aux habitués, et seulement ce qui est en stock maintenant.
+  async function catalogueBrut(req, lien, { forcer = false } = {}) {
     const cle = `lgdm:pro-catalogue:${lien.idClient}`;
     const m = catalogues.get(lien.idClient);
-    if (!forcer && m && Date.now() < m.expire) return m.produits;
+    if (!forcer && m && Date.now() < m.expire) return m.cat;
     if (!forcer) {
       const v = await redis('GET', cle).catch(() => null);
-      if (v) {
-        const produits = JSON.parse(v);
-        catalogues.set(lien.idClient, { produits, expire: Date.now() + 30 * 60 * 1000 });
-        return produits;
+      const cat = v ? JSON.parse(v) : null;
+      if (cat?.produits) {           // ancien format (liste seule) : recalculé
+        catalogues.set(lien.idClient, { cat, expire: Date.now() + 30 * 60 * 1000 });
+        return cat;
       }
     }
-    const produits = await calculerCatalogue(req, lien);
-    catalogues.set(lien.idClient, { produits, expire: Date.now() + 30 * 60 * 1000 });
-    if (produits.length) await redis('SET', cle, JSON.stringify(produits), 'EX', DUREE_CATALOGUE).catch(() => {});
-    return produits;
+    const cat = await calculerCatalogue(req, lien);
+    catalogues.set(lien.idClient, { cat, expire: Date.now() + 30 * 60 * 1000 });
+    if (cat.produits.length) await redis('SET', cle, JSON.stringify(cat), 'EX', DUREE_CATALOGUE).catch(() => {});
+    return cat;
   }
+  async function catalogue(req, lien, opts) {
+    const cat = await catalogueBrut(req, lien, opts);
+    let stock = null;
+    try { stock = await fetchInterne(req, '/api/cache/stock-index'); } catch {}
+    return cat.produits
+      .filter(p => cat.futs || !estFut(p))
+      // Stock illisible : on ne masque rien plutôt que de vider le catalogue.
+      .filter(p => !stock || (stock[p.cle]?.quantiteDisponible ?? 0) > 0);
+  }
+
 
   const vueCommande = c => ({
     id: c.id, recuLe: c.recuLe, statut: c.statut, dateSouhaitee: c.dateSouhaitee,
@@ -214,6 +231,51 @@ export function monterPro(app, d) {
     };
     await ecrire(CLE_CMD, cmd.id, cmd);
     res.json({ ok: true, commande: vueCommande(cmd) });
+  }));
+
+  // Récapitulatif PDF d'une commande, pour le client.
+  app.get('/api/pro/:token/commande/:id/recap.pdf', (req, res) => repondre(res, async () => {
+    const lien = await lienValide(req.params.token);
+    const c = await lire(CLE_CMD, req.params.id);
+    if (!c || c.token !== req.params.token) throw erreur(404, 'Commande inconnue');
+    const eur = n => n == null ? '—' : n.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/[\u202f\u00a0]/g, ' ') + ' €';
+    const doc = new PDFDocument({ size: 'A4', margin: 48 });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="commande-gue-des-moines-${new Date(c.recuLe).toISOString().slice(0, 10)}.pdf"`);
+    res.setHeader('Cache-Control', 'no-store');
+    doc.pipe(res);
+    doc.font('Helvetica-Bold').fontSize(18).text('Brasserie du Gué des Moines');
+    doc.font('Helvetica').fontSize(9).fillColor('#666').text('Bruguières (31)');
+    doc.moveDown(1.2).fillColor('#000').font('Helvetica-Bold').fontSize(14).text('Récapitulatif de commande');
+    doc.font('Helvetica').fontSize(10).moveDown(0.4)
+      .text(`Client : ${lien.nom}`)
+      .text(`Commande du ${new Date(c.recuLe).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })}`)
+      .text(`État : ${({ a_valider: 'reçue, en cours de vérification', envoi: 'en cours de traitement', validee: 'validée', refusee: 'non retenue' })[c.statut] ?? c.statut}`);
+    if (c.dateSouhaitee) doc.text(`Livraison souhaitée : ${c.dateSouhaitee.split('-').reverse().join('/')}`);
+    doc.moveDown(1);
+    const x = [48, 330, 400, 480], y0 = doc.y;
+    doc.font('Helvetica-Bold').fontSize(9);
+    ['Produit', 'Qté', 'PU HT', 'Total HT'].forEach((t, i) => doc.text(t, x[i], y0, { width: i ? 70 : 270, align: i ? 'right' : 'left' }));
+    doc.moveTo(48, y0 + 14).lineTo(548, y0 + 14).strokeColor('#bbb').stroke();
+    doc.font('Helvetica').fontSize(9);
+    let y = y0 + 20;
+    for (const l of c.lignes) {
+      if (y > 760) { doc.addPage(); y = 48; }
+      doc.text(`${l.libelle} — ${l.contenant}`, x[0], y, { width: 270 });
+      doc.text(String(l.quantite), x[1], y, { width: 70, align: 'right' });
+      doc.text(eur(l.prixHT), x[2], y, { width: 70, align: 'right' });
+      doc.text(eur(l.prixHT == null ? null : l.prixHT * l.quantite), x[3], y, { width: 70, align: 'right' });
+      y = Math.max(doc.y, y + 12) + 4;
+    }
+    doc.moveTo(48, y).lineTo(548, y).strokeColor('#bbb').stroke();
+    doc.font('Helvetica-Bold').text('Total HT indicatif', x[0], y + 8).text(eur(c.totalHT), x[3], y + 8, { width: 70, align: 'right' });
+    doc.font('Helvetica').fillColor('#000');
+    if (c.commentaire) doc.moveDown(1.5).text(`Commentaire : ${c.commentaire}`, 48);
+    if (c.motif) doc.moveDown(0.5).text(`Motif : ${c.motif}`, 48);
+    doc.moveDown(2).fontSize(8).fillColor('#666').text(
+      'Document récapitulatif, non contractuel : prix HT de votre grille au moment de la commande, hors droits et consignes éventuels. '
+      + 'La facture fait foi.', 48, undefined, { width: 500 });
+    doc.end();
   }));
 
   // --- Côté équipe (session requise) ---

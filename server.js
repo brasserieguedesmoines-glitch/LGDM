@@ -2746,7 +2746,23 @@ app.post('/api/donnees/:espace/reprise', async (req, res) => {
 });
 
 // --- Espace pro : liens clients et file de commandes à valider ---
-monterPro(app, { redis, redisActif, getProduitsClient, fetchInterne, construirePayloadCommande, easybeerPost });
+// Un client a-t-il déjà commandé des fûts ? On parcourt ses 15 dernières
+// commandes (listes et détails passent par le cache CDN). En cas de doute
+// (historique illisible), on répond null : l'appelant décide.
+async function aDejaCommandeDesFuts(req, idClient) {
+  const toutes = await chargerCommandes(req, 60 * 1000);
+  const siennes = toutes.filter(c => c.client?.idClient === idClient && !c.estDevis && !c.estAnnulee)
+    .sort((a, b) => (b.dateCreation ?? 0) - (a.dateCreation ?? 0)).slice(0, 15);
+  for (const c of siennes) {
+    try {
+      const det = await fetchInterne(req, `/api/cache/detail/${c.idCommande}?v=2`);
+      if ((det.elements ?? []).some(e => /f[uû]t|keg/i.test(e.libelle ?? ''))) return true;
+    } catch {}
+  }
+  return toutes.length ? false : null;
+}
+
+monterPro(app, { redis, redisActif, getProduitsClient, fetchInterne, construirePayloadCommande, easybeerPost, aDejaCommandeDesFuts });
 
 // --- Création de commande ---
 app.post('/api/commande', async (req, res) => {
