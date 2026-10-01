@@ -1275,6 +1275,26 @@ async function chargerClientsInactifs(req, budgetMs = 75 * 1000) {
   return inactifs;
 }
 
+// Clients désactivés dans EasyBeer, pour les retirer de la recherche de la
+// prise de commande. Le calcul lit une fiche par client (lent à froid) : le
+// résultat est gardé 12 h dans la base partagée.
+app.get('/api/clients-inactifs', async (req, res) => {
+  const cle = 'lgdm:clients-inactifs';
+  try {
+    if (redisActif()) {
+      const v = await redis('GET', cle).catch(() => null);
+      if (v) return res.json(JSON.parse(v));
+    }
+    const inactifs = await chargerClientsInactifs(req, 60 * 1000);
+    if (!inactifs) return res.json({ ids: [], inconnu: true });
+    const r = { ids: [...inactifs], le: Date.now() };
+    if (redisActif()) await redis('SET', cle, JSON.stringify(r), 'EX', 12 * 3600).catch(() => {});
+    res.json(r);
+  } catch (err) {
+    res.status(err.status ?? 502).json({ error: err.message });
+  }
+});
+
 // Rassemble les pages par lots parallèles ; s'arrête sur une page incomplète
 // (fin de liste) ou quand le budget de temps est épuisé.
 async function chargerCommandes(req, budgetMs = 150 * 1000, maxPages = 60) {

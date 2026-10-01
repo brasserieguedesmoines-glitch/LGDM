@@ -115,6 +115,12 @@ async function chargerClients() {
       clientCanalIndex[String(c.id)] = c.canal;
     });
     const options = clients.map(c => ({ value: String(c.id), label: c.nom }));
+    // Clients désactivés dans EasyBeer : retirés de la recherche dès qu'ils sont
+    // connus (la liste est lue en direct par le champ de recherche).
+    apiFetch('/api/clients-inactifs').then(r => {
+      const inactifs = new Set((r.ids ?? []).map(String));
+      for (let i = options.length - 1; i >= 0; i--) if (inactifs.has(options[i].value)) options.splice(i, 1);
+    }).catch(() => {});
 
     clientSearchSelect = createSearchSelect('Nom du client…', options, async (value) => {
       currentIdClient = value;
