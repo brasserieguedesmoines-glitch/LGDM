@@ -26,6 +26,9 @@
     .prod .inf { flex: 1; min-width: 0; }
     .prod .nom { font-weight: 600; }
     .prod .prix { font-size: var(--t-sm); color: var(--texte-2); }
+    .packs { display: flex; gap: 6px; margin-top: 6px; }
+    .packs button { min-height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--accent);
+      background: var(--accent-doux); color: var(--accent-texte); font-weight: 700; font-size: var(--t-sm); cursor: pointer; }
     .pas { display: flex; align-items: center; gap: 6px; }
     .pas button { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--bordure-forte);
       background: var(--surface); color: var(--texte); font-size: 20px; font-weight: 600; cursor: pointer; }
@@ -109,6 +112,17 @@
     const urlRecap = id => `/api/pro/${encodeURIComponent(token)}/commande/${id}/recap.pdf`;
     function erreur(t) { $('etat').textContent = t; $('etat').hidden = false; }
 
+    // Colisage, comme à la prise de commande : 33 cL → 12 / 24, 75 cL → 6 / 12.
+    function colisage(contenant) {
+      const l = String(contenant ?? '').toLowerCase();
+      if (/f[uû]t|keg/.test(l)) return [];
+      const m = l.match(/(\d+(?:[.,]\d+)?)\s*l\b/);
+      const v = m ? parseFloat(m[1].replace(',', '.')) : null;
+      if (v !== null && Math.abs(v - 0.75) < 0.01) return [6, 12];
+      if (v !== null && Math.abs(v - 0.33) < 0.01) return [12, 24];
+      return [];
+    }
+
     // Regroupement par format (bouteille, canette, fût…), lisible sur mobile
     function rendreCatalogue() {
       const groupes = new Map();
@@ -122,7 +136,9 @@
           '<div class="info">Aucun produit disponible pour le moment. Contactez la brasserie.</div>') + [...groupes].map(([g, l]) => `<h2>${echap(g)}</h2>` + l.map(p => `
         <div class="prod ${qte.get(p.cle) ? 'choisi' : ''}" data-cle="${p.cle}">
           <div class="inf"><div class="nom">${echap(p.libelle)}</div>
-            <div class="prix">${p.prixHT != null ? eur(p.prixHT) + ' HT' : 'prix communiqué à la validation'}</div></div>
+            <div class="prix">${p.prixHT != null ? eur(p.prixHT) + ' HT' : 'prix communiqué à la validation'}</div>
+            ${colisage(p.contenant).length ? `<div class="packs">${colisage(p.contenant).map(n =>
+              `<button type="button" data-pack="${n}" title="Ajouter ${n} bouteilles">+${n}</button>`).join('')}</div>` : ''}</div>
           <div class="pas">
             <button type="button" data-d="-1" aria-label="Retirer un ${echap(p.libelle)}">−</button>
             <input type="number" min="0" max="500" inputmode="numeric" value="${qte.get(p.cle) ?? 0}" aria-label="Quantité ${echap(p.libelle)}">
@@ -134,6 +150,7 @@
         const cle = el.dataset.cle, inp = el.querySelector('input');
         const fixer = v => { v = Math.max(0, Math.min(500, Math.floor(Number(v) || 0)));
           v ? qte.set(cle, v) : qte.delete(cle); inp.value = v; el.classList.toggle('choisi', v > 0); majBarre(); };
+        el.querySelectorAll('[data-pack]').forEach(b => b.addEventListener('click', () => fixer((qte.get(cle) ?? 0) + Number(b.dataset.pack))));
         el.querySelectorAll('[data-d]').forEach(b => b.addEventListener('click', () => fixer((qte.get(cle) ?? 0) + Number(b.dataset.d))));
         inp.addEventListener('change', () => fixer(inp.value));
       });
