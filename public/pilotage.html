@@ -448,7 +448,7 @@
   <script>
     // « Actualiser » : relit les dernières commandes dans EasyBeer au lieu du cache.
     monterCoquille({ titre: 'Pilotage', actif: '/pilotage.html',
-      actions: `<button class="btn-secondaire" id="btn-actualiser" style="min-height:36px;padding:0 14px;font-weight:600">↻ Actualiser</button>` });
+      actions: `<button id="btn-actualiser" style="min-height:36px;padding:0 14px;font-weight:600;border:1px solid var(--bordure-forte);border-radius:var(--r-md);background:var(--surface);color:var(--texte);cursor:pointer">↻ Actualiser</button>` });
     const FRAIS = new URLSearchParams(location.search).has('frais');
     if (FRAIS) history.replaceState(null, '', location.pathname + location.hash);
     document.getElementById('btn-actualiser').addEventListener('click', e => {
