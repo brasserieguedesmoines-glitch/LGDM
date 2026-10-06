@@ -1297,13 +1297,16 @@ app.get('/api/clients-inactifs', async (req, res) => {
 
 // Rassemble les pages par lots parallèles ; s'arrête sur une page incomplète
 // (fin de liste) ou quand le budget de temps est épuisé.
-async function chargerCommandes(req, budgetMs = 150 * 1000, maxPages = 60) {
+// « frais » : les 2 premières pages (les commandes les plus récentes, tri par
+// numéro décroissant) sont relues dans EasyBeer au lieu du cache CDN d'1 h.
+async function chargerCommandes(req, budgetMs = 150 * 1000, maxPages = 60, frais = false) {
   const t0 = Date.now();
   const LOT = 8;
   const toutes = [];
   for (let debut = 1; debut <= maxPages; debut += LOT) {
     const pages = Array.from({ length: Math.min(LOT, maxPages - debut + 1) }, (_, k) => debut + k);
-    const lots = await enParallele(pages, LOT, p => fetchInterne(req, `/api/cache/commandes/p/${p}`));
+    const lots = await enParallele(pages, LOT, p =>
+      fetchInterne(req, `/api/cache/commandes/p/${p}${frais && p <= 2 ? `?frais=${Date.now()}` : ''}`));
     let fini = false;
     for (const r of lots) {
       if (!r || r.erreur || !r.commandes) { fini = true; break; }
@@ -1704,11 +1707,11 @@ let pilotageCacheExpiry = 0;
 const detailCommandeCache = new Map();
 
 let pilotageEnCours = null;
-async function construirePilotage(req) {
-  if (pilotageCache && Date.now() < pilotageCacheExpiry) return pilotageCache;
+async function construirePilotage(req, { frais = false } = {}) {
+  if (!frais && pilotageCache && Date.now() < pilotageCacheExpiry) return pilotageCache;
   // Mutex : les requêtes simultanées partagent la même construction
   if (!pilotageEnCours) {
-    pilotageEnCours = construirePilotageInterne(req).finally(() => { pilotageEnCours = null; });
+    pilotageEnCours = construirePilotageInterne(req, { frais }).finally(() => { pilotageEnCours = null; });
   }
   try {
     return await pilotageEnCours;
@@ -1767,7 +1770,7 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
   // En cas d'échec on lève l'erreur : le cache périmé sera servi à la place
   // La récupération des commandes ne peut consommer plus que les deux tiers du
   // budget : il faut garder de quoi charger le contenu des livraisons.
-  const toutes = await mesurer('chargerCommandes', () => chargerCommandes(req, Math.min(resteMs(), BUDGET_MS * 0.65)));
+  const toutes = await mesurer('chargerCommandes', () => chargerCommandes(req, Math.min(resteMs(), BUDGET_MS * 0.65), 60, !!optionsPilotage.frais));
   jalon('commandes');
   if (Date.now() - t0 > BUDGET_MS * 0.65) budgetAtteint = true;
   // Sans cette garde, un échec de récupération produit un tableau de bord vide
@@ -2412,7 +2415,10 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
 
 app.get('/api/pilotage', async (req, res) => {
   try {
-    const data = await construirePilotage(req);
+    const frais = req.query.frais !== undefined;
+    const data = await construirePilotage(req, { frais });
+    if (frais) res.set('Cache-Control', 'no-store');
+    else
     // Cache CDN court si des données sont incomplètes, pour retenter rapidement
     res.set('Cache-Control', data.incomplet
       ? 'public, s-maxage=300, stale-while-revalidate=3600'
