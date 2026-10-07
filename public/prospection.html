@@ -40,6 +40,14 @@
     .rp-champ { margin-bottom: var(--e3); min-width: 0; }
     .rp-champ label, .rp-lbl { display: block; font-size: var(--t-xs); font-weight: 600; color: var(--texte-2); margin-bottom: 4px; }
     .rp-champ input, .rp-champ select, .rp-champ textarea { width: 100%; }
+    .rp-recherche { position: relative; }
+    #cr-liste { position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px); background: var(--surface);
+      border: 1px solid var(--bordure-forte); border-radius: var(--r-md); box-shadow: var(--ombre-1); max-height: 320px; overflow-y: auto; }
+    #cr-liste button { display: block; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--bordure);
+      padding: 8px 12px; color: var(--texte); cursor: pointer; font-size: var(--t-sm); }
+    #cr-liste button:hover { background: var(--surface-2); }
+    #cr-liste button span { display: block; color: var(--texte-2); font-size: var(--t-xs); }
+    #cr-liste p { padding: 10px 12px; color: var(--texte-2); font-size: var(--t-sm); margin: 0; }
     .rp-ligne { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e2); }
     .rp-duo { display: flex; gap: 6px; } .rp-duo input { flex: 1; min-width: 0; } .rp-duo select { width: auto; }
     .rp-puces { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
@@ -282,8 +290,10 @@
         <form class="rp-carte" id="cr" autocomplete="off">
           <h3>Compte rendu de contact</h3>
           <div class="rp-champ"><label for="cr-q">Prospect</label>
-            <input type="text" id="cr-q" list="cr-liste" placeholder="Rechercher un prospect…" required>
-            <datalist id="cr-liste"></datalist></div>
+            <div class="rp-recherche">
+              <input type="text" id="cr-q" placeholder="Nom, ville ou n° de prospect…" role="combobox" aria-expanded="false" aria-controls="cr-liste">
+              <div id="cr-liste" role="listbox" hidden></div>
+            </div></div>
           <div class="rp-ligne">
             <div class="rp-champ"><label for="cr-type">Type de contact</label><select id="cr-type"></select></div>
             <div class="rp-champ"><label for="cr-date">Date</label><input type="date" id="cr-date" required></div>
@@ -1095,10 +1105,31 @@
     document.getElementById('cr-res').innerHTML = RESULTATS.map(([r]) => `<button type="button" data-r="${r}">${r}</button>`).join('');
     document.getElementById('cr-date').value = isoJour(Date.now());
 
-    document.getElementById('cr-q').addEventListener('change', e => {
-      const p = prospects.find(x => etiquetteP(x) === e.target.value);
-      choisirProspect(p ?? null);
+    // Recherche maison : le <datalist> n'était jamais rempli et se comporte
+    // différemment selon les navigateurs.
+    const q = document.getElementById('cr-q'), liste = document.getElementById('cr-liste');
+    const fermer = () => { liste.hidden = true; q.setAttribute('aria-expanded', 'false'); };
+    q.addEventListener('input', () => {
+      choisirProspect(null);
+      const t = norm(q.value.trim());
+      if (t.length < 2) return fermer();
+      const res = prospects.filter(p => norm(`${p.nom} ${p.ville} ${p.numero}`).includes(t)).slice(0, 12);
+      liste.innerHTML = res.length
+        ? res.map(p => `<button type="button" role="option" data-id="${p.idClient}"><b>${echap(p.nom)}</b>
+            <span>${echap([p.ville, p.etatContactLibelle, p.commercial].filter(Boolean).join(' · '))}</span></button>`).join('')
+        : '<p>Aucun prospect trouvé.</p>';
+      liste.hidden = false; q.setAttribute('aria-expanded', 'true');
     });
+    liste.addEventListener('click', e => {
+      const b = e.target.closest('[data-id]'); if (!b) return;
+      const p = prospects.find(x => x.idClient === Number(b.dataset.id));
+      q.value = etiquetteP(p); fermer(); choisirProspect(p);
+    });
+    q.addEventListener('keydown', e => {
+      if (e.key === 'Escape') fermer();
+      if (e.key === 'Enter' && !liste.hidden) { e.preventDefault(); liste.querySelector('[data-id]')?.click(); }
+    });
+    document.addEventListener('click', e => { if (!e.target.closest('.rp-recherche')) fermer(); });
     document.getElementById('cr-res').addEventListener('click', e => {
       const b = e.target.closest('[data-r]'); if (!b) return;
       crResultat = b.dataset.r;
