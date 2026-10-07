@@ -256,6 +256,25 @@ export function monterProspection(app, { easybeerGet, easybeerPost }) {
     }
   }));
 
+  // --- Clore une action existante (FAIT / NE_PAS_FAIRE) ---
+  // Route EasyBeer /parametres/client/action/etat/{idAction}/{etat}. Sa méthode
+  // HTTP est lue dans le contrat Swagger plutôt que supposée.
+  const swagger = () => enCache('swagger', 6 * 3600 * 1000, () => easybeerGet('/v2/api-docs', 60000));
+  app.post('/api/prospection/action/clore', (req, res) => repondre(res, async () => {
+    const id = Number(req.body?.idAction);
+    const etat = String(req.body?.etat ?? 'FAIT');
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'idAction requis' });
+    if (!['FAIT', 'NE_PAS_FAIRE'].includes(etat)) return res.status(400).json({ error: 'État non autorisé' });
+    const def = (await swagger())?.paths?.['/parametres/client/action/etat/{idAction}/{etat}'];
+    if (!def) throw Object.assign(new Error('Route de changement d’état absente du contrat EasyBeer'), { status: 501 });
+    const chemin = `/parametres/client/action/etat/${id}/${etat}`;
+    if (def.get) await easybeerGet(chemin);
+    else if (def.post) await easybeerPost(chemin, {});
+    else throw Object.assign(new Error('Méthode non prise en charge par le contrat'), { status: 501 });
+    viderCache('actions');
+    res.json({ ok: true, idAction: id, etat });
+  }));
+
   // --- Changer l'état de contact d'un prospect ---
   // Route dédiée d'EasyBeer (GET /parametres/prospect/etat-contact/{id}/{etat}) :
   // elle ne touche qu'à l'état, pas au reste de la fiche. L'état demandé est

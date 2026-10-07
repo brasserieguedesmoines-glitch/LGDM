@@ -33,6 +33,33 @@
            border-top: 3px solid var(--bordure-forte); border-radius: var(--r-md);
            padding: var(--e3) var(--e4); text-align: left; cursor: pointer; width: 100%; }
     .kpi:hover { background: var(--surface-2); }
+    .rp-grille { display: grid; grid-template-columns: minmax(320px, 440px) 1fr; gap: var(--e4); align-items: start; }
+    @media (max-width: 960px) { .rp-grille { grid-template-columns: 1fr; } }
+    .rp-carte { background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--r-lg); padding: var(--e4); margin-bottom: var(--e3); }
+    .rp-carte h3 { font-size: var(--t-md); margin-bottom: var(--e3); }
+    .rp-champ { margin-bottom: var(--e3); min-width: 0; }
+    .rp-champ label, .rp-lbl { display: block; font-size: var(--t-xs); font-weight: 600; color: var(--texte-2); margin-bottom: 4px; }
+    .rp-champ input, .rp-champ select, .rp-champ textarea { width: 100%; }
+    .rp-ligne { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e2); }
+    .rp-duo { display: flex; gap: 6px; } .rp-duo input { flex: 1; min-width: 0; } .rp-duo select { width: auto; }
+    .rp-puces { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .rp-puces button { min-height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--bordure-forte);
+      background: var(--surface-2); color: var(--texte); font-weight: 600; font-size: var(--t-sm); cursor: pointer; }
+    .rp-puces button[aria-pressed="true"] { background: var(--accent-doux); border-color: var(--accent); color: var(--accent-texte); }
+    .rp-retards label { display: flex; gap: 8px; align-items: center; font-size: var(--t-sm); color: var(--texte); font-weight: 400; margin: 4px 0; }
+    .rp-retards input { width: auto; }
+    #cr-ok { width: 100%; min-height: 44px; }
+    .rp-etapes { list-style: none; padding: 0; margin: var(--e2) 0; font-size: var(--t-sm); }
+    .rp-etapes li { padding: 3px 0; } .rp-etapes .ok { color: var(--ok); } .rp-etapes .ko { color: var(--danger); } .rp-etapes .attente { color: var(--texte-2); }
+    .rp-deux { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e3); }
+    @media (max-width: 640px) { .rp-deux, .rp-ligne { grid-template-columns: 1fr; } }
+    .rp-barre { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--bordure); font-size: var(--t-sm); }
+    .rp-entonnoir { display: grid; grid-template-columns: 110px 1fr 40px; gap: 8px; align-items: center; font-size: var(--t-sm); margin: 6px 0; }
+    .rp-entonnoir i { display: block; height: 14px; border-radius: 4px; background: var(--accent); }
+    .rp-entonnoir b { text-align: right; }
+    .rp-cr { display: flex; justify-content: space-between; gap: 8px; width: 100%; text-align: left; background: none; border: 0;
+      border-bottom: 1px solid var(--bordure); padding: 10px 0; color: var(--texte); font-size: var(--t-sm); cursor: pointer; }
+    .rp-cr:hover { background: var(--surface-2); }
     .etat-ligne { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     #f-etat-contact { width: auto; min-height: 32px; padding: 2px 8px; font-weight: 600; }
     .kpi.actif { background: var(--surface-2); outline: 2px solid var(--accent, var(--alerte)); outline-offset: -2px; }
@@ -198,6 +225,7 @@
       <button data-vue="aujourdhui" class="actif">Aujourd'hui</button>
       <button data-vue="prospects">Prospects</button>
       <button data-vue="tournees">Tournées</button>
+      <button data-vue="reporting">Reporting</button>
     </div>
 
     <div class="sync" id="sync" data-etat="ok">Chargement…</div>
@@ -248,6 +276,63 @@
       <div id="tournee-sel"></div>
       <div id="tournee-dispo"></div>
     </div>
+
+    <div class="vue" id="vue-reporting" style="display:none">
+      <div class="rp-grille">
+        <form class="rp-carte" id="cr" autocomplete="off">
+          <h3>Compte rendu de contact</h3>
+          <div class="rp-champ"><label for="cr-q">Prospect</label>
+            <input type="text" id="cr-q" list="cr-liste" placeholder="Rechercher un prospect…" required>
+            <datalist id="cr-liste"></datalist></div>
+          <div class="rp-ligne">
+            <div class="rp-champ"><label for="cr-type">Type de contact</label><select id="cr-type"></select></div>
+            <div class="rp-champ"><label for="cr-date">Date</label><input type="date" id="cr-date" required></div>
+          </div>
+          <div class="rp-ligne">
+            <div class="rp-champ"><label for="cr-inter">Interlocuteur</label><input type="text" id="cr-inter" placeholder="Nom"></div>
+            <div class="rp-champ"><label for="cr-fonction">Fonction</label><input type="text" id="cr-fonction" placeholder="Gérant, chef de bar…"></div>
+          </div>
+          <div class="rp-champ"><span class="rp-lbl">Résultat</span><div class="rp-puces" id="cr-res"></div></div>
+          <div class="rp-ligne">
+            <div class="rp-champ"><label for="cr-etat">Nouvel état de contact</label><select id="cr-etat"></select></div>
+            <div class="rp-champ"><label for="cr-com">Commercial</label><select id="cr-com"></select></div>
+          </div>
+          <div class="rp-ligne">
+            <div class="rp-champ"><label for="cr-vol">Potentiel / mois</label>
+              <span class="rp-duo"><input type="number" id="cr-vol" min="0" placeholder="Volume">
+              <select id="cr-unite"><option value="bouteilles">bouteilles</option><option value="fûts">fûts</option></select></span></div>
+            <div class="rp-champ"><label for="cr-gamme">Gamme visée</label>
+              <select id="cr-gamme"><option value="">—</option><option>Classique</option><option>La Bruguiéroise (GMS)</option><option>Fûts</option><option>Mixte</option></select></div>
+          </div>
+          <div class="rp-champ"><label for="cr-conc">Concurrents en place</label><input type="text" id="cr-conc" maxlength="200" placeholder="Brasseries déjà référencées"></div>
+          <div class="rp-champ"><span class="rp-lbl">Prochaine action</span>
+            <div class="rp-ligne">
+              <select id="cr-ptype"><option value="">Aucune</option></select>
+              <input type="date" id="cr-pdate">
+            </div>
+            <div class="rp-puces" id="cr-praccourcis">
+              <button type="button" data-j="7">1 semaine</button><button type="button" data-j="14">2 semaines</button><button type="button" data-j="30">1 mois</button>
+            </div></div>
+          <div class="rp-champ"><label for="cr-note">Note</label><textarea id="cr-note" rows="3" maxlength="1500"></textarea></div>
+          <div id="cr-retards"></div>
+          <button type="submit" class="primary" id="cr-ok">Enregistrer le compte rendu</button>
+          <div id="cr-etapes" role="status"></div>
+        </form>
+
+        <div class="rp-tableau">
+          <div class="filtres">
+            <div><label for="rp-per">Période</label><select id="rp-per">
+              <option value="semaine">Cette semaine</option><option value="mois" selected>Ce mois</option><option value="libre">Personnalisée</option></select></div>
+            <div id="rp-libre" hidden><label for="rp-du">Du</label><input type="date" id="rp-du"></div>
+            <div id="rp-libre2" hidden><label for="rp-au">Au</label><input type="date" id="rp-au"></div>
+            <div><label for="rp-com">Commercial</label><select id="rp-com"><option value="">Tous</option></select></div>
+            <button class="btn-raz" id="rp-csv">Export CSV</button>
+          </div>
+          <div id="rp-kpis" class="kpi-grid"></div>
+          <div id="rp-detail"></div>
+        </div>
+      </div>
+    </div>
   </main>
 
   <div id="fond" role="dialog" aria-modal="true" aria-labelledby="fiche-titre"><div id="fiche"></div></div>
@@ -274,6 +359,7 @@
   // les postes. Il prime sur l'action EasyBeer et sort la fiche des
   // « Non transformés » ; rien n'est écrit dans EasyBeer.
   const reports = creerMagasin('reports', { surChangement: () => rendre() });
+  const reportings = creerMagasin('reportings', { surChangement: () => { if (vue === 'reporting') rendreTableau(); } });
   const cleDe = p => p.source === 'locale' ? `L${p.cleLocale}` : `E${p.idClient}`;
   const reportDe = p => reports.tout().find(r => r.id === cleDe(p));
   const tournee = creerMagasin('visites', {
@@ -439,6 +525,7 @@
     if (vue === 'aujourdhui') rendreJour();
     if (vue === 'prospects') rendreListe();
     if (vue === 'tournees') rendreTournees();
+    if (vue === 'reporting') rendreReporting();
   }
 
   // Non transformés : prospects en échec ou à ne pas contacter. Rangés à part
@@ -692,6 +779,7 @@
 
       <div class="rapides">
         <button class="primaire" id="b-saisir">${ico('check')} Enregistrer une visite</button>
+        ${p.source !== 'locale' && p.idClient ? `<button id="b-cr">${ico('liste')} Compte rendu</button>` : ''}
         ${tel ? `<a href="tel:${tel}">${ico('telephone')} Appeler</a>` : ''}
         ${p.contact.email ? `<a href="mailto:${p.contact.email}">${ico('mail')} Email</a>` : ''}
         <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(maps)}"
@@ -761,6 +849,7 @@
     });
     document.getElementById('saisie').addEventListener('submit', e => { e.preventDefault(); enregistrer(p); });
     document.getElementById('b-convertir')?.addEventListener('click', () => convertir(p));
+    document.getElementById('b-cr')?.addEventListener('click', () => { fermerFiche(); ouvrirCompteRendu(p); });
     document.getElementById('f-etat-contact')?.addEventListener('change', e => changerEtat(p, e.target));
     const reporter = async date => {
       if (date === null) await reports.supprimer(cleDe(p));
@@ -976,12 +1065,238 @@
     }
   }
 
+  // --- Reporting --------------------------------------------------------------
+  // Un compte rendu = un enregistrement dans l'espace partagé « reportings »,
+  // puis jusqu'à quatre écritures EasyBeer (action FAIT, état de contact,
+  // prochaine action, clôture d'anciennes actions). Chaque étape garde son
+  // résultat : réessayer ne rejoue que celles qui ont échoué, sans doublon.
+  const RESULTATS = [
+    ['Intéressé', 'QUALIFICATION'], ['À rappeler', 'A_RECONTACTER'],
+    ['Dégustation prévue', 'CONTACT_EN_COURS'], ['Devis demandé', 'VALIDATION_EN_COURS'],
+    ['Pas intéressé', 'ECHEC'], ['Absent', 'TENTATIVE_CONTACT'],
+  ];
+  const ETAPES = { action: 'Contact enregistré dans EasyBeer', etat: 'État de contact mis à jour',
+    suivante: 'Prochaine action programmée', clore: 'Anciennes actions closes' };
+  let crProspect = null, crResultat = null, crPret = false;
+  const isoJour = t => new Date(t).toLocaleDateString('sv-SE');
+  const libEtat = c => ref.etatsContact.find(e => e.code === c)?.libelle || c || '—';
+  const etiquetteP = p => `${p.nom}${p.ville ? ' — ' + p.ville : ''} (${p.numero || p.idClient})`;
+
+  function preparerFormulaire() {
+    if (crPret) return; crPret = true;
+    const opt = (l, v, t) => l.map(x => `<option value="${echap(v(x))}">${echap(t(x))}</option>`).join('');
+    document.getElementById('cr-type').innerHTML = opt(ref.typesAction, x => x.code, x => x.libelle);
+    document.getElementById('cr-type').value = 'VISITE';
+    document.getElementById('cr-ptype').innerHTML = '<option value="">Aucune</option>' + opt(ref.typesAction, x => x.code, x => x.libelle);
+    document.getElementById('cr-etat').innerHTML = '<option value="">Inchangé</option>' + opt(ref.etatsContact, x => x.code, x => x.libelle);
+    const coms = ref.utilisateurs.filter(u => u.actif);
+    document.getElementById('cr-com').innerHTML = opt(coms, x => x.id, x => x.nom);
+    document.getElementById('rp-com').innerHTML = '<option value="">Tous</option>' + opt(coms, x => x.nom, x => x.nom);
+    document.getElementById('cr-res').innerHTML = RESULTATS.map(([r]) => `<button type="button" data-r="${r}">${r}</button>`).join('');
+    document.getElementById('cr-date').value = isoJour(Date.now());
+
+    document.getElementById('cr-q').addEventListener('change', e => {
+      const p = prospects.find(x => etiquetteP(x) === e.target.value);
+      choisirProspect(p ?? null);
+    });
+    document.getElementById('cr-res').addEventListener('click', e => {
+      const b = e.target.closest('[data-r]'); if (!b) return;
+      crResultat = b.dataset.r;
+      document.querySelectorAll('#cr-res [data-r]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      const code = RESULTATS.find(([r]) => r === crResultat)[1];
+      if (ref.etatsContact.some(x => x.code === code)) document.getElementById('cr-etat').value = code;
+    });
+    document.getElementById('cr-praccourcis').addEventListener('click', e => {
+      const b = e.target.closest('[data-j]'); if (!b) return;
+      document.getElementById('cr-pdate').value = isoJour(AUJ() + b.dataset.j * JOUR);
+      const t = document.getElementById('cr-ptype'); if (!t.value) t.value = 'APPEL';
+    });
+    document.getElementById('cr').addEventListener('submit', e => { e.preventDefault(); enregistrerCR(); });
+    ['rp-per', 'rp-du', 'rp-au', 'rp-com'].forEach(id => document.getElementById(id).addEventListener('change', rendreTableau));
+    document.getElementById('rp-csv').addEventListener('click', exporterCSV);
+  }
+
+  function choisirProspect(p) {
+    crProspect = p;
+    const z = document.getElementById('cr-retards');
+    if (!p) { z.innerHTML = ''; return; }
+    if (p.idCommercial) document.getElementById('cr-com').value = p.idCommercial;
+    const retards = actions.filter(a => a.idClient === p.idClient && !ACTIONS_CLOSES.has(a.etat) && a.idAction && a.date && a.date < AUJ());
+    z.innerHTML = !retards.length ? '' : `<div class="rp-champ rp-retards"><span class="rp-lbl">Actions en retard sur ce prospect — à clore ?</span>
+      ${retards.map(a => `<label><input type="checkbox" value="${a.idAction}"> ${echap(a.libelle || a.typeLibelle || 'Action')} — ${fmtD(a.date)}</label>`).join('')}</div>`;
+  }
+
+  function ouvrirCompteRendu(p) {
+    document.querySelector('#tabs button[data-vue="reporting"]').click();
+    document.getElementById('cr-q').value = etiquetteP(p);
+    choisirProspect(p);
+    document.getElementById('cr-q').scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }
+
+  async function enregistrerCR() {
+    const p = crProspect;
+    const etapesEl = document.getElementById('cr-etapes');
+    if (!p) { etapesEl.innerHTML = '<p class="msg ko">Choisissez un prospect dans la liste.</p>'; return; }
+    if (!crResultat) { etapesEl.innerHTML = '<p class="msg ko">Indiquez le résultat du contact.</p>'; return; }
+    const v = id => document.getElementById(id).value.trim();
+    const com = ref.utilisateurs.find(u => String(u.id) === v('cr-com'));
+    const nouvelEtat = v('cr-etat') && v('cr-etat') !== p.etatContact ? v('cr-etat') : null;
+    const clore = [...document.querySelectorAll('#cr-retards input:checked')].map(i => Number(i.value));
+    const r = {
+      id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+      creeLe: Date.now(), date: new Date(v('cr-date') + 'T12:00').getTime(),
+      idClient: p.idClient, nom: p.nom, ville: p.ville,
+      type: v('cr-type'), typeLibelle: ref.typesAction.find(t => t.code === v('cr-type'))?.libelle ?? v('cr-type'),
+      interlocuteur: v('cr-inter'), fonction: v('cr-fonction'), resultat: crResultat,
+      etatAvant: p.etatContact ?? null, nouvelEtat,
+      potentiel: v('cr-vol') ? { volume: Number(v('cr-vol')), unite: v('cr-unite') } : null,
+      gamme: v('cr-gamme'), concurrents: v('cr-conc'), note: v('cr-note'),
+      idCommercial: com?.id ?? null, commercial: com?.nom ?? '',
+      suivante: v('cr-ptype') && v('cr-pdate') ? { type: v('cr-ptype'), date: new Date(v('cr-pdate') + 'T09:00').getTime() } : null,
+      clore,
+      etapes: { action: 'attente', etat: nouvelEtat ? 'attente' : null,
+        suivante: v('cr-ptype') && v('cr-pdate') ? 'attente' : null, clore: clore.length ? 'attente' : null },
+      erreurs: {},
+    };
+    await reportings.enregistrer(r);
+    await executerCR(r);
+  }
+
+  const resumeCR = r => [
+    `Résultat : ${r.resultat}`,
+    r.interlocuteur && `Interlocuteur : ${r.interlocuteur}${r.fonction ? ' (' + r.fonction + ')' : ''}`,
+    r.potentiel && `Potentiel : ${r.potentiel.volume} ${r.potentiel.unite}/mois`,
+    r.gamme && `Gamme visée : ${r.gamme}`,
+    r.concurrents && `Concurrents : ${r.concurrents}`,
+    r.note && `Note : ${r.note}`,
+  ].filter(Boolean).join('\n');
+
+  async function executerCR(r) {
+    const ok = document.getElementById('cr-ok'); ok.disabled = true;
+    const post = (url, corps) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) }).then(verifier);
+    const faire = {
+      action: () => post('/api/prospection/action', { idClient: r.idClient, type: r.type, libelle: `${r.typeLibelle} — ${r.resultat}`,
+        description: resumeCR(r), date: r.date, etat: 'FAIT', idResponsable: r.idCommercial ?? undefined }),
+      etat: () => post('/api/prospection/etat-contact', { idClient: r.idClient, etat: r.nouvelEtat }),
+      suivante: () => post('/api/prospection/action', { idClient: r.idClient, type: r.suivante.type,
+        libelle: `${ref.typesAction.find(t => t.code === r.suivante.type)?.libelle ?? 'Relance'} — suite au contact du ${fmtD(r.date)}`,
+        description: r.note || '', date: r.suivante.date, etat: 'A_FAIRE', idResponsable: r.idCommercial ?? undefined }),
+      clore: async () => { for (const id of r.clore) await post('/api/prospection/action/clore', { idAction: id, etat: 'FAIT' }); },
+    };
+    for (const k of Object.keys(faire)) {
+      if (r.etapes[k] !== 'attente' && r.etapes[k] !== 'ko') continue;
+      afficherEtapes(r);
+      try { await faire[k](); r.etapes[k] = 'ok'; delete r.erreurs[k]; }
+      catch (e) { r.etapes[k] = 'ko'; r.erreurs[k] = e.message; }
+      await reportings.enregistrer({ ...r });
+    }
+    ok.disabled = false;
+    afficherEtapes(r);
+    const tousOk = Object.values(r.etapes).every(x => x === null || x === 'ok');
+    if (tousOk) {
+      document.getElementById('cr').reset(); crProspect = null; crResultat = null;
+      document.getElementById('cr-date').value = isoJour(Date.now());
+      document.getElementById('cr-type').value = 'VISITE';
+      document.getElementById('cr-retards').innerHTML = '';
+      document.querySelectorAll('#cr-res [data-r]').forEach(x => x.setAttribute('aria-pressed', 'false'));
+    }
+    await charger();   // états et actions relus dans EasyBeer
+  }
+
+  function afficherEtapes(r) {
+    const el = document.getElementById('cr-etapes');
+    const lignes = Object.entries(r.etapes).filter(([, v]) => v).map(([k, v]) =>
+      `<li class="${v}">${v === 'ok' ? '✓' : v === 'ko' ? '✗' : '…'} ${ETAPES[k]}${v === 'ko' ? ` — <small>${echap(r.erreurs[k])}</small>` : ''}</li>`).join('');
+    const echec = Object.values(r.etapes).includes('ko');
+    el.innerHTML = `<p class="rp-lbl">${echap(r.nom)}</p><ul class="rp-etapes">${lignes}</ul>`
+      + (echec ? `<button type="button" class="btn-raz" id="cr-reessayer">Réessayer les étapes en échec</button>` : '');
+    document.getElementById('cr-reessayer')?.addEventListener('click', () => executerCR(r));
+  }
+
+  // --- Tableau ---
+  function bornes() {
+    const per = document.getElementById('rp-per').value;
+    document.getElementById('rp-libre').hidden = document.getElementById('rp-libre2').hidden = per !== 'libre';
+    const d = new Date(AUJ());
+    if (per === 'semaine') { const l = new Date(d); l.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return [l.getTime(), AUJ() + JOUR]; }
+    if (per === 'mois') return [new Date(d.getFullYear(), d.getMonth(), 1).getTime(), AUJ() + JOUR];
+    const du = document.getElementById('rp-du').value, au = document.getElementById('rp-au').value;
+    return [du ? new Date(du + 'T00:00').getTime() : 0, au ? new Date(au + 'T00:00').getTime() + JOUR : Infinity];
+  }
+  function crPeriode() {
+    const [a, b] = bornes(), com = document.getElementById('rp-com').value;
+    return reportings.tout().filter(r => r.date >= a && r.date < b && (!com || r.commercial === com)).sort((x, y) => y.date - x.date);
+  }
+
+  function rendreReporting() { preparerFormulaire(); rendreTableau(); }
+
+  function rendreTableau() {
+    if (!crPret) return;
+    const [a, b] = bornes(), com = document.getElementById('rp-com').value;
+    const crs = crPeriode();
+    // Contacts : toutes les actions FAIT de la période dans EasyBeer, y compris
+    // celles saisies hors de l'appli.
+    const faits = actions.filter(x => x.etat === 'FAIT' && x.date >= a && x.date < b && (!com || x.responsable === com));
+    const parType = new Map();
+    for (const x of faits) parType.set(x.typeLibelle || 'Autre', (parType.get(x.typeLibelle || 'Autre') ?? 0) + 1);
+    const ouvertes = actions.filter(x => !ACTIONS_CLOSES.has(x.etat) && x.date && (!com || x.responsable === com));
+    const retard = ouvertes.filter(x => x.date < AUJ()).length;
+    const contactes = new Set(crs.map(r => r.idClient));
+    const valides = [...contactes].filter(id => { const p = prospects.find(x => x.idClient === id); return !p || p.etatContact === 'VALIDE'; }).length;
+    const portefeuille = prospects.filter(p => !com || p.commercial === com);
+    const F = [['Non contacté', ['NON_CONTACTE']], ['Contacté', ['TENTATIVE_CONTACT', 'CONTACT_EN_COURS', 'CONTACTE', 'A_RECONTACTER']],
+      ['Qualification', ['QUALIFICATION', 'VALIDATION_EN_COURS', 'BESOIN_NON_IDENTIFIE']], ['Validé', ['VALIDE']],
+      ['Échecs', ['ECHEC', 'NON_QUALIFIE', 'NE_PAS_CONTACTER']]].map(([l, c]) => [l, portefeuille.filter(p => c.includes(p.etatContact)).length]);
+    const maxF = Math.max(1, ...F.map(([, n]) => n));
+    const passages = new Map();
+    for (const r of crs) if (r.nouvelEtat) passages.set(libEtat(r.nouvelEtat), (passages.get(libEtat(r.nouvelEtat)) ?? 0) + 1);
+
+    document.getElementById('rp-kpis').innerHTML = [
+      ['', 'Contacts (EasyBeer)', faits.length], ['', 'Comptes rendus', crs.length],
+      ['visite', 'Validés parmi les contactés', contactes.size ? `${valides}/${contactes.size}` : '—'],
+      [retard ? 'retard' : '', 'Relances en retard', retard], ['', 'Relances à venir', ouvertes.length - retard],
+    ].map(([cl, l, v]) => `<div class="kpi ${cl}"><span class="lbl">${l}</span><span class="val">${v}</span></div>`).join('');
+
+    document.getElementById('rp-detail').innerHTML = `
+      <div class="rp-deux">
+        <div class="rp-carte"><h3>Contacts par type</h3>${[...parType].sort((x, y) => y[1] - x[1]).map(([t, n]) =>
+          `<div class="rp-barre"><span>${echap(t)}</span><b>${n}</b></div>`).join('') || '<p class="carte-soustitre">Aucun contact sur la période.</p>'}</div>
+        <div class="rp-carte"><h3>Passages d'état (comptes rendus)</h3>${[...passages].map(([t, n]) =>
+          `<div class="rp-barre"><span>${echap(t)}</span><b>${n}</b></div>`).join('') || '<p class="carte-soustitre">Aucun changement d’état sur la période.</p>'}</div>
+      </div>
+      <div class="rp-carte"><h3>Entonnoir du portefeuille (aujourd'hui)</h3>
+        ${F.map(([l, n]) => `<div class="rp-entonnoir"><span>${l}</span><i style="width:${Math.max(2, n / maxF * 100)}%"></i><b>${n}</b></div>`).join('')}</div>
+      <div class="rp-carte"><h3>Derniers comptes rendus (${crs.length})</h3>
+        ${crs.slice(0, 50).map(r => {
+          const echec = Object.values(r.etapes ?? {}).includes('ko');
+          return `<button class="rp-cr" data-cle="E${r.idClient}">
+            <span><b>${echap(r.nom)}</b> <span class="carte-soustitre">${fmtD(r.date)} · ${echap(r.typeLibelle)} · ${echap(r.commercial)}</span><br>
+            ${echap(r.resultat)}${r.nouvelEtat ? ` → ${echap(libEtat(r.nouvelEtat))}` : ''}${r.potentiel ? ` · ${r.potentiel.volume} ${r.potentiel.unite}/mois` : ''}</span>
+            ${echec ? '<span class="echeance retard">écriture EasyBeer incomplète</span>' : ''}</button>`; }).join('')
+          || '<p class="carte-soustitre">Aucun compte rendu sur la période.</p>'}</div>`;
+    document.querySelectorAll('.rp-cr').forEach(b => b.addEventListener('click', () => ouvrirFiche(b.dataset.cle)));
+  }
+
+  function exporterCSV() {
+    const c = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const lignes = [['Date', 'Prospect', 'Ville', 'Commercial', 'Type', 'Interlocuteur', 'Fonction', 'Résultat', 'État avant', 'Nouvel état',
+      'Potentiel', 'Gamme', 'Concurrents', 'Prochaine action', 'Note', 'Écriture EasyBeer']]
+      .concat(crPeriode().map(r => [fmtD(r.date), r.nom, r.ville, r.commercial, r.typeLibelle, r.interlocuteur, r.fonction, r.resultat,
+        libEtat(r.etatAvant), r.nouvelEtat ? libEtat(r.nouvelEtat) : '', r.potentiel ? `${r.potentiel.volume} ${r.potentiel.unite}/mois` : '',
+        r.gamme, r.concurrents, r.suivante ? fmtD(r.suivante.date) : '', r.note,
+        Object.values(r.etapes ?? {}).includes('ko') ? 'incomplète' : 'ok']));
+    const blob = new Blob(['﻿' + lignes.map(l => l.map(c).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = `reporting-prospection-${isoJour(Date.now())}.csv`; a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
   // --- Navigation ----------------------------------------------------------
   document.getElementById('tabs').addEventListener('click', e => {
     const b = e.target.closest('button[data-vue]'); if (!b) return;
     document.querySelectorAll('#tabs button').forEach(x => x.classList.remove('actif'));
     b.classList.add('actif'); vue = b.dataset.vue;
-    ['aujourdhui','prospects','tournees'].forEach(v =>
+    ['aujourdhui','prospects','tournees','reporting'].forEach(v =>
       document.getElementById('vue-' + v).style.display = v === vue ? '' : 'none');
     rendre();
   });
@@ -1001,6 +1316,7 @@
     monterCoquille({ titre: 'Prospection', actif: '/prospection.html' });
     locales.charger().then(rendre);
     reports.charger().then(rendre); reports.suivre(30_000);
+    reportings.charger().then(() => { if (vue === 'reporting') rendreReporting(); }); reportings.suivre(60_000);
     tournee.charger().then(() => { if (vue === 'tournees') rendreTournees(); });
     charger();
   });
