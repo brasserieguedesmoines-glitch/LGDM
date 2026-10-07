@@ -203,6 +203,7 @@
     monterCoquille({ titre: 'Clients à relancer', actif: '/relances.html' });
     const LABELS = { urgent: 'Urgent', cette_semaine: 'Cette semaine', a_surveiller: 'À surveiller', pas_prioritaire: 'Pas prioritaire' };
     let clients = [];
+    let analyseRecue = false;   // pas de rendu avant l'analyse : sinon « 0 client » trompeur
 
     function fmtDate(d) {
       if (!d) return '—';
@@ -219,7 +220,7 @@
     // de clé, donc la liste se remet à zéro toute seule au changement de
     // semaine — aucun ménage à faire. Partagé avec l'équipe quand la base est
     // configurée : inutile que deux personnes rappellent le même client.
-    const ecartes = creerMagasin('relances', { surChangement: () => render(filtreCourant) });
+    const ecartes = creerMagasin('relances', { surChangement: () => { if (analyseRecue) render(filtreCourant); } });
 
     function semaineISO(d = new Date()) {
       const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -486,6 +487,7 @@
       .then(data => {
         if (data.error) throw new Error(data.error);
         clients = data.clients ?? [];
+        analyseRecue = true;
         window._genere = data.generePour;
         window._inactifs = data.nbInactifsExclus;
         document.getElementById('zone-filtres').style.display = 'flex';
