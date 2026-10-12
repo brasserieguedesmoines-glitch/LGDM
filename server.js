@@ -245,6 +245,35 @@ async function getAllClients() {
   return allClientsCache;
 }
 
+// Liste des clients partagée entre instances via la base Redis (1 h).
+// Depuis la protection de l'appli, /api/clients n'est plus mis en cache par le
+// CDN (réponse privée) : sans ce partage, chaque instance froide relisait
+// toutes les grilles tarifaires (plus d'une minute pour les CHR), ce qui
+// faisait expirer l'analyse des relances et ralentissait la prise de commande.
+const CLE_CLIENTS = 'lgdm:clients';
+async function getAllClientsPartage() {
+  if (allClientsCache && Date.now() < allClientsCacheExpiry) return allClientsCache;
+  if (redisActif()) {
+    const v = await redis('GET', CLE_CLIENTS).catch(() => null);
+    if (v) {
+      const l = JSON.parse(v);
+      for (const c of l) if (c.idClientType) clientTypeMap.set(c.id, c.idClientType);
+      const liste = l.map(({ id, nom }) => ({ id, nom }));
+      liste.echecs = [];
+      allClientsCache = liste;
+      allClientsCacheExpiry = Date.now() + 10 * 60 * 1000;
+      return liste;
+    }
+  }
+  const liste = await getAllClients();
+  if (!liste.echecs?.length && liste.length && redisActif()) {
+    await redis('SET', CLE_CLIENTS,
+      JSON.stringify(liste.map(c => ({ ...c, idClientType: clientTypeMap.get(c.id) ?? null }))), 'EX', 3600)
+      .catch(() => {});
+  }
+  return liste;
+}
+
 // Retourne les produits d'un client depuis sa grille tarifaire
 async function getProduitsClient(idClient) {
   let type = clientTypeMap.get(idClient);
@@ -695,7 +724,7 @@ app.get('/api/clients', async (req, res) => {
   try {
     // Inclut idClientType pour que le frontend puisse l'envoyer avec la commande,
     // et le canal (CHR / GMS / …) qui détermine la gamme proposée à la saisie
-    const clients = await getAllClients();
+    const clients = await getAllClientsPartage();
     const types = await getTypesClient().catch(() => []);
     const libelleType = new Map(types.map(t => [t.idClientType, t.libelle]));
     // Cache CDN Vercel : évite de refaire ~10 appels EasyBeer à chaque visite
@@ -1272,6 +1301,23 @@ async function chargerClientsInactifs(req, budgetMs = 75 * 1000) {
   });
   if (!reussies) return null;
   console.log(`clients inactifs : ${inactifs.size} sur ${reussies}/${pages.length} pages`);
+  inactifs.complet = reussies === pages.length;
+  return inactifs;
+}
+
+// Même liste, partagée via Redis : complète, elle est gardée 12 h ;
+// partielle (pages froides), 10 min seulement, pour se compléter vite.
+const CLE_INACTIFS = 'lgdm:clients-inactifs';
+async function inactifsPartages(req, budgetMs = 60 * 1000) {
+  if (redisActif()) {
+    const v = await redis('GET', CLE_INACTIFS).catch(() => null);
+    if (v) return new Set(JSON.parse(v).ids);
+  }
+  const inactifs = await chargerClientsInactifs(req, budgetMs);
+  if (inactifs && redisActif()) {
+    await redis('SET', CLE_INACTIFS, JSON.stringify({ ids: [...inactifs], le: Date.now(), complet: inactifs.complet }),
+      'EX', inactifs.complet ? 12 * 3600 : 600).catch(() => {});
+  }
   return inactifs;
 }
 
@@ -1279,17 +1325,9 @@ async function chargerClientsInactifs(req, budgetMs = 75 * 1000) {
 // prise de commande. Le calcul lit une fiche par client (lent à froid) : le
 // résultat est gardé 12 h dans la base partagée.
 app.get('/api/clients-inactifs', async (req, res) => {
-  const cle = 'lgdm:clients-inactifs';
   try {
-    if (redisActif()) {
-      const v = await redis('GET', cle).catch(() => null);
-      if (v) return res.json(JSON.parse(v));
-    }
-    const inactifs = await chargerClientsInactifs(req, 60 * 1000);
-    if (!inactifs) return res.json({ ids: [], inconnu: true });
-    const r = { ids: [...inactifs], le: Date.now() };
-    if (redisActif()) await redis('SET', cle, JSON.stringify(r), 'EX', 12 * 3600).catch(() => {});
-    res.json(r);
+    const inactifs = await inactifsPartages(req);
+    res.json(inactifs ? { ids: [...inactifs] } : { ids: [], inconnu: true });
   } catch (err) {
     res.status(err.status ?? 502).json({ error: err.message });
   }
@@ -1342,6 +1380,7 @@ async function analyserClients(req) {
 }
 
 async function analyserClientsInterne(req) {
+  const t0 = Date.now();
 
   // Toutes les commandes (l'app EasyBeer utilise l'état "toutes").
   // En cas d'échec on laisse remonter l'erreur : le cache périmé sera servi
@@ -1355,13 +1394,13 @@ async function analyserClientsInterne(req) {
   // ou désactivées. Sans ce filtre on relançait des clients qui n'existent plus.
   let clientsActifs = null;
   try {
-    clientsActifs = new Set((await fetchInterne(req, '/api/clients')).map(c => c.id));
+    clientsActifs = new Set((await getAllClientsPartage()).map(c => c.id));
   } catch (e) {
     console.warn('relances: liste clients indisponible, filtre des supprimés ignoré —', e.message);
   }
   // Clients désactivés dans EasyBeer : c'est ce statut qui fait foi pour savoir
   // qui ne commande plus, et non l'ancienneté de la dernière commande.
-  const inactifs = await chargerClientsInactifs(req);
+  const inactifs = await inactifsPartages(req);
   // Exclut devis, annulées, comptes internes et clients particuliers de l'analyse
   const typesParticuliers = await getIdsTypesParticuliers();
   toutes = toutes.filter(c =>
@@ -1465,16 +1504,19 @@ async function analyserClientsInterne(req) {
     .sort((a, b) => (ordreEnrichissement[a.priorite] - ordreEnrichissement[b.priorite])
                     || ((a.joursRetard ?? 0) - (b.joursRetard ?? 0)))
     .slice(0, 60);
-  for (const c of prioritaires) {
+  // En parallèle (6 à la fois) et dans un budget de temps : en série, 60
+  // lectures froides suffisaient à dépasser la limite de 5 min de Vercel.
+  await enParallele(prioritaires, 6, async c => {
+    if (Date.now() - t0 > 200 * 1000) return;
     try {
-      const cmd = await fetchInterne(req, `/api/cache/derniere-commande/${c.idClient}`);
+      const cmd = await fetchInterne(req, `/api/cache/derniere-commande/${c.idClient}`, 15000);
       const elements = cmd.elementsBouteilles ?? [];
       c.volumeMoyen = elements.reduce((a, e) => a + (e.quantite ?? 0), 0);
       c.produitsHabituels = [...new Set(elements.map(e =>
         e.stockProduit?.libelle ?? e.produit?.libelle ?? ''
       ).filter(Boolean))].slice(0, 4);
     } catch {}
-  }
+  });
 
   if (!clients.length) {
     throw Object.assign(new Error('Analyse des relances vide — données EasyBeer incomplètes'), { status: 503 });
@@ -1937,8 +1979,8 @@ async function construirePilotageInterne(req, optionsPilotage = {}) {
   const libelleType = new Map(typesTous.map(t => [t.idClientType, (t.libelle ?? '').toLowerCase()]));
   let typeParClient = new Map();
   try {
-    const listeClients = await mesurer('api/clients', () => fetchInterne(req, '/api/clients'));
-    typeParClient = new Map(listeClients.map(c => [c.id, c.idClientType]));
+    const listeClients = await mesurer('api/clients', () => getAllClientsPartage());
+    typeParClient = new Map(listeClients.map(c => [c.id, clientTypeMap.get(c.id)]));
   } catch {}
   const canalDe = (idClient, nom) =>
     canalParLibelleEtNom(libelleType.get(typeParClient.get(idClient) ?? clientTypeMap.get(idClient)), nom);
@@ -2431,11 +2473,24 @@ app.get('/api/pilotage', async (req, res) => {
 });
 
 // --- API Relances ---
+// La dernière analyse est gardée dans la base partagée : la page l'affiche
+// immédiatement, puis demande un recalcul (?recalcul) si elle a plus de 30 min.
+const CLE_RELANCES = 'lgdm:relances';
+const RELANCES_FRAICHES_MS = 30 * 60 * 1000;
 app.get('/api/relances', async (req, res) => {
   try {
+    res.set('Cache-Control', 'no-store');
+    const recalcul = req.query.recalcul !== undefined;
+    if (!recalcul && redisActif()) {
+      const v = await redis('GET', CLE_RELANCES).catch(() => null);
+      if (v) {
+        const d = JSON.parse(v);
+        return res.json({ ...d, perime: Date.now() - Date.parse(d.generePour) > RELANCES_FRAICHES_MS });
+      }
+    }
     const data = await analyserClients(req);
-    res.set('Cache-Control', 'public, s-maxage=1800, stale-while-revalidate=86400');
-    res.json(data);
+    if (redisActif()) await redis('SET', CLE_RELANCES, JSON.stringify(data), 'EX', 7 * 86400).catch(() => {});
+    res.json({ ...data, perime: false });
   } catch (err) {
     console.error('GET /api/relances', err.message, err.detail);
     res.status(err.status ?? 502).json({ error: err.message, detail: err.detail });

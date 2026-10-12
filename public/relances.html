@@ -429,6 +429,8 @@
       const nomFiltre = filtre === 'tous' ? 'toutes priorités' : LABELS[filtre];
       document.getElementById('meta').innerHTML =
         `${list.length} client(s) affiché(s) sur ${clients.length} — analyse générée le ${new Date(window._genere).toLocaleString('fr-FR')}`
+        + (window._majEnCours ? ' · <span style="color:var(--texte-3)">mise à jour en cours…</span>' : '')
+        + (window._majEchec ? ` · <span class="error">mise à jour impossible (${window._majEchec}), analyse précédente affichée</span>` : '')
         + (ecartesSemaine().length ? ` · ${ecartesSemaine().length} écarté(s) cette semaine` : '')
         + (exclusDurables().length ? ` · ${exclusDurables().length} exclu(s) durablement` : '')
         + (window._inactifs
@@ -482,19 +484,37 @@
     ecartes.charger().then(() => { if (clients.length) render(filtreCourant); });
     ecartes.suivre();
 
-    fetch('/api/relances')
-      .then(r => r.json())
+    // Une réponse non JSON (délai Vercel dépassé) devient un message lisible.
+    const lireRelances = url => fetch(url).then(async r => {
+      const brut = await r.text();
+      let d; try { d = JSON.parse(brut); }
+      catch { throw new Error(r.status === 504 ? 'délai dépassé côté serveur' : `HTTP ${r.status}`); }
+      if (d.error) throw new Error(d.error);
+      return d;
+    });
+    const appliquer = data => {
+      clients = data.clients ?? [];
+      window._genere = data.generePour;
+      window._inactifs = data.nbInactifsExclus;
+    };
+
+    // La dernière analyse s'affiche tout de suite ; si elle a plus de 30 min,
+    // un recalcul est lancé et remplace la liste à son arrivée.
+    lireRelances('/api/relances')
       .then(data => {
-        if (data.error) throw new Error(data.error);
-        clients = data.clients ?? [];
+        appliquer(data);
         analyseRecue = true;
-        window._genere = data.generePour;
-        window._inactifs = data.nbInactifsExclus;
+        window._majEnCours = !!data.perime;
         document.getElementById('zone-filtres').style.display = 'flex';
         menuMobile('#filtres', 'data-f', 'Filtrer par priorité');
         replierActions('.barre-actions', '.btn-export', 'Exporter');
         document.getElementById('wrap').style.display = 'block';
         render('tous');
+        if (data.perime) {
+          lireRelances('/api/relances?recalcul=' + Date.now())
+            .then(frais => { appliquer(frais); window._majEnCours = false; render(filtreCourant); })
+            .catch(e => { window._majEnCours = false; window._majEchec = e.message; render(filtreCourant); });
+        }
       })
       .catch(err => {
         document.getElementById('meta').innerHTML =
