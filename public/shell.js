@@ -5,6 +5,7 @@
 const PAGES = [
   { href: '/',              icone: 'colis',    libelle: 'Prise de commande' },
   { href: '/pilotage.html', icone: 'pilotage', libelle: 'Pilotage' },
+  { href: '/bilan.html',    icone: 'stats',    libelle: 'Bilan' },
   { href: '/relances.html', icone: 'relances', libelle: 'Relances' },
   { href: '/ruptures.html', icone: 'horloge',  libelle: 'Ruptures' },
   { href: '/visites.html', icone: 'carte', libelle: 'Y aller' },

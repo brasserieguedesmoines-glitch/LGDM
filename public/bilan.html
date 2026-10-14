@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#F7F7F8">
+  <title>Bilan — Le Gué des Moines</title>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'light';</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="icons.js"></script>
+  <script src="ui.js"></script>
+  <script src="shell.js"></script>
+  <style>
+    /* Années : une seule teinte, l'année précédente plus claire (validé ordinal,
+       clair et sombre). Le même codage sert à tous les graphiques de la page. */
+    :root { --annee-n: #256abf; --annee-n1: #86b6ef; }
+    :root[data-theme="dark"] { --annee-n: #6da7ec; --annee-n1: #1c5cab; }
+
+    .filtres-bilan { display: flex; flex-wrap: wrap; gap: var(--e3); align-items: flex-end; margin-bottom: var(--e3); }
+    .filtres-bilan label { display: block; font-size: var(--t-xs); font-weight: 600; color: var(--texte-2); margin-bottom: 4px; }
+    .filtres-bilan select { width: auto; min-width: 150px; }
+    .bouton { min-height: 38px; padding: 0 14px; border-radius: var(--r-md); border: 1px solid var(--bordure-forte);
+      background: var(--surface); color: var(--texte); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+    .bouton:disabled { opacity: .5; cursor: wait; }
+    .portee { font-size: var(--t-sm); color: var(--texte-2); margin-bottom: var(--e4); }
+    .avert { background: var(--alerte-doux); color: var(--alerte); border-radius: var(--r-md); padding: 10px 14px; font-size: var(--t-sm); margin-bottom: var(--e4); }
+
+    .tuiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--e3); margin-bottom: var(--e4); }
+    .tuile { background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--r-lg); padding: var(--e4); }
+    .tuile .lbl { font-size: var(--t-xs); font-weight: 600; color: var(--texte-2); text-transform: uppercase; letter-spacing: .04em; }
+    .tuile .val { font-size: var(--t-kpi); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; margin: 4px 0; }
+    .tuile .avant { font-size: var(--t-sm); color: var(--texte-2); }
+    .evol { font-weight: 700; white-space: nowrap; }
+    .evol.hausse { color: var(--ok); } .evol.baisse { color: var(--danger); } .evol.stable { color: var(--texte-2); }
+
+    .carte-b { background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--r-lg); padding: var(--e4); margin-bottom: var(--e4); }
+    .carte-b h2 { font-size: var(--t-lg); margin-bottom: 2px; }
+    .carte-b .sous { font-size: var(--t-sm); color: var(--texte-2); margin-bottom: var(--e3); }
+    .legende { display: flex; gap: var(--e4); font-size: var(--t-sm); color: var(--texte-2); margin-bottom: var(--e2); flex-wrap: wrap; }
+    .legende i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+    .zone-graph { position: relative; height: 300px; }
+    .graphes { display: grid; grid-template-columns: 1.3fr 1fr; gap: var(--e4); }
+    @media (max-width: 1000px) { .graphes { grid-template-columns: 1fr; } }
+
+    table.bilan { width: 100%; border-collapse: collapse; font-size: var(--t-sm); }
+    table.bilan th { text-align: right; font-size: var(--t-xs); color: var(--texte-2); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--bordure-forte); white-space: nowrap; }
+    table.bilan td { text-align: right; padding: 9px 10px; border-bottom: 1px solid var(--bordure); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    table.bilan th:first-child, table.bilan td:first-child { text-align: left; }
+    table.bilan tr.total td { font-weight: 700; border-top: 1px solid var(--bordure-forte); }
+    .tableau-defile { overflow-x: auto; }
+
+    .clients4 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--e4); }
+    @media (max-width: 900px) { .clients4 { grid-template-columns: minmax(0, 1fr); } }
+    .liste-c { list-style: none; padding: 0; margin: 0; font-size: var(--t-sm); }
+    .liste-c li { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--bordure); }
+    .liste-c li span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .liste-c li span:last-child { white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .canal { font-size: var(--t-xs); color: var(--texte-3); margin-left: 6px; }
+    .chiffre-cle { font-size: var(--t-xl); font-weight: 700; }
+    .vide { text-align: center; padding: 48px; color: var(--texte-2); }
+    #entete-impression { display: none; }
+
+    @media print {
+      @page { size: A4; margin: 12mm; }
+      .sidebar, .entete, .filtres-bilan, .voile-sidebar { display: none !important; }
+      .zone, .app { display: block !important; margin: 0 !important; }
+      #entete-impression { display: block !important; margin-bottom: 8px; }
+      .carte-b, .tuile { break-inside: avoid; box-shadow: none; }
+      .graphes { grid-template-columns: 1fr 1fr; }
+      .zone-graph { height: 220px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="large">
+    <div id="entete-impression"><h1 style="font-size:18pt">Bilan — Brasserie du Gué des Moines</h1></div>
+    <div class="filtres-bilan">
+      <div><label for="f-annee">Année</label><select id="f-annee"></select></div>
+      <div><label for="f-mode">Période</label>
+        <select id="f-mode"><option value="adate">Du 1er janvier à aujourd'hui</option><option value="complet">Année complète</option></select></div>
+      <button class="bouton" id="b-actualiser">Actualiser</button>
+      <button class="bouton" id="b-imprimer">Imprimer</button>
+      <button class="bouton" id="b-csv">Export CSV</button>
+    </div>
+    <p class="portee" id="portee">Chargement du bilan… (jusqu'à 2 min la première fois)</p>
+    <div id="contenu"></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script>
+    monterCoquille({ titre: 'Bilan', actif: '/bilan.html' });
+    const $ = id => document.getElementById(id);
+    const echap = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
+    const eur = n => (n ?? 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+    const nb = n => (n ?? 0).toLocaleString('fr-FR');
+    const fmtD = t => new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+    const MOIS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+    const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    let B = null, graphes = [];
+
+    // Évolution : signe + flèche + couleur, jamais la couleur seule.
+    function evol(n, n1, { pts = false } = {}) {
+      if (pts) {
+        const d = Math.round((n - n1) * 10) / 10;
+        const cl = Math.abs(d) < 0.5 ? 'stable' : d > 0 ? 'hausse' : 'baisse';
+        return `<span class="evol ${cl}">${cl === 'stable' ? '≈ ' : d > 0 ? '▲ +' : '▼ '}${d.toLocaleString('fr-FR')} pt</span>`;
+      }
+      if (!n1) return n ? '<span class="evol hausse">nouveau</span>' : '<span class="evol stable">—</span>';
+      const p = (n - n1) / n1 * 100;
+      const cl = Math.abs(p) < 1 ? 'stable' : p > 0 ? 'hausse' : 'baisse';
+      return `<span class="evol ${cl}">${cl === 'stable' ? '≈ ' : p > 0 ? '▲ +' : '▼ '}${Math.round(p).toLocaleString('fr-FR')} %</span>`;
+    }
+
+    async function charger(frais = false) {
+      $('b-actualiser').disabled = true;
+      $('portee').textContent = 'Chargement du bilan… (jusqu\'à 2 min la première fois)';
+      const q = new URLSearchParams({ annee: $('f-annee').value || new Date().getFullYear(), mode: $('f-mode').value });
+      if (frais) q.set('frais', Date.now());
+      try {
+        const r = await fetch('/api/bilan?' + q);
+        const brut = await r.text();
+        let d; try { d = JSON.parse(brut); } catch { throw new Error(r.status === 504 ? 'délai dépassé côté serveur, réessayez' : `HTTP ${r.status}`); }
+        if (d.error) throw new Error(d.error);
+        B = d; rendre();
+      } catch (e) {
+        $('portee').innerHTML = `<span style="color:var(--danger)">Bilan indisponible : ${echap(e.message)}</span>`;
+      } finally { $('b-actualiser').disabled = false; }
+    }
+
+    function remplirAnnees(liste) {
+      const sel = $('f-annee'), v = sel.value;
+      sel.innerHTML = liste.map(a => `<option value="${a}">${a} vs ${a - 1}</option>`).join('');
+      sel.value = v || liste[0];
+    }
+
+    function rendre() {
+      remplirAnnees(B.anneesDisponibles);
+      $('f-annee').value = B.annee;
+      const a = B.annee, [dn, fn] = B.periode.n, [dn1, fn1] = B.periode.n1;
+      $('portee').innerHTML = `Du <b>${fmtD(dn)}</b> au <b>${fmtD(fn)}</b> comparé au ${fmtD(dn1)} – ${fmtD(fn1)}
+        · par date de commande · montants HT · hors devis, commandes annulées et comptes salariés
+        · calculé le ${new Date(B.genere).toLocaleString('fr-FR')}`;
+      $('entete-impression').innerHTML = `<h1 style="font-size:18pt">Bilan ${a} vs ${a - 1} — Brasserie du Gué des Moines</h1>`;
+
+      const T = B.totaux;
+      const tuile = (lbl, n, n1, f) => `<div class="tuile"><div class="lbl">${lbl}</div>
+        <div class="val">${f(n)}</div><div class="avant">${a - 1} : ${f(n1)} · ${evol(n, n1)}</div></div>`;
+      const c = B.clients;
+      $('contenu').innerHTML = `
+        ${B.typesIndisponibles ? `<div class="avert">${ico('alerte')} Les types de clients EasyBeer n'ont pas pu être lus : les canaux sont déduits des seuls noms, la répartition est approximative. Cliquez sur « Actualiser » dans quelques minutes.</div>` : ''}
+        ${B.historiqueIncomplet ? `<div class="avert">${ico('alerte')} L'historique chargé ne remonte pas jusqu'au début de ${a - 1} : la comparaison est incomplète. Cliquez sur « Actualiser » pour recharger.</div>` : ''}
+        <div class="tuiles">
+          ${tuile('Chiffre d\'affaires HT', T.n.ca, T.n1.ca, eur)}
+          ${tuile('Commandes', T.n.commandes, T.n1.commandes, nb)}
+          ${tuile('Clients ayant commandé', T.n.clients, T.n1.clients, nb)}
+          ${tuile('Panier moyen HT', T.n.panier, T.n1.panier, eur)}
+        </div>
+
+        <div class="graphes">
+          <div class="carte-b"><h2>Chiffre d'affaires mensuel</h2>
+            <p class="sous">Années civiles complètes, tous canaux</p>
+            <div class="legende"><span><i style="background:var(--annee-n)"></i>${a}</span><span><i style="background:var(--annee-n1)"></i>${a - 1}</span></div>
+            <div class="zone-graph"><canvas id="g-mois" role="img" aria-label="Chiffre d'affaires mensuel ${a} et ${a - 1}"></canvas></div></div>
+          <div class="carte-b"><h2>Chiffre d'affaires par canal</h2>
+            <p class="sous">Sur la période comparée</p>
+            <div class="legende"><span><i style="background:var(--annee-n)"></i>${a}</span><span><i style="background:var(--annee-n1)"></i>${a - 1}</span></div>
+            <div class="zone-graph"><canvas id="g-canaux" role="img" aria-label="Chiffre d'affaires par canal ${a} et ${a - 1}"></canvas></div></div>
+        </div>
+
+        <div class="carte-b"><h2>Évolution par canal</h2>
+          <p class="sous">La part de marché est la part du chiffre d'affaires de la brasserie réalisée dans le canal ; la contribution indique quelle part de l'écart total vient du canal.</p>
+          <div class="tableau-defile"><table class="bilan">
+            <thead><tr><th>Canal</th><th>CA ${a - 1}</th><th>CA ${a}</th><th>Évolution</th><th>Part ${a - 1}</th><th>Part ${a}</th><th>Écart de part</th>
+              <th>Contribution</th><th>Commandes ${a}</th><th>Clients ${a}</th><th>Panier ${a}</th></tr></thead>
+            <tbody>${B.canaux.slice().sort((x, y) => y.n.ca - x.n.ca).map(k => {
+              const ecartTotal = T.n.ca - T.n1.ca, ecart = k.n.ca - k.n1.ca;
+              return `<tr><td><b>${echap(k.canal)}</b></td><td>${eur(k.n1.ca)}</td><td>${eur(k.n.ca)}</td><td>${evol(k.n.ca, k.n1.ca)}</td>
+                <td>${k.part.n1.toLocaleString('fr-FR')} %</td><td>${k.part.n.toLocaleString('fr-FR')} %</td><td>${evol(k.part.n, k.part.n1, { pts: true })}</td>
+                <td>${ecartTotal ? `${ecart >= 0 ? '+' : ''}${eur(ecart)}` : '—'}</td>
+                <td>${nb(k.n.commandes)} ${evol(k.n.commandes, k.n1.commandes)}</td><td>${nb(k.n.clients)} ${evol(k.n.clients, k.n1.clients)}</td>
+                <td>${eur(k.n.panier)}</td></tr>`; }).join('')}
+              <tr class="total"><td>Total</td><td>${eur(T.n1.ca)}</td><td>${eur(T.n.ca)}</td><td>${evol(T.n.ca, T.n1.ca)}</td><td>100 %</td><td>100 %</td><td></td>
+                <td>${(T.n.ca - T.n1.ca) >= 0 ? '+' : ''}${eur(T.n.ca - T.n1.ca)}</td><td>${nb(T.n.commandes)}</td><td>${nb(T.n.clients)}</td><td>${eur(T.n.panier)}</td></tr>
+            </tbody></table></div></div>
+
+        <div class="clients4">
+          <div class="carte-b"><h2>Nouveaux clients</h2>
+            <p class="sous">Première commande sur la période</p>
+            <p><span class="chiffre-cle">${nb(c.nouveaux.nombre)}</span> · ${eur(c.nouveaux.ca)} de CA</p>
+            ${listeC(c.nouveaux.liste, x => eur(x.n))}</div>
+          <div class="carte-b"><h2>Clients sans commande cette année</h2>
+            <p class="sous">Ont commandé sur la période ${a - 1}, pas sur la période ${a}</p>
+            <p><span class="chiffre-cle">${nb(c.perdus.nombre)}</span> · ${eur(c.perdus.ca)} de CA ${a - 1}</p>
+            ${listeC(c.perdus.liste, x => eur(x.n1))}</div>
+          <div class="carte-b"><h2>Plus fortes hausses</h2><p class="sous">Écart de CA, clients présents les deux années</p>
+            ${listeC(c.hausses, x => `<span class="evol hausse">▲ +${eur(x.ecart)}</span>`)}</div>
+          <div class="carte-b"><h2>Plus fortes baisses</h2><p class="sous">Écart de CA, clients présents les deux années</p>
+            ${listeC(c.baisses, x => `<span class="evol baisse">▼ ${eur(x.ecart)}</span>`)}</div>
+        </div>
+
+        <div class="carte-b"><h2>Principaux clients ${a}</h2>
+          <div class="tableau-defile"><table class="bilan"><thead><tr><th>Client</th><th>Canal</th><th>CA ${a - 1}</th><th>CA ${a}</th><th>Évolution</th><th>Commandes ${a}</th></tr></thead>
+            <tbody>${c.top.map(x => `<tr><td>${echap(x.nom)}</td><td>${echap(x.canal)}</td><td>${eur(x.n1)}</td><td>${eur(x.n)}</td><td>${evol(x.n, x.n1)}</td><td>${nb(x.cmdN)}</td></tr>`).join('')}</tbody>
+          </table></div></div>`;
+      dessinerGraphes();
+    }
+
+    function listeC(l, val) {
+      return l.length ? `<ul class="liste-c">${l.map(x => `<li><span>${echap(x.nom)}<span class="canal">${echap(x.canal)}</span></span><span>${val(x)}</span></li>`).join('')}</ul>`
+        : '<p class="sous">Aucun.</p>';
+    }
+
+    function dessinerGraphes() {
+      graphes.forEach(g => g.destroy()); graphes = [];
+      if (!window.Chart) return;
+      const a = B.annee, cN = css('--annee-n'), cN1 = css('--annee-n1'), texte2 = css('--texte-2'), grille = css('--grille');
+      Chart.defaults.font.family = css('--police') || 'Inter, system-ui, sans-serif';
+      Chart.defaults.color = texte2;
+      const axes = horizontal => ({
+        x: { grid: { display: horizontal, color: grille }, border: { display: false },
+             ticks: horizontal ? { callback: v => eur(v) } : {} },
+        y: { grid: { display: !horizontal, color: grille }, border: { display: false },
+             ticks: horizontal ? {} : { callback: v => eur(v) }, beginAtZero: true },
+      });
+      const infobulle = { callbacks: { label: ctx => ` ${ctx.dataset.label} : ${eur(ctx.parsed[ctx.chart.options.indexAxis === 'y' ? 'x' : 'y'])}` } };
+
+      graphes.push(new Chart($('g-mois'), {
+        type: 'line',
+        data: { labels: MOIS, datasets: [
+          { label: String(a), data: B.mois.map(m => m.n), borderColor: cN, backgroundColor: cN, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5, tension: 0.25, spanGaps: false },
+          { label: String(a - 1), data: B.mois.map(m => m.n1), borderColor: cN1, backgroundColor: cN1, borderWidth: 2, borderDash: [5, 4], pointRadius: 0, pointHoverRadius: 5, tension: 0.25 },
+        ] },
+        options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+          plugins: { legend: { display: false }, tooltip: infobulle }, scales: axes(false) },
+      }));
+
+      const canaux = B.canaux.slice().sort((x, y) => y.n.ca - x.n.ca);
+      graphes.push(new Chart($('g-canaux'), {
+        type: 'bar',
+        data: { labels: canaux.map(k => k.canal), datasets: [
+          { label: String(a - 1), data: canaux.map(k => k.n1.ca), backgroundColor: cN1, borderRadius: 4, borderSkipped: 'start', barPercentage: 0.8, categoryPercentage: 0.7 },
+          { label: String(a), data: canaux.map(k => k.n.ca), backgroundColor: cN, borderRadius: 4, borderSkipped: 'start', barPercentage: 0.8, categoryPercentage: 0.7 },
+        ] },
+        options: { indexAxis: 'y', maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+          plugins: { legend: { display: false }, tooltip: infobulle }, scales: axes(true) },
+      }));
+    }
+
+    function exporterCSV() {
+      if (!B) return;
+      const a = B.annee, c = v => `"${String(v ?? '').replace(/"/g, '""')}"`, n = v => String(v ?? '').replace('.', ',');
+      const l = [['Bilan', `${a} vs ${a - 1}`, B.mode === 'complet' ? 'année complète' : 'à date'], [],
+        ['Canal', `CA ${a - 1}`, `CA ${a}`, `Part ${a - 1} %`, `Part ${a} %`, `Commandes ${a - 1}`, `Commandes ${a}`, `Clients ${a - 1}`, `Clients ${a}`]];
+      for (const k of B.canaux) l.push([k.canal, n(k.n1.ca), n(k.n.ca), n(k.part.n1), n(k.part.n), k.n1.commandes, k.n.commandes, k.n1.clients, k.n.clients]);
+      l.push(['Total', n(B.totaux.n1.ca), n(B.totaux.n.ca), 100, 100, B.totaux.n1.commandes, B.totaux.n.commandes, B.totaux.n1.clients, B.totaux.n.clients], []);
+      l.push(['Client', 'Canal', `CA ${a - 1}`, `CA ${a}`, 'Statut']);
+      const st = [[B.clients.top, 'principal'], [B.clients.nouveaux.liste, 'nouveau'], [B.clients.perdus.liste, `sans commande ${a}`]];
+      for (const [liste, s] of st) for (const x of liste) l.push([x.nom, x.canal, n(x.n1), n(x.n), s]);
+      const blob = new Blob(['﻿' + l.map(r => r.map(c).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+      const lien = document.createElement('a');
+      lien.href = URL.createObjectURL(blob); lien.download = `bilan-${a}-vs-${a - 1}.csv`; lien.click();
+      URL.revokeObjectURL(lien.href);
+    }
+
+    $('f-annee').innerHTML = `<option value="${new Date().getFullYear()}">${new Date().getFullYear()} vs ${new Date().getFullYear() - 1}</option>`;
+    $('f-annee').addEventListener('change', () => {
+      // Une année passée se compare d'office en entier.
+      if (+$('f-annee').value < new Date().getFullYear()) $('f-mode').value = 'complet';
+      charger();
+    });
+    $('f-mode').addEventListener('change', () => charger());
+    $('b-actualiser').addEventListener('click', () => charger(true));
+    $('b-imprimer').addEventListener('click', () => window.print());
+    $('b-csv').addEventListener('click', exporterCSV);
+    document.addEventListener('theme-change', () => { if (B) dessinerGraphes(); });
+    window.addEventListener('beforeprint', () => graphes.forEach(g => g.resize()));
+    charger();
+  </script>
+</body>
+</html>

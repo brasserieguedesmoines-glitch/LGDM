@@ -2473,6 +2473,127 @@ app.get('/api/pilotage', async (req, res) => {
 });
 
 // --- API Relances ---
+// ---- Bilan : comparaison avec l'année précédente, par canal ----
+// Calculé sur la liste des commandes (date de commande, montants HT), hors
+// devis, commandes annulées et comptes salariés. La liste EasyBeer ne donne
+// pas les volumes : le bilan porte sur le chiffre d'affaires, les commandes
+// et les clients.
+const CANAUX_BILAN = ['CHR', 'GMS', 'Distributeurs', 'Cavistes', 'Associations', 'Autres pros', 'Particuliers', 'Non catégorisé'];
+const sansAccent = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+async function construireBilan(req, annee, mode) {
+  const toutes = await chargerCommandes(req, 150 * 1000);
+  if (!toutes.length) throw Object.assign(new Error('Aucune commande récupérée depuis EasyBeer'), { status: 503 });
+  await getAllClientsPartage().catch(() => {});        // remplit clientTypeMap
+  const types = await getTypesClient().catch(() => []);
+  const libelleType = new Map(types.map(t => [t.idClientType, t.libelle]));
+  const particuliers = await getIdsTypesParticuliers();
+  const canalDe = (id, nom) => {
+    const t = clientTypeMap.get(id);
+    if ((t && particuliers.has(t)) || sansAccent(nom).includes('particulier')) return 'Particuliers';
+    return canalParLibelleEtNom(libelleType.get(t), nom);
+  };
+
+  const auj = new Date();
+  const fin = a => mode === 'complet' ? Date.UTC(a + 1, 0, 1) : Date.UTC(a, auj.getUTCMonth(), auj.getUTCDate() + 1);
+  const debN = Date.UTC(annee, 0, 1), finN = fin(annee);
+  const debN1 = Date.UTC(annee - 1, 0, 1), finN1 = fin(annee - 1);
+
+  const valides = toutes.filter(c => !c.estDevis && !c.estAnnulee && c.dateCreation
+    && !/^employe\b/.test(sansAccent(c.client?.nom)));
+  const plusAncienne = Math.min(...valides.map(c => c.dateCreation));
+
+  const vide = () => ({ ca: 0, commandes: 0, clients: new Set() });
+  const parCanal = new Map(CANAUX_BILAN.map(k => [k, { n: vide(), n1: vide() }]));
+  const mois = Array.from({ length: 12 }, () => ({ n: 0, n1: 0 }));
+  const parClient = new Map();
+  const premiere = new Map();
+  for (const c of valides) {
+    const id = c.client?.idClient, t = c.dateCreation, ht = c.totalHT ?? 0;
+    if (id && !(premiere.get(id) <= t)) premiere.set(id, t);
+    // Courbe mensuelle : années civiles entières, quelle que soit la période.
+    const y = new Date(t).getUTCFullYear();
+    if (y === annee) mois[new Date(t).getUTCMonth()].n += ht;
+    if (y === annee - 1) mois[new Date(t).getUTCMonth()].n1 += ht;
+    const cote = t >= debN && t < finN ? 'n' : t >= debN1 && t < finN1 ? 'n1' : null;
+    if (!cote) continue;
+    const canal = canalDe(id, c.client?.nom);
+    const a = parCanal.get(canal)[cote];
+    a.ca += ht; a.commandes++; if (id) a.clients.add(id);
+    if (id) {
+      const pc = parClient.get(id) ?? { idClient: id, nom: c.client.nom, canal, n: 0, n1: 0, cmdN: 0, cmdN1: 0 };
+      pc[cote] += ht; pc[cote === 'n' ? 'cmdN' : 'cmdN1']++;
+      parClient.set(id, pc);
+    }
+  }
+
+  const r2 = x => Math.round(x * 100) / 100;
+  const resume = a => ({ ca: r2(a.ca), commandes: a.commandes, clients: a.clients.size,
+    panier: a.commandes ? r2(a.ca / a.commandes) : 0 });
+  const totN = vide(), totN1 = vide();
+  for (const { n, n1 } of parCanal.values()) {
+    totN.ca += n.ca; totN.commandes += n.commandes; n.clients.forEach(x => totN.clients.add(x));
+    totN1.ca += n1.ca; totN1.commandes += n1.commandes; n1.clients.forEach(x => totN1.clients.add(x));
+  }
+  const canaux = [...parCanal].filter(([, v]) => v.n.commandes || v.n1.commandes).map(([canal, v]) => ({
+    canal, n: resume(v.n), n1: resume(v.n1),
+    part: { n: totN.ca ? r2(v.n.ca / totN.ca * 100) : 0, n1: totN1.ca ? r2(v.n1.ca / totN1.ca * 100) : 0 },
+  }));
+
+  const clients = [...parClient.values()].map(c => ({ ...c, n: r2(c.n), n1: r2(c.n1), ecart: r2(c.n - c.n1) }));
+  const nouveaux = clients.filter(c => c.n > 0 && premiere.get(c.idClient) >= debN).sort((a, b) => b.n - a.n);
+  const perdus = clients.filter(c => c.n1 > 0 && c.n === 0).sort((a, b) => b.n1 - a.n1);
+  const suivis = clients.filter(c => c.n > 0 && c.n1 > 0);
+
+  return {
+    annee, mode, genere: Date.now(),
+    periode: { n: [debN, finN - 1], n1: [debN1, finN1 - 1] },
+    // L'historique chargé doit remonter au début de l'année précédente,
+    // sinon la comparaison serait faussée : on le dit plutôt que de l'ignorer.
+    historiqueIncomplet: plusAncienne > debN1,
+    // Sans les types de clients (grilles illisibles), le canal ne se déduit
+    // que du nom : la répartition serait fausse, on le signale.
+    typesIndisponibles: clientTypeMap.size === 0,
+    totaux: { n: resume(totN), n1: resume(totN1) },
+    canaux,
+    mois: mois.map((m, i) => ({ mois: i, n: Date.UTC(annee, i, 1) > auj.getTime() ? null : r2(m.n), n1: r2(m.n1) })),
+    clients: {
+      nouveaux: { nombre: nouveaux.length, ca: r2(nouveaux.reduce((s, c) => s + c.n, 0)), liste: nouveaux.slice(0, 25) },
+      perdus: { nombre: perdus.length, ca: r2(perdus.reduce((s, c) => s + c.n1, 0)), liste: perdus.slice(0, 25) },
+      hausses: suivis.filter(c => c.ecart > 0).sort((a, b) => b.ecart - a.ecart).slice(0, 12),
+      baisses: suivis.filter(c => c.ecart < 0).sort((a, b) => a.ecart - b.ecart).slice(0, 12),
+      top: clients.filter(c => c.n > 0).sort((a, b) => b.n - a.n).slice(0, 20),
+    },
+    anneesDisponibles: Array.from({ length: auj.getUTCFullYear() - new Date(plusAncienne).getUTCFullYear() + 1 },
+      (_, i) => auj.getUTCFullYear() - i),
+  };
+}
+
+const bilansMemoire = new Map();
+app.get('/api/bilan', async (req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store');
+    const anneeCourante = new Date().getUTCFullYear();
+    const annee = Math.min(anneeCourante, Math.max(2015, parseInt(req.query.annee) || anneeCourante));
+    const mode = req.query.mode === 'complet' ? 'complet' : 'adate';
+    const cle = `lgdm:bilan:${annee}:${mode}`;
+    const frais = req.query.frais !== undefined;
+    const m = bilansMemoire.get(cle);
+    if (!frais && m && Date.now() - m.genere < 30 * 60 * 1000) return res.json(m);
+    if (!frais && redisActif()) {
+      const v = await redis('GET', cle).catch(() => null);
+      if (v) return res.json(JSON.parse(v));
+    }
+    const b = await construireBilan(req, annee, mode);
+    bilansMemoire.set(cle, b);
+    if (redisActif()) await redis('SET', cle, JSON.stringify(b), 'EX', 6 * 3600).catch(() => {});
+    res.json(b);
+  } catch (err) {
+    console.error('GET /api/bilan', err.message);
+    res.status(err.status ?? 502).json({ error: err.message });
+  }
+});
+
 // La dernière analyse est gardée dans la base partagée : la page l'affiche
 // immédiatement, puis demande un recalcul (?recalcul) si elle a plus de 30 min.
 const CLE_RELANCES = 'lgdm:relances';
