@@ -2558,8 +2558,9 @@ async function construireBilan(req, annee, mode) {
     canaux,
     mois: mois.map((m, i) => ({ mois: i, n: Date.UTC(annee, i, 1) > auj.getTime() ? null : r2(m.n), n1: r2(m.n1) })),
     clients: {
-      nouveaux: { nombre: nouveaux.length, ca: r2(nouveaux.reduce((s, c) => s + c.n, 0)), liste: nouveaux.slice(0, 25) },
-      perdus: { nombre: perdus.length, ca: r2(perdus.reduce((s, c) => s + c.n1, 0)), liste: perdus.slice(0, 25) },
+      // Listes complètes : la page les filtre par canal (cases à cocher).
+      nouveaux: { nombre: nouveaux.length, ca: r2(nouveaux.reduce((s, c) => s + c.n, 0)), liste: nouveaux },
+      perdus: { nombre: perdus.length, ca: r2(perdus.reduce((s, c) => s + c.n1, 0)), liste: perdus },
       hausses: suivis.filter(c => c.ecart > 0).sort((a, b) => b.ecart - a.ecart).slice(0, 12),
       baisses: suivis.filter(c => c.ecart < 0).sort((a, b) => a.ecart - b.ecart).slice(0, 12),
       top: clients.filter(c => c.n > 0).sort((a, b) => b.n - a.n).slice(0, 20),
@@ -2576,7 +2577,7 @@ app.get('/api/bilan', async (req, res) => {
     const anneeCourante = new Date().getUTCFullYear();
     const annee = Math.min(anneeCourante, Math.max(2015, parseInt(req.query.annee) || anneeCourante));
     const mode = req.query.mode === 'complet' ? 'complet' : 'adate';
-    const cle = `lgdm:bilan:${annee}:${mode}`;
+    const cle = `lgdm:bilan:v2:${annee}:${mode}`;   // v2 : listes clients complètes
     const frais = req.query.frais !== undefined;
     const m = bilansMemoire.get(cle);
     if (!frais && m && Date.now() - m.genere < 30 * 60 * 1000) return res.json(m);

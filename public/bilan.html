@@ -58,6 +58,17 @@
     .liste-c li { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--bordure); }
     .liste-c li span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .liste-c li span:last-child { white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .filtre-canaux { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: var(--e3) var(--e4); }
+    .lbl-filtre { font-size: var(--t-xs); font-weight: 600; color: var(--texte-2); text-transform: uppercase; letter-spacing: .04em; margin-right: 4px; }
+    .puce-canal { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border-radius: 999px;
+      border: 1px solid var(--bordure-forte); background: var(--surface); font-size: var(--t-sm); font-weight: 600; cursor: pointer; user-select: none; }
+    .puce-canal:has(input:checked) { background: var(--accent-doux); border-color: var(--accent); color: var(--accent-texte); }
+    .puce-canal input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+    .puce-canal small { font-weight: 500; color: var(--texte-2); }
+    .bouton-lien { background: none; border: 0; color: var(--accent-texte); font-weight: 600; font-size: var(--t-sm); cursor: pointer; padding: 0 6px; }
+    .aide-filtre { color: var(--texte-3); font-size: var(--t-xs); margin-left: auto; }
+    .defile-liste { max-height: 560px; overflow-y: auto; }
+    @media print { .filtre-canaux { display: none !important; } .defile-liste { max-height: none; overflow: visible; } }
     .canal { font-size: var(--t-xs); color: var(--texte-3); margin-left: 6px; }
     .chiffre-cle { font-size: var(--t-xl); font-weight: 700; }
     .vide { text-align: center; padding: 48px; color: var(--texte-2); }
@@ -186,15 +197,10 @@
                 <td>${(T.n.ca - T.n1.ca) >= 0 ? '+' : ''}${eur(T.n.ca - T.n1.ca)}</td><td>${nb(T.n.commandes)}</td><td>${nb(T.n.clients)}</td><td>${eur(T.n.panier)}</td></tr>
             </tbody></table></div></div>
 
+        <div class="carte-b filtre-canaux" id="filtre-canaux"></div>
         <div class="clients4">
-          <div class="carte-b"><h2>Nouveaux clients</h2>
-            <p class="sous">Première commande sur la période</p>
-            <p><span class="chiffre-cle">${nb(c.nouveaux.nombre)}</span> · ${eur(c.nouveaux.ca)} de CA</p>
-            ${listeC(c.nouveaux.liste, x => eur(x.n))}</div>
-          <div class="carte-b"><h2>Clients sans commande cette année</h2>
-            <p class="sous">Ont commandé sur la période ${a - 1}, pas sur la période ${a}</p>
-            <p><span class="chiffre-cle">${nb(c.perdus.nombre)}</span> · ${eur(c.perdus.ca)} de CA ${a - 1}</p>
-            ${listeC(c.perdus.liste, x => eur(x.n1))}</div>
+          <div class="carte-b" id="carte-nouveaux"></div>
+          <div class="carte-b" id="carte-perdus"></div>
           <div class="carte-b"><h2>Plus fortes hausses</h2><p class="sous">Écart de CA, clients présents les deux années</p>
             ${listeC(c.hausses, x => `<span class="evol hausse">▲ +${eur(x.ecart)}</span>`)}</div>
           <div class="carte-b"><h2>Plus fortes baisses</h2><p class="sous">Écart de CA, clients présents les deux années</p>
@@ -205,7 +211,50 @@
           <div class="tableau-defile"><table class="bilan"><thead><tr><th>Client</th><th>Canal</th><th>CA ${a - 1}</th><th>CA ${a}</th><th>Évolution</th><th>Commandes ${a}</th></tr></thead>
             <tbody>${c.top.map(x => `<tr><td>${echap(x.nom)}</td><td>${echap(x.canal)}</td><td>${eur(x.n1)}</td><td>${eur(x.n)}</td><td>${evol(x.n, x.n1)}</td><td>${nb(x.cmdN)}</td></tr>`).join('')}</tbody>
           </table></div></div>`;
+      rendreSuivi();
       dessinerGraphes();
+    }
+
+    // --- Nouveaux / sans commande : filtre par canal (cases à cocher) ---
+    // Le choix est retenu sur cet appareil ; aucune case cochée = rien affiché.
+    const ORDRE_CANAUX = ['CHR', 'GMS', 'Distributeurs', 'Cavistes', 'Associations', 'Autres pros', 'Particuliers', 'Non catégorisé'];
+    const CLE_CANAUX = 'lgdm-bilan-canaux';
+    let canauxCoches = (() => { try { const v = JSON.parse(localStorage.getItem(CLE_CANAUX)); return Array.isArray(v) ? new Set(v) : null; } catch { return null; } })();
+    const memoriser = () => { try { localStorage.setItem(CLE_CANAUX, JSON.stringify(canauxCoches ? [...canauxCoches] : null)); } catch {} };
+
+    function rendreSuivi() {
+      const c = B.clients, a = B.annee;
+      const presents = ORDRE_CANAUX.filter(k => c.nouveaux.liste.some(x => x.canal === k) || c.perdus.liste.some(x => x.canal === k));
+      const coche = k => !canauxCoches || canauxCoches.has(k);
+      const compte = (l, k) => l.filter(x => x.canal === k).length;
+      $('filtre-canaux').innerHTML = `
+        <span class="lbl-filtre">Canaux affichés</span>
+        ${presents.map(k => `<label class="puce-canal"><input type="checkbox" value="${echap(k)}" ${coche(k) ? 'checked' : ''}>
+          ${echap(k)} <small>${compte(c.nouveaux.liste, k)} / ${compte(c.perdus.liste, k)}</small></label>`).join('')}
+        <button class="bouton-lien" data-tout="1">Tout cocher</button>
+        <button class="bouton-lien" data-tout="0">Tout décocher</button>
+        <small class="aide-filtre">nouveaux / sans commande</small>`;
+      $('filtre-canaux').querySelectorAll('input').forEach(i => i.addEventListener('change', () => {
+        canauxCoches = new Set([...$('filtre-canaux').querySelectorAll('input:checked')].map(x => x.value));
+        if (canauxCoches.size === presents.length) canauxCoches = null;
+        memoriser(); rendreSuivi();
+      }));
+      $('filtre-canaux').querySelectorAll('[data-tout]').forEach(b => b.addEventListener('click', () => {
+        canauxCoches = b.dataset.tout === '1' ? null : new Set();
+        memoriser(); rendreSuivi();
+      }));
+
+      const filtre = l => l.filter(x => coche(x.canal));
+      const actif = canauxCoches ? ` <span class="sous">· filtré</span>` : '';
+      const nouv = filtre(c.nouveaux.liste), perd = filtre(c.perdus.liste);
+      $('carte-nouveaux').innerHTML = `<h2>Nouveaux clients</h2>
+        <p class="sous">Première commande sur la période</p>
+        <p><span class="chiffre-cle">${nb(nouv.length)}</span> · ${eur(nouv.reduce((s, x) => s + x.n, 0))} de CA${actif}</p>
+        <div class="defile-liste">${listeC(nouv, x => eur(x.n))}</div>`;
+      $('carte-perdus').innerHTML = `<h2>Clients sans commande cette année</h2>
+        <p class="sous">Ont commandé sur la période ${a - 1}, pas sur la période ${a}</p>
+        <p><span class="chiffre-cle">${nb(perd.length)}</span> · ${eur(perd.reduce((s, x) => s + x.n1, 0))} de CA ${a - 1}${actif}</p>
+        <div class="defile-liste">${listeC(perd, x => eur(x.n1))}</div>`;
     }
 
     function listeC(l, val) {
