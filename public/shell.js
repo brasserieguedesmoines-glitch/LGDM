@@ -7,7 +7,7 @@ const PAGES = [
   { href: '/pilotage.html', icone: 'pilotage', libelle: 'Pilotage' },
   { href: '/bilan.html',    icone: 'stats',    libelle: 'Bilan' },
   { href: '/relances.html', icone: 'relances', libelle: 'Relances' },
-  { href: '/ruptures.html', icone: 'horloge',  libelle: 'Ruptures' },
+  { href: '/ruptures.html', icone: 'horloge',  libelle: 'Ruptures & précos' },
   { href: '/visites.html', icone: 'carte', libelle: 'Y aller' },
   { href: '/prospection.html', icone: 'clients', libelle: 'Prospection' },
   { href: '/commandes-pro.html', icone: 'colis', libelle: 'Commandes pro' },

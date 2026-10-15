@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#F7F7F8">
-  <title>Ruptures — Le Gué des Moines</title>
+  <title>Ruptures et précommandes — Le Gué des Moines</title>
   <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'light';</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,133 +15,458 @@
   <script src="shell.js"></script>
   <script src="donnees.js"></script>
   <style>
-    .attente { background: var(--surface); border: 1px solid var(--bordure);
-               border-radius: var(--r-lg); padding: var(--e4) var(--e5);
-               margin-bottom: var(--e4); box-shadow: var(--ombre-1); }
-    .attente .haut { display: flex; align-items: center; gap: var(--e3); flex-wrap: wrap; }
+    .barre-haut { display: flex; flex-wrap: wrap; gap: var(--e3); align-items: center; margin-bottom: var(--e4); }
+    .barre-haut .intro { flex: 1; min-width: 260px; font-size: var(--t-sm); color: var(--texte-2); }
+    .bouton { min-height: 38px; padding: 0 14px; border-radius: var(--r-md); border: 1px solid var(--bordure-forte);
+      background: var(--surface); color: var(--texte); font-weight: 600; font-size: var(--t-sm); cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .bouton.principal { background: var(--accent); border-color: var(--accent); color: var(--sur-accent); }
+    .bouton.principal:hover:not(:disabled) { background: var(--accent-fonce); }
+    .bouton.danger { color: var(--danger); }
+    .bouton:disabled { opacity: .5; cursor: wait; }
+
+    .onglets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: var(--e3); }
+    .onglets button { min-height: 36px; padding: 0 14px; border-radius: var(--r-md); border: 1px solid var(--bordure);
+      background: var(--surface); color: var(--texte); font-weight: 600; cursor: pointer; }
+    .onglets button[aria-pressed="true"] { background: var(--accent-doux); border-color: var(--accent); color: var(--accent-texte); }
+    .filtres-r { display: flex; flex-wrap: wrap; gap: var(--e2); margin-bottom: var(--e4); align-items: center; }
+    .filtres-r input[type=search] { flex: 1; min-width: 200px; }
+    .filtres-r select { width: auto; }
+
+    .groupe { margin-bottom: var(--e5); }
+    .groupe-tete { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e3); padding: var(--e3) 0; border-bottom: 2px solid var(--bordure-forte); margin-bottom: var(--e3); }
+    .groupe-tete h2 { font-size: var(--t-lg); }
+    .groupe-tete .resume { flex-basis: 100%; font-size: var(--t-sm); color: var(--texte-2); display: flex; flex-wrap: wrap; gap: 4px 14px; }
+    .groupe-tete .actions { margin-left: auto; display: flex; gap: 8px; }
+
+    .attente { background: var(--surface); border: 1px solid var(--bordure); border-left: 4px solid var(--alerte);
+      border-radius: var(--r-lg); padding: var(--e3) var(--e4); margin-bottom: var(--e3); }
+    .attente.precommande { border-left-color: var(--info); }
+    .attente.pret { border-left-color: var(--ok); }
+    .attente .haut { display: flex; align-items: center; gap: 8px var(--e3); flex-wrap: wrap; }
     .attente .nom { font-weight: 700; font-size: var(--t-lg); }
-    .attente .date { color: var(--texte-3); font-size: var(--t-sm); }
-    .attente .actions { margin-left: auto; display: flex; gap: var(--e2); flex-wrap: wrap; }
-    .attente .actions button { min-height: var(--cible-min); padding: 0 var(--e4);
-      font-size: var(--t-sm); border: 1px solid var(--bordure-forte);
-      background: var(--surface); color: var(--texte); }
-    .attente .actions .declencher { background: var(--accent); border-color: var(--accent);
-      color: var(--sur-accent); font-weight: 600; }
-    .attente .actions .declencher:hover { background: var(--accent-fonce); }
-    .attente .actions .suppr { color: var(--danger); }
-    .attente .actions .suppr:hover { background: var(--danger-doux); }
-    .attente ul { list-style: none; margin-top: var(--e3); display: flex;
-                  flex-direction: column; gap: var(--e1); }
-    .attente li { font-size: var(--t-sm); color: var(--texte-2); display: flex; gap: var(--e2); }
-    .attente li strong { color: var(--texte); font-weight: 600; min-width: 3.5em; text-align: right; }
-    .attente .note { margin-top: var(--e2); font-size: var(--t-sm); color: var(--texte-3); font-style: italic; }
-    .attente .statut { margin-top: var(--e2); font-size: var(--t-sm); min-height: 1.3em; }
-    .attente .statut.error { color: var(--danger); }
-    .attente .statut.ok { color: var(--ok); }
+    .badge { font-size: var(--t-xs); font-weight: 700; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+    .badge.rupture { background: var(--alerte-doux); color: var(--alerte); }
+    .badge.precommande { background: var(--info-doux); color: var(--info); }
+    .badge.pret { background: var(--ok-doux); color: var(--ok); }
+    .badge.du { background: var(--danger-doux); color: var(--danger); }
+    .meta { font-size: var(--t-sm); color: var(--texte-3); }
+    .attente .actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+    .lignes { list-style: none; padding: 0; margin: var(--e3) 0 0; display: flex; flex-direction: column; gap: 4px; }
+    .lignes li { font-size: var(--t-sm); display: flex; gap: var(--e2); align-items: center; flex-wrap: wrap; }
+    .lignes li strong { min-width: 3.5em; text-align: right; }
+    .stock { font-size: var(--t-xs); font-weight: 600; }
+    .stock.ok { color: var(--ok); } .stock.manque { color: var(--danger); } .stock.inconnu { color: var(--texte-3); }
+    .note { margin-top: var(--e2); font-size: var(--t-sm); color: var(--texte-2); font-style: italic; }
+    .statut { margin-top: var(--e2); font-size: var(--t-sm); min-height: 1.2em; }
+    .statut.erreur { color: var(--danger); } .statut.ok { color: var(--ok); }
+    .edition { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--e2); margin-top: var(--e3); }
+    .edition label, .champ label { display: block; font-size: var(--t-xs); font-weight: 600; color: var(--texte-2); margin-bottom: 4px; }
+    .edition input, .edition select, .edition textarea { width: 100%; }
+    .q-edit { width: 76px !important; min-height: 32px; text-align: center; padding: 2px; }
+
     .vide-page { display: flex; flex-direction: column; align-items: center; gap: var(--e3);
-                 padding: var(--e8) var(--e5); color: var(--texte-2); text-align: center; }
-    .vide-page .ico { width: 32px; height: 32px; color: var(--texte-3); }
+      padding: var(--e8) var(--e5); color: var(--texte-2); text-align: center; }
+
+    /* Formulaire de création */
+    #panneau { background: var(--surface); border: 1px solid var(--accent); border-radius: var(--r-lg); padding: var(--e4); margin-bottom: var(--e5); }
+    #panneau h2 { font-size: var(--t-lg); margin-bottom: var(--e3); }
+    .grille-f { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--e3); margin-bottom: var(--e3); }
+    .champ input, .champ select, .champ textarea { width: 100%; }
+    .recherche { position: relative; }
+    .resultats { position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px); background: var(--surface);
+      border: 1px solid var(--bordure-forte); border-radius: var(--r-md); box-shadow: var(--ombre-1); max-height: 300px; overflow-y: auto; }
+    .resultats button { display: block; width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--bordure);
+      padding: 8px 12px; color: var(--texte); cursor: pointer; font-size: var(--t-sm); }
+    .resultats button:hover { background: var(--surface-2); }
+    .resultats small { color: var(--texte-3); margin-left: 6px; }
+    .produits { max-height: 420px; overflow-y: auto; border: 1px solid var(--bordure); border-radius: var(--r-md); }
+    .prod { display: flex; align-items: center; gap: var(--e2); padding: 8px 12px; border-bottom: 1px solid var(--bordure); flex-wrap: wrap; }
+    .prod.choisi { background: var(--accent-doux); }
+    .prod .inf { flex: 1; min-width: 180px; font-size: var(--t-sm); }
+    .prod .inf b { display: block; }
+    .prod .packs button { min-height: 30px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--accent);
+      background: var(--accent-doux); color: var(--accent-texte); font-weight: 700; font-size: var(--t-xs); cursor: pointer; }
+    .prod input[type=number] { width: 80px; text-align: center; min-height: 34px; }
+    .pied-f { display: flex; gap: var(--e2); align-items: center; flex-wrap: wrap; margin-top: var(--e3); }
+    .pied-f .msg { font-size: var(--t-sm); }
+    .bandeau { padding: 10px 14px; border-radius: var(--r-md); font-size: var(--t-sm); margin-bottom: var(--e3); background: var(--surface-2); }
+    .bandeau.ok { background: var(--ok-doux); color: var(--ok); } .bandeau.erreur { background: var(--danger-doux); color: var(--danger); }
+    [hidden] { display: none !important; }
   </style>
 </head>
 <body>
-  <main class="etroit">
-    <section>
-      <div>
-        <h2>Commandes en attente de stock</h2>
-        <p class="carte-soustitre">
-          Mises en attente depuis la prise de commande (bouton « Mettre en attente »).
-          Rien n'est envoyé à EasyBeer tant que vous ne déclenchez pas la commande.
-          <span id="mention-stockage">Liste conservée sur cet appareil.</span>
-        </p>
-      </div>
-      <div id="liste"></div>
-    </section>
+  <main class="large">
+    <div class="barre-haut">
+      <p class="intro">Commandes gardées en attente (rupture de stock) ou prises à l'avance (précommande, bière de Noël…).
+        <b>Rien n'est envoyé à EasyBeer tant que vous ne déclenchez pas.</b> <span id="mention-stockage"></span></p>
+      <button class="bouton principal" id="b-nouvelle">+ Nouvelle commande en attente</button>
+    </div>
+
+    <section id="panneau" hidden></section>
+    <datalist id="dl-camp"></datalist>
+    <p id="bandeau" class="bandeau" role="status" hidden></p>
+
+    <div class="onglets" role="group" aria-label="Vue">
+      <button data-v="attente" aria-pressed="true">En attente <span id="n-attente"></span></button>
+      <button data-v="declenchees" aria-pressed="false">Déclenchées <span id="n-decl"></span></button>
+    </div>
+    <div class="filtres-r">
+      <input type="search" id="f-q" placeholder="Rechercher un client ou un produit…" aria-label="Rechercher">
+      <select id="f-type" aria-label="Type"><option value="">Ruptures et précommandes</option><option value="rupture">Ruptures</option><option value="precommande">Précommandes</option></select>
+      <select id="f-camp" aria-label="Campagne"><option value="">Toutes les campagnes</option></select>
+    </div>
+    <div id="liste"><div class="vide-page"><span class="loader"></span> Chargement…</div></div>
   </main>
 
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      monterCoquille({ titre: 'Ruptures', actif: '/ruptures.html' });
-      render();
-      magasin.charger().then(() => { render(); majMention(); });
-      magasin.suivre();
-    });
-
-    // Partagé avec l'équipe quand la base est configurée, local sinon
-    const magasin = creerMagasin('ruptures', { surChangement: () => render() });
-    const lire = () => magasin.tout();
-
-    function majMention() {
-      const p = document.getElementById('mention-stockage');
-      if (!p) return;
-      p.textContent = magasin.espacePartage
-        ? 'Liste partagée avec l’équipe : une commande mise en attente depuis un autre poste apparaît ici.'
-        : 'Liste conservée sur cet appareil.';
-    }
+    const $ = id => document.getElementById(id);
+    const echap = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]);
     const fmtD = t => new Date(t).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    const AUJ = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); };
+    const cleL = l => `${l.idProduit}-${l.idContenant}-${l.idLot ?? 1}`;
+    const TYPES = { rupture: 'Rupture', precommande: 'Précommande' };
 
-    function render() {
-      const el = document.getElementById('liste');
-      const file = lire();
-      if (!file.length) {
-        el.innerHTML = `<div class="vide-page">${ico('check', { classe: 'ico' })}
-          <p>Aucune commande en attente.<br>Sur la prise de commande, « Mettre en attente (rupture) »
-          garde la commande ici jusqu'au retour du stock.</p></div>`;
-        return;
-      }
-      el.innerHTML = file.map(e => `
-        <article class="attente" data-id="${e.id}">
-          <div class="haut">
-            <span class="nom">${e.commande.nomClient || 'Client inconnu'}</span>
-            <span class="date">${ico('horloge')} en attente depuis le ${fmtD(e.creeLe)}</span>
-            <span class="actions">
-              <button class="declencher">${ico('check')} Déclencher la commande</button>
-              <button class="suppr" title="Abandonne la mise en attente (rien n'existe dans EasyBeer)">Supprimer</button>
-            </span>
-          </div>
-          <ul>${e.commande.lignes.map(l =>
-            `<li><strong>${l.quantite} ×</strong> ${l.libelle} ${l.contenant ?? ''}</li>`).join('')}
-          </ul>
-          ${e.commande.commentaire ? `<p class="note">« ${e.commande.commentaire} »</p>` : ''}
-          <p class="statut" role="status"></p>
-        </article>`).join('');
+    // Une entrée : { id, creeLe, type, campagne, datePrevue, statut, commande, declencheLe, reference }
+    // Les entrées créées avant cette version n'ont ni type ni statut : rupture, en attente.
+    const magasin = creerMagasin('ruptures', { surChangement: () => rendre() });
+    const norm = e => ({ type: 'rupture', statut: 'attente', campagne: '', ...e });
+    const toutes = () => magasin.tout().map(norm);
+    let vue = 'attente', stock = null, edition = null;
+    // La liste se redessine à chaque synchronisation : l'état d'envoi et les
+    // messages vivent donc ici, pas dans les éléments affichés.
+    const enCours = new Set(), retours = new Map();
+    function bandeau(html, classe = '') { const b = $('bandeau'); b.hidden = !html; b.className = 'bandeau ' + classe; b.innerHTML = html; }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      monterCoquille({ titre: 'Ruptures et précommandes', actif: '/ruptures.html' });
+      magasin.charger().then(() => {
+        $('mention-stockage').textContent = magasin.espacePartage
+          ? 'Liste partagée avec toute l’équipe.' : 'Attention : base partagée indisponible, liste conservée sur cet appareil.';
+        rendre();
+      });
+      magasin.suivre(30_000);
+      chargerStock();
+    });
+
+    // Stock disponible EasyBeer (index public, mis à jour au plus toutes les 30 min)
+    async function chargerStock() {
+      try { stock = await (await fetch('/api/cache/stock-index')).json(); } catch { stock = null; }
+      rendre();
+    }
+    const dispo = l => stock && stock[cleL(l)] ? (stock[cleL(l)].quantiteDisponible ?? 0) : null;
+    function etatStock(lignes) {
+      if (!stock) return null;
+      return lignes.every(l => dispo(l) !== null && dispo(l) >= l.quantite);
     }
 
-    document.getElementById('liste').addEventListener('click', async (ev) => {
-      const art = ev.target.closest('.attente'); if (!art) return;
-      const id = parseInt(art.dataset.id);
-      const statut = art.querySelector('.statut');
+    // --- Rendu ----------------------------------------------------------------
+    function filtrees() {
+      const q = $('f-q').value.trim().toLowerCase(), t = $('f-type').value, c = $('f-camp').value;
+      return toutes().filter(e => (vue === 'attente' ? e.statut !== 'declenchee' : e.statut === 'declenchee'))
+        .filter(e => !t || e.type === t)
+        .filter(e => !c || (e.campagne || '') === c)
+        .filter(e => !q || `${e.commande.nomClient} ${e.commande.lignes.map(l => l.libelle + ' ' + (l.contenant ?? '')).join(' ')} ${e.campagne}`.toLowerCase().includes(q));
+    }
 
-      if (ev.target.closest('.suppr')) {
-        if (!confirm('Supprimer cette commande en attente ? (rien n\'existe dans EasyBeer)')) return;
-        magasin.supprimer(id);
+    function rendre() {
+      const tout = toutes();
+      const att = tout.filter(e => e.statut !== 'declenchee'), decl = tout.filter(e => e.statut === 'declenchee');
+      $('n-attente').textContent = `(${att.length})`; $('n-decl').textContent = `(${decl.length})`;
+      document.querySelectorAll('.onglets button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === vue)));
+      const camps = [...new Set(tout.map(e => e.campagne).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr'));
+      const fc = $('f-camp'), v = fc.value;
+      fc.innerHTML = '<option value="">Toutes les campagnes</option>' + camps.map(c => `<option>${echap(c)}</option>`).join('');
+      fc.value = camps.includes(v) ? v : '';
+      $('dl-camp')?.replaceChildren(...camps.map(c => Object.assign(document.createElement('option'), { value: c })));
+
+      const l = filtrees(), el = $('liste');
+      if (!l.length) {
+        el.innerHTML = `<div class="vide-page">${ico('check')}<p>${vue === 'attente'
+          ? 'Aucune commande en attente.<br>« + Nouvelle commande en attente » ici, ou « Mettre en attente » sur la prise de commande.'
+          : 'Aucune commande déclenchée pour l’instant.'}</p></div>`;
         return;
       }
+      if (vue === 'declenchees') {
+        el.innerHTML = l.sort((a, b) => (b.declencheLe ?? 0) - (a.declencheLe ?? 0)).map(carteDeclenchee).join('');
+        return;
+      }
+      // Groupes : une campagne = un groupe ; sans campagne, regroupement par type.
+      const groupes = new Map();
+      for (const e of l) {
+        const g = e.campagne || (e.type === 'precommande' ? 'Précommandes sans campagne' : 'Ruptures de stock');
+        if (!groupes.has(g)) groupes.set(g, []);
+        groupes.get(g).push(e);
+      }
+      el.innerHTML = [...groupes].map(([g, es]) => {
+        const besoin = new Map();
+        for (const e of es) for (const li of e.commande.lignes) {
+          const k = cleL(li), b = besoin.get(k) ?? { l: li, q: 0 };
+          b.q += li.quantite; besoin.set(k, b);
+        }
+        const dates = es.map(e => e.datePrevue).filter(Boolean).sort();
+        return `<div class="groupe">
+          <div class="groupe-tete">
+            <h2>${echap(g)}</h2><span class="meta">${es.length} commande(s)${dates[0] ? ` · à déclencher à partir du ${fmtD(dates[0])}` : ''}</span>
+            <span class="actions"><button class="bouton principal" data-groupe="${echap(g)}">${es.length > 1 ? `Déclencher les ${es.length} commandes` : 'Déclencher la commande'}</button></span>
+            <div class="resume">${[...besoin.values()].map(({ l: li, q }) => {
+              const d = dispo(li);
+              return `<span>${q} × ${echap(li.libelle)} ${echap(li.contenant ?? '')}
+                <span class="stock ${d === null ? 'inconnu' : d >= q ? 'ok' : 'manque'}">${d === null ? '' : d >= q ? `(stock ${d} ✓)` : `(stock ${d}, manque ${q - d})`}</span></span>`; }).join('')}</div>
+          </div>
+          ${es.sort((a, b) => a.creeLe - b.creeLe).map(carte).join('')}
+        </div>`;
+      }).join('');
+    }
 
-      const btn = ev.target.closest('.declencher'); if (!btn) return;
-      const entree = lire().find(e => e.id === id); if (!entree) return;
-      btn.disabled = true;
-      btn.innerHTML = '<span class="loader"></span> Envoi en cours…';
-      statut.className = 'statut'; statut.textContent = '';
+    function carte(e) {
+      const pret = etatStock(e.commande.lignes);
+      const du = e.datePrevue && new Date(e.datePrevue + 'T00:00').getTime() <= AUJ();
+      if (edition === String(e.id)) return carteEdition(e);
+      const occupe = enCours.has(String(e.id)) || e.statut === 'envoi';
+      const retour = retours.get(String(e.id));
+      return `<article class="attente ${e.type} ${pret ? 'pret' : ''}" data-id="${e.id}">
+        <div class="haut">
+          <span class="nom">${echap(e.commande.nomClient || 'Client inconnu')}</span>
+          <span class="badge ${e.type}">${TYPES[e.type]}</span>
+          ${pret ? '<span class="badge pret">✓ tout est en stock</span>' : ''}
+          ${e.datePrevue ? `<span class="badge ${du ? 'du' : e.type}">${du ? 'à déclencher' : 'prévue le'} ${fmtD(e.datePrevue + 'T12:00')}</span>` : ''}
+          <span class="actions">
+            <button class="bouton principal" data-a="declencher" ${occupe ? 'disabled' : ''}>${occupe ? '<span class="loader"></span> Envoi…' : ico('check') + ' Déclencher'}</button>
+            <button class="bouton" data-a="modifier">Modifier</button>
+            <button class="bouton danger" data-a="supprimer" title="Rien n'existe dans EasyBeer">Supprimer</button>
+          </span>
+        </div>
+        <div class="meta">en attente depuis le ${fmtD(e.creeLe)}</div>
+        <ul class="lignes">${e.commande.lignes.map(l => {
+          const d = dispo(l);
+          return `<li><strong>${l.quantite} ×</strong> ${echap(l.libelle)} ${echap(l.contenant ?? '')}
+            <span class="stock ${d === null ? 'inconnu' : d >= l.quantite ? 'ok' : 'manque'}">${d === null ? (stock ? 'stock inconnu' : '') : d >= l.quantite ? `en stock (${d})` : `stock ${d}`}</span></li>`; }).join('')}</ul>
+        ${e.commande.commentaire ? `<p class="note">« ${echap(e.commande.commentaire)} »</p>` : ''}
+        <p class="statut ${retour?.classe ?? ''}">${retour ? echap(retour.texte) : ''}</p>
+      </article>`;
+    }
+
+    function carteEdition(e) {
+      return `<article class="attente ${e.type}" data-id="${e.id}">
+        <div class="haut"><span class="nom">${echap(e.commande.nomClient)}</span><span class="meta">modification — une quantité à 0 retire la ligne</span></div>
+        <ul class="lignes">${e.commande.lignes.map((l, i) => `<li><input class="q-edit" type="number" min="0" value="${l.quantite}" data-i="${i}" aria-label="Quantité ${echap(l.libelle)}">
+          ${echap(l.libelle)} ${echap(l.contenant ?? '')}</li>`).join('')}</ul>
+        <div class="edition">
+          <div><label>Type</label><select data-c="type">${Object.entries(TYPES).map(([k, v]) => `<option value="${k}" ${k === e.type ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+          <div><label>Campagne</label><input type="text" data-c="campagne" list="dl-camp" value="${echap(e.campagne)}" placeholder="ex. Bière de Noël 2026"></div>
+          <div><label>À déclencher à partir du</label><input type="date" data-c="datePrevue" value="${e.datePrevue ?? ''}"></div>
+          <div style="grid-column:1/-1"><label>Commentaire</label><input type="text" data-c="commentaire" value="${echap(e.commande.commentaire)}"></div>
+        </div>
+        <div class="pied-f"><button class="bouton principal" data-a="enregistrer">Enregistrer</button><button class="bouton" data-a="annuler">Annuler</button></div>
+      </article>`;
+    }
+
+    function carteDeclenchee(e) {
+      return `<article class="attente pret" data-id="${e.id}">
+        <div class="haut"><span class="nom">${echap(e.commande.nomClient)}</span><span class="badge ${e.type}">${TYPES[e.type]}</span>
+          ${e.campagne ? `<span class="meta">${echap(e.campagne)}</span>` : ''}
+          <span class="actions"><button class="bouton danger" data-a="supprimer">Retirer de l'historique</button></span></div>
+        <div class="meta">Déclenchée le ${fmtD(e.declencheLe)}${e.reference ? ` — commande EasyBeer n° ${echap(e.reference)}` : ''} · créée le ${fmtD(e.creeLe)}</div>
+        <ul class="lignes">${e.commande.lignes.map(l => `<li><strong>${l.quantite} ×</strong> ${echap(l.libelle)} ${echap(l.contenant ?? '')}</li>`).join('')}</ul>
+      </article>`;
+    }
+
+    // --- Déclenchement ---------------------------------------------------------
+    // Verrou « envoi » écrit avant l'appel : un collègue qui déclencherait la
+    // même commande au même moment la voit déjà prise. En cas d'échec, elle
+    // revient en attente.
+    async function declencher(id) {
+      await magasin.charger();
+      const e = toutes().find(x => String(x.id) === String(id));
+      if (!e || e.statut !== 'attente') throw new Error('commande déjà déclenchée ou en cours d’envoi par un autre poste');
+      const brut = magasin.tout().find(x => String(x.id) === String(id));
+      await magasin.enregistrer({ ...brut, statut: 'envoi' });
+      const prefixe = e.type === 'precommande' ? `Précommande${e.campagne ? ' — ' + e.campagne : ''}` : `Rupture${e.campagne ? ' — ' + e.campagne : ''}`;
       try {
-        const res = await fetch('/api/commande', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(entree.commande),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
-        magasin.supprimer(id);
-        const ref = data.map?.numero ?? data.map?.id ?? data.reference ?? data.idCommande ?? data.id ?? '';
-        statut.className = 'statut ok';
-        statut.textContent = `Commande envoyée à EasyBeer${ref ? ' — référence ' + ref : ''}.`;
-        setTimeout(render, 2500);
+        const r = await fetch('/api/commande', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...e.commande, commentaire: [prefixe, e.commande.commentaire].filter(Boolean).join(' — ') }) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error ?? `HTTP ${r.status}`);
+        const reference = d.map?.numero ?? d.map?.id ?? d.reference ?? '';
+        await magasin.enregistrer({ ...brut, type: e.type, statut: 'declenchee', declencheLe: Date.now(), reference: String(reference) });
+        return reference;
       } catch (err) {
-        statut.className = 'statut error';
-        statut.textContent = 'Échec de l\'envoi : ' + err.message + ' — la commande reste en attente.';
-        btn.disabled = false;
-        btn.innerHTML = ico('check') + ' Déclencher la commande';
+        await magasin.enregistrer({ ...brut, statut: 'attente' });
+        throw err;
+      }
+    }
+
+    $('liste').addEventListener('click', async ev => {
+      const bg = ev.target.closest('[data-groupe]');
+      if (bg) return declencherGroupe(bg.dataset.groupe, bg);
+      const art = ev.target.closest('.attente'); const b = ev.target.closest('[data-a]');
+      if (!art || !b) return;
+      const id = art.dataset.id;
+      const brut = magasin.tout().find(x => String(x.id) === String(id));
+      switch (b.dataset.a) {
+        case 'supprimer':
+          if (confirm(vue === 'attente' ? 'Supprimer cette commande en attente ? (rien n’existe dans EasyBeer)' : 'Retirer de l’historique ? (la commande EasyBeer n’est pas touchée)'))
+            magasin.supprimer(brut.id);
+          return;
+        case 'modifier': edition = String(id); return rendre();
+        case 'annuler': edition = null; return rendre();
+        case 'enregistrer': {
+          const lignes = brut.commande.lignes.map((l, i) => ({ ...l, quantite: Math.max(0, parseInt(art.querySelector(`[data-i="${i}"]`).value) || 0) }))
+            .filter(l => l.quantite > 0);
+          if (!lignes.length && !confirm('Plus aucune ligne : supprimer la commande en attente ?')) return;
+          const v = c => art.querySelector(`[data-c="${c}"]`).value.trim();
+          edition = null;
+          if (!lignes.length) return magasin.supprimer(brut.id);
+          return magasin.enregistrer({ ...brut, type: v('type'), campagne: v('campagne'), datePrevue: v('datePrevue') || null,
+            commande: { ...brut.commande, lignes, commentaire: v('commentaire') } });
+        }
+        case 'declencher': {
+          const e = norm(brut);
+          if (etatStock(e.commande.lignes) === false && !confirm('Le stock EasyBeer ne couvre pas toute la commande. Déclencher quand même ?')) return;
+          enCours.add(id); retours.delete(id); rendre();
+          try {
+            const ref = await declencher(id);
+            bandeau(`✓ ${echap(e.commande.nomClient)} : commande envoyée à EasyBeer${ref ? ' — n° ' + echap(ref) : ''}. Elle est dans l'onglet « Déclenchées ».`, 'ok');
+          } catch (err) {
+            retours.set(id, { classe: 'erreur', texte: 'Échec : ' + err.message + ' — la commande reste en attente.' });
+          } finally { enCours.delete(id); rendre(); }
+        }
       }
     });
+
+    async function declencherGroupe(g, bouton) {
+      const es = filtrees().filter(e => (e.campagne || (e.type === 'precommande' ? 'Précommandes sans campagne' : 'Ruptures de stock')) === g);
+      const manque = es.filter(e => etatStock(e.commande.lignes) === false).length;
+      if (!confirm(`Envoyer ${es.length} commande(s) « ${g} » dans EasyBeer ?`
+        + (manque ? `\n\nAttention : le stock ne couvre pas ${manque} d’entre elles.` : ''))) return;
+      es.forEach(e => enCours.add(String(e.id))); rendre();
+      let ok = 0; const echecs = [];
+      for (const [i, e] of es.entries()) {
+        bandeau(`<span class="loader"></span> « ${echap(g)} » : envoi ${i + 1} / ${es.length}…`);
+        try { await declencher(e.id); ok++; }
+        catch (err) {
+          echecs.push(`${e.commande.nomClient} : ${err.message}`);
+          retours.set(String(e.id), { classe: 'erreur', texte: 'Échec : ' + err.message + ' — reste en attente.' });
+        }
+        enCours.delete(String(e.id)); rendre();
+      }
+      bandeau(`${ok} commande(s) « ${echap(g)} » envoyée(s) à EasyBeer.`
+        + (echecs.length ? ` <b>${echecs.length} échec(s)</b>, restée(s) en attente : ${echecs.map(echap).join(' · ')}` : ''), echecs.length ? 'erreur' : 'ok');
+    }
+
+    // --- Création --------------------------------------------------------------
+    let clients = null, nouvelle = null;
+    $('b-nouvelle').addEventListener('click', () => { $('panneau').hidden ? ouvrirPanneau() : fermerPanneau(); });
+    function fermerPanneau() { $('panneau').hidden = true; nouvelle = null; }
+
+    async function ouvrirPanneau() {
+      nouvelle = { client: null, produits: [], qte: new Map(), toute: false };
+      const p = $('panneau'); p.hidden = false;
+      p.innerHTML = `<h2>Nouvelle commande en attente</h2>
+        <div class="grille-f">
+          <div class="champ recherche"><label for="n-client">Client</label>
+            <input type="text" id="n-client" placeholder="Nom du client…" autocomplete="off"><div class="resultats" id="n-res" hidden></div></div>
+          <div class="champ"><label for="n-type">Type</label><select id="n-type"><option value="precommande">Précommande</option><option value="rupture">Rupture de stock</option></select></div>
+          <div class="champ"><label for="n-camp">Campagne (facultatif)</label><input type="text" id="n-camp" list="dl-camp" placeholder="ex. Bière de Noël 2026"></div>
+          <div class="champ"><label for="n-date">À déclencher à partir du (facultatif)</label><input type="date" id="n-date"></div>
+        </div>
+        <div id="n-produits"><p class="meta">Choisissez d'abord un client : ses produits et sa gamme s'afficheront.</p></div>
+        <div class="champ" style="margin-top:var(--e3)"><label for="n-com">Commentaire</label><input type="text" id="n-com" placeholder="Livraison, précision…"></div>
+        <div class="pied-f"><button class="bouton principal" id="n-ok">Enregistrer en attente</button><button class="bouton" id="n-annuler">Annuler</button>
+          <span class="msg" id="n-msg" role="status"></span></div>`;
+      rendre();   // remplit la liste des campagnes
+      $('n-annuler').addEventListener('click', fermerPanneau);
+      $('n-ok').addEventListener('click', enregistrerNouvelle);
+      const q = $('n-client'), res = $('n-res');
+      q.addEventListener('input', async () => {
+        nouvelle.client = null;
+        const t = q.value.trim().toLowerCase();
+        if (t.length < 2) { res.hidden = true; return; }
+        if (!clients) { res.hidden = false; res.innerHTML = '<button disabled><span class="loader"></span> Chargement des clients…</button>';
+          clients = await (await fetch('/api/clients')).json().catch(() => []); }
+        const l = clients.filter(c => c.nom.toLowerCase().includes(q.value.trim().toLowerCase())).slice(0, 12);
+        res.innerHTML = l.length ? l.map(c => `<button data-id="${c.id}">${echap(c.nom)}<small>${echap(c.canal ?? '')}</small></button>`).join('')
+          : '<button disabled>Aucun client trouvé</button>';
+        res.hidden = false;
+      });
+      res.addEventListener('click', e => {
+        const b = e.target.closest('[data-id]'); if (!b) return;
+        nouvelle.client = clients.find(c => String(c.id) === b.dataset.id);
+        q.value = nouvelle.client.nom; res.hidden = true;
+        chargerProduits();
+      });
+      document.addEventListener('click', e => { if (!e.target.closest('.recherche')) res.hidden = true; });
+      q.focus();
+    }
+
+    // Colisage, comme à la prise de commande : 33 cL → 12 / 24, 75 cL → 6 / 12.
+    function colisage(contenant) {
+      const l = String(contenant ?? '').toLowerCase();
+      if (/f[uû]t|keg/.test(l)) return [];
+      const m = l.match(/(\d+(?:[.,]\d+)?)\s*l\b/);
+      const v = m ? parseFloat(m[1].replace(',', '.')) : null;
+      if (v !== null && Math.abs(v - 0.75) < 0.01) return [6, 12];
+      if (v !== null && Math.abs(v - 0.33) < 0.01) return [12, 24];
+      return [];
+    }
+
+    async function chargerProduits() {
+      const z = $('n-produits');
+      z.innerHTML = '<p class="meta"><span class="loader"></span> Chargement des produits du client…</p>';
+      try {
+        const r = await fetch('/api/tarifs/' + nouvelle.client.id);
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error ?? `HTTP ${r.status}`);
+        nouvelle.produits = d; nouvelle.qte.clear(); rendreProduits();
+      } catch (e) { z.innerHTML = `<p class="statut erreur">Produits indisponibles : ${echap(e.message)}</p>`; }
+    }
+
+    function rendreProduits() {
+      const gamme = nouvelle.client?.canal === 'GMS' ? 'gms' : 'classique';
+      const dansGamme = nouvelle.produits.filter(p => (p.gamme ?? 'classique') === gamme);
+      const liste = nouvelle.toute || !dansGamme.length ? nouvelle.produits : dansGamme;
+      $('n-produits').innerHTML = `<div class="pied-f" style="margin:0 0 var(--e2)">
+          <input type="search" id="n-fprod" placeholder="Filtrer les produits…" style="flex:1;min-width:180px">
+          <label class="meta"><input type="checkbox" id="n-toute" ${nouvelle.toute ? 'checked' : ''}> toute la gamme</label></div>
+        <div class="produits">${liste.map(p => {
+          const k = cleL(p), q = nouvelle.qte.get(k) ?? 0, d = dispo(p);
+          return `<div class="prod ${q ? 'choisi' : ''}" data-k="${k}" data-nom="${echap((p.libelle + ' ' + p.contenant).toLowerCase())}">
+            <div class="inf"><b>${echap(p.libelle)}</b><span class="meta">${echap(p.contenant ?? '')}${d !== null ? ` · stock ${d}` : ''}</span></div>
+            <span class="packs">${colisage(p.contenant).map(n => `<button data-p="${n}">+${n}</button>`).join(' ')}</span>
+            <input type="number" min="0" value="${q}" aria-label="Quantité ${echap(p.libelle)}"></div>`; }).join('')}</div>`;
+      const z = $('n-produits');
+      const fixer = (el, v) => { v = Math.max(0, parseInt(v) || 0); const k = el.dataset.k;
+        v ? nouvelle.qte.set(k, v) : nouvelle.qte.delete(k); el.querySelector('input').value = v; el.classList.toggle('choisi', v > 0); };
+      z.querySelectorAll('.prod').forEach(el => {
+        el.querySelector('input').addEventListener('change', ev => fixer(el, ev.target.value));
+        el.querySelectorAll('[data-p]').forEach(b => b.addEventListener('click', () => fixer(el, (nouvelle.qte.get(el.dataset.k) ?? 0) + Number(b.dataset.p))));
+      });
+      $('n-toute').addEventListener('change', e => { nouvelle.toute = e.target.checked; rendreProduits(); });
+      $('n-fprod').addEventListener('input', e => {
+        const t = e.target.value.trim().toLowerCase();
+        z.querySelectorAll('.prod').forEach(el => el.hidden = !!t && !el.dataset.nom.includes(t));
+      });
+    }
+
+    async function enregistrerNouvelle() {
+      const msg = $('n-msg');
+      if (!nouvelle?.client) { msg.className = 'msg statut erreur'; msg.textContent = 'Choisissez un client dans la liste.'; return; }
+      const lignes = nouvelle.produits.filter(p => nouvelle.qte.get(cleL(p))).map(p => ({
+        idProduit: p.idProduit, idContenant: p.idContenant, idLot: p.idLot ?? 1, idStockBouteille: p.idStockBouteille, gtin: p.gtin,
+        quantite: nouvelle.qte.get(cleL(p)), libelle: p.libelle, contenant: p.contenant }));
+      if (!lignes.length) { msg.className = 'msg statut erreur'; msg.textContent = 'Indiquez au moins une quantité.'; return; }
+      const c = nouvelle.client;
+      await magasin.enregistrer({
+        id: Date.now(), creeLe: Date.now(), type: $('n-type').value, statut: 'attente',
+        campagne: $('n-camp').value.trim(), datePrevue: $('n-date').value || null,
+        commande: { idClient: c.id, idClientType: c.idClientType ?? null, nomClient: c.nom, lignes, commentaire: $('n-com').value.trim() },
+      });
+      fermerPanneau(); vue = 'attente'; rendre();
+    }
+
+    document.querySelectorAll('.onglets button').forEach(b => b.addEventListener('click', () => { vue = b.dataset.v; edition = null; rendre(); }));
+    ['f-q', 'f-type', 'f-camp'].forEach(id => $(id).addEventListener(id === 'f-q' ? 'input' : 'change', rendre));
   </script>
 </body>
 </html>

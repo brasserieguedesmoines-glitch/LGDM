@@ -523,12 +523,12 @@ document.getElementById('btn-attente')?.addEventListener('click', async () => {
   const commande = collecterCommande();
   if (!commande) return;
   try {
-    await magasinRuptures.enregistrer({ id: Date.now(), creeLe: Date.now(), commande });
+    await magasinRuptures.enregistrer({ id: Date.now(), creeLe: Date.now(), type: 'rupture', statut: 'attente', campagne: '', commande });
   } catch {
     setStatut('Impossible d’enregistrer la mise en attente.', true);
     return;
   }
-  modalDetail.textContent = `${commande.nomClient} — ${commande.lignes.length} ligne(s) en attente de réapprovisionnement. À déclencher depuis la page Ruptures.`;
+  modalDetail.textContent = `${commande.nomClient} — ${commande.lignes.length} ligne(s) en attente de réapprovisionnement. À déclencher depuis la page Ruptures et précommandes.`;
   document.getElementById('modal-titre').textContent = 'Commande mise en attente';
   modalOverlay.style.display = 'flex';
 });
