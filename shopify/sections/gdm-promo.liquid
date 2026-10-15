@@ -1,0 +1,472 @@
+{%- comment -%}
+  Le Gué des Moines — Bannière promo avec compte à rebours
+  Idéale pour Noël, une sortie de brassin ou une date limite de commande.
+  Le compte à rebours suit l'heure de Paris.
+{%- endcomment -%}
+{%- liquid
+  assign s = section.settings
+  assign heading_tag = s.heading_tag | default: 'h2'
+  assign show_countdown = false
+  if s.countdown_date != blank
+    assign end_key = s.countdown_date | date: '%Y%m%d' | plus: 0
+    assign today_key = 'now' | date: '%Y%m%d' | plus: 0
+    if end_key >= today_key
+      assign show_countdown = true
+    endif
+  endif
+-%}
+{%- render 'gdm-assets' -%}
+
+<gdm-section
+  id="gdm-{{ section.id }}"
+  class="gdm gdm-promo gdm-promo--image-{{ s.image_position }}"
+  style="--gdm-bg: {{ s.color_bg }}; --gdm-accent: {{ s.color_accent }}; --gdm-pt: {{ s.padding_top }}px; --gdm-pb: {{ s.padding_bottom }}px;"
+>
+  <div class="gdm-container">
+    <div class="gdm-promo__card gdm-grain" data-gdm-reveal>
+      <div class="gdm-glow gdm-promo__glow" aria-hidden="true"></div>
+
+      <div class="gdm-promo__content">
+        {%- if s.pill != blank -%}
+          <p class="gdm-pill">{{ s.pill | escape }}</p>
+        {%- endif -%}
+        {%- if s.title != blank or s.title_accent != blank -%}
+          <{{ heading_tag }} class="gdm-title gdm-promo__title">
+            {{- s.title | escape }}{% if s.title_accent != blank %} <em class="is-block">{{ s.title_accent | escape }}</em>{% endif -%}
+          </{{ heading_tag }}>
+        {%- endif -%}
+        {%- if s.text != blank -%}
+          <p class="gdm-lead">{{ s.text }}</p>
+        {%- endif -%}
+
+        {%- if show_countdown -%}
+          <gdm-countdown class="gdm-promo__countdown" data-date="{{ s.countdown_date | date: '%Y-%m-%d' }}" data-time="{{ s.countdown_time | escape }}">
+            {%- if s.countdown_label != blank -%}
+              <p class="gdm-promo__countdown-label">{{ s.countdown_label | escape }}</p>
+            {%- endif -%}
+            <div class="gdm-promo__units" role="timer" aria-live="off">
+              <div class="gdm-promo__unit"><span data-unit="days">00</span><small>{{ s.label_days | escape }}</small></div>
+              <div class="gdm-promo__unit"><span data-unit="hours">00</span><small>{{ s.label_hours | escape }}</small></div>
+              <div class="gdm-promo__unit"><span data-unit="minutes">00</span><small>{{ s.label_minutes | escape }}</small></div>
+              <div class="gdm-promo__unit"><span data-unit="seconds">00</span><small>{{ s.label_seconds | escape }}</small></div>
+            </div>
+            {%- if s.ended_text != blank -%}
+              <p class="gdm-promo__ended">{{ s.ended_text | escape }}</p>
+            {%- endif -%}
+          </gdm-countdown>
+        {%- endif -%}
+
+        {%- if s.button_label != blank or s.button2_label != blank -%}
+          <div class="gdm-actions">
+            {%- if s.button_label != blank -%}
+              <a class="gdm-btn gdm-btn--primary" href="{{ s.button_link | default: routes.all_products_collection_url }}">
+                {{- s.button_label | escape -}}
+                {%- render 'gdm-icon', name: 'arrow-up-right' -%}
+              </a>
+            {%- endif -%}
+            {%- if s.button2_label != blank -%}
+              <a class="gdm-btn gdm-btn--ghost" href="{{ s.button2_link | default: '#' }}">{{ s.button2_label | escape }}</a>
+            {%- endif -%}
+          </div>
+        {%- endif -%}
+      </div>
+
+      <div class="gdm-promo__visual">
+        {%- if s.image != blank -%}
+          {{ s.image | image_url: width: 1200 | image_tag: loading: 'lazy', widths: '500, 800, 1000, 1200', sizes: '(min-width: 990px) 45vw, 90vw', class: 'gdm-promo__img' }}
+        {%- else -%}
+          <div class="gdm-promo__icon" aria-hidden="true">{% render 'gdm-icon', name: 'sparkle', icon_size: 120 %}</div>
+        {%- endif -%}
+        {%- if s.badge != blank -%}
+          <span class="gdm-promo__badge"><span>{{ s.badge | escape }}</span></span>
+        {%- endif -%}
+      </div>
+    </div>
+  </div>
+</gdm-section>
+
+{% stylesheet %}
+  .gdm.gdm-promo .gdm-promo__card {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    align-items: center;
+    gap: 32px;
+    padding: clamp(28px, 5vw, 64px);
+    border: 1px solid var(--gdm-line);
+    border-radius: 32px;
+    background: linear-gradient(135deg, var(--gdm-surface-2) 0%, var(--gdm-surface) 55%, var(--gdm-bg) 100%);
+    overflow: hidden;
+  }
+
+  @media (min-width: 990px) {
+    .gdm.gdm-promo .gdm-promo__card {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      gap: 56px;
+    }
+
+    .gdm.gdm-promo--image-left .gdm-promo__visual {
+      order: -1;
+    }
+  }
+
+  .gdm.gdm-promo .gdm-promo__glow {
+    right: -25%;
+    bottom: -70%;
+  }
+
+  .gdm.gdm-promo .gdm-promo__content {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    justify-items: start;
+    gap: 22px;
+  }
+
+  .gdm.gdm-promo .gdm-promo__title {
+    font-size: clamp(42px, 26px + 4vw, 88px);
+  }
+
+  .gdm.gdm-promo .gdm-promo__countdown {
+    display: grid;
+    gap: 12px;
+  }
+
+  .gdm.gdm-promo .gdm-promo__countdown-label {
+    color: var(--gdm-muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .gdm.gdm-promo .gdm-promo__units {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .gdm.gdm-promo .gdm-promo__unit {
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+    min-width: 78px;
+    padding: 14px 10px 12px;
+    border: 1px solid var(--gdm-border);
+    border-radius: 18px;
+    background: rgba(13, 13, 13, 0.55);
+  }
+
+  .gdm.gdm-promo .gdm-promo__unit span {
+    color: var(--gdm-text);
+    font-family: var(--gdm-font-display);
+    font-size: 40px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .gdm.gdm-promo .gdm-promo__unit:first-child span {
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-promo .gdm-promo__unit small {
+    color: var(--gdm-muted);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .gdm.gdm-promo .gdm-promo__ended {
+    display: none;
+    color: var(--gdm-accent);
+    font-weight: 600;
+  }
+
+  .gdm.gdm-promo gdm-countdown[data-ended] .gdm-promo__units,
+  .gdm.gdm-promo gdm-countdown[data-ended] .gdm-promo__countdown-label {
+    display: none;
+  }
+
+  .gdm.gdm-promo gdm-countdown[data-ended] .gdm-promo__ended {
+    display: block;
+  }
+
+  .gdm.gdm-promo .gdm-promo__visual {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    min-height: 280px;
+  }
+
+  .gdm.gdm-promo .gdm-promo__img {
+    width: 100%;
+    max-height: 520px;
+    object-fit: contain;
+    filter: drop-shadow(0 30px 40px rgba(0, 0, 0, 0.6));
+    transition: transform 0.8s var(--gdm-ease);
+  }
+
+  .gdm.gdm-promo .gdm-promo__card:hover .gdm-promo__img {
+    transform: translateY(-6px) rotate(-1.5deg);
+  }
+
+  .gdm.gdm-promo .gdm-promo__icon {
+    display: grid;
+    place-items: center;
+    width: 240px;
+    aspect-ratio: 1;
+    border: 1px dashed var(--gdm-line);
+    border-radius: 50%;
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-promo .gdm-promo__badge {
+    position: absolute;
+    top: 4%;
+    right: 4%;
+    display: grid;
+    place-items: center;
+    width: 112px;
+    aspect-ratio: 1;
+    padding: 12px;
+    border-radius: 50%;
+    background: var(--gdm-accent);
+    color: var(--gdm-on-accent);
+    font-family: var(--gdm-font-display);
+    font-size: 22px;
+    line-height: 1;
+    text-align: center;
+    text-transform: uppercase;
+    transform: rotate(12deg);
+    box-shadow: 0 0 0 6px var(--gdm-accent-glow);
+  }
+
+  @media (max-width: 749px) {
+    .gdm.gdm-promo .gdm-promo__card {
+      border-radius: 24px;
+    }
+
+    .gdm.gdm-promo .gdm-promo__units {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      width: 100%;
+      gap: 8px;
+    }
+
+    .gdm.gdm-promo .gdm-promo__unit {
+      min-width: 0;
+      padding: 12px 4px 10px;
+    }
+
+    .gdm.gdm-promo .gdm-promo__unit span {
+      font-size: 30px;
+    }
+
+    .gdm.gdm-promo .gdm-promo__unit small {
+      font-size: 9px;
+      letter-spacing: 0.08em;
+    }
+
+    .gdm.gdm-promo .gdm-actions,
+    .gdm.gdm-promo .gdm-actions .gdm-btn {
+      width: 100%;
+    }
+
+    .gdm.gdm-promo .gdm-promo__badge {
+      width: 88px;
+      font-size: 17px;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "GDM · Promo + compteur",
+  "tag": "section",
+  "class": "gdm-shopify-section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Texte"
+    },
+    {
+      "type": "text",
+      "id": "pill",
+      "label": "Badge",
+      "default": "Édition limitée"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titre",
+      "default": "Les bières de Noël"
+    },
+    {
+      "type": "text",
+      "id": "title_accent",
+      "label": "Titre — partie orange",
+      "default": "sont arrivées"
+    },
+    {
+      "type": "select",
+      "id": "heading_tag",
+      "label": "Niveau du titre (SEO)",
+      "default": "h2",
+      "options": [
+        { "value": "h1", "label": "H1" },
+        { "value": "h2", "label": "H2" }
+      ]
+    },
+    {
+      "type": "inline_richtext",
+      "id": "text",
+      "label": "Texte",
+      "default": "Coffrets, éditions spéciales et idées cadeaux brassées à Bruguières. Commandez tôt : les quantités sont limitées."
+    },
+    {
+      "type": "text",
+      "id": "button_label",
+      "label": "Bouton principal",
+      "default": "Voir les idées cadeaux"
+    },
+    {
+      "type": "url",
+      "id": "button_link",
+      "label": "Lien du bouton principal"
+    },
+    {
+      "type": "text",
+      "id": "button2_label",
+      "label": "Bouton secondaire"
+    },
+    {
+      "type": "url",
+      "id": "button2_link",
+      "label": "Lien du bouton secondaire"
+    },
+    {
+      "type": "header",
+      "content": "Compte à rebours"
+    },
+    {
+      "type": "text",
+      "id": "countdown_date",
+      "label": "Date de fin (AAAA-MM-JJ)",
+      "default": "2026-12-20",
+      "info": "Laisser vide pour masquer le compte à rebours. Il disparaît aussi une fois la date passée."
+    },
+    {
+      "type": "text",
+      "id": "countdown_time",
+      "label": "Heure de fin",
+      "default": "12:00",
+      "info": "Heure de Paris, par exemple 12:00."
+    },
+    {
+      "type": "text",
+      "id": "countdown_label",
+      "label": "Texte au-dessus",
+      "default": "Dernières commandes livrées avant Noël dans"
+    },
+    {
+      "type": "text",
+      "id": "ended_text",
+      "label": "Texte une fois terminé",
+      "default": "Les commandes pour Noël sont closes — merci !"
+    },
+    {
+      "type": "text",
+      "id": "label_days",
+      "label": "Jours",
+      "default": "Jours"
+    },
+    {
+      "type": "text",
+      "id": "label_hours",
+      "label": "Heures",
+      "default": "Heures"
+    },
+    {
+      "type": "text",
+      "id": "label_minutes",
+      "label": "Minutes",
+      "default": "Min"
+    },
+    {
+      "type": "text",
+      "id": "label_seconds",
+      "label": "Secondes",
+      "default": "Sec"
+    },
+    {
+      "type": "header",
+      "content": "Visuel"
+    },
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Image",
+      "info": "Idéalement une bouteille ou un coffret détouré (PNG transparent)."
+    },
+    {
+      "type": "select",
+      "id": "image_position",
+      "label": "Position de l'image",
+      "default": "right",
+      "options": [
+        { "value": "right", "label": "À droite" },
+        { "value": "left", "label": "À gauche" }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "badge",
+      "label": "Pastille sur l'image",
+      "default": "Nouveau"
+    },
+    {
+      "type": "header",
+      "content": "Couleurs et espacement"
+    },
+    {
+      "type": "color",
+      "id": "color_bg",
+      "label": "Fond",
+      "default": "#0D0D0D"
+    },
+    {
+      "type": "color",
+      "id": "color_accent",
+      "label": "Accent",
+      "default": "#F0921E"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Marge haute",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 64
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Marge basse",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 64
+    }
+  ],
+  "presets": [
+    {
+      "name": "GDM · Promo + compteur"
+    }
+  ]
+}
+{% endschema %}

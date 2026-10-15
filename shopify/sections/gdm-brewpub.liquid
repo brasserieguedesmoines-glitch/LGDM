@@ -1,0 +1,778 @@
+{%- comment -%}
+  Le Gué des Moines — Venir au brewpub
+  Horaires (jour en cours surligné + statut « Ouvert / Fermé » en direct,
+  heure de Paris), adresse, téléphone, itinéraire et carte Google chargée
+  uniquement au clic (aucun cookie Google avant l'action du visiteur).
+{%- endcomment -%}
+{%- liquid
+  assign s = section.settings
+  assign heading_tag = s.heading_tag | default: 'h2'
+  assign day_names = 'Lundi,Mardi,Mercredi,Jeudi,Vendredi,Samedi,Dimanche' | split: ','
+  assign address_flat = s.address | newline_to_br | replace: '<br />', ' ' | strip_newlines | strip
+  assign map_query = s.map_query | default: address_flat
+  assign phone_href = s.phone | remove: ' ' | remove: '.' | remove: '-'
+-%}
+{%- render 'gdm-assets' -%}
+
+<gdm-section
+  id="gdm-{{ section.id }}"
+  class="gdm gdm-brewpub gdm-grain"
+  style="--gdm-bg: {{ s.color_bg }}; --gdm-accent: {{ s.color_accent }}; --gdm-pt: {{ s.padding_top }}px; --gdm-pb: {{ s.padding_bottom }}px;"
+>
+  <div class="gdm-glow gdm-brewpub__glow" aria-hidden="true"></div>
+  <div class="gdm-container gdm-brewpub__grid">
+    <div class="gdm-brewpub__info">
+      <div class="gdm-head gdm-brewpub__head">
+        {%- if s.pill != blank -%}
+          <p class="gdm-pill" data-gdm-reveal>{{ s.pill | escape }}</p>
+        {%- endif -%}
+        {%- if s.title != blank or s.title_accent != blank -%}
+          <{{ heading_tag }} class="gdm-title" data-gdm-reveal style="--gdm-i: 1;">
+            {{- s.title | escape }}{% if s.title_accent != blank %} <em>{{ s.title_accent | escape }}</em>{% endif -%}
+          </{{ heading_tag }}>
+        {%- endif -%}
+        {%- if s.text != blank -%}
+          <p class="gdm-lead" data-gdm-reveal style="--gdm-i: 2;">{{ s.text }}</p>
+        {%- endif -%}
+      </div>
+
+      {%- if section.blocks.size > 0 -%}
+        <gdm-hours
+          class="gdm-brewpub__hours gdm-card"
+          data-gdm-reveal
+          style="--gdm-i: 3;"
+          data-open-label="{{ s.label_open | escape }}"
+          data-closed-label="{{ s.label_closed | escape }}"
+          data-closes-label="{{ s.label_closes | escape }}"
+          data-opens-label="{{ s.label_opens | escape }}"
+          data-today-label="{{ s.label_today | escape }}"
+          data-tomorrow-label="{{ s.label_tomorrow | escape }}"
+          data-at-label="{{ s.label_at | escape }}"
+        >
+          <div class="gdm-brewpub__hours-head">
+            <span class="gdm-brewpub__hours-title">{% render 'gdm-icon', name: 'clock', icon_size: 20 %}{{ s.hours_title | escape }}</span>
+            <span class="gdm-brewpub__status" data-status hidden><span class="gdm-brewpub__dot"></span><span data-status-label></span></span>
+          </div>
+          <dl class="gdm-brewpub__days">
+            {%- for block in section.blocks -%}
+              {%- assign b = block.settings -%}
+              {%- assign day_index = b.day | plus: 0 | minus: 1 -%}
+              <div class="gdm-brewpub__day" data-day="{{ b.day }}" {{ block.shopify_attributes }}>
+                <dt>{{ day_names[day_index] }}</dt>
+                <dd>
+                  {%- if b.closed -%}
+                    <span class="gdm-brewpub__closed">{{ s.label_closed_day | escape }}</span>
+                  {%- else -%}
+                    {{ b.open | escape }} – {{ b.close | escape }}
+                  {%- endif -%}
+                  {%- if b.note != blank -%}<span class="gdm-brewpub__note">{{ b.note | escape }}</span>{%- endif -%}
+                </dd>
+              </div>
+            {%- endfor -%}
+          </dl>
+          <script type="application/json">
+            [
+              {%- for block in section.blocks -%}
+                {"day": {{ block.settings.day | plus: 0 }}, "open": {{ block.settings.open | json }}, "close": {{ block.settings.close | json }}, "closed": {{ block.settings.closed | json }}}{% unless forloop.last %},{% endunless %}
+              {%- endfor -%}
+            ]
+          </script>
+        </gdm-hours>
+      {%- endif -%}
+
+      <ul class="gdm-brewpub__contact" data-gdm-reveal style="--gdm-i: 4;">
+        {%- if s.address != blank -%}
+          <li>
+            <span class="gdm-brewpub__contact-icon">{% render 'gdm-icon', name: 'map-pin', icon_size: 20 %}</span>
+            <span>{{ s.address | escape | newline_to_br }}</span>
+          </li>
+        {%- endif -%}
+        {%- if s.phone != blank -%}
+          <li>
+            <span class="gdm-brewpub__contact-icon">{% render 'gdm-icon', name: 'phone', icon_size: 20 %}</span>
+            <a href="tel:{{ phone_href }}">{{ s.phone | escape }}</a>
+          </li>
+        {%- endif -%}
+        {%- if s.email != blank -%}
+          <li>
+            <span class="gdm-brewpub__contact-icon">{% render 'gdm-icon', name: 'mail', icon_size: 20 %}</span>
+            <a href="mailto:{{ s.email | escape }}">{{ s.email | escape }}</a>
+          </li>
+        {%- endif -%}
+      </ul>
+
+      <div class="gdm-actions" data-gdm-reveal style="--gdm-i: 5;">
+        {%- if map_query != blank and s.directions_label != blank -%}
+          <a class="gdm-btn gdm-btn--primary" href="https://www.google.com/maps/dir/?api=1&destination={{ map_query | url_encode }}" target="_blank" rel="noopener">
+            {{- s.directions_label | escape -}}
+            {%- render 'gdm-icon', name: 'arrow-up-right' -%}
+          </a>
+        {%- endif -%}
+        {%- if s.button2_label != blank -%}
+          <a class="gdm-btn gdm-btn--ghost" href="{{ s.button2_link | default: '#' }}">{{ s.button2_label | escape }}</a>
+        {%- endif -%}
+      </div>
+    </div>
+
+    <gdm-map
+      class="gdm-brewpub__map"
+      data-gdm-reveal
+      style="--gdm-i: 2;"
+      data-query="{{ map_query | escape }}"
+      data-title="{{ s.map_title | escape }}"
+    >
+      <div class="gdm-brewpub__map-cover">
+        {%- if s.image != blank -%}
+          {{ s.image | image_url: width: 1400 | image_tag: loading: 'lazy', widths: '600, 900, 1200, 1400', sizes: '(min-width: 990px) 50vw, 100vw', class: 'gdm-brewpub__img' }}
+        {%- else -%}
+          <svg class="gdm-brewpub__pattern" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs>
+              <pattern id="gdm-grid-{{ section.id }}" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M40 0H0v40" fill="none" stroke="currentColor" stroke-width="1"/>
+              </pattern>
+            </defs>
+            <rect width="400" height="400" fill="url(#gdm-grid-{{ section.id }})"/>
+            <path d="M-20 300C80 260 120 120 230 140S360 60 430 20" fill="none" stroke="currentColor" stroke-width="10" opacity=".55"/>
+            <path d="M60 -20C90 120 70 260 140 420" fill="none" stroke="currentColor" stroke-width="6" opacity=".4"/>
+            <path d="M-20 90C120 110 260 220 420 210" fill="none" stroke="currentColor" stroke-width="4" opacity=".35"/>
+          </svg>
+        {%- endif -%}
+        <div class="gdm-brewpub__pin" aria-hidden="true">
+          <span>{% render 'gdm-icon', name: 'beer', icon_size: 28 %}</span>
+        </div>
+        {%- if map_query != blank -%}
+          <button type="button" class="gdm-btn gdm-btn--primary gdm-brewpub__map-btn" data-load-map>
+            {%- render 'gdm-icon', name: 'map-pin', icon_size: 18 -%}
+            {{- s.map_button_label | escape -}}
+          </button>
+          <p class="gdm-brewpub__map-note">{{ s.map_note | escape }}</p>
+        {%- endif -%}
+      </div>
+    </gdm-map>
+  </div>
+
+  {%- if s.structured_data and s.address != blank -%}
+    {%- liquid
+      assign address_lines = s.address | newline_to_br | split: '<br />'
+      assign street = address_lines | first | strip
+      assign city_line = address_lines | last | strip
+      assign postal = city_line | split: ' ' | first
+      assign city = city_line | remove_first: postal | strip
+    -%}
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Brewery",
+        "name": {{ shop.name | json }},
+        "url": {{ request.origin | append: routes.root_url | json }},
+        {%- if s.phone != blank %}"telephone": {{ s.phone | json }},{% endif %}
+        {%- if s.image != blank %}"image": {{ s.image | image_url: width: 1200 | prepend: 'https:' | json }},{% endif %}
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": {{ street | json }},
+          "postalCode": {{ postal | json }},
+          "addressLocality": {{ city | json }},
+          "addressCountry": "FR"
+        },
+        "openingHoursSpecification": [
+          {%- assign first_spec = true -%}
+          {%- assign schema_days = 'Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday' | split: ',' -%}
+          {%- for block in section.blocks -%}
+            {%- unless block.settings.closed -%}
+              {%- assign d = block.settings.day | plus: 0 | minus: 1 -%}
+              {%- unless first_spec %},{% endunless -%}
+              {
+                "@type": "OpeningHoursSpecification",
+                "dayOfWeek": "https://schema.org/{{ schema_days[d] }}",
+                "opens": {{ block.settings.open | replace: 'h', ':' | json }},
+                "closes": {{ block.settings.close | replace: 'h', ':' | json }}
+              }
+              {%- assign first_spec = false -%}
+            {%- endunless -%}
+          {%- endfor -%}
+        ]
+      }
+    </script>
+  {%- endif -%}
+</gdm-section>
+
+{% stylesheet %}
+  .gdm.gdm-brewpub .gdm-brewpub__glow {
+    left: -30%;
+    top: -40%;
+    opacity: 0.6;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__grid {
+    display: grid;
+    gap: clamp(40px, 5vw, 72px);
+    align-items: stretch;
+  }
+
+  @media (min-width: 990px) {
+    .gdm.gdm-brewpub .gdm-brewpub__grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    }
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__info {
+    display: grid;
+    align-content: start;
+    gap: 28px;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__head {
+    margin-bottom: 0;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__hours {
+    padding: 22px 24px 10px;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__hours-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--gdm-border);
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__hours-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--gdm-text);
+    font-family: var(--gdm-font-display);
+    font-size: 22px;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__hours-title svg {
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    color: var(--gdm-muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__status[hidden] {
+    display: none;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #8a8580;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__status[data-state='open'] {
+    border-color: rgba(74, 222, 128, 0.35);
+    color: #86efac;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__status[data-state='open'] .gdm-brewpub__dot {
+    background: #4ade80;
+    animation: gdm-pulse 2s infinite;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__days {
+    display: grid;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__day {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 0 -12px;
+    padding: 11px 12px;
+    border-bottom: 1px dashed var(--gdm-border);
+    border-radius: 10px;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__day:last-child {
+    border-bottom: 0;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__day dt {
+    color: var(--gdm-muted);
+    font-weight: 500;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__day dd {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 4px 10px;
+    margin: 0;
+    color: var(--gdm-text);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__closed {
+    color: var(--gdm-muted);
+    font-weight: 500;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__note {
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--gdm-accent-soft);
+    color: var(--gdm-accent);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__day.is-today {
+    border-bottom-color: transparent;
+    background: var(--gdm-accent-soft);
+    box-shadow: inset 3px 0 0 var(--gdm-accent);
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__day.is-today dt {
+    color: var(--gdm-accent);
+    font-weight: 700;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__contact {
+    display: grid;
+    gap: 14px;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__contact li {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    color: var(--gdm-text);
+    line-height: 1.5;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__contact a {
+    color: var(--gdm-text);
+    transition: color 0.2s var(--gdm-ease);
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__contact a:hover {
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__contact-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 40px;
+    height: 40px;
+    margin-top: -8px;
+    border: 1px solid var(--gdm-line);
+    border-radius: 50%;
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__map {
+    position: relative;
+    min-height: 420px;
+    border: 1px solid var(--gdm-border);
+    border-radius: 28px;
+    overflow: hidden;
+    background: var(--gdm-surface);
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__map-cover {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 16px;
+    padding: 24px;
+    text-align: center;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__img,
+  .gdm.gdm-brewpub .gdm-brewpub__pattern {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__img {
+    filter: brightness(0.5) saturate(0.85);
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__pattern {
+    color: var(--gdm-line);
+    opacity: 0.8;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__pin {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 76px;
+    height: 76px;
+    border-radius: 50% 50% 50% 6px;
+    background: var(--gdm-accent);
+    color: var(--gdm-on-accent);
+    transform: rotate(-45deg);
+    box-shadow: 0 0 0 10px var(--gdm-accent-glow), 0 24px 40px -18px rgba(0, 0, 0, 0.9);
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__pin span {
+    transform: rotate(45deg);
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__map-btn {
+    position: relative;
+    margin-top: 12px;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__map-note {
+    position: relative;
+    max-width: 36ch;
+    padding: 8px 14px;
+    border-radius: 12px;
+    background: rgba(13, 13, 13, 0.72);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    color: #c9c4bb;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .gdm.gdm-brewpub .gdm-map__frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    filter: grayscale(0.25) contrast(1.05);
+  }
+
+  .gdm.gdm-brewpub gdm-map[data-loaded] .gdm-brewpub__map-cover {
+    display: none;
+  }
+
+  @media (max-width: 749px) {
+    .gdm.gdm-brewpub .gdm-brewpub__map {
+      min-height: 340px;
+    }
+
+    .gdm.gdm-brewpub .gdm-brewpub__hours {
+      padding: 18px 18px 8px;
+    }
+
+    .gdm.gdm-brewpub .gdm-actions,
+    .gdm.gdm-brewpub .gdm-actions .gdm-btn {
+      width: 100%;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "GDM · Venir au brewpub",
+  "tag": "section",
+  "class": "gdm-shopify-section",
+  "max_blocks": 7,
+  "settings": [
+    {
+      "type": "header",
+      "content": "Texte"
+    },
+    {
+      "type": "text",
+      "id": "pill",
+      "label": "Badge",
+      "default": "Le brewpub"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titre",
+      "default": "Venez trinquer"
+    },
+    {
+      "type": "text",
+      "id": "title_accent",
+      "label": "Titre — partie orange",
+      "default": "à la source"
+    },
+    {
+      "type": "select",
+      "id": "heading_tag",
+      "label": "Niveau du titre (SEO)",
+      "default": "h2",
+      "options": [
+        { "value": "h1", "label": "H1" },
+        { "value": "h2", "label": "H2" }
+      ]
+    },
+    {
+      "type": "inline_richtext",
+      "id": "text",
+      "label": "Texte",
+      "default": "Bières pression fraîchement brassées, vente à emporter et ambiance conviviale, à 15 minutes de Toulouse."
+    },
+    {
+      "type": "header",
+      "content": "Coordonnées"
+    },
+    {
+      "type": "textarea",
+      "id": "address",
+      "label": "Adresse",
+      "info": "Rue sur la 1re ligne, code postal et ville sur la dernière.",
+      "default": "31 rue de la Briqueterie\n31150 Bruguières"
+    },
+    {
+      "type": "text",
+      "id": "phone",
+      "label": "Téléphone"
+    },
+    {
+      "type": "text",
+      "id": "email",
+      "label": "E-mail"
+    },
+    {
+      "type": "text",
+      "id": "directions_label",
+      "label": "Bouton itinéraire",
+      "default": "Itinéraire"
+    },
+    {
+      "type": "text",
+      "id": "button2_label",
+      "label": "Bouton secondaire",
+      "default": "Nous contacter"
+    },
+    {
+      "type": "url",
+      "id": "button2_link",
+      "label": "Lien du bouton secondaire"
+    },
+    {
+      "type": "header",
+      "content": "Carte"
+    },
+    {
+      "type": "text",
+      "id": "map_query",
+      "label": "Recherche Google Maps",
+      "default": "Le Gué des Moines, 31 rue de la Briqueterie, 31150 Bruguières",
+      "info": "Par défaut : l'adresse. Vous pouvez mettre le nom exact de votre fiche Google, par exemple « Le Gué des Moines Bruguières »."
+    },
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Photo de couverture de la carte (facultatif)",
+      "info": "Une photo du brewpub, affichée avant le chargement de la carte."
+    },
+    {
+      "type": "text",
+      "id": "map_button_label",
+      "label": "Bouton de la carte",
+      "default": "Afficher la carte"
+    },
+    {
+      "type": "text",
+      "id": "map_note",
+      "label": "Mention sous le bouton",
+      "default": "La carte est fournie par Google Maps et ne se charge qu'à votre demande."
+    },
+    {
+      "type": "text",
+      "id": "map_title",
+      "label": "Titre de la carte (accessibilité)",
+      "default": "Plan d'accès au brewpub"
+    },
+    {
+      "type": "header",
+      "content": "Horaires"
+    },
+    {
+      "type": "paragraph",
+      "content": "Ajoutez un bloc « Jour » par jour d'ouverture. Format des heures : 17:00 ou 17h00. Une fermeture après minuit (ex. 01:00) est bien gérée."
+    },
+    {
+      "type": "text",
+      "id": "hours_title",
+      "label": "Titre des horaires",
+      "default": "Horaires"
+    },
+    {
+      "type": "text",
+      "id": "label_open",
+      "label": "Texte « Ouvert »",
+      "default": "Ouvert"
+    },
+    {
+      "type": "text",
+      "id": "label_closed",
+      "label": "Texte « Fermé »",
+      "default": "Fermé"
+    },
+    {
+      "type": "text",
+      "id": "label_closes",
+      "label": "Texte « ferme à »",
+      "default": "ferme à"
+    },
+    {
+      "type": "text",
+      "id": "label_opens",
+      "label": "Texte « ouvre »",
+      "default": "ouvre"
+    },
+    {
+      "type": "text",
+      "id": "label_today",
+      "label": "Texte « aujourd'hui »",
+      "default": "aujourd'hui"
+    },
+    {
+      "type": "text",
+      "id": "label_tomorrow",
+      "label": "Texte « demain »",
+      "default": "demain"
+    },
+    {
+      "type": "text",
+      "id": "label_at",
+      "label": "Texte « à »",
+      "default": "à"
+    },
+    {
+      "type": "text",
+      "id": "label_closed_day",
+      "label": "Jour fermé",
+      "default": "Fermé"
+    },
+    {
+      "type": "checkbox",
+      "id": "structured_data",
+      "label": "Ajouter les données structurées Google (SEO local)",
+      "default": false,
+      "info": "Décrit la brasserie, son adresse et ses horaires aux moteurs de recherche. À activer sur une seule page."
+    },
+    {
+      "type": "header",
+      "content": "Couleurs et espacement"
+    },
+    {
+      "type": "color",
+      "id": "color_bg",
+      "label": "Fond",
+      "default": "#0D0D0D"
+    },
+    {
+      "type": "color",
+      "id": "color_accent",
+      "label": "Accent",
+      "default": "#F0921E"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Marge haute",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Marge basse",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    }
+  ],
+  "blocks": [
+    {
+      "type": "day",
+      "name": "Jour",
+      "settings": [
+        {
+          "type": "select",
+          "id": "day",
+          "label": "Jour",
+          "default": "5",
+          "options": [
+            { "value": "1", "label": "Lundi" },
+            { "value": "2", "label": "Mardi" },
+            { "value": "3", "label": "Mercredi" },
+            { "value": "4", "label": "Jeudi" },
+            { "value": "5", "label": "Vendredi" },
+            { "value": "6", "label": "Samedi" },
+            { "value": "7", "label": "Dimanche" }
+          ]
+        },
+        {
+          "type": "checkbox",
+          "id": "closed",
+          "label": "Fermé ce jour-là",
+          "default": false
+        },
+        {
+          "type": "text",
+          "id": "open",
+          "label": "Ouverture",
+          "default": "17:00"
+        },
+        {
+          "type": "text",
+          "id": "close",
+          "label": "Fermeture",
+          "default": "23:00"
+        },
+        {
+          "type": "text",
+          "id": "note",
+          "label": "Étiquette (facultatif)",
+          "info": "Par exemple « Afterwork » ou « Concert »."
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "GDM · Venir au brewpub",
+      "blocks": [
+        { "type": "day", "settings": { "day": "1", "closed": true } },
+        { "type": "day", "settings": { "day": "2", "closed": true } },
+        { "type": "day", "settings": { "day": "3", "open": "17:00", "close": "22:00" } },
+        { "type": "day", "settings": { "day": "4", "open": "17:00", "close": "22:00" } },
+        { "type": "day", "settings": { "day": "5", "open": "17:00", "close": "00:00", "note": "Afterwork" } },
+        { "type": "day", "settings": { "day": "6", "open": "15:00", "close": "00:00" } },
+        { "type": "day", "settings": { "day": "7", "closed": true } }
+      ]
+    }
+  ]
+}
+{% endschema %}

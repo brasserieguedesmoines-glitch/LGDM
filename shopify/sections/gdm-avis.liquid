@@ -1,0 +1,559 @@
+{%- comment -%}
+  Le Gué des Moines — Avis clients
+  « Ils parlent du Gué des Moines » : note globale en grand, bandeau de
+  chiffres clés en pilules et carrousel de témoignages.
+{%- endcomment -%}
+{%- liquid
+  assign s = section.settings
+  assign heading_tag = s.heading_tag | default: 'h2'
+  assign reviews = section.blocks | where: 'type', 'review'
+  assign stats = section.blocks | where: 'type', 'stat'
+-%}
+{%- render 'gdm-assets' -%}
+
+<gdm-section
+  id="gdm-{{ section.id }}"
+  class="gdm gdm-avis gdm-grain"
+  style="--gdm-bg: {{ s.color_bg }}; --gdm-accent: {{ s.color_accent }}; --gdm-cols: {{ s.columns }}; --gdm-pt: {{ s.padding_top }}px; --gdm-pb: {{ s.padding_bottom }}px;"
+>
+  <div class="gdm-glow gdm-avis__glow" aria-hidden="true"></div>
+  <div class="gdm-container">
+    <gdm-carousel>
+      <div class="gdm-avis__top">
+        <div class="gdm-head gdm-avis__head">
+          {%- if s.pill != blank -%}
+            <p class="gdm-pill" data-gdm-reveal>{{ s.pill | escape }}</p>
+          {%- endif -%}
+          {%- if s.title != blank or s.title_accent != blank -%}
+            <{{ heading_tag }} class="gdm-title" data-gdm-reveal style="--gdm-i: 1;">
+              {{- s.title | escape }}{% if s.title_accent != blank %} <em>{{ s.title_accent | escape }}</em>{% endif -%}
+            </{{ heading_tag }}>
+          {%- endif -%}
+        </div>
+
+        {%- if s.rating_value != blank -%}
+          <div class="gdm-avis__score" data-gdm-reveal style="--gdm-i: 2;">
+            <div class="gdm-rating">
+              <span class="gdm-rating__value">{{ s.rating_value | escape }}</span>
+              <span class="gdm-rating__meta">
+                {%- render 'gdm-stars', rating: s.rating_stars, star_size: 18 -%}
+                <span class="gdm-rating__label">{{ s.rating_label | escape }}</span>
+              </span>
+            </div>
+            {%- if s.rating_link_label != blank and s.rating_link != blank -%}
+              <a class="gdm-link" href="{{ s.rating_link }}" target="_blank" rel="noopener">
+                {{- s.rating_link_label | escape -}}
+                {%- render 'gdm-icon', name: 'arrow-up-right' -%}
+              </a>
+            {%- endif -%}
+          </div>
+        {%- endif -%}
+      </div>
+
+      {%- if stats.size > 0 -%}
+        <div class="gdm-stats gdm-avis__stats" data-gdm-reveal style="--gdm-i: 3;">
+          {%- for block in stats -%}
+            <div class="gdm-stat{% if block.settings.highlight %} gdm-stat--accent{% endif %}" {{ block.shopify_attributes }}>
+              <span class="gdm-stat__value">{{ block.settings.value | escape }}</span>
+              <span class="gdm-stat__label">{{ block.settings.label | escape }}</span>
+            </div>
+          {%- endfor -%}
+        </div>
+      {%- endif -%}
+
+      {%- if reviews.size > 0 -%}
+        <div class="gdm-carousel__track gdm-avis__track" data-track tabindex="0" role="region" aria-label="{{ s.label_region | escape }}">
+          {%- for block in reviews -%}
+            {%- assign b = block.settings -%}
+            <figure class="gdm-review gdm-card" data-gdm-reveal style="--gdm-i: {{ forloop.index0 | modulo: 3 }};" {{ block.shopify_attributes }}>
+              <div class="gdm-review__top">
+                {%- render 'gdm-stars', rating: b.rating -%}
+                <span class="gdm-review__quote">{% render 'gdm-icon', name: 'quote', icon_size: 34 %}</span>
+              </div>
+              {%- if b.title != blank -%}
+                <p class="gdm-review__title">{{ b.title | escape }}</p>
+              {%- endif -%}
+              <blockquote class="gdm-review__text">{{ b.text }}</blockquote>
+              <figcaption class="gdm-review__author">
+                <span class="gdm-review__avatar" aria-hidden="true">
+                  {%- if b.avatar != blank -%}
+                    {{ b.avatar | image_url: width: 120 | image_tag: loading: 'lazy', alt: '', width: 48, height: 48 }}
+                  {%- else -%}
+                    {{ b.author | strip | slice: 0 | upcase }}
+                  {%- endif -%}
+                </span>
+                <span class="gdm-review__who">
+                  <span class="gdm-review__name">{{ b.author | escape }}</span>
+                  {%- if b.meta != blank -%}<span class="gdm-review__meta">{{ b.meta | escape }}</span>{%- endif -%}
+                </span>
+                {%- if b.source != 'none' -%}
+                  <span class="gdm-review__source">{{ b.source }}</span>
+                {%- endif -%}
+              </figcaption>
+            </figure>
+          {%- endfor -%}
+        </div>
+
+        <div class="gdm-avis__foot" data-carousel-ui>
+          <div class="gdm-carousel__progress" data-progress aria-hidden="true"><span></span></div>
+          <div class="gdm-carousel__nav">
+            <button type="button" class="gdm-icon-btn" data-prev aria-label="{{ s.label_prev | escape }}">{% render 'gdm-icon', name: 'chevron-left' %}</button>
+            <button type="button" class="gdm-icon-btn" data-next aria-label="{{ s.label_next | escape }}">{% render 'gdm-icon', name: 'chevron-right' %}</button>
+          </div>
+        </div>
+      {%- endif -%}
+    </gdm-carousel>
+  </div>
+</gdm-section>
+
+{% stylesheet %}
+  .gdm.gdm-avis .gdm-avis__glow {
+    left: 50%;
+    bottom: -70%;
+    transform: translateX(-50%);
+    opacity: 0.7;
+  }
+
+  .gdm.gdm-avis .gdm-avis__top {
+    display: grid;
+    gap: 28px;
+    align-items: end;
+    margin-bottom: 28px;
+  }
+
+  @media (min-width: 990px) {
+    .gdm.gdm-avis .gdm-avis__top {
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 48px;
+    }
+  }
+
+  .gdm.gdm-avis .gdm-avis__head {
+    margin-bottom: 0;
+  }
+
+  .gdm.gdm-avis .gdm-avis__score {
+    display: grid;
+    justify-items: start;
+    gap: 14px;
+    padding: 22px 26px;
+    border: 1px solid var(--gdm-line);
+    border-radius: var(--gdm-radius);
+    background: var(--gdm-surface);
+  }
+
+  .gdm.gdm-avis .gdm-avis__score .gdm-rating__value {
+    font-size: 76px;
+  }
+
+  .gdm.gdm-avis .gdm-avis__stats {
+    margin-bottom: clamp(32px, 4vw, 48px);
+  }
+
+  .gdm.gdm-avis .gdm-avis__track {
+    --gdm-slide: 86%;
+    align-items: stretch;
+  }
+
+  @media (min-width: 750px) {
+    .gdm.gdm-avis .gdm-avis__track {
+      --gdm-slide: calc((100% - var(--gdm-gap)) / 2.1);
+    }
+  }
+
+  @media (min-width: 990px) {
+    .gdm.gdm-avis .gdm-avis__track {
+      --gdm-slide: calc((100% - (var(--gdm-cols, 3) - 1) * var(--gdm-gap)) / var(--gdm-cols, 3));
+    }
+  }
+
+  .gdm.gdm-avis .gdm-review {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    height: 100%;
+    margin: 0;
+    padding: 28px;
+  }
+
+  .gdm.gdm-avis .gdm-review:hover {
+    background: var(--gdm-surface-2);
+  }
+
+  .gdm.gdm-avis .gdm-review__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .gdm.gdm-avis .gdm-review__quote {
+    color: var(--gdm-line);
+    transition: color 0.3s var(--gdm-ease);
+  }
+
+  .gdm.gdm-avis .gdm-review:hover .gdm-review__quote {
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-avis .gdm-review__title {
+    font-family: var(--gdm-font-display);
+    font-size: 24px;
+    line-height: 1.05;
+    text-transform: uppercase;
+    color: var(--gdm-text);
+  }
+
+  .gdm.gdm-avis .gdm-review__text {
+    flex: 1;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    color: #d6d1c8;
+    font-size: 16px;
+    font-style: normal;
+    line-height: 1.65;
+  }
+
+  .gdm.gdm-avis .gdm-review__text p + p {
+    margin-top: 0.8em;
+  }
+
+  .gdm.gdm-avis .gdm-review__author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-top: 18px;
+    border-top: 1px solid var(--gdm-border);
+  }
+
+  .gdm.gdm-avis .gdm-review__avatar {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 48px;
+    height: 48px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gdm-accent), var(--gdm-line));
+    color: var(--gdm-on-accent);
+    font-family: var(--gdm-font-display);
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .gdm.gdm-avis .gdm-review__avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .gdm.gdm-avis .gdm-review__who {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+    gap: 2px;
+  }
+
+  .gdm.gdm-avis .gdm-review__name {
+    color: var(--gdm-text);
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .gdm.gdm-avis .gdm-review__meta {
+    color: var(--gdm-muted);
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  .gdm.gdm-avis .gdm-review__source {
+    flex: none;
+    padding: 5px 10px;
+    border: 1px solid var(--gdm-border);
+    border-radius: 999px;
+    color: var(--gdm-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .gdm.gdm-avis .gdm-avis__foot {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-top: 32px;
+  }
+
+  .gdm.gdm-avis .gdm-avis__foot .gdm-carousel__progress {
+    flex: 1;
+    margin-top: 0;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "GDM · Avis clients",
+  "tag": "section",
+  "class": "gdm-shopify-section",
+  "max_blocks": 16,
+  "settings": [
+    {
+      "type": "header",
+      "content": "En-tête"
+    },
+    {
+      "type": "text",
+      "id": "pill",
+      "label": "Badge",
+      "default": "Avis clients vérifiés"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titre",
+      "default": "Ils parlent du"
+    },
+    {
+      "type": "text",
+      "id": "title_accent",
+      "label": "Titre — partie orange",
+      "default": "Gué des Moines"
+    },
+    {
+      "type": "select",
+      "id": "heading_tag",
+      "label": "Niveau du titre (SEO)",
+      "default": "h2",
+      "options": [
+        { "value": "h1", "label": "H1" },
+        { "value": "h2", "label": "H2" }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "Note globale"
+    },
+    {
+      "type": "text",
+      "id": "rating_value",
+      "label": "Note",
+      "default": "5,0",
+      "info": "Laisser vide pour masquer l'encart de note."
+    },
+    {
+      "type": "range",
+      "id": "rating_stars",
+      "label": "Étoiles pleines",
+      "min": 0,
+      "max": 5,
+      "step": 1,
+      "default": 5
+    },
+    {
+      "type": "text",
+      "id": "rating_label",
+      "label": "Légende",
+      "default": "Note moyenne sur Google"
+    },
+    {
+      "type": "text",
+      "id": "rating_link_label",
+      "label": "Texte du lien",
+      "default": "Voir tous les avis"
+    },
+    {
+      "type": "url",
+      "id": "rating_link",
+      "label": "Lien vers vos avis",
+      "info": "Par exemple votre fiche Google."
+    },
+    {
+      "type": "header",
+      "content": "Carrousel"
+    },
+    {
+      "type": "range",
+      "id": "columns",
+      "label": "Avis visibles sur ordinateur",
+      "min": 2,
+      "max": 4,
+      "step": 1,
+      "default": 3
+    },
+    {
+      "type": "text",
+      "id": "label_region",
+      "label": "Nom du carrousel (accessibilité)",
+      "default": "Avis de nos clients"
+    },
+    {
+      "type": "text",
+      "id": "label_prev",
+      "label": "Flèche précédente (accessibilité)",
+      "default": "Avis précédents"
+    },
+    {
+      "type": "text",
+      "id": "label_next",
+      "label": "Flèche suivante (accessibilité)",
+      "default": "Avis suivants"
+    },
+    {
+      "type": "header",
+      "content": "Couleurs et espacement"
+    },
+    {
+      "type": "color",
+      "id": "color_bg",
+      "label": "Fond",
+      "default": "#0D0D0D"
+    },
+    {
+      "type": "color",
+      "id": "color_accent",
+      "label": "Accent",
+      "default": "#F0921E"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Marge haute",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Marge basse",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    }
+  ],
+  "blocks": [
+    {
+      "type": "stat",
+      "name": "Chiffre clé",
+      "limit": 5,
+      "settings": [
+        {
+          "type": "text",
+          "id": "value",
+          "label": "Chiffre",
+          "default": "100%"
+        },
+        {
+          "type": "text",
+          "id": "label",
+          "label": "Légende",
+          "default": "Avis 5 étoiles"
+        },
+        {
+          "type": "checkbox",
+          "id": "highlight",
+          "label": "Chiffre en orange",
+          "default": false
+        }
+      ]
+    },
+    {
+      "type": "review",
+      "name": "Avis",
+      "settings": [
+        {
+          "type": "range",
+          "id": "rating",
+          "label": "Étoiles",
+          "min": 1,
+          "max": 5,
+          "step": 1,
+          "default": 5
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Titre de l'avis (facultatif)"
+        },
+        {
+          "type": "richtext",
+          "id": "text",
+          "label": "Avis",
+          "default": "<p>Collez ici un avis réel laissé par un client.</p>"
+        },
+        {
+          "type": "text",
+          "id": "author",
+          "label": "Nom",
+          "default": "Prénom N."
+        },
+        {
+          "type": "text",
+          "id": "meta",
+          "label": "Précision",
+          "default": "Avis Google"
+        },
+        {
+          "type": "image_picker",
+          "id": "avatar",
+          "label": "Photo (facultatif)",
+          "info": "Sinon, l'initiale du prénom est affichée."
+        },
+        {
+          "type": "select",
+          "id": "source",
+          "label": "Plateforme",
+          "default": "Google",
+          "options": [
+            { "value": "Google", "label": "Google" },
+            { "value": "Facebook", "label": "Facebook" },
+            { "value": "Untappd", "label": "Untappd" },
+            { "value": "TripAdvisor", "label": "TripAdvisor" },
+            { "value": "none", "label": "Aucune" }
+          ]
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "GDM · Avis clients",
+      "blocks": [
+        { "type": "stat", "settings": { "value": "100%", "label": "Avis 5 étoiles", "highlight": true } },
+        { "type": "stat", "settings": { "value": "+10", "label": "Bières à la carte" } },
+        { "type": "stat", "settings": { "value": "2016", "label": "Brasseurs depuis" } },
+        {
+          "type": "review",
+          "settings": {
+            "text": "<p>Collez ici un avis réel laissé par un client (Google, Facebook, Untappd…). Un avis par bloc.</p>",
+            "author": "Prénom N.",
+            "meta": "Avis Google"
+          }
+        },
+        {
+          "type": "review",
+          "settings": {
+            "text": "<p>Collez ici un avis réel laissé par un client (Google, Facebook, Untappd…). Un avis par bloc.</p>",
+            "author": "Prénom N.",
+            "meta": "Avis Google"
+          }
+        },
+        {
+          "type": "review",
+          "settings": {
+            "text": "<p>Collez ici un avis réel laissé par un client (Google, Facebook, Untappd…). Un avis par bloc.</p>",
+            "author": "Prénom N.",
+            "meta": "Avis Google"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

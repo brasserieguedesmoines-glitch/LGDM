@@ -1,0 +1,22 @@
+{%- comment -%}
+  Le Gué des Moines — tampon circulaire avec texte qui tourne.
+  Usage : {% render 'gdm-stamp', id: section.id, text: 'Brassé à Bruguières • Depuis 2016 •', center: '2016', stamp_size: 150 %}
+  Si « center » est vide, une icône de houblon est affichée au centre.
+{%- endcomment -%}
+<div class="gdm-stamp" style="--gdm-stamp-size: {{ stamp_size | default: 150 }}px;" aria-hidden="true">
+  <svg class="gdm-stamp__ring" viewBox="0 0 200 200">
+    <defs>
+      <path id="gdm-stamp-path-{{ id }}" d="M100,100 m-76,0 a76,76 0 1,1 152,0 a76,76 0 1,1 -152,0"/>
+    </defs>
+    <text>
+      <textPath href="#gdm-stamp-path-{{ id }}" textLength="472" lengthAdjust="spacing">{{ text | upcase | escape }}</textPath>
+    </text>
+  </svg>
+  <div class="gdm-stamp__center">
+    {%- if center != blank -%}
+      {{ center | escape }}
+    {%- else -%}
+      {% render 'gdm-icon', name: 'hop', icon_size: 40 %}
+    {%- endif -%}
+  </div>
+</div>

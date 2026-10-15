@@ -1,0 +1,818 @@
+{%- comment -%}
+  Le Gué des Moines — Nos bières
+  Cartes produit sombres avec halo ambré : style, degré, IBU (métachamps
+  custom.degre / custom.ibu), jauge d'amertume, choix 33 cL / 75 cL
+  et ajout au panier direct. En carrousel ou en grille.
+{%- endcomment -%}
+{%- liquid
+  assign s = section.settings
+  assign collection = s.collection
+  assign is_carousel = false
+  if s.layout == 'carousel'
+    assign is_carousel = true
+  endif
+  assign heading_tag = s.heading_tag | default: 'h2'
+-%}
+{%- render 'gdm-assets' -%}
+
+{%- capture cards -%}
+  {%- if collection != blank and collection.products_count > 0 -%}
+    {%- for product in collection.products limit: s.limit -%}
+      {%- liquid
+        assign current = product.selected_or_first_available_variant
+        assign degre = product.metafields.custom.degre.value
+        assign ibu = product.metafields.custom.ibu.value
+        assign style_label = ''
+        case s.style_source
+          when 'custom_style'
+            assign style_label = product.metafields.custom.style.value
+          when 'type'
+            assign style_label = product.type
+          when 'vendor'
+            assign style_label = product.vendor
+          when 'beer_style'
+            for style in product.metafields.shopify['beer-style'].value
+              if style.label != blank
+                assign style_label = style.label
+                break
+              endif
+            endfor
+        endcase
+        assign image = product.featured_media.preview_image
+        assign image_alt = image.alt | default: product.title
+        assign show_pills = false
+        if s.show_variants and product.has_only_default_variant == false and product.variants.size <= 4
+          assign show_pills = true
+        endif
+      -%}
+      <article class="gdm-beer gdm-card" data-product-card data-gdm-reveal style="--gdm-i: {{ forloop.index0 | modulo: 4 }};">
+        <a class="gdm-beer__media" href="{{ product.url }}" tabindex="-1" aria-hidden="true">
+          <span class="gdm-beer__halo"></span>
+          {%- if image != blank -%}
+            {{ image | image_url: width: 720 | image_tag: loading: 'lazy', widths: '360, 540, 720', sizes: '(min-width: 990px) 25vw, (min-width: 750px) 45vw, 80vw', alt: image_alt, class: 'gdm-beer__img' }}
+          {%- else -%}
+            {{ 'product-1' | placeholder_svg_tag: 'gdm-placeholder' }}
+          {%- endif -%}
+          <span class="gdm-beer__badges">
+            {%- unless product.available -%}
+              <span class="gdm-beer__badge gdm-beer__badge--muted">{{ s.label_soldout | escape }}</span>
+            {%- endunless -%}
+            {%- if product.compare_at_price > product.price -%}
+              <span class="gdm-beer__badge">{{ s.label_sale | escape }}</span>
+            {%- endif -%}
+          </span>
+        </a>
+
+        <div class="gdm-beer__body">
+          {%- if style_label != blank -%}
+            <p class="gdm-beer__style">{{ style_label | escape }}</p>
+          {%- endif -%}
+          <h3 class="gdm-beer__title">
+            <a href="{{ product.url }}">{{ product.title | escape }}</a>
+          </h3>
+
+          {%- if s.show_specs and degre != blank or s.show_specs and ibu != blank -%}
+            <ul class="gdm-beer__specs">
+              {%- if degre != blank -%}
+                <li><strong>{{ degre | replace: '.', ',' }} %</strong> alc.</li>
+              {%- endif -%}
+              {%- if ibu != blank -%}
+                <li><strong>{{ ibu }}</strong> IBU</li>
+              {%- endif -%}
+            </ul>
+          {%- endif -%}
+
+          {%- if s.show_bitterness and ibu != blank -%}
+            {%- liquid
+              assign ibu_num = ibu | plus: 0
+              assign level = ibu_num | divided_by: 15.0 | ceil
+              if level > 5
+                assign level = 5
+              elsif level < 1
+                assign level = 1
+              endif
+            -%}
+            <div class="gdm-beer__bitter" title="{{ s.label_bitterness | escape }} : {{ level }}/5">
+              <span class="gdm-beer__bitter-label">{{ s.label_bitterness | escape }}</span>
+              <span class="gdm-beer__bitter-bar" role="img" aria-label="{{ s.label_bitterness | escape }} {{ level }}/5">
+                {%- for i in (1..5) -%}<i{% if i <= level %} class="is-on"{% endif %}></i>{%- endfor -%}
+              </span>
+            </div>
+          {%- endif -%}
+
+          {%- form 'product', product, class: 'gdm-beer__form', novalidate: 'novalidate' -%}
+            {%- if show_pills -%}
+              <gdm-variant-pills class="gdm-beer__variants">
+                <fieldset>
+                  <legend class="gdm-visually-hidden">{{ s.label_format | escape }}</legend>
+                  {%- for variant in product.variants -%}
+                    {%- assign pill_id = section.id | append: '-' | append: product.id | append: '-' | append: variant.id -%}
+                    <input
+                      type="radio"
+                      id="{{ pill_id }}"
+                      name="id"
+                      value="{{ variant.id }}"
+                      class="gdm-visually-hidden"
+                      data-variant-price="{{ variant.price | money | strip_html | escape }}"
+                      data-variant-compare="{% if variant.compare_at_price > variant.price %}{{ variant.compare_at_price | money | strip_html | escape }}{% endif %}"
+                      data-variant-available="{{ variant.available }}"
+                      {% if variant.id == current.id %}checked{% endif %}
+                    >
+                    <label for="{{ pill_id }}"{% unless variant.available %} class="is-unavailable"{% endunless %}>{{ variant.title | escape }}</label>
+                  {%- endfor -%}
+                </fieldset>
+              </gdm-variant-pills>
+            {%- else -%}
+              <input type="hidden" name="id" value="{{ current.id }}">
+            {%- endif -%}
+            <input type="hidden" name="quantity" value="1">
+
+            <div class="gdm-beer__foot">
+              <p class="gdm-beer__price">
+                {%- if show_pills == false and product.price_varies -%}
+                  <span class="gdm-beer__from">{{ s.label_from | escape }}</span>
+                  <span data-price>{{ product.price_min | money }}</span>
+                {%- else -%}
+                  <span data-price>{{ current.price | money }}</span>
+                  <s class="gdm-beer__compare" data-compare-price{% unless current.compare_at_price > current.price %} hidden{% endunless %}>
+                    {%- if current.compare_at_price > current.price %}{{ current.compare_at_price | money }}{% endif -%}
+                  </s>
+                {%- endif -%}
+              </p>
+
+              {%- if s.show_add_to_cart -%}
+                <button
+                  type="submit"
+                  name="add"
+                  class="gdm-beer__add"
+                  data-add-to-cart
+                  data-label-add="{{ s.label_add | escape }}"
+                  data-label-soldout="{{ s.label_soldout | escape }}"
+                  {% unless current.available %}disabled{% endunless %}
+                >
+                  {%- render 'gdm-icon', name: 'plus', icon_size: 18 -%}
+                  <span data-add-label>{% if current.available %}{{ s.label_add | escape }}{% else %}{{ s.label_soldout | escape }}{% endif %}</span>
+                  <span class="gdm-visually-hidden"> — {{ product.title | escape }}</span>
+                </button>
+              {%- else -%}
+                <a class="gdm-beer__add" href="{{ product.url }}">
+                  {%- render 'gdm-icon', name: 'arrow-up-right', icon_size: 18 -%}
+                  <span>{{ s.label_view | escape }}</span>
+                  <span class="gdm-visually-hidden"> — {{ product.title | escape }}</span>
+                </a>
+              {%- endif -%}
+            </div>
+          {%- endform -%}
+        </div>
+      </article>
+    {%- endfor -%}
+  {%- else -%}
+    {%- for i in (1..4) -%}
+      <article class="gdm-beer gdm-card" data-gdm-reveal style="--gdm-i: {{ forloop.index0 }};">
+        <div class="gdm-beer__media">
+          <span class="gdm-beer__halo"></span>
+          {%- capture ph -%}product-{{ i }}{%- endcapture -%}
+          {{ ph | placeholder_svg_tag: 'gdm-placeholder' }}
+        </div>
+        <div class="gdm-beer__body">
+          <p class="gdm-beer__style">IPA</p>
+          <h3 class="gdm-beer__title">Nom de la bière</h3>
+          <ul class="gdm-beer__specs">
+            <li><strong>6,2 %</strong> alc.</li>
+            <li><strong>45</strong> IBU</li>
+          </ul>
+          <div class="gdm-beer__foot">
+            <p class="gdm-beer__price"><span>3,80 €</span></p>
+          </div>
+        </div>
+      </article>
+    {%- endfor -%}
+  {%- endif -%}
+{%- endcapture -%}
+
+<gdm-section
+  id="gdm-{{ section.id }}"
+  class="gdm gdm-bieres"
+  style="--gdm-bg: {{ s.color_bg }}; --gdm-accent: {{ s.color_accent }}; --gdm-cols: {{ s.columns }}; --gdm-pt: {{ s.padding_top }}px; --gdm-pb: {{ s.padding_bottom }}px;"
+>
+  <div class="gdm-glow gdm-bieres__glow" aria-hidden="true"></div>
+  <div class="gdm-container">
+    {%- if is_carousel -%}<gdm-carousel>{%- endif -%}
+
+    <div class="gdm-head gdm-head--split">
+      {%- if s.pill != blank -%}
+        <p class="gdm-pill" data-gdm-reveal>{{ s.pill | escape }}</p>
+      {%- endif -%}
+      {%- if s.title != blank or s.title_accent != blank -%}
+        <{{ heading_tag }} class="gdm-title" data-gdm-reveal style="--gdm-i: 1;">
+          {{- s.title | escape }}{% if s.title_accent != blank %} <em>{{ s.title_accent | escape }}</em>{% endif -%}
+        </{{ heading_tag }}>
+      {%- endif -%}
+      {%- if s.text != blank -%}
+        <p class="gdm-lead" data-gdm-reveal style="--gdm-i: 2;">{{ s.text }}</p>
+      {%- endif -%}
+      <div class="gdm-head__aside" data-gdm-reveal style="--gdm-i: 2;">
+        {%- if s.link_label != blank -%}
+          <a class="gdm-link" href="{{ s.link_url | default: collection.url | default: routes.all_products_collection_url }}">
+            {{- s.link_label | escape -}}
+            {%- render 'gdm-icon', name: 'arrow-up-right' -%}
+          </a>
+        {%- endif -%}
+        {%- if is_carousel -%}
+          <div class="gdm-carousel__nav" data-carousel-ui>
+            <button type="button" class="gdm-icon-btn" data-prev aria-label="{{ s.label_prev | escape }}">{% render 'gdm-icon', name: 'chevron-left' %}</button>
+            <button type="button" class="gdm-icon-btn" data-next aria-label="{{ s.label_next | escape }}">{% render 'gdm-icon', name: 'chevron-right' %}</button>
+          </div>
+        {%- endif -%}
+      </div>
+    </div>
+
+    {%- if is_carousel -%}
+      <div class="gdm-carousel__track gdm-bieres__list" data-track tabindex="0" role="region" aria-label="{{ s.title | append: ' ' | append: s.title_accent | strip | escape }}">
+        {{ cards }}
+      </div>
+      <div class="gdm-carousel__progress" data-progress data-carousel-ui aria-hidden="true"><span></span></div>
+      </gdm-carousel>
+    {%- else -%}
+      <div class="gdm-grid gdm-bieres__list">
+        {{ cards }}
+      </div>
+    {%- endif -%}
+  </div>
+</gdm-section>
+
+{% stylesheet %}
+  .gdm.gdm-bieres .gdm-bieres__glow {
+    right: -25%;
+    top: -35%;
+    opacity: 0.6;
+  }
+
+  .gdm.gdm-bieres .gdm-beer {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .gdm.gdm-bieres .gdm-beer:hover {
+    transform: translateY(-4px);
+  }
+
+  .gdm.gdm-bieres .gdm-beer__media {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: radial-gradient(120% 90% at 50% 100%, var(--gdm-surface-2) 0%, var(--gdm-surface) 60%);
+  }
+
+  .gdm.gdm-bieres .gdm-beer__halo {
+    position: absolute;
+    left: 50%;
+    bottom: 6%;
+    width: 72%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, var(--gdm-accent-glow), transparent);
+    transform: translateX(-50%) scale(0.9);
+    opacity: 0.75;
+    transition: transform 0.6s var(--gdm-ease), opacity 0.6s var(--gdm-ease);
+  }
+
+  .gdm.gdm-bieres .gdm-beer:hover .gdm-beer__halo {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.15);
+  }
+
+  .gdm.gdm-bieres .gdm-beer__img,
+  .gdm.gdm-bieres .gdm-beer__media .gdm-placeholder {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s var(--gdm-ease);
+  }
+
+  .gdm.gdm-bieres .gdm-beer__media .gdm-placeholder {
+    padding: 18%;
+    background: transparent;
+  }
+
+  .gdm.gdm-bieres .gdm-beer:hover .gdm-beer__img {
+    transform: translateY(-6px) scale(1.04) rotate(-1.5deg);
+  }
+
+  .gdm.gdm-bieres .gdm-beer__badges {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .gdm.gdm-bieres .gdm-beer__badge {
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: var(--gdm-accent);
+    color: var(--gdm-on-accent);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .gdm.gdm-bieres .gdm-beer__badge--muted {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--gdm-text);
+  }
+
+  .gdm.gdm-bieres .gdm-beer__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px 20px 20px;
+    border-top: 1px solid var(--gdm-border);
+  }
+
+  .gdm.gdm-bieres .gdm-beer__style {
+    color: var(--gdm-accent);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .gdm.gdm-bieres .gdm-beer__title {
+    font-family: var(--gdm-font-display);
+    font-size: 26px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+  }
+
+  .gdm.gdm-bieres .gdm-beer__title a {
+    color: var(--gdm-text);
+    transition: color 0.2s var(--gdm-ease);
+  }
+
+  .gdm.gdm-bieres .gdm-beer__title a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+
+  .gdm.gdm-bieres .gdm-beer__title a:hover {
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-bieres .gdm-beer__specs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .gdm.gdm-bieres .gdm-beer__specs li {
+    padding: 5px 10px;
+    border: 1px solid var(--gdm-border);
+    border-radius: 999px;
+    color: var(--gdm-muted);
+    font-size: 12px;
+    line-height: 1.2;
+  }
+
+  .gdm.gdm-bieres .gdm-beer__specs strong {
+    color: var(--gdm-text);
+    font-weight: 600;
+  }
+
+  .gdm.gdm-bieres .gdm-beer__bitter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--gdm-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .gdm.gdm-bieres .gdm-beer__bitter-bar {
+    display: inline-flex;
+    gap: 3px;
+  }
+
+  .gdm.gdm-bieres .gdm-beer__bitter-bar i {
+    width: 16px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  .gdm.gdm-bieres .gdm-beer__bitter-bar i.is-on {
+    background: var(--gdm-accent);
+  }
+
+  .gdm.gdm-bieres .gdm-beer__form {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 14px;
+    margin: 4px 0 0;
+  }
+
+  .gdm.gdm-bieres .gdm-beer__variants,
+  .gdm.gdm-bieres .gdm-beer__foot,
+  .gdm.gdm-bieres .gdm-beer__add {
+    position: relative;
+    z-index: 1;
+  }
+
+  .gdm.gdm-bieres .gdm-beer__variants fieldset {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .gdm.gdm-bieres .gdm-beer__variants label {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    margin: 0;
+    padding: 0 12px;
+    border: 1px solid var(--gdm-border-strong);
+    border-radius: 999px;
+    color: var(--gdm-muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: border-color 0.2s var(--gdm-ease), color 0.2s var(--gdm-ease), background-color 0.2s var(--gdm-ease);
+  }
+
+  .gdm.gdm-bieres .gdm-beer__variants label:hover {
+    border-color: var(--gdm-accent);
+    color: var(--gdm-text);
+  }
+
+  .gdm.gdm-bieres .gdm-beer__variants input:checked + label {
+    border-color: var(--gdm-accent);
+    background: var(--gdm-accent-soft);
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-bieres .gdm-beer__variants input:focus-visible + label {
+    outline: 2px solid var(--gdm-accent);
+    outline-offset: 2px;
+  }
+
+  .gdm.gdm-bieres .gdm-beer__variants label.is-unavailable {
+    text-decoration: line-through;
+    opacity: 0.55;
+  }
+
+  .gdm.gdm-bieres .gdm-beer__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--gdm-border);
+  }
+
+  .gdm.gdm-bieres .gdm-beer__price {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 8px;
+    color: var(--gdm-text);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  .gdm.gdm-bieres .gdm-beer__from {
+    color: var(--gdm-muted);
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .gdm.gdm-bieres .gdm-beer__compare {
+    color: var(--gdm-muted);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .gdm.gdm-bieres .gdm-beer__add {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    margin: 0;
+    padding: 0 16px 0 12px;
+    border: 1px solid var(--gdm-accent);
+    border-radius: 999px;
+    background: var(--gdm-accent);
+    color: var(--gdm-on-accent);
+    box-shadow: none;
+    font-family: var(--gdm-font-body);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transition: background-color 0.2s var(--gdm-ease), transform 0.2s var(--gdm-ease), box-shadow 0.2s var(--gdm-ease);
+  }
+
+  .gdm.gdm-bieres .gdm-beer__add:hover:not(:disabled) {
+    background: var(--gdm-accent-hover);
+    color: var(--gdm-on-accent);
+    box-shadow: 0 10px 24px -12px var(--gdm-accent);
+  }
+
+  .gdm.gdm-bieres .gdm-beer__add:disabled {
+    border-color: var(--gdm-border-strong);
+    background: transparent;
+    color: var(--gdm-muted);
+    cursor: not-allowed;
+  }
+
+  .gdm.gdm-bieres .gdm-beer__add svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  @media (max-width: 749px) {
+    .gdm.gdm-bieres .gdm-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .gdm.gdm-bieres .gdm-grid .gdm-beer__body {
+      padding: 14px;
+    }
+
+    .gdm.gdm-bieres .gdm-grid .gdm-beer__title {
+      font-size: 20px;
+    }
+
+    .gdm.gdm-bieres .gdm-grid .gdm-beer__foot {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .gdm.gdm-bieres .gdm-grid .gdm-beer__add {
+      justify-content: center;
+    }
+
+    .gdm.gdm-bieres .gdm-grid .gdm-beer__bitter-label {
+      display: none;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "GDM · Nos bières",
+  "tag": "section",
+  "class": "gdm-shopify-section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "En-tête"
+    },
+    {
+      "type": "text",
+      "id": "pill",
+      "label": "Badge",
+      "default": "La gamme du moment"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titre",
+      "default": "Nos"
+    },
+    {
+      "type": "text",
+      "id": "title_accent",
+      "label": "Titre — partie orange",
+      "default": "bières"
+    },
+    {
+      "type": "select",
+      "id": "heading_tag",
+      "label": "Niveau du titre (SEO)",
+      "default": "h2",
+      "options": [
+        { "value": "h1", "label": "H1" },
+        { "value": "h2", "label": "H2" }
+      ]
+    },
+    {
+      "type": "inline_richtext",
+      "id": "text",
+      "label": "Texte",
+      "default": "Des permanentes aux éphémères Labelle : toutes nos bières sont brassées, fermentées et embouteillées à Bruguières."
+    },
+    {
+      "type": "text",
+      "id": "link_label",
+      "label": "Texte du lien",
+      "default": "Toute la gamme"
+    },
+    {
+      "type": "url",
+      "id": "link_url",
+      "label": "Lien",
+      "info": "Par défaut : la collection choisie."
+    },
+    {
+      "type": "header",
+      "content": "Produits"
+    },
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Collection"
+    },
+    {
+      "type": "range",
+      "id": "limit",
+      "label": "Nombre de bières",
+      "min": 2,
+      "max": 16,
+      "step": 1,
+      "default": 8
+    },
+    {
+      "type": "select",
+      "id": "layout",
+      "label": "Disposition",
+      "default": "carousel",
+      "options": [
+        { "value": "carousel", "label": "Carrousel" },
+        { "value": "grid", "label": "Grille" }
+      ]
+    },
+    {
+      "type": "range",
+      "id": "columns",
+      "label": "Colonnes sur ordinateur",
+      "min": 2,
+      "max": 5,
+      "step": 1,
+      "default": 4
+    },
+    {
+      "type": "select",
+      "id": "style_source",
+      "label": "Petit texte orange au-dessus du nom",
+      "default": "custom_style",
+      "options": [
+        { "value": "none", "label": "Rien" },
+        { "value": "custom_style", "label": "Métachamp custom.style" },
+        { "value": "type", "label": "Type de produit" },
+        { "value": "beer_style", "label": "Style de bière (catégorie Shopify)" },
+        { "value": "vendor", "label": "Fournisseur" }
+      ],
+      "info": "Conseillé : créez un métachamp produit « custom.style » (texte sur une ligne) et indiquez NEIPA, West Coast IPA, Sour framboise… Les bières sans valeur n'affichent rien."
+    },
+    {
+      "type": "checkbox",
+      "id": "show_specs",
+      "label": "Afficher degré et IBU",
+      "default": true,
+      "info": "Métachamps custom.degre et custom.ibu."
+    },
+    {
+      "type": "checkbox",
+      "id": "show_bitterness",
+      "label": "Afficher la jauge d'amertume",
+      "default": true,
+      "info": "Calculée à partir de l'IBU."
+    },
+    {
+      "type": "checkbox",
+      "id": "show_variants",
+      "label": "Choix du contenant (33 cL / 75 cL)",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_add_to_cart",
+      "label": "Bouton « Ajouter au panier »",
+      "default": true,
+      "info": "Sinon, un bouton « Voir » mène à la fiche produit."
+    },
+    {
+      "type": "header",
+      "content": "Textes des boutons"
+    },
+    {
+      "type": "text",
+      "id": "label_add",
+      "label": "Ajouter",
+      "default": "Ajouter"
+    },
+    {
+      "type": "text",
+      "id": "label_view",
+      "label": "Voir",
+      "default": "Voir"
+    },
+    {
+      "type": "text",
+      "id": "label_soldout",
+      "label": "Épuisée",
+      "default": "Épuisée"
+    },
+    {
+      "type": "text",
+      "id": "label_sale",
+      "label": "Promo",
+      "default": "Promo"
+    },
+    {
+      "type": "text",
+      "id": "label_from",
+      "label": "À partir de",
+      "default": "dès"
+    },
+    {
+      "type": "text",
+      "id": "label_bitterness",
+      "label": "Amertume",
+      "default": "Amertume"
+    },
+    {
+      "type": "text",
+      "id": "label_format",
+      "label": "Contenant",
+      "default": "Contenant"
+    },
+    {
+      "type": "text",
+      "id": "label_prev",
+      "label": "Flèche précédente (accessibilité)",
+      "default": "Bières précédentes"
+    },
+    {
+      "type": "text",
+      "id": "label_next",
+      "label": "Flèche suivante (accessibilité)",
+      "default": "Bières suivantes"
+    },
+    {
+      "type": "header",
+      "content": "Couleurs et espacement"
+    },
+    {
+      "type": "color",
+      "id": "color_bg",
+      "label": "Fond",
+      "default": "#0D0D0D"
+    },
+    {
+      "type": "color",
+      "id": "color_accent",
+      "label": "Accent",
+      "default": "#F0921E"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Marge haute",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Marge basse",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    }
+  ],
+  "presets": [
+    {
+      "name": "GDM · Nos bières"
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,459 @@
+{%- comment -%}
+  Le Gué des Moines — Questions fréquentes
+  Intro fixe à gauche, accordéon à droite, carte contact. Option : données
+  structurées FAQPage pour Google.
+{%- endcomment -%}
+{%- liquid
+  assign s = section.settings
+  assign heading_tag = s.heading_tag | default: 'h2'
+-%}
+{%- render 'gdm-assets' -%}
+
+<gdm-section
+  id="gdm-{{ section.id }}"
+  class="gdm gdm-faq"
+  style="--gdm-bg: {{ s.color_bg }}; --gdm-accent: {{ s.color_accent }}; --gdm-pt: {{ s.padding_top }}px; --gdm-pb: {{ s.padding_bottom }}px;"
+>
+  <div class="gdm-container gdm-faq__grid">
+    <div class="gdm-faq__intro">
+      <div class="gdm-head gdm-faq__head">
+        {%- if s.pill != blank -%}
+          <p class="gdm-pill" data-gdm-reveal>{{ s.pill | escape }}</p>
+        {%- endif -%}
+        {%- if s.title != blank or s.title_accent != blank -%}
+          <{{ heading_tag }} class="gdm-title" data-gdm-reveal style="--gdm-i: 1;">
+            {{- s.title | escape }}{% if s.title_accent != blank %} <em>{{ s.title_accent | escape }}</em>{% endif -%}
+          </{{ heading_tag }}>
+        {%- endif -%}
+        {%- if s.text != blank -%}
+          <p class="gdm-lead" data-gdm-reveal style="--gdm-i: 2;">{{ s.text }}</p>
+        {%- endif -%}
+      </div>
+
+      {%- if s.contact_title != blank -%}
+        <div class="gdm-faq__contact gdm-card" data-gdm-reveal style="--gdm-i: 3;">
+          <span class="gdm-faq__contact-icon">{% render 'gdm-icon', name: 'beer', icon_size: 26 %}</span>
+          <div>
+            <p class="gdm-faq__contact-title">{{ s.contact_title | escape }}</p>
+            {%- if s.contact_text != blank -%}<p class="gdm-faq__contact-text">{{ s.contact_text }}</p>{%- endif -%}
+          </div>
+          {%- if s.contact_label != blank -%}
+            <a class="gdm-btn gdm-btn--primary" href="{{ s.contact_link | default: routes.root_url }}">
+              {{- s.contact_label | escape -}}
+              {%- render 'gdm-icon', name: 'arrow-up-right' -%}
+            </a>
+          {%- endif -%}
+        </div>
+      {%- endif -%}
+    </div>
+
+    <div class="gdm-faq__list">
+      {%- for block in section.blocks -%}
+        <details
+          class="gdm-faq__item"
+          name="gdm-faq-{{ section.id }}"
+          data-gdm-reveal
+          style="--gdm-i: {{ forloop.index0 | modulo: 5 }};"
+          {% if forloop.first and s.open_first %}open{% endif %}
+          {{ block.shopify_attributes }}
+        >
+          <summary class="gdm-faq__question">
+            <span class="gdm-faq__num" aria-hidden="true">{{ forloop.index | prepend: '0' | slice: -2, 2 }}</span>
+            <span class="gdm-faq__q">{{ block.settings.question | escape }}</span>
+            <span class="gdm-faq__toggle" aria-hidden="true">{% render 'gdm-icon', name: 'plus', icon_size: 20 %}</span>
+          </summary>
+          <div class="gdm-faq__answer gdm-rte">{{ block.settings.answer }}</div>
+        </details>
+      {%- endfor -%}
+    </div>
+  </div>
+
+  {%- if s.structured_data and section.blocks.size > 0 -%}
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {%- for block in section.blocks -%}
+            {
+              "@type": "Question",
+              "name": {{ block.settings.question | json }},
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": {{ block.settings.answer | strip_html | json }}
+              }
+            }{% unless forloop.last %},{% endunless %}
+          {%- endfor -%}
+        ]
+      }
+    </script>
+  {%- endif -%}
+</gdm-section>
+
+{% stylesheet %}
+  .gdm.gdm-faq .gdm-faq__grid {
+    display: grid;
+    gap: clamp(40px, 5vw, 80px);
+    align-items: start;
+  }
+
+  @media (min-width: 990px) {
+    .gdm.gdm-faq .gdm-faq__grid {
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    }
+
+    .gdm.gdm-faq .gdm-faq__intro {
+      position: sticky;
+      top: 120px;
+    }
+  }
+
+  .gdm.gdm-faq .gdm-faq__intro {
+    display: grid;
+    gap: 32px;
+  }
+
+  .gdm.gdm-faq .gdm-faq__head {
+    margin-bottom: 0;
+  }
+
+  .gdm.gdm-faq .gdm-faq__contact {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 16px 18px;
+    padding: 22px;
+    border-color: var(--gdm-line);
+  }
+
+  .gdm.gdm-faq .gdm-faq__contact .gdm-btn {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .gdm.gdm-faq .gdm-faq__contact-icon {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--gdm-accent);
+    color: var(--gdm-on-accent);
+  }
+
+  .gdm.gdm-faq .gdm-faq__contact-title {
+    color: var(--gdm-text);
+    font-family: var(--gdm-font-display);
+    font-size: 22px;
+    line-height: 1.1;
+    text-transform: uppercase;
+  }
+
+  .gdm.gdm-faq .gdm-faq__contact-text {
+    margin-top: 4px;
+    color: var(--gdm-muted);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .gdm.gdm-faq .gdm-faq__list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .gdm.gdm-faq .gdm-faq__item {
+    border: 1px solid var(--gdm-border);
+    border-radius: 20px;
+    background: var(--gdm-surface);
+    transition: border-color 0.3s var(--gdm-ease), background-color 0.3s var(--gdm-ease);
+  }
+
+  .gdm.gdm-faq .gdm-faq__item:hover {
+    border-color: var(--gdm-line);
+  }
+
+  .gdm.gdm-faq .gdm-faq__item[open] {
+    border-color: var(--gdm-line);
+    background: var(--gdm-surface-2);
+  }
+
+  .gdm.gdm-faq .gdm-faq__question {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 20px 22px;
+    list-style: none;
+    cursor: pointer;
+    border-radius: 20px;
+  }
+
+  .gdm.gdm-faq .gdm-faq__question::-webkit-details-marker,
+  .gdm.gdm-faq .gdm-faq__question::marker {
+    display: none;
+    content: '';
+  }
+
+  .gdm.gdm-faq .gdm-faq__num {
+    flex: none;
+    color: var(--gdm-accent);
+    font-family: var(--gdm-font-display);
+    font-size: 20px;
+    line-height: 1;
+    opacity: 0.8;
+  }
+
+  .gdm.gdm-faq .gdm-faq__q {
+    flex: 1;
+    color: var(--gdm-text);
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.4;
+    text-wrap: pretty;
+  }
+
+  .gdm.gdm-faq .gdm-faq__toggle {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--gdm-border-strong);
+    border-radius: 50%;
+    color: var(--gdm-text);
+    transition: transform 0.35s var(--gdm-ease), background-color 0.3s var(--gdm-ease), border-color 0.3s var(--gdm-ease),
+      color 0.3s var(--gdm-ease);
+  }
+
+  .gdm.gdm-faq .gdm-faq__question:hover .gdm-faq__toggle {
+    border-color: var(--gdm-accent);
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-faq .gdm-faq__item[open] .gdm-faq__toggle {
+    transform: rotate(45deg);
+    border-color: var(--gdm-accent);
+    background: var(--gdm-accent);
+    color: var(--gdm-on-accent);
+  }
+
+  .gdm.gdm-faq .gdm-faq__answer {
+    padding: 0 22px 22px 60px;
+    font-size: 16px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .gdm.gdm-faq .gdm-faq__item[open] .gdm-faq__answer {
+      animation: gdm-faq-in 0.45s var(--gdm-ease);
+    }
+  }
+
+  @keyframes gdm-faq-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+  }
+
+  @media (max-width: 749px) {
+    .gdm.gdm-faq .gdm-faq__question {
+      gap: 12px;
+      padding: 16px;
+    }
+
+    .gdm.gdm-faq .gdm-faq__q {
+      font-size: 16px;
+    }
+
+    .gdm.gdm-faq .gdm-faq__answer {
+      padding: 0 16px 18px;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "GDM · FAQ",
+  "tag": "section",
+  "class": "gdm-shopify-section",
+  "max_blocks": 20,
+  "settings": [
+    {
+      "type": "text",
+      "id": "pill",
+      "label": "Badge",
+      "default": "FAQ"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titre",
+      "default": "Vos questions,"
+    },
+    {
+      "type": "text",
+      "id": "title_accent",
+      "label": "Titre — partie orange",
+      "default": "nos réponses"
+    },
+    {
+      "type": "select",
+      "id": "heading_tag",
+      "label": "Niveau du titre (SEO)",
+      "default": "h2",
+      "options": [
+        { "value": "h1", "label": "H1" },
+        { "value": "h2", "label": "H2" }
+      ]
+    },
+    {
+      "type": "inline_richtext",
+      "id": "text",
+      "label": "Texte",
+      "default": "Livraison, retrait, conservation, privatisation… tout ce qu'il faut savoir avant de commander."
+    },
+    {
+      "type": "checkbox",
+      "id": "open_first",
+      "label": "Ouvrir la première question",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Encart contact"
+    },
+    {
+      "type": "text",
+      "id": "contact_title",
+      "label": "Titre",
+      "default": "Une autre question ?",
+      "info": "Laisser vide pour masquer l'encart."
+    },
+    {
+      "type": "inline_richtext",
+      "id": "contact_text",
+      "label": "Texte",
+      "default": "L'équipe vous répond rapidement."
+    },
+    {
+      "type": "text",
+      "id": "contact_label",
+      "label": "Bouton",
+      "default": "Nous écrire"
+    },
+    {
+      "type": "url",
+      "id": "contact_link",
+      "label": "Lien du bouton"
+    },
+    {
+      "type": "header",
+      "content": "SEO"
+    },
+    {
+      "type": "checkbox",
+      "id": "structured_data",
+      "label": "Ajouter les données structurées FAQ",
+      "default": true,
+      "info": "Aide Google à comprendre vos questions-réponses."
+    },
+    {
+      "type": "header",
+      "content": "Couleurs et espacement"
+    },
+    {
+      "type": "color",
+      "id": "color_bg",
+      "label": "Fond",
+      "default": "#0D0D0D"
+    },
+    {
+      "type": "color",
+      "id": "color_accent",
+      "label": "Accent",
+      "default": "#F0921E"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Marge haute",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Marge basse",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    }
+  ],
+  "blocks": [
+    {
+      "type": "question",
+      "name": "Question",
+      "settings": [
+        {
+          "type": "text",
+          "id": "question",
+          "label": "Question",
+          "default": "Votre question ?"
+        },
+        {
+          "type": "richtext",
+          "id": "answer",
+          "label": "Réponse",
+          "default": "<p>Votre réponse.</p>"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "GDM · FAQ",
+      "blocks": [
+        {
+          "type": "question",
+          "settings": {
+            "question": "Comment conserver mes bières ?",
+            "answer": "<p>Au frais, à l'abri de la lumière et <strong>debout</strong>. Nos bières, notamment les IPA et NEIPA, sont meilleures bues jeunes pour profiter de tous les arômes de houblon.</p>"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "Puis-je retirer ma commande à la brasserie ?",
+            "answer": "<p>Indiquez ici vos conditions de retrait (jours, horaires, adresse : 31 rue de la Briqueterie, 31150 Bruguières).</p>"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "Livrez-vous à domicile ?",
+            "answer": "<p>Indiquez ici vos zones, délais et frais de livraison.</p>"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "Quelle est la différence entre les permanentes et les Labelle ?",
+            "answer": "<p>Les <strong>permanentes</strong> sont disponibles toute l'année. Les <strong>Labelle</strong> sont nos éphémères : des recettes brassées en petite quantité, à découvrir tant qu'il y en a !</p>"
+          }
+        },
+        {
+          "type": "question",
+          "settings": {
+            "question": "Peut-on privatiser le brewpub ?",
+            "answer": "<p>Indiquez ici vos conditions de privatisation (capacité, formules, contact).</p>"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

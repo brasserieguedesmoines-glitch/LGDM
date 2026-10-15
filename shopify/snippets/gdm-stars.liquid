@@ -1,0 +1,13 @@
+{%- comment -%}
+  Le Gué des Moines — rangée de 5 étoiles.
+  Usage : {% render 'gdm-stars', rating: 5, star_size: 16 %}
+{%- endcomment -%}
+{%- liquid
+  assign gdm_rating = rating | default: 5 | round
+  assign gdm_star_size = star_size | default: 16
+-%}
+<span class="gdm-stars" role="img" aria-label="{{ gdm_rating }} / 5">
+  {%- for i in (1..5) -%}
+    <span{% if i > gdm_rating %} class="is-off"{% endif %}>{% render 'gdm-icon', name: 'star', icon_size: gdm_star_size %}</span>
+  {%- endfor -%}
+</span>

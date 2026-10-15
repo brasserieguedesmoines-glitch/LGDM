@@ -1,0 +1,29 @@
+{%- comment -%}
+  Le Gué des Moines — charge les polices, les styles et le script communs
+  à toutes les sections « GDM ». Inclus en tête de chaque section : le
+  navigateur ne télécharge chaque fichier qu'une seule fois.
+
+  Les polices Anton et Inter (licence SIL OFL 1.1) sont hébergées dans le
+  thème : aucune requête vers Google Fonts, donc rien à déclarer côté RGPD.
+
+  Usage : {% render 'gdm-assets' %}
+{%- endcomment -%}
+{{ 'gdm-anton-latin.woff2' | asset_url | preload_tag: as: 'font', type: 'font/woff2', crossorigin: 'anonymous' }}
+<style>
+  @font-face {
+    font-family: 'GDM Anton';
+    src: url('{{ 'gdm-anton-latin.woff2' | asset_url }}') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'GDM Inter';
+    src: url('{{ 'gdm-inter-latin.woff2' | asset_url }}') format('woff2');
+    font-weight: 400 700;
+    font-style: normal;
+    font-display: swap;
+  }
+</style>
+{{ 'gdm-sections.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'gdm-sections.js' | asset_url }}" defer="defer"></script>

@@ -1,0 +1,456 @@
+{%- comment -%}
+  Le Gué des Moines — Notre histoire (image + texte)
+  Grande photo encadrée d'un liseré ambré, seconde photo en médaillon,
+  tampon rotatif, texte riche, points forts avec icônes et bouton.
+{%- endcomment -%}
+{%- liquid
+  assign s = section.settings
+  assign heading_tag = s.heading_tag | default: 'h2'
+-%}
+{%- render 'gdm-assets' -%}
+
+<gdm-section
+  id="gdm-{{ section.id }}"
+  class="gdm gdm-histoire gdm-histoire--image-{{ s.image_position }}"
+  style="--gdm-bg: {{ s.color_bg }}; --gdm-accent: {{ s.color_accent }}; --gdm-pt: {{ s.padding_top }}px; --gdm-pb: {{ s.padding_bottom }}px;"
+>
+  <div class="gdm-container gdm-histoire__grid">
+    <div class="gdm-histoire__visual" data-gdm-reveal>
+      <div class="gdm-histoire__frame">
+        {%- if s.image != blank -%}
+          {{ s.image | image_url: width: 1400 | image_tag: loading: 'lazy', widths: '600, 900, 1200, 1400', sizes: '(min-width: 990px) 50vw, 100vw', class: 'gdm-histoire__img' }}
+        {%- else -%}
+          {{ 'lifestyle-2' | placeholder_svg_tag: 'gdm-placeholder gdm-histoire__img' }}
+        {%- endif -%}
+      </div>
+      {%- if s.image_2 != blank -%}
+        <div class="gdm-histoire__inset">
+          {{ s.image_2 | image_url: width: 600 | image_tag: loading: 'lazy', widths: '300, 450, 600', sizes: '(min-width: 990px) 20vw, 40vw', class: 'gdm-histoire__img' }}
+        </div>
+      {%- endif -%}
+      {%- if s.stamp_text != blank -%}
+        <div class="gdm-histoire__stamp">
+          {%- render 'gdm-stamp', id: section.id, text: s.stamp_text, center: s.stamp_center, stamp_size: 136 -%}
+        </div>
+      {%- endif -%}
+    </div>
+
+    <div class="gdm-histoire__content">
+      {%- if s.pill != blank -%}
+        <p class="gdm-pill" data-gdm-reveal>{{ s.pill | escape }}</p>
+      {%- endif -%}
+      {%- if s.title != blank or s.title_accent != blank -%}
+        <{{ heading_tag }} class="gdm-title" data-gdm-reveal style="--gdm-i: 1;">
+          {{- s.title | escape }}{% if s.title_accent != blank %} <em>{{ s.title_accent | escape }}</em>{% endif -%}
+        </{{ heading_tag }}>
+      {%- endif -%}
+      {%- if s.text != blank -%}
+        <div class="gdm-rte gdm-histoire__text" data-gdm-reveal style="--gdm-i: 2;">{{ s.text }}</div>
+      {%- endif -%}
+
+      {%- if section.blocks.size > 0 -%}
+        <ul class="gdm-histoire__features">
+          {%- for block in section.blocks -%}
+            <li class="gdm-histoire__feature" data-gdm-reveal style="--gdm-i: {{ forloop.index | plus: 2 }};" {{ block.shopify_attributes }}>
+              <span class="gdm-histoire__feature-icon">{% render 'gdm-icon', name: block.settings.icon %}</span>
+              <span>
+                <span class="gdm-histoire__feature-title">{{ block.settings.title | escape }}</span>
+                {%- if block.settings.text != blank -%}
+                  <span class="gdm-histoire__feature-text">{{ block.settings.text }}</span>
+                {%- endif -%}
+              </span>
+            </li>
+          {%- endfor -%}
+        </ul>
+      {%- endif -%}
+
+      {%- if s.button_label != blank -%}
+        <div class="gdm-actions" data-gdm-reveal style="--gdm-i: 6;">
+          <a class="gdm-btn gdm-btn--{{ s.button_style }}" href="{{ s.button_link | default: '#' }}">
+            {{- s.button_label | escape -}}
+            {%- render 'gdm-icon', name: 'arrow-up-right' -%}
+          </a>
+        </div>
+      {%- endif -%}
+    </div>
+  </div>
+</gdm-section>
+
+{% stylesheet %}
+  .gdm.gdm-histoire .gdm-histoire__grid {
+    display: grid;
+    gap: clamp(48px, 6vw, 96px);
+    align-items: center;
+  }
+
+  @media (min-width: 990px) {
+    .gdm.gdm-histoire .gdm-histoire__grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .gdm.gdm-histoire--image-right .gdm-histoire__visual {
+      order: 2;
+    }
+  }
+
+  .gdm.gdm-histoire .gdm-histoire__visual {
+    position: relative;
+    padding: 0 0 36px 0;
+  }
+
+  .gdm.gdm-histoire .gdm-histoire__frame {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    border-radius: 28px;
+    overflow: hidden;
+    background: var(--gdm-surface);
+  }
+
+  .gdm.gdm-histoire .gdm-histoire__frame::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px var(--gdm-border);
+    background: linear-gradient(180deg, transparent 55%, rgba(13, 13, 13, 0.55));
+    pointer-events: none;
+  }
+
+  .gdm.gdm-histoire .gdm-histoire__visual::before {
+    content: '';
+    position: absolute;
+    inset: 22px -22px 14px 22px;
+    z-index: -1;
+    border: 1px solid var(--gdm-line);
+    border-radius: 32px;
+  }
+
+  .gdm.gdm-histoire--image-right .gdm-histoire__visual::before {
+    inset: 22px 22px 14px -22px;
+  }
+
+  .gdm.gdm-histoire .gdm-histoire__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 1.2s var(--gdm-ease);
+  }
+
+  .gdm.gdm-histoire .gdm-histoire__visual:hover .gdm-histoire__frame .gdm-histoire__img {
+    transform: scale(1.04);
+  }
+
+  .gdm.gdm-histoire .gdm-histoire__inset {
+    position: absolute;
+    right: -6%;
+    bottom: 0;
+    width: 42%;
+    aspect-ratio: 1;
+    border: 6px solid var(--gdm-bg);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.9);
+  }
+
+  .gdm.gdm-histoire--image-right .gdm-histoire__inset {
+    right: auto;
+    left: -6%;
+  }
+
+  .gdm.gdm-histoire .gdm-histoire__stamp {
+    position: absolute;
+    top: -28px;
+    left: -28px;
+  }
+
+  .gdm.gdm-histoire--image-right .gdm-histoire__stamp {
+    left: auto;
+    right: -28px;
+  }
+
+  .gdm.gdm-histoire .gdm-histoire__content {
+    display: grid;
+    justify-items: start;
+    gap: 24px;
+  }
+
+  .gdm.gdm-histoire .gdm-histoire__text {
+    font-size: 17px;
+    max-width: 60ch;
+  }
+
+  .gdm.gdm-histoire .gdm-histoire__features {
+    display: grid;
+    gap: 12px;
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  @media (min-width: 750px) {
+    .gdm.gdm-histoire .gdm-histoire__features {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .gdm.gdm-histoire .gdm-histoire__feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid var(--gdm-border);
+    border-radius: 18px;
+    background: var(--gdm-surface);
+    transition: border-color 0.3s var(--gdm-ease);
+  }
+
+  .gdm.gdm-histoire .gdm-histoire__feature:hover {
+    border-color: var(--gdm-line);
+  }
+
+  .gdm.gdm-histoire .gdm-histoire__feature-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--gdm-accent-soft);
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-histoire .gdm-histoire__feature-title {
+    display: block;
+    color: var(--gdm-text);
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .gdm.gdm-histoire .gdm-histoire__feature-text {
+    display: block;
+    margin-top: 2px;
+    color: var(--gdm-muted);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 989px) {
+    .gdm.gdm-histoire .gdm-histoire__visual {
+      max-width: 560px;
+      margin-inline: auto;
+      width: calc(100% - 24px);
+    }
+  }
+
+  @media (max-width: 749px) {
+    .gdm.gdm-histoire .gdm-histoire__stamp {
+      top: -18px;
+      left: -10px;
+    }
+
+    .gdm.gdm-histoire .gdm-histoire__stamp .gdm-stamp {
+      --gdm-stamp-size: 104px !important;
+    }
+
+    .gdm.gdm-histoire--image-right .gdm-histoire__stamp {
+      right: -10px;
+    }
+
+    .gdm.gdm-histoire .gdm-histoire__inset {
+      right: -3%;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "GDM · Notre histoire",
+  "tag": "section",
+  "class": "gdm-shopify-section",
+  "max_blocks": 6,
+  "settings": [
+    {
+      "type": "header",
+      "content": "Images"
+    },
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Image principale",
+      "info": "Format portrait conseillé : 1200 × 1500 px."
+    },
+    {
+      "type": "image_picker",
+      "id": "image_2",
+      "label": "Image en médaillon (facultatif)"
+    },
+    {
+      "type": "select",
+      "id": "image_position",
+      "label": "Position des images",
+      "default": "left",
+      "options": [
+        { "value": "left", "label": "À gauche" },
+        { "value": "right", "label": "À droite" }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "stamp_text",
+      "label": "Tampon — texte circulaire",
+      "default": "Brasserie artisanale • Bruguières • Occitanie •",
+      "info": "Laisser vide pour masquer le tampon."
+    },
+    {
+      "type": "text",
+      "id": "stamp_center",
+      "label": "Tampon — texte au centre",
+      "default": "2016"
+    },
+    {
+      "type": "header",
+      "content": "Texte"
+    },
+    {
+      "type": "text",
+      "id": "pill",
+      "label": "Badge",
+      "default": "Notre histoire"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titre",
+      "default": "Des bières qui ont"
+    },
+    {
+      "type": "text",
+      "id": "title_accent",
+      "label": "Titre — partie orange",
+      "default": "du caractère"
+    },
+    {
+      "type": "select",
+      "id": "heading_tag",
+      "label": "Niveau du titre (SEO)",
+      "default": "h2",
+      "options": [
+        { "value": "h1", "label": "H1" },
+        { "value": "h2", "label": "H2" }
+      ]
+    },
+    {
+      "type": "richtext",
+      "id": "text",
+      "label": "Texte",
+      "default": "<p>Depuis 2016, Le Gué des Moines brasse à Bruguières, aux portes de Toulouse, des bières généreuses et sans compromis.</p><p>Des permanentes que l'on retrouve toute l'année aux éphémères <strong>Labelle</strong>, chaque brassin est imaginé, fermenté et conditionné sur place.</p>"
+    },
+    {
+      "type": "text",
+      "id": "button_label",
+      "label": "Bouton",
+      "default": "Découvrir la brasserie"
+    },
+    {
+      "type": "url",
+      "id": "button_link",
+      "label": "Lien du bouton"
+    },
+    {
+      "type": "select",
+      "id": "button_style",
+      "label": "Style du bouton",
+      "default": "primary",
+      "options": [
+        { "value": "primary", "label": "Orange" },
+        { "value": "ghost", "label": "Contour" }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "Couleurs et espacement"
+    },
+    {
+      "type": "color",
+      "id": "color_bg",
+      "label": "Fond",
+      "default": "#0D0D0D"
+    },
+    {
+      "type": "color",
+      "id": "color_accent",
+      "label": "Accent",
+      "default": "#F0921E"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Marge haute",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 112
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Marge basse",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 112
+    }
+  ],
+  "blocks": [
+    {
+      "type": "feature",
+      "name": "Point fort",
+      "settings": [
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "Icône",
+          "default": "hop",
+          "options": [
+            { "value": "hop", "label": "Houblon" },
+            { "value": "wheat", "label": "Épi" },
+            { "value": "beer", "label": "Chope" },
+            { "value": "barrel", "label": "Fût" },
+            { "value": "droplet", "label": "Goutte" },
+            { "value": "leaf", "label": "Feuille" },
+            { "value": "award", "label": "Médaille" },
+            { "value": "heart", "label": "Cœur" },
+            { "value": "users", "label": "Équipe" },
+            { "value": "map-pin", "label": "Lieu" },
+            { "value": "truck", "label": "Livraison" },
+            { "value": "check", "label": "Coche" }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Titre",
+          "default": "Brassé sur place"
+        },
+        {
+          "type": "inline_richtext",
+          "id": "text",
+          "label": "Texte"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "GDM · Notre histoire",
+      "blocks": [
+        { "type": "feature", "settings": { "icon": "map-pin", "title": "Brassé à Bruguières", "text": "Du brassin à la bouteille, tout est fait ici." } },
+        { "type": "feature", "settings": { "icon": "hop", "title": "Houblons aromatiques", "text": "IPA, NEIPA, West Coast : on aime quand ça sent bon." } },
+        { "type": "feature", "settings": { "icon": "barrel", "title": "Vieillies en fût", "text": "Armagnac et whisky pour nos éditions spéciales." } },
+        { "type": "feature", "settings": { "icon": "users", "title": "Brewpub convivial", "text": "Venez goûter à la source, entre amis." } }
+      ]
+    }
+  ]
+}
+{% endschema %}

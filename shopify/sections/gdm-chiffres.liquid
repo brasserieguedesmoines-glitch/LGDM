@@ -1,0 +1,324 @@
+{%- comment -%}
+  Le Gué des Moines — Chiffres clés
+  Grands chiffres orange qui s'incrémentent à l'apparition, avec icône,
+  légende et petite description.
+{%- endcomment -%}
+{%- liquid
+  assign s = section.settings
+  assign heading_tag = s.heading_tag | default: 'h2'
+  assign count = section.blocks.size
+  if count > 4
+    assign count = 4
+  endif
+-%}
+{%- render 'gdm-assets' -%}
+
+<gdm-section
+  id="gdm-{{ section.id }}"
+  class="gdm gdm-chiffres"
+  style="--gdm-bg: {{ s.color_bg }}; --gdm-accent: {{ s.color_accent }}; --gdm-cols: {{ count | at_least: 1 }}; --gdm-pt: {{ s.padding_top }}px; --gdm-pb: {{ s.padding_bottom }}px;"
+>
+  <div class="gdm-container">
+    {%- if s.pill != blank or s.title != blank or s.title_accent != blank -%}
+      <div class="gdm-head gdm-head--center">
+        {%- if s.pill != blank -%}
+          <p class="gdm-pill" data-gdm-reveal>{{ s.pill | escape }}</p>
+        {%- endif -%}
+        {%- if s.title != blank or s.title_accent != blank -%}
+          <{{ heading_tag }} class="gdm-title" data-gdm-reveal style="--gdm-i: 1;">
+            {{- s.title | escape }}{% if s.title_accent != blank %} <em>{{ s.title_accent | escape }}</em>{% endif -%}
+          </{{ heading_tag }}>
+        {%- endif -%}
+      </div>
+    {%- endif -%}
+
+    <ul class="gdm-chiffres__list">
+      {%- for block in section.blocks -%}
+        {%- assign b = block.settings -%}
+        <li class="gdm-chiffres__item gdm-card" data-gdm-reveal style="--gdm-i: {{ forloop.index0 | modulo: 4 }};" {{ block.shopify_attributes }}>
+          {%- if b.icon != 'none' -%}
+            <span class="gdm-chiffres__icon">{% render 'gdm-icon', name: b.icon, icon_size: 26 %}</span>
+          {%- endif -%}
+          <p class="gdm-chiffres__value">
+            {%- if b.prefix != blank %}<span class="gdm-chiffres__affix gdm-chiffres__affix--prefix">{{ b.prefix | escape }}</span>{% endif -%}
+            {%- if b.animate -%}
+              <gdm-counter data-value="{{ b.number | escape }}">{{ b.number | escape }}</gdm-counter>
+            {%- else -%}
+              <span>{{ b.number | escape }}</span>
+            {%- endif -%}
+            {%- if b.suffix != blank %}<span class="gdm-chiffres__affix">{{ b.suffix | escape }}</span>{% endif -%}
+          </p>
+          <p class="gdm-chiffres__label">{{ b.label | escape }}</p>
+          {%- if b.text != blank -%}
+            <p class="gdm-chiffres__text">{{ b.text }}</p>
+          {%- endif -%}
+        </li>
+      {%- endfor -%}
+    </ul>
+  </div>
+</gdm-section>
+
+{% stylesheet %}
+  .gdm.gdm-chiffres .gdm-chiffres__list {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (min-width: 990px) {
+    .gdm.gdm-chiffres .gdm-chiffres__list {
+      gap: 24px;
+      grid-template-columns: repeat(var(--gdm-cols, 4), minmax(0, 1fr));
+    }
+  }
+
+  .gdm.gdm-chiffres .gdm-chiffres__item {
+    display: grid;
+    align-content: start;
+    gap: 10px;
+    padding: clamp(20px, 3vw, 32px);
+    overflow: hidden;
+  }
+
+  .gdm.gdm-chiffres .gdm-chiffres__item::before {
+    content: '';
+    position: absolute;
+    inset: auto -30% -60% auto;
+    width: 70%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, var(--gdm-accent-glow), transparent);
+    opacity: 0;
+    transition: opacity 0.4s var(--gdm-ease);
+    pointer-events: none;
+  }
+
+  .gdm.gdm-chiffres .gdm-chiffres__item:hover::before {
+    opacity: 1;
+  }
+
+  .gdm.gdm-chiffres .gdm-chiffres__icon {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 8px;
+    border: 1px solid var(--gdm-line);
+    border-radius: 50%;
+    background: var(--gdm-accent-soft);
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-chiffres .gdm-chiffres__value {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+    color: var(--gdm-accent);
+    font-family: var(--gdm-font-display);
+    font-size: clamp(44px, 30px + 3.4vw, 84px);
+    line-height: 0.95;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .gdm.gdm-chiffres .gdm-chiffres__affix {
+    font-size: 0.6em;
+  }
+
+  .gdm.gdm-chiffres .gdm-chiffres__affix--prefix {
+    align-self: center;
+    font-size: 0.7em;
+  }
+
+  .gdm.gdm-chiffres .gdm-chiffres__label {
+    color: var(--gdm-text);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .gdm.gdm-chiffres .gdm-chiffres__text {
+    color: var(--gdm-muted);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 749px) {
+    .gdm.gdm-chiffres .gdm-chiffres__icon {
+      width: 44px;
+      height: 44px;
+    }
+
+    .gdm.gdm-chiffres .gdm-chiffres__label {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+    }
+
+    .gdm.gdm-chiffres .gdm-chiffres__text {
+      font-size: 14px;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "GDM · Chiffres clés",
+  "tag": "section",
+  "class": "gdm-shopify-section",
+  "max_blocks": 8,
+  "settings": [
+    {
+      "type": "text",
+      "id": "pill",
+      "label": "Badge",
+      "default": "Le Gué en chiffres"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titre",
+      "default": "Brasseurs"
+    },
+    {
+      "type": "text",
+      "id": "title_accent",
+      "label": "Titre — partie orange",
+      "default": "depuis 2016"
+    },
+    {
+      "type": "select",
+      "id": "heading_tag",
+      "label": "Niveau du titre (SEO)",
+      "default": "h2",
+      "options": [
+        { "value": "h1", "label": "H1" },
+        { "value": "h2", "label": "H2" }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "Couleurs et espacement"
+    },
+    {
+      "type": "color",
+      "id": "color_bg",
+      "label": "Fond",
+      "default": "#0D0D0D"
+    },
+    {
+      "type": "color",
+      "id": "color_accent",
+      "label": "Accent",
+      "default": "#F0921E"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Marge haute",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Marge basse",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    }
+  ],
+  "blocks": [
+    {
+      "type": "stat",
+      "name": "Chiffre",
+      "settings": [
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "Icône",
+          "default": "beer",
+          "options": [
+            { "value": "none", "label": "Aucune" },
+            { "value": "beer", "label": "Chope" },
+            { "value": "hop", "label": "Houblon" },
+            { "value": "wheat", "label": "Épi" },
+            { "value": "barrel", "label": "Fût" },
+            { "value": "droplet", "label": "Goutte" },
+            { "value": "award", "label": "Médaille" },
+            { "value": "users", "label": "Clients" },
+            { "value": "heart", "label": "Cœur" },
+            { "value": "star", "label": "Étoile" },
+            { "value": "map-pin", "label": "Lieu" },
+            { "value": "calendar", "label": "Calendrier" },
+            { "value": "truck", "label": "Livraison" }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "prefix",
+          "label": "Avant le chiffre",
+          "info": "Par exemple « + »."
+        },
+        {
+          "type": "text",
+          "id": "number",
+          "label": "Chiffre",
+          "default": "10"
+        },
+        {
+          "type": "text",
+          "id": "suffix",
+          "label": "Après le chiffre",
+          "info": "Par exemple « % » ou « k »."
+        },
+        {
+          "type": "checkbox",
+          "id": "animate",
+          "label": "Animer le chiffre",
+          "default": true,
+          "info": "À décocher pour une année (2016)."
+        },
+        {
+          "type": "text",
+          "id": "label",
+          "label": "Légende",
+          "default": "Bières maison"
+        },
+        {
+          "type": "inline_richtext",
+          "id": "text",
+          "label": "Description (facultatif)"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "GDM · Chiffres clés",
+      "blocks": [
+        {
+          "type": "stat",
+          "settings": { "icon": "calendar", "number": "2016", "animate": false, "label": "Création de la brasserie", "text": "Une aventure née à Bruguières, au nord de Toulouse." }
+        },
+        {
+          "type": "stat",
+          "settings": { "icon": "beer", "prefix": "+", "number": "10", "label": "Bières maison", "text": "Des permanentes et des éphémères Labelle." }
+        },
+        {
+          "type": "stat",
+          "settings": { "icon": "barrel", "number": "24", "label": "Mois en fût", "text": "Pour notre stout vieillie en fût de whisky." }
+        },
+        {
+          "type": "stat",
+          "settings": { "icon": "map-pin", "number": "100", "suffix": "%", "label": "Brassé sur place", "text": "Du brassin à la bouteille, tout se passe ici." }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

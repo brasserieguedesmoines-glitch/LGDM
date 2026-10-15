@@ -1,0 +1,99 @@
+{%- comment -%}
+  Le Gué des Moines — bibliothèque d'icônes (traits 24×24, couleur = currentColor).
+
+  Usage : {% render 'gdm-icon', name: 'hop' %}
+          {% render 'gdm-icon', name: 'star', icon_size: 16 %}
+
+  Icônes : arrow-up-right, arrow-right, chevron-left, chevron-right, plus, check,
+  star, quote, hop, wheat, beer, barrel, droplet, leaf, award, heart, users,
+  map-pin, clock, phone, mail, calendar, music, truck, bag, sparkle, dot
+{%- endcomment -%}
+{%- assign gdm_icon_size = icon_size | default: 24 -%}
+<svg class="gdm-icon gdm-icon--{{ name }}" width="{{ gdm_icon_size }}" height="{{ gdm_icon_size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+  {%- case name -%}
+    {%- when 'arrow-up-right' -%}
+      <path d="M7 17 17 7M8 7h9v9"/>
+    {%- when 'arrow-right' -%}
+      <path d="M5 12h14M13 6l6 6-6 6"/>
+    {%- when 'chevron-left' -%}
+      <path d="m15 18-6-6 6-6"/>
+    {%- when 'chevron-right' -%}
+      <path d="m9 18 6-6-6-6"/>
+    {%- when 'plus' -%}
+      <path d="M12 5v14M5 12h14"/>
+    {%- when 'check' -%}
+      <path d="m5 12.5 4.5 4.5L19 7.5"/>
+    {%- when 'star' -%}
+      <path fill="currentColor" stroke="none" d="M12 2.6l2.9 5.9 6.5.95-4.7 4.6 1.1 6.45L12 17.45l-5.8 3.05 1.1-6.45-4.7-4.6 6.5-.95L12 2.6z"/>
+    {%- when 'quote' -%}
+      <path fill="currentColor" stroke="none" d="M10 5.5C6.7 6.3 4 9.2 4 13.1V18.5h6.2v-6.2H7.1c.1-2.2 1.4-3.8 3.4-4.4L10 5.5zm10 0c-3.3.8-6 3.7-6 7.6v5.4h6.2v-6.2h-3.1c.1-2.2 1.4-3.8 3.4-4.4L20 5.5z"/>
+    {%- when 'hop' -%}
+      <path d="M12 2.5v2.6"/>
+      <path d="M12 3.6c1.6-1.5 4.2-1.6 5.8-.2-1.6 1.5-4.2 1.6-5.8.2z"/>
+      <path d="M12 5.1c3.4 0 5.9 3.2 5.9 7.4 0 4.6-2.7 8.1-5.9 9-3.2-.9-5.9-4.4-5.9-9 0-4.2 2.5-7.4 5.9-7.4z"/>
+      <path d="M6.7 10c1.6 1.3 3.4 1.9 5.3 1.9s3.7-.6 5.3-1.9"/>
+      <path d="M6.3 13.9c1.7 1.5 3.6 2.2 5.7 2.2s4-.7 5.7-2.2"/>
+      <path d="M7.9 18.1c1.2 1 2.6 1.5 4.1 1.5s2.9-.5 4.1-1.5"/>
+      <path d="M12 5.1c-1.2 1.6-1.2 4.4 0 6.8 1.2 2.4 1.2 5.6 0 9.6"/>
+    {%- when 'wheat' -%}
+      <path d="M12 22V9"/>
+      <path d="M12 9c-2.3-.4-3.6-2.2-3.4-4.9 2.4.3 3.7 2.2 3.4 4.9zm0 0c2.3-.4 3.6-2.2 3.4-4.9-2.4.3-3.7 2.2-3.4 4.9z"/>
+      <path d="M12 14c-2.3-.4-3.6-2.2-3.4-4.9 2.4.3 3.7 2.2 3.4 4.9zm0 0c2.3-.4 3.6-2.2 3.4-4.9-2.4.3-3.7 2.2-3.4 4.9z"/>
+      <path d="M12 19c-2.3-.4-3.6-2.2-3.4-4.9 2.4.3 3.7 2.2 3.4 4.9zm0 0c2.3-.4 3.6-2.2 3.4-4.9-2.4.3-3.7 2.2-3.4 4.9z"/>
+      <path d="M12 4.2V2"/>
+    {%- when 'beer' -%}
+      <path d="M5.5 8.5h10v11a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-11z"/>
+      <path d="M15.5 11h1.8a2.2 2.2 0 0 1 2.2 2.2v2.6a2.2 2.2 0 0 1-2.2 2.2h-1.8"/>
+      <path d="M9 12v6.5M12 12v6.5"/>
+      <path d="M5 8.5a2.4 2.4 0 0 1 .9-4.6c.6-1.3 1.9-2.1 3.3-1.9 1-.9 2.6-.9 3.6.1 1.6-.4 3.2.7 3.3 2.4a2 2 0 0 1-.6 4"/>
+    {%- when 'barrel' -%}
+      <path d="M7 3h10c1.4 2.7 2.1 5.7 2.1 9s-.7 6.3-2.1 9H7c-1.4-2.7-2.1-5.7-2.1-9S5.6 5.7 7 3z"/>
+      <path d="M5.4 8h13.2M5.4 16h13.2"/>
+    {%- when 'droplet' -%}
+      <path d="M12 2.8s6.2 6.4 6.2 11.4a6.2 6.2 0 0 1-12.4 0C5.8 9.2 12 2.8 12 2.8z"/>
+      <path d="M9 14.5a3 3 0 0 0 3 3"/>
+    {%- when 'leaf' -%}
+      <path d="M5 19c0-8.5 5.5-14 15-14 0 9.5-5.5 15-14 15"/>
+      <path d="M5 19c3.5-4.5 6.5-7.5 10-10"/>
+    {%- when 'award' -%}
+      <circle cx="12" cy="9" r="6"/>
+      <path d="m8.6 13.9-1.4 7.6 4.8-2.7 4.8 2.7-1.4-7.6"/>
+    {%- when 'heart' -%}
+      <path d="M12 20.3s-7.6-4.6-7.6-10.4A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.6 2.7c0 5.8-7.6 10.4-7.6 10.4z"/>
+    {%- when 'users' -%}
+      <circle cx="9" cy="8" r="3.8"/>
+      <path d="M2.5 20.5a6.5 6.5 0 0 1 13 0"/>
+      <path d="M16 4.4a3.8 3.8 0 0 1 0 7.2M21.5 20.5a6.5 6.5 0 0 0-3.8-5.9"/>
+    {%- when 'map-pin' -%}
+      <path d="M12 21.5s-7-6.1-7-11.8a7 7 0 0 1 14 0c0 5.7-7 11.8-7 11.8z"/>
+      <circle cx="12" cy="9.7" r="2.6"/>
+    {%- when 'clock' -%}
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M12 7v5l3.2 2"/>
+    {%- when 'phone' -%}
+      <path d="M5.2 3.5h3.3l1.8 4.6-2.3 1.4a11.5 11.5 0 0 0 6.5 6.5l1.4-2.3 4.6 1.8v3.3a1.9 1.9 0 0 1-2 1.9C10.9 20.2 3.8 13.1 3.3 5.5a1.9 1.9 0 0 1 1.9-2z"/>
+    {%- when 'mail' -%}
+      <rect x="3" y="5" width="18" height="14" rx="2.5"/>
+      <path d="m3.5 7 8.5 6 8.5-6"/>
+    {%- when 'calendar' -%}
+      <rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/>
+      <path d="M16 2.5v4M8 2.5v4M3 10h18"/>
+    {%- when 'music' -%}
+      <path d="M9 18V5.5l11-2V16"/>
+      <circle cx="6.5" cy="18" r="2.5"/>
+      <circle cx="17.5" cy="16" r="2.5"/>
+    {%- when 'truck' -%}
+      <path d="M2.5 6h11.5v10.5H2.5zM14 9.5h3.8l3.2 3.3v3.7H14"/>
+      <circle cx="6.5" cy="17.5" r="1.8" fill="currentColor"/>
+      <circle cx="17.5" cy="17.5" r="1.8" fill="currentColor"/>
+    {%- when 'bag' -%}
+      <path d="M5.5 7.5h13l-1 13h-11l-1-13z"/>
+      <path d="M9 10V6.5a3 3 0 0 1 6 0V10"/>
+    {%- when 'sparkle' -%}
+      <path fill="currentColor" stroke="none" d="M12 2c.5 4.6 2.9 7 7.5 7.5v1C14.9 11 12.5 13.4 12 18h-1c-.5-4.6-2.9-7-7.5-7.5v-1C8.1 9 10.5 6.6 11 2h1z" transform="translate(.5 2)"/>
+    {%- when 'dot' -%}
+      <circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/>
+    {%- else -%}
+      <circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/>
+  {%- endcase -%}
+</svg>

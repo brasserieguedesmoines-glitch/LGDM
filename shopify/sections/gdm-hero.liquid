@@ -1,0 +1,541 @@
+{%- comment -%}
+  Le Gué des Moines — Bannière d'accueil (hero)
+  Grand titre compressé, badge pilule, deux boutons, bandeau de stats/avis
+  et tampon rotatif. Image, image mobile ou vidéo en fond.
+{%- endcomment -%}
+{%- liquid
+  assign s = section.settings
+  assign heading_tag = s.heading_tag | default: 'h2'
+  assign overlay = s.overlay_opacity | divided_by: 100.0
+-%}
+{%- render 'gdm-assets' -%}
+
+<gdm-section
+  id="gdm-{{ section.id }}"
+  class="gdm gdm-hero gdm-grain gdm-hero--h-{{ s.height }} gdm-hero--{{ s.align }}"
+  style="--gdm-bg: {{ s.color_bg }}; --gdm-accent: {{ s.color_accent }}; --gdm-overlay: {{ overlay }}; --gdm-pt: {{ s.padding_top }}px; --gdm-pb: {{ s.padding_bottom }}px;"
+>
+  <div class="gdm-hero__media" aria-hidden="true">
+    {%- if s.video != blank -%}
+      {{ s.video | video_tag: autoplay: true, loop: true, muted: true, controls: false, playsinline: true, preload: 'metadata', image_size: '1920x', class: 'gdm-hero__video' }}
+    {%- elsif s.image != blank -%}
+      <picture>
+        {%- if s.image_mobile != blank -%}
+          <source
+            media="(max-width: 749px)"
+            srcset="{{ s.image_mobile | image_url: width: 750 }} 750w, {{ s.image_mobile | image_url: width: 1100 }} 1100w, {{ s.image_mobile | image_url: width: 1500 }} 1500w"
+            sizes="100vw"
+          >
+        {%- endif -%}
+        {{ s.image | image_url: width: 2400 | image_tag: loading: 'eager', fetchpriority: 'high', widths: '750, 1100, 1500, 1920, 2400', sizes: '100vw', alt: '', class: 'gdm-hero__img' }}
+      </picture>
+    {%- endif -%}
+  </div>
+  <div class="gdm-hero__shade" aria-hidden="true"></div>
+  <div class="gdm-glow gdm-hero__glow" aria-hidden="true"></div>
+  <div class="gdm-glow gdm-hero__glow gdm-hero__glow--2" aria-hidden="true"></div>
+
+  <div class="gdm-container gdm-hero__inner">
+    <div class="gdm-hero__top">
+      <div class="gdm-hero__content">
+        {%- if s.pill != blank -%}
+          <p class="gdm-pill" data-gdm-reveal>{{ s.pill | escape }}</p>
+        {%- endif -%}
+
+        {%- if s.title != blank or s.title_accent != blank -%}
+          <{{ heading_tag }} class="gdm-title gdm-title--xl gdm-hero__title" data-gdm-reveal style="--gdm-i: 1;">
+            {{- s.title | escape -}}
+            {%- if s.title_accent != blank %} <em{% if s.accent_new_line %} class="is-block"{% endif %}>{{ s.title_accent | escape }}</em>{% endif -%}
+          </{{ heading_tag }}>
+        {%- endif -%}
+
+        {%- if s.text != blank -%}
+          <p class="gdm-lead gdm-hero__text" data-gdm-reveal style="--gdm-i: 2;">{{ s.text }}</p>
+        {%- endif -%}
+
+        {%- if s.button_label != blank or s.button2_label != blank -%}
+          <div class="gdm-actions gdm-hero__actions" data-gdm-reveal style="--gdm-i: 3;">
+            {%- if s.button_label != blank -%}
+              <a class="gdm-btn gdm-btn--primary" href="{{ s.button_link | default: routes.all_products_collection_url }}">
+                {{- s.button_label | escape -}}
+                {%- render 'gdm-icon', name: 'arrow-up-right' -%}
+              </a>
+            {%- endif -%}
+            {%- if s.button2_label != blank -%}
+              <a class="gdm-btn gdm-btn--ghost" href="{{ s.button2_link | default: '#' }}">{{ s.button2_label | escape }}</a>
+            {%- endif -%}
+          </div>
+        {%- endif -%}
+      </div>
+
+      {%- if s.show_stamp and s.stamp_text != blank -%}
+        <div class="gdm-hero__stamp" data-gdm-reveal style="--gdm-i: 2;">
+          {%- render 'gdm-stamp', id: section.id, text: s.stamp_text, center: s.stamp_center, stamp_size: 156 -%}
+        </div>
+      {%- endif -%}
+    </div>
+
+    {%- if section.blocks.size > 0 -%}
+      <div class="gdm-hero__bar" data-gdm-reveal style="--gdm-i: 4;">
+        {%- for block in section.blocks -%}
+          {%- case block.type -%}
+            {%- when 'rating' -%}
+              <div class="gdm-rating gdm-hero__rating" {{ block.shopify_attributes }}>
+                <span class="gdm-rating__value">{{ block.settings.value | escape }}</span>
+                <span class="gdm-rating__meta">
+                  {%- render 'gdm-stars', rating: block.settings.stars -%}
+                  <span class="gdm-rating__label">{{ block.settings.label | escape }}</span>
+                </span>
+              </div>
+            {%- when 'stat' -%}
+              <div class="gdm-stat{% if block.settings.highlight %} gdm-stat--accent{% endif %}" {{ block.shopify_attributes }}>
+                <span class="gdm-stat__value">{{ block.settings.value | escape }}</span>
+                <span class="gdm-stat__label">{{ block.settings.label | escape }}</span>
+              </div>
+          {%- endcase -%}
+        {%- endfor -%}
+      </div>
+    {%- endif -%}
+  </div>
+</gdm-section>
+
+{% stylesheet %}
+  .gdm.gdm-hero {
+    --gdm-hero-h: 640px;
+    display: flex;
+    align-items: flex-end;
+    min-height: var(--gdm-hero-h);
+  }
+
+  .gdm.gdm-hero--h-large {
+    --gdm-hero-h: min(880px, 86vh);
+  }
+
+  .gdm.gdm-hero--h-full {
+    --gdm-hero-h: 100vh;
+    --gdm-hero-h: 100svh;
+  }
+
+  .gdm.gdm-hero .gdm-hero__media {
+    position: absolute;
+    inset: 0;
+    z-index: -3;
+  }
+
+  .gdm.gdm-hero .gdm-hero__media picture,
+  .gdm.gdm-hero .gdm-hero__img,
+  .gdm.gdm-hero .gdm-hero__media video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .gdm.gdm-hero .gdm-hero__shade {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    background:
+      linear-gradient(90deg, rgb(13 13 13 / calc(var(--gdm-overlay) * 0.9)) 0%, rgb(13 13 13 / calc(var(--gdm-overlay) * 0.35)) 65%, transparent 100%),
+      linear-gradient(180deg, rgb(13 13 13 / calc(var(--gdm-overlay) * 0.55)) 0%, rgb(13 13 13 / var(--gdm-overlay)) 70%, var(--gdm-bg) 100%);
+  }
+
+  .gdm.gdm-hero--center .gdm-hero__shade {
+    background: linear-gradient(180deg, rgb(13 13 13 / calc(var(--gdm-overlay) * 0.6)) 0%, rgb(13 13 13 / var(--gdm-overlay)) 70%, var(--gdm-bg) 100%);
+  }
+
+  .gdm.gdm-hero .gdm-hero__glow {
+    left: -18%;
+    bottom: -55%;
+  }
+
+  .gdm.gdm-hero .gdm-hero__glow--2 {
+    left: auto;
+    right: -30%;
+    bottom: auto;
+    top: -60%;
+    opacity: 0.55;
+  }
+
+  .gdm.gdm-hero .gdm-hero__inner {
+    z-index: 1;
+    display: grid;
+    gap: clamp(40px, 6vw, 72px);
+  }
+
+  .gdm.gdm-hero .gdm-hero__top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 40px;
+  }
+
+  .gdm.gdm-hero .gdm-hero__content {
+    display: grid;
+    justify-items: start;
+    gap: 24px;
+    max-width: 900px;
+  }
+
+  .gdm.gdm-hero .gdm-hero__text {
+    max-width: 54ch;
+    color: #d6d1c8;
+  }
+
+  .gdm.gdm-hero .gdm-hero__actions {
+    margin-top: 12px;
+  }
+
+  .gdm.gdm-hero--center .gdm-hero__top {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+  }
+
+  .gdm.gdm-hero--center .gdm-hero__content {
+    justify-items: center;
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  .gdm.gdm-hero--center .gdm-hero__actions {
+    justify-content: center;
+  }
+
+  .gdm.gdm-hero--center .gdm-hero__stamp {
+    position: absolute;
+    top: 0;
+    right: clamp(16px, 4vw, 48px);
+  }
+
+  .gdm.gdm-hero .gdm-hero__bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    width: fit-content;
+    max-width: 100%;
+    padding: 12px;
+    border: 1px solid var(--gdm-border);
+    border-radius: 28px;
+    background: rgba(26, 23, 20, 0.72);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+
+  .gdm.gdm-hero--center .gdm-hero__bar {
+    margin-inline: auto;
+  }
+
+  .gdm.gdm-hero .gdm-hero__rating {
+    padding: 4px 22px 4px 12px;
+    margin-right: 6px;
+    border-right: 1px solid var(--gdm-border);
+  }
+
+  .gdm.gdm-hero .gdm-hero__rating .gdm-rating__value {
+    font-size: 54px;
+  }
+
+  .gdm.gdm-hero .gdm-hero__bar .gdm-stat {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  @media (max-width: 989px) {
+    .gdm.gdm-hero .gdm-hero__stamp {
+      display: none;
+    }
+
+    .gdm.gdm-hero .gdm-hero__top {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 749px) {
+    .gdm.gdm-hero {
+      --gdm-hero-h: 560px;
+    }
+
+    .gdm.gdm-hero--h-full {
+      --gdm-hero-h: 100svh;
+    }
+
+    .gdm.gdm-hero .gdm-hero__actions,
+    .gdm.gdm-hero .gdm-hero__actions .gdm-btn {
+      width: 100%;
+    }
+
+    .gdm.gdm-hero .gdm-hero__bar {
+      width: 100%;
+      border-radius: 22px;
+    }
+
+    .gdm.gdm-hero .gdm-hero__rating {
+      flex: 1 1 100%;
+      justify-content: center;
+      margin: 0 0 4px;
+      padding: 6px 6px 14px;
+      border-right: 0;
+      border-bottom: 1px solid var(--gdm-border);
+    }
+
+    .gdm.gdm-hero .gdm-hero__bar .gdm-stat {
+      flex: 1 1 calc(50% - 5px);
+      min-width: 0;
+      padding: 12px 10px;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "GDM · Bannière d'accueil",
+  "tag": "section",
+  "class": "gdm-shopify-section",
+  "max_blocks": 6,
+  "settings": [
+    {
+      "type": "header",
+      "content": "Fond"
+    },
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Image de fond",
+      "info": "Format paysage conseillé : 2400 × 1350 px."
+    },
+    {
+      "type": "image_picker",
+      "id": "image_mobile",
+      "label": "Image mobile (facultatif)",
+      "info": "Format portrait conseillé : 1100 × 1600 px."
+    },
+    {
+      "type": "video",
+      "id": "video",
+      "label": "Vidéo de fond (facultatif)",
+      "info": "Remplace l'image. Lue en boucle et sans le son."
+    },
+    {
+      "type": "range",
+      "id": "overlay_opacity",
+      "label": "Assombrissement du fond",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 70
+    },
+    {
+      "type": "select",
+      "id": "height",
+      "label": "Hauteur",
+      "default": "large",
+      "options": [
+        { "value": "medium", "label": "Moyenne" },
+        { "value": "large", "label": "Grande" },
+        { "value": "full", "label": "Plein écran" }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "align",
+      "label": "Alignement du texte",
+      "default": "left",
+      "options": [
+        { "value": "left", "label": "À gauche" },
+        { "value": "center", "label": "Centré" }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "Texte"
+    },
+    {
+      "type": "text",
+      "id": "pill",
+      "label": "Badge",
+      "default": "Brasserie artisanale · Depuis 2016"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titre",
+      "default": "Bières artisanales"
+    },
+    {
+      "type": "text",
+      "id": "title_accent",
+      "label": "Titre — partie orange",
+      "default": "de Bruguières"
+    },
+    {
+      "type": "checkbox",
+      "id": "accent_new_line",
+      "label": "Partie orange sur une nouvelle ligne",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "heading_tag",
+      "label": "Niveau du titre (SEO)",
+      "default": "h1",
+      "options": [
+        { "value": "h1", "label": "H1 — titre principal de la page" },
+        { "value": "h2", "label": "H2" }
+      ],
+      "info": "Une seule balise H1 par page."
+    },
+    {
+      "type": "inline_richtext",
+      "id": "text",
+      "label": "Texte",
+      "default": "Brassées à Bruguières, à deux pas de Toulouse. IPA, NEIPA, sours fruitées, brune vieillie en fût : passez au brewpub ou faites-vous livrer."
+    },
+    {
+      "type": "text",
+      "id": "button_label",
+      "label": "Bouton principal",
+      "default": "Découvrir nos bières"
+    },
+    {
+      "type": "url",
+      "id": "button_link",
+      "label": "Lien du bouton principal"
+    },
+    {
+      "type": "text",
+      "id": "button2_label",
+      "label": "Bouton secondaire",
+      "default": "Venir au brewpub"
+    },
+    {
+      "type": "url",
+      "id": "button2_link",
+      "label": "Lien du bouton secondaire"
+    },
+    {
+      "type": "header",
+      "content": "Tampon rotatif"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_stamp",
+      "label": "Afficher le tampon",
+      "default": true,
+      "info": "Visible sur ordinateur."
+    },
+    {
+      "type": "text",
+      "id": "stamp_text",
+      "label": "Texte circulaire",
+      "default": "Brassé à Bruguières • Bière artisanale • Depuis 2016 •"
+    },
+    {
+      "type": "text",
+      "id": "stamp_center",
+      "label": "Texte au centre",
+      "info": "Laisser vide pour afficher un cône de houblon."
+    },
+    {
+      "type": "header",
+      "content": "Couleurs et espacement"
+    },
+    {
+      "type": "color",
+      "id": "color_bg",
+      "label": "Fond",
+      "default": "#0D0D0D"
+    },
+    {
+      "type": "color",
+      "id": "color_accent",
+      "label": "Accent",
+      "default": "#F0921E"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Marge haute",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 120
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Marge basse",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 56
+    }
+  ],
+  "blocks": [
+    {
+      "type": "rating",
+      "name": "Note clients",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "text",
+          "id": "value",
+          "label": "Note",
+          "default": "5,0"
+        },
+        {
+          "type": "range",
+          "id": "stars",
+          "label": "Étoiles pleines",
+          "min": 0,
+          "max": 5,
+          "step": 1,
+          "default": 5
+        },
+        {
+          "type": "text",
+          "id": "label",
+          "label": "Légende",
+          "default": "Avis Google vérifiés"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "name": "Chiffre clé",
+      "settings": [
+        {
+          "type": "text",
+          "id": "value",
+          "label": "Chiffre",
+          "default": "+10"
+        },
+        {
+          "type": "text",
+          "id": "label",
+          "label": "Légende",
+          "default": "Bières à la carte"
+        },
+        {
+          "type": "checkbox",
+          "id": "highlight",
+          "label": "Chiffre en orange",
+          "default": false
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "GDM · Bannière d'accueil",
+      "blocks": [
+        { "type": "rating" },
+        { "type": "stat", "settings": { "value": "2016", "label": "Fondée en" } },
+        { "type": "stat", "settings": { "value": "+10", "label": "Bières maison", "highlight": true } },
+        { "type": "stat", "settings": { "value": "100%", "label": "Brassées sur place" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

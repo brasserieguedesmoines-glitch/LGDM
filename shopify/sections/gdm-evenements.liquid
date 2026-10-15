@@ -1,0 +1,551 @@
+{%- comment -%}
+  Le Gué des Moines — Agenda du brewpub
+  Liste d'événements façon affiche de concert : grande date, étiquette,
+  horaire et lien. Les événements passés disparaissent tout seuls.
+{%- endcomment -%}
+{%- liquid
+  assign s = section.settings
+  assign heading_tag = s.heading_tag | default: 'h2'
+  assign months = 'janv.,févr.,mars,avr.,mai,juin,juil.,août,sept.,oct.,nov.,déc.' | split: ','
+  assign weekdays = 'lun.,mar.,mer.,jeu.,ven.,sam.,dim.' | split: ','
+  assign today_key = 'now' | date: '%Y%m%d' | plus: 0
+  assign shown = 0
+-%}
+{%- render 'gdm-assets' -%}
+
+<gdm-section
+  id="gdm-{{ section.id }}"
+  class="gdm gdm-events"
+  style="--gdm-bg: {{ s.color_bg }}; --gdm-accent: {{ s.color_accent }}; --gdm-pt: {{ s.padding_top }}px; --gdm-pb: {{ s.padding_bottom }}px;"
+>
+  <div class="gdm-container">
+    <div class="gdm-head gdm-head--split">
+      {%- if s.pill != blank -%}
+        <p class="gdm-pill" data-gdm-reveal>{{ s.pill | escape }}</p>
+      {%- endif -%}
+      {%- if s.title != blank or s.title_accent != blank -%}
+        <{{ heading_tag }} class="gdm-title" data-gdm-reveal style="--gdm-i: 1;">
+          {{- s.title | escape }}{% if s.title_accent != blank %} <em>{{ s.title_accent | escape }}</em>{% endif -%}
+        </{{ heading_tag }}>
+      {%- endif -%}
+      {%- if s.text != blank -%}
+        <p class="gdm-lead" data-gdm-reveal style="--gdm-i: 2;">{{ s.text }}</p>
+      {%- endif -%}
+      {%- if s.link_label != blank and s.link_url != blank -%}
+        <div class="gdm-head__aside" data-gdm-reveal style="--gdm-i: 2;">
+          <a class="gdm-link" href="{{ s.link_url }}">
+            {{- s.link_label | escape -}}
+            {%- render 'gdm-icon', name: 'arrow-up-right' -%}
+          </a>
+        </div>
+      {%- endif -%}
+    </div>
+
+    <gdm-events>
+      <ol class="gdm-events__list">
+        {%- for block in section.blocks -%}
+          {%- liquid
+            assign b = block.settings
+            assign has_date = false
+            if b.date != blank
+              assign has_date = true
+              assign event_key = b.date | date: '%Y%m%d' | plus: 0
+              assign month_index = b.date | date: '%m' | plus: 0 | minus: 1
+              assign weekday_index = b.date | date: '%u' | plus: 0 | minus: 1
+            endif
+            assign is_past = false
+            if has_date and event_key < today_key
+              assign is_past = true
+            endif
+          -%}
+          {%- if is_past and request.design_mode == false -%}{%- continue -%}{%- endif -%}
+          {%- assign shown = shown | plus: 1 -%}
+          <li
+            class="gdm-event gdm-card{% if is_past %} is-past{% endif %}"
+            data-event-date="{% if has_date %}{{ b.date | date: '%Y-%m-%d' }}{% endif %}"
+            data-gdm-reveal
+            style="--gdm-i: {{ forloop.index0 | modulo: 4 }};"
+            {{ block.shopify_attributes }}
+          >
+            <div class="gdm-event__date"{% if has_date %} aria-label="{{ weekdays[weekday_index] }} {{ b.date | date: '%-d' }} {{ months[month_index] }} {{ b.date | date: '%Y' }}"{% endif %}>
+              {%- if has_date -%}
+                <span class="gdm-event__weekday" aria-hidden="true">{{ weekdays[weekday_index] }}</span>
+                <span class="gdm-event__day" aria-hidden="true">{{ b.date | date: '%d' }}</span>
+                <span class="gdm-event__month" aria-hidden="true">{{ months[month_index] }}</span>
+              {%- else -%}
+                <span class="gdm-event__day" aria-hidden="true">?</span>
+                <span class="gdm-event__month">{{ s.label_tbc | escape }}</span>
+              {%- endif -%}
+            </div>
+
+            <div class="gdm-event__body">
+              <div class="gdm-event__meta">
+                {%- if b.tag != blank -%}
+                  <span class="gdm-event__tag">{% render 'gdm-icon', name: b.icon, icon_size: 16 %}{{ b.tag | escape }}</span>
+                {%- endif -%}
+                {%- if b.time != blank -%}
+                  <span class="gdm-event__info">{% render 'gdm-icon', name: 'clock', icon_size: 16 %}{{ b.time | escape }}</span>
+                {%- endif -%}
+                {%- if b.price != blank -%}
+                  <span class="gdm-event__info">{{ b.price | escape }}</span>
+                {%- endif -%}
+              </div>
+              <h3 class="gdm-event__title">
+                {%- if b.link != blank -%}
+                  <a href="{{ b.link }}">{{ b.title | escape }}</a>
+                {%- else -%}
+                  {{ b.title | escape }}
+                {%- endif -%}
+              </h3>
+              {%- if b.text != blank -%}
+                <p class="gdm-event__text">{{ b.text }}</p>
+              {%- endif -%}
+            </div>
+
+            {%- if b.image != blank -%}
+              <div class="gdm-event__media">
+                {{ b.image | image_url: width: 480 | image_tag: loading: 'lazy', widths: '240, 360, 480', sizes: '220px', alt: b.title }}
+              </div>
+            {%- endif -%}
+
+            {%- if b.link != blank -%}
+              <span class="gdm-event__go" aria-hidden="true">{% render 'gdm-icon', name: 'arrow-up-right' %}</span>
+            {%- endif -%}
+          </li>
+        {%- endfor -%}
+      </ol>
+
+      <div class="gdm-events__empty gdm-card" data-events-empty{% if shown > 0 %} hidden{% endif %}>
+        {%- render 'gdm-icon', name: 'calendar', icon_size: 32 -%}
+        <p>{{ s.empty_text }}</p>
+        {%- if s.empty_link_label != blank and s.empty_link != blank -%}
+          <a class="gdm-btn gdm-btn--ghost" href="{{ s.empty_link }}" target="_blank" rel="noopener">
+            {{- s.empty_link_label | escape -}}
+            {%- render 'gdm-icon', name: 'arrow-up-right' -%}
+          </a>
+        {%- endif -%}
+      </div>
+    </gdm-events>
+  </div>
+</gdm-section>
+
+{% stylesheet %}
+  .gdm.gdm-events .gdm-events__list {
+    display: grid;
+    gap: 14px;
+  }
+
+  .gdm.gdm-events .gdm-event {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 20px;
+    padding: 16px;
+  }
+
+  @media (min-width: 750px) {
+    .gdm.gdm-events .gdm-event {
+      grid-template-columns: 112px minmax(0, 1fr) auto auto;
+      gap: 32px;
+      padding: 18px 28px 18px 18px;
+    }
+  }
+
+  .gdm.gdm-events .gdm-event:hover {
+    background: var(--gdm-surface-2);
+  }
+
+  .gdm.gdm-events .gdm-event.is-past {
+    opacity: 0.45;
+  }
+
+  .gdm.gdm-events .gdm-event__date {
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    width: 88px;
+    aspect-ratio: 1;
+    border: 1px solid var(--gdm-line);
+    border-radius: 18px;
+    background: var(--gdm-accent-soft);
+    text-align: center;
+    transition: background-color 0.3s var(--gdm-ease), border-color 0.3s var(--gdm-ease);
+  }
+
+  @media (min-width: 750px) {
+    .gdm.gdm-events .gdm-event__date {
+      width: 112px;
+    }
+  }
+
+  .gdm.gdm-events .gdm-event:hover .gdm-event__date {
+    border-color: var(--gdm-accent);
+    background: var(--gdm-accent);
+  }
+
+  .gdm.gdm-events .gdm-event__weekday,
+  .gdm.gdm-events .gdm-event__month {
+    color: var(--gdm-muted);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    transition: color 0.3s var(--gdm-ease);
+  }
+
+  .gdm.gdm-events .gdm-event__day {
+    color: var(--gdm-accent);
+    font-family: var(--gdm-font-display);
+    font-size: clamp(36px, 28px + 1.6vw, 48px);
+    line-height: 1;
+    transition: color 0.3s var(--gdm-ease);
+  }
+
+  .gdm.gdm-events .gdm-event:hover .gdm-event__day,
+  .gdm.gdm-events .gdm-event:hover .gdm-event__weekday,
+  .gdm.gdm-events .gdm-event:hover .gdm-event__month {
+    color: var(--gdm-on-accent);
+  }
+
+  .gdm.gdm-events .gdm-event__body {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .gdm.gdm-events .gdm-event__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    align-items: center;
+  }
+
+  .gdm.gdm-events .gdm-event__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border: 1px solid var(--gdm-line);
+    border-radius: 999px;
+    color: var(--gdm-accent);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .gdm.gdm-events .gdm-event__info {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--gdm-muted);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .gdm.gdm-events .gdm-event__title {
+    font-family: var(--gdm-font-display);
+    font-size: clamp(24px, 18px + 1.4vw, 36px);
+    font-weight: 400;
+    line-height: 1;
+    text-transform: uppercase;
+    color: var(--gdm-text);
+  }
+
+  .gdm.gdm-events .gdm-event__title a {
+    color: inherit;
+  }
+
+  .gdm.gdm-events .gdm-event__title a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  .gdm.gdm-events .gdm-event__text {
+    color: var(--gdm-muted);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  .gdm.gdm-events .gdm-event__media {
+    display: none;
+    width: 200px;
+    aspect-ratio: 16 / 10;
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  @media (min-width: 990px) {
+    .gdm.gdm-events .gdm-event__media {
+      display: block;
+    }
+  }
+
+  .gdm.gdm-events .gdm-event__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s var(--gdm-ease);
+  }
+
+  .gdm.gdm-events .gdm-event:hover .gdm-event__media img {
+    transform: scale(1.06);
+  }
+
+  .gdm.gdm-events .gdm-event__go {
+    display: none;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border: 1px solid var(--gdm-border-strong);
+    border-radius: 50%;
+    color: var(--gdm-text);
+    transition: border-color 0.3s var(--gdm-ease), color 0.3s var(--gdm-ease), transform 0.3s var(--gdm-ease);
+  }
+
+  @media (min-width: 750px) {
+    .gdm.gdm-events .gdm-event__go {
+      display: grid;
+    }
+  }
+
+  .gdm.gdm-events .gdm-event:hover .gdm-event__go {
+    border-color: var(--gdm-accent);
+    color: var(--gdm-accent);
+    transform: rotate(45deg);
+  }
+
+  .gdm.gdm-events .gdm-events__empty {
+    display: grid;
+    justify-items: center;
+    gap: 16px;
+    padding: 48px 24px;
+    color: var(--gdm-muted);
+    text-align: center;
+  }
+
+  .gdm.gdm-events .gdm-events__empty[hidden] {
+    display: none;
+  }
+
+  .gdm.gdm-events .gdm-events__empty svg {
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-events .gdm-events__list:not(:has(> li:not([hidden]))) {
+    display: none;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "GDM · Agenda",
+  "tag": "section",
+  "class": "gdm-shopify-section",
+  "max_blocks": 20,
+  "settings": [
+    {
+      "type": "text",
+      "id": "pill",
+      "label": "Badge",
+      "default": "Au brewpub"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titre",
+      "default": "Les prochains"
+    },
+    {
+      "type": "text",
+      "id": "title_accent",
+      "label": "Titre — partie orange",
+      "default": "rendez-vous"
+    },
+    {
+      "type": "select",
+      "id": "heading_tag",
+      "label": "Niveau du titre (SEO)",
+      "default": "h2",
+      "options": [
+        { "value": "h1", "label": "H1" },
+        { "value": "h2", "label": "H2" }
+      ]
+    },
+    {
+      "type": "inline_richtext",
+      "id": "text",
+      "label": "Texte",
+      "default": "Concerts, quiz, dégustations et sorties de brassin : on vous attend !"
+    },
+    {
+      "type": "text",
+      "id": "link_label",
+      "label": "Texte du lien",
+      "default": "Suivez-nous sur Instagram"
+    },
+    {
+      "type": "url",
+      "id": "link_url",
+      "label": "Lien"
+    },
+    {
+      "type": "paragraph",
+      "content": "Ajoutez un bloc par événement, dans l'ordre chronologique. Les événements passés sont masqués automatiquement sur la boutique (ils restent visibles, grisés, dans l'éditeur)."
+    },
+    {
+      "type": "text",
+      "id": "label_tbc",
+      "label": "Texte « date à venir »",
+      "default": "À venir"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "empty_text",
+      "label": "Message quand aucun événement n'est prévu",
+      "default": "Pas d'événement prévu pour le moment… mais le bar, lui, est bien ouvert !"
+    },
+    {
+      "type": "text",
+      "id": "empty_link_label",
+      "label": "Bouton du message",
+      "default": "Voir les actus"
+    },
+    {
+      "type": "url",
+      "id": "empty_link",
+      "label": "Lien du bouton"
+    },
+    {
+      "type": "header",
+      "content": "Couleurs et espacement"
+    },
+    {
+      "type": "color",
+      "id": "color_bg",
+      "label": "Fond",
+      "default": "#0D0D0D"
+    },
+    {
+      "type": "color",
+      "id": "color_accent",
+      "label": "Accent",
+      "default": "#F0921E"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Marge haute",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Marge basse",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    }
+  ],
+  "blocks": [
+    {
+      "type": "event",
+      "name": "Événement",
+      "settings": [
+        {
+          "type": "text",
+          "id": "date",
+          "label": "Date (AAAA-MM-JJ)",
+          "placeholder": "2026-11-14",
+          "info": "Exemple : 2026-11-14. Laisser vide pour « À venir »."
+        },
+        {
+          "type": "text",
+          "id": "time",
+          "label": "Horaire",
+          "default": "19h30"
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Titre",
+          "default": "Soirée concert"
+        },
+        {
+          "type": "inline_richtext",
+          "id": "text",
+          "label": "Description"
+        },
+        {
+          "type": "text",
+          "id": "tag",
+          "label": "Étiquette",
+          "default": "Concert"
+        },
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "Icône de l'étiquette",
+          "default": "music",
+          "options": [
+            { "value": "music", "label": "Musique" },
+            { "value": "beer", "label": "Chope" },
+            { "value": "hop", "label": "Houblon" },
+            { "value": "barrel", "label": "Fût" },
+            { "value": "users", "label": "Groupe" },
+            { "value": "award", "label": "Médaille" },
+            { "value": "heart", "label": "Cœur" },
+            { "value": "sparkle", "label": "Éclat" },
+            { "value": "calendar", "label": "Calendrier" }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "price",
+          "label": "Prix / mention (facultatif)",
+          "info": "Par exemple « Entrée libre »."
+        },
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Image (facultatif)"
+        },
+        {
+          "type": "url",
+          "id": "link",
+          "label": "Lien (facultatif)",
+          "info": "Billetterie, événement Facebook…"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "GDM · Agenda",
+      "blocks": [
+        {
+          "type": "event",
+          "settings": { "date": "2026-11-14", "time": "20h00", "title": "Soirée concert", "text": "Exemple d'événement : remplacez la date, le titre et la description.", "tag": "Concert", "icon": "music", "price": "Entrée libre" }
+        },
+        {
+          "type": "event",
+          "settings": { "date": "2026-11-27", "time": "19h00", "title": "Quiz de la brasserie", "text": "Exemple d'événement : remplacez la date, le titre et la description.", "tag": "Quiz", "icon": "users" }
+        },
+        {
+          "type": "event",
+          "settings": { "date": "2026-12-12", "time": "18h00", "title": "Lancement de la bière de Noël", "text": "Exemple d'événement : remplacez la date, le titre et la description.", "tag": "Sortie de brassin", "icon": "sparkle" }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}
