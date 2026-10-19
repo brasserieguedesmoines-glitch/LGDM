@@ -105,6 +105,18 @@ gdm-events {
   letter-spacing: inherit;
 }
 
+/* Le thème Kalles impose sa propre police en !important sur button, em, q et
+   blockquote : on rétablit celle des sections GDM, uniquement à l'intérieur de .gdm. */
+.gdm button {
+  font-family: var(--gdm-font-body) !important;
+}
+
+.gdm em,
+.gdm i,
+.gdm q {
+  font-family: inherit !important;
+}
+
 .gdm :where(a, button, input, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--gdm-accent);
   outline-offset: 3px;

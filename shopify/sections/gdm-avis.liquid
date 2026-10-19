@@ -73,7 +73,7 @@
               {%- if b.title != blank -%}
                 <p class="gdm-review__title">{{ b.title | escape }}</p>
               {%- endif -%}
-              <blockquote class="gdm-review__text">{{ b.text }}</blockquote>
+              <div class="gdm-review__text">{{ b.text }}</div>
               <figcaption class="gdm-review__author">
                 <span class="gdm-review__avatar" aria-hidden="true">
                   {%- if b.avatar != blank -%}
