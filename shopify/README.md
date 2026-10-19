@@ -76,4 +76,6 @@ Les métachamps existants `custom.degre` et `custom.ibu` sont déjà utilisés. 
 
 ## Aperçu
 
+`apercu-interactif.html` : ouvrez-le dans un navigateur pour essayer les sections (carrousel, 33/75 cL, compte à rebours, FAQ…). L'ajout au panier y est simulé.
+
 `apercu-ordinateur.jpg` et `apercu-mobile.jpg` montrent toutes les sections empilées, avec vos vraies bières et vos photos.
