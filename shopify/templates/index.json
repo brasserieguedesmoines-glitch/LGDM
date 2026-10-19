@@ -110,7 +110,8 @@
         "pd_tb": "",
         "mg_mb": ",,30px,",
         "pd_mb": ""
-      }
+      },
+      "disabled": true
     },
     "custom_liquid_exzC47": {
       "type": "custom-liquid",
