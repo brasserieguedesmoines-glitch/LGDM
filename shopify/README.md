@@ -74,6 +74,12 @@ Les métachamps existants `custom.degre` et `custom.ibu` sont déjà utilisés. 
 - **Personnalisation** : chaque section a ses réglages de couleur de fond, de couleur d'accent et de marges. Tout le CSS est préfixé `gdm-` : aucun risque de conflit avec le thème.
 - Validé avec **Shopify Theme Check** : 0 erreur, 0 avertissement.
 
+## Page d'accueil installée sur la copie du thème
+
+`templates/index.json` est la page d'accueil installée sur le thème « LGDM V2 - nouvelles sections GDM » (copie non publiée). Les nouvelles sections y sont remplies avec les vrais contenus du site : avis, horaires, FAQ, téléphone. Vos sections existantes sont conservées : univers, Untappd, location de tireuse, blog, réseaux sociaux, newsletter.
+
+Les 4 anciennes sections remplacées (diaporama, collection, avis, FAQ) y sont **masquées, pas supprimées** : vous pouvez les réafficher en un clic dans l'éditeur. Shopify limite une page à 25 sections, alors les sections déjà masquées sur le site en ligne ont été retirées de la copie. Elles restent intactes dans votre thème en ligne. Chiffres clés et Agenda peuvent être ajoutés via « Ajouter une section ».
+
 ## Aperçu
 
 `apercu-interactif.html` : ouvrez-le dans un navigateur pour essayer les sections (carrousel, 33/75 cL, compte à rebours, FAQ…). L'ajout au panier y est simulé.
