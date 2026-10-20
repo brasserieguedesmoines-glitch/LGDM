@@ -6,7 +6,8 @@
 
   Icônes : arrow-up-right, arrow-right, chevron-left, chevron-right, plus, check,
   star, quote, hop, wheat, beer, barrel, droplet, leaf, award, heart, users,
-  map-pin, clock, phone, mail, calendar, music, truck, bag, sparkle, dot
+  map-pin, clock, phone, mail, calendar, music, truck, bag, sparkle, lock, shield,
+  store, send, gift, instagram, book, percent, dot
 {%- endcomment -%}
 {%- assign gdm_icon_size = icon_size | default: 24 -%}
 <svg class="gdm-icon gdm-icon--{{ name }}" width="{{ gdm_icon_size }}" height="{{ gdm_icon_size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -91,6 +92,36 @@
       <path d="M9 10V6.5a3 3 0 0 1 6 0V10"/>
     {%- when 'sparkle' -%}
       <path fill="currentColor" stroke="none" d="M12 2c.5 4.6 2.9 7 7.5 7.5v1C14.9 11 12.5 13.4 12 18h-1c-.5-4.6-2.9-7-7.5-7.5v-1C8.1 9 10.5 6.6 11 2h1z" transform="translate(.5 2)"/>
+    {%- when 'lock' -%}
+      <rect x="4.5" y="10.5" width="15" height="10.5" rx="2.5"/>
+      <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>
+      <circle cx="12" cy="15.75" r="1.4" fill="currentColor" stroke="none"/>
+    {%- when 'shield' -%}
+      <path d="M12 2.8 4.5 5.8v5.4c0 4.7 3.1 8.6 7.5 10 4.4-1.4 7.5-5.3 7.5-10V5.8L12 2.8z"/>
+      <path d="m8.8 12 2.2 2.2 4.2-4.4"/>
+    {%- when 'store' -%}
+      <path d="M3.5 9.5 5 4h14l1.5 5.5"/>
+      <path d="M3.5 9.5a2.8 2.8 0 0 0 5.6 0 2.8 2.8 0 0 0 5.8 0 2.8 2.8 0 0 0 5.6 0"/>
+      <path d="M5 11.8V20h14v-8.2"/>
+      <path d="M10 20v-5h4v5"/>
+    {%- when 'send' -%}
+      <path d="M21 3 10.5 13.5"/>
+      <path d="m21 3-6.5 18-4-7.5L3 9.5 21 3z"/>
+    {%- when 'gift' -%}
+      <rect x="3.5" y="8" width="17" height="4" rx="1"/>
+      <path d="M5 12v8.5h14V12M12 8v12.5"/>
+      <path d="M12 8C10.5 5 7.5 4.2 7 5.8 6.4 7.8 10 8 12 8zm0 0c1.5-3 4.5-3.8 5-2.2.6 2-3 2.2-5 2.2z"/>
+    {%- when 'instagram' -%}
+      <rect x="3.5" y="3.5" width="17" height="17" rx="5"/>
+      <circle cx="12" cy="12" r="4"/>
+      <circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none"/>
+    {%- when 'book' -%}
+      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/>
+      <path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5M8 7.5h8M8 11h6"/>
+    {%- when 'percent' -%}
+      <path d="M19 5 5 19"/>
+      <circle cx="7" cy="7" r="2.5"/>
+      <circle cx="17" cy="17" r="2.5"/>
     {%- when 'dot' -%}
       <circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/>
     {%- else -%}
