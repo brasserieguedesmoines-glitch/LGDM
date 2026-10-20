@@ -1,0 +1,611 @@
+{%- comment -%}
+  Le Gué des Moines — Articles : carrousel de cartes d'articles (photo, étiquette,
+  titre, lien « Lire ») avec lien « Tous », flèches et barre de progression.
+  Cartes saisies à la main (blocs « Article ») ou, s'il n'y a aucun bloc,
+  derniers articles du blog choisi, avec leur image.
+{%- endcomment -%}
+{%- liquid
+  assign s = section.settings
+  assign heading_tag = s.heading_tag | default: 'h2'
+  assign card_tag = 'h3'
+  if heading_tag == 'h1'
+    assign card_tag = 'h2'
+  endif
+
+  assign article_blocks = section.blocks | where: 'type', 'article'
+  assign use_blocks = false
+  assign has_items = false
+  if article_blocks.size > 0
+    assign use_blocks = true
+    assign has_items = true
+    assign items = article_blocks
+    assign item_limit = 50
+  elsif s.blog != blank and s.blog.articles_count > 0
+    assign has_items = true
+    assign items = s.blog.articles
+    assign item_limit = s.articles_count
+  endif
+
+  assign all_link = s.all_link | default: s.blog.url
+  assign desktop_vw = 96 | divided_by: s.columns
+  assign img_sizes = '(min-width: 990px) ' | append: desktop_vw | append: 'vw, (min-width: 750px) 46vw, 82vw'
+-%}
+{%- render 'gdm-assets' -%}
+
+<gdm-section
+  id="gdm-{{ section.id }}"
+  class="gdm gdm-articles gdm-grain"
+  style="--gdm-bg: {{ s.color_bg }}; --gdm-accent: {{ s.color_accent }}; --gdm-cols: {{ s.columns }}; --gdm-pt: {{ s.padding_top }}px; --gdm-pb: {{ s.padding_bottom }}px;"
+>
+  <div class="gdm-container">
+    <gdm-carousel class="gdm-articles__layout">
+      <div class="gdm-head gdm-articles__head">
+        {%- if s.pill != blank -%}
+          <p class="gdm-pill" data-gdm-reveal>{{ s.pill | escape }}</p>
+        {%- endif -%}
+        {%- if s.title != blank or s.title_accent != blank -%}
+          <{{ heading_tag }} class="gdm-title" data-gdm-reveal style="--gdm-i: 1;">
+            {{- s.title | escape }}{% if s.title_accent != blank %} <em>{{ s.title_accent | escape }}</em>{% endif -%}
+          </{{ heading_tag }}>
+        {%- endif -%}
+        {%- if s.text != blank -%}
+          <p class="gdm-lead" data-gdm-reveal style="--gdm-i: 2;">{{ s.text }}</p>
+        {%- endif -%}
+      </div>
+
+      {%- if has_items or s.all_label != blank and all_link != blank -%}
+        <div class="gdm-articles__aside" data-gdm-reveal style="--gdm-i: 2;">
+          {%- if s.all_label != blank and all_link != blank -%}
+            <a class="gdm-link gdm-articles__all" href="{{ all_link }}">
+              {{- s.all_label | escape -}}
+              {%- render 'gdm-icon', name: 'arrow-right' -%}
+            </a>
+          {%- endif -%}
+          {%- if has_items -%}
+            <div class="gdm-carousel__nav gdm-articles__nav" data-carousel-ui>
+              <button type="button" class="gdm-icon-btn" data-prev aria-label="{{ s.label_prev | escape }}">{% render 'gdm-icon', name: 'chevron-left' %}</button>
+              <button type="button" class="gdm-icon-btn" data-next aria-label="{{ s.label_next | escape }}">{% render 'gdm-icon', name: 'chevron-right' %}</button>
+            </div>
+          {%- endif -%}
+        </div>
+      {%- endif -%}
+
+      {%- if has_items -%}
+        <div class="gdm-carousel__track gdm-articles__track" data-track tabindex="0" role="region" aria-label="{{ s.label_region | escape }}">
+          {%- for item in items limit: item_limit -%}
+            {%- liquid
+              if use_blocks
+                assign b = item.settings
+                assign c_image = b.image
+                assign c_alt = b.image_alt | default: b.image.alt | default: b.title
+                assign c_tag = b.tag
+                assign c_title = b.title
+                assign c_url = b.link
+                assign c_more = b.link_label
+                assign c_attrs = item.shopify_attributes
+              else
+                assign c_image = item.image
+                assign c_alt = item.image.alt | default: item.title
+                assign c_tag = item.tags.first
+                assign c_title = item.title
+                assign c_url = item.url
+                assign c_more = s.auto_link_label
+                assign c_attrs = ''
+              endif
+              assign link_on_more = false
+              if c_title == blank and c_url != blank
+                assign link_on_more = true
+                assign c_more = c_more | default: s.auto_link_label
+              endif
+            -%}
+            <article class="gdm-articles__card gdm-card{% if c_url != blank %} is-linked{% endif %}" data-gdm-reveal style="--gdm-i: {{ forloop.index0 | modulo: 4 }};" {{ c_attrs }}>
+              <div class="gdm-articles__media">
+                {%- if c_image != blank -%}
+                  {{ c_image | image_url: width: 900 | image_tag: loading: 'lazy', widths: '360, 540, 720, 900', sizes: img_sizes, alt: c_alt, class: 'gdm-articles__img' }}
+                {%- else -%}
+                  <span class="gdm-articles__noimg" aria-hidden="true">{% render 'gdm-icon', name: 'book', icon_size: 36 %}</span>
+                {%- endif -%}
+                {%- if c_tag != blank -%}
+                  <p class="gdm-articles__tag">{{ c_tag | escape }}</p>
+                {%- endif -%}
+              </div>
+
+              <div class="gdm-articles__body">
+                {%- if c_title != blank -%}
+                  <{{ card_tag }} class="gdm-articles__title">
+                    {%- if c_url != blank -%}
+                      <a class="gdm-articles__link" href="{{ c_url }}">{{ c_title | escape }}</a>
+                    {%- else -%}
+                      {{ c_title | escape }}
+                    {%- endif -%}
+                  </{{ card_tag }}>
+                {%- endif -%}
+                {%- if c_url != blank and c_more != blank -%}
+                  {%- if link_on_more -%}
+                    <a class="gdm-articles__more gdm-articles__link" href="{{ c_url }}">
+                      {{- c_more | escape -}}
+                      {%- render 'gdm-icon', name: 'arrow-right' -%}
+                    </a>
+                  {%- else -%}
+                    <span class="gdm-articles__more" aria-hidden="true">
+                      {{- c_more | escape -}}
+                      {%- render 'gdm-icon', name: 'arrow-right' -%}
+                    </span>
+                  {%- endif -%}
+                {%- endif -%}
+              </div>
+            </article>
+          {%- endfor -%}
+        </div>
+
+        <div class="gdm-carousel__progress gdm-articles__progress" data-progress data-carousel-ui aria-hidden="true"><span></span></div>
+      {%- elsif request.design_mode -%}
+        <p class="gdm-articles__empty">Ajoutez des blocs « Article », ou choisissez un blog dans « Mode automatique » pour afficher ses derniers articles.</p>
+      {%- endif -%}
+    </gdm-carousel>
+  </div>
+</gdm-section>
+
+{% stylesheet %}
+  .gdm.gdm-articles .gdm-articles__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'head'
+      'aside'
+      'track'
+      'progress';
+  }
+
+  .gdm.gdm-articles .gdm-articles__head {
+    grid-area: head;
+    margin-bottom: 20px;
+  }
+
+  .gdm.gdm-articles .gdm-articles__aside {
+    grid-area: aside;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 20px;
+    margin-bottom: 24px;
+  }
+
+  .gdm.gdm-articles .gdm-articles__track {
+    grid-area: track;
+    align-items: stretch;
+  }
+
+  .gdm.gdm-articles .gdm-articles__progress {
+    grid-area: progress;
+  }
+
+  .gdm.gdm-articles .gdm-articles__empty {
+    grid-area: track;
+    padding: 28px;
+    border: 1px dashed var(--gdm-line);
+    border-radius: var(--gdm-radius);
+    color: var(--gdm-muted);
+    font-size: 15px;
+    text-align: center;
+  }
+
+  @media (min-width: 750px) {
+    .gdm.gdm-articles .gdm-articles__layout {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        'head aside'
+        'track track'
+        'progress progress';
+      column-gap: 32px;
+      align-items: end;
+    }
+
+    .gdm.gdm-articles .gdm-articles__head,
+    .gdm.gdm-articles .gdm-articles__aside {
+      margin-bottom: clamp(28px, 4vw, 48px);
+    }
+
+    .gdm.gdm-articles .gdm-articles__aside {
+      justify-content: flex-end;
+    }
+  }
+
+  /* ---------- Lien « Tous » ---------- */
+  .gdm.gdm-articles .gdm-articles__all {
+    color: var(--gdm-text);
+  }
+
+  .gdm.gdm-articles .gdm-articles__all:hover {
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-articles .gdm-articles__all:hover svg {
+    transform: translateX(3px);
+  }
+
+  /* ---------- Carte ---------- */
+  .gdm.gdm-articles .gdm-articles__card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .gdm.gdm-articles .gdm-articles__card:hover {
+    background: var(--gdm-surface-2);
+  }
+
+  .gdm.gdm-articles .gdm-articles__card.is-linked:hover {
+    transform: translateY(-3px);
+  }
+
+  .gdm.gdm-articles .gdm-articles__media {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: var(--gdm-surface-2);
+  }
+
+  .gdm.gdm-articles .gdm-articles__media::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(13, 13, 13, 0.35) 0%, rgba(13, 13, 13, 0) 34%, rgba(13, 13, 13, 0) 70%, rgba(13, 13, 13, 0.35) 100%);
+    pointer-events: none;
+  }
+
+  .gdm.gdm-articles .gdm-articles__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.92) saturate(0.95);
+    transition: transform 1.2s var(--gdm-ease), filter 0.6s var(--gdm-ease);
+  }
+
+  .gdm.gdm-articles .gdm-articles__card:hover .gdm-articles__img {
+    transform: scale(1.05);
+    filter: brightness(1) saturate(1.05);
+  }
+
+  .gdm.gdm-articles .gdm-articles__noimg {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(70% 90% at 50% 50%, var(--gdm-accent-soft), transparent), var(--gdm-surface-2);
+    color: var(--gdm-line);
+  }
+
+  .gdm.gdm-articles .gdm-articles__tag {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    max-width: calc(100% - 28px);
+    padding: 7px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    background: rgba(13, 13, 13, 0.7);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    color: var(--gdm-accent);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .gdm.gdm-articles .gdm-articles__tag::before {
+    content: '';
+    flex: none;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .gdm.gdm-articles .gdm-articles__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 18px;
+    padding: 20px 22px 22px;
+  }
+
+  .gdm.gdm-articles .gdm-articles__title {
+    flex: 1;
+    margin: 0;
+    color: var(--gdm-text);
+    font-family: var(--gdm-font-display);
+    font-size: clamp(22px, 18px + 0.5vw, 26px);
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+
+  .gdm.gdm-articles .gdm-articles__link,
+  .gdm.gdm-articles .gdm-articles__link:hover {
+    color: var(--gdm-text);
+    text-decoration: none;
+  }
+
+  /* Toute la carte est cliquable : le lien du titre s'étend sur la carte. */
+  .gdm.gdm-articles .gdm-articles__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: inherit;
+  }
+
+  .gdm.gdm-articles a.gdm-articles__link:focus-visible {
+    outline: none;
+  }
+
+  .gdm.gdm-articles a.gdm-articles__link:focus-visible::after {
+    box-shadow: inset 0 0 0 2px var(--gdm-accent);
+  }
+
+  .gdm.gdm-articles .gdm-articles__more {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid var(--gdm-border);
+    color: var(--gdm-muted);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: color 0.2s var(--gdm-ease);
+  }
+
+  .gdm.gdm-articles .gdm-articles__more svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    color: var(--gdm-accent);
+    transition: transform 0.3s var(--gdm-ease);
+  }
+
+  .gdm.gdm-articles .gdm-articles__card:hover .gdm-articles__more {
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-articles .gdm-articles__card:hover .gdm-articles__more svg {
+    transform: translateX(4px);
+  }
+
+  @media (max-width: 749px) {
+    .gdm.gdm-articles .gdm-articles__body {
+      padding: 18px 18px 20px;
+    }
+
+    .gdm.gdm-articles .gdm-articles__tag {
+      top: 12px;
+      left: 12px;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "GDM · Articles",
+  "tag": "section",
+  "class": "gdm-shopify-section",
+  "max_blocks": 12,
+  "settings": [
+    {
+      "type": "header",
+      "content": "En-tête"
+    },
+    {
+      "type": "text",
+      "id": "pill",
+      "label": "Badge",
+      "default": "Le blog"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titre",
+      "default": "À lire &"
+    },
+    {
+      "type": "text",
+      "id": "title_accent",
+      "label": "Titre — partie orange",
+      "default": "explorer"
+    },
+    {
+      "type": "select",
+      "id": "heading_tag",
+      "label": "Niveau du titre (SEO)",
+      "default": "h2",
+      "options": [
+        { "value": "h1", "label": "H1" },
+        { "value": "h2", "label": "H2" }
+      ]
+    },
+    {
+      "type": "inline_richtext",
+      "id": "text",
+      "label": "Texte d'introduction (facultatif)"
+    },
+    {
+      "type": "text",
+      "id": "all_label",
+      "label": "Lien « tout voir » — texte",
+      "default": "Tous"
+    },
+    {
+      "type": "url",
+      "id": "all_link",
+      "label": "Lien « tout voir » — destination",
+      "info": "Par exemple la page du blog. En mode automatique, le blog choisi est utilisé si ce champ est vide."
+    },
+    {
+      "type": "header",
+      "content": "Carrousel"
+    },
+    {
+      "type": "range",
+      "id": "columns",
+      "label": "Articles visibles sur ordinateur",
+      "min": 2,
+      "max": 5,
+      "step": 1,
+      "default": 4,
+      "info": "Au-delà, les articles défilent avec les flèches. Sur mobile, ils défilent au doigt."
+    },
+    {
+      "type": "text",
+      "id": "label_region",
+      "label": "Nom du carrousel (accessibilité)",
+      "default": "Articles du blog"
+    },
+    {
+      "type": "text",
+      "id": "label_prev",
+      "label": "Flèche précédente (accessibilité)",
+      "default": "Précédent"
+    },
+    {
+      "type": "text",
+      "id": "label_next",
+      "label": "Flèche suivante (accessibilité)",
+      "default": "Suivant"
+    },
+    {
+      "type": "header",
+      "content": "Mode automatique"
+    },
+    {
+      "type": "paragraph",
+      "content": "Utilisé seulement s'il n'y a aucun bloc « Article » : la section affiche alors les derniers articles du blog choisi, avec leur image et leur première étiquette (tag)."
+    },
+    {
+      "type": "blog",
+      "id": "blog",
+      "label": "Blog"
+    },
+    {
+      "type": "range",
+      "id": "articles_count",
+      "label": "Nombre d'articles",
+      "min": 2,
+      "max": 12,
+      "step": 1,
+      "default": 6
+    },
+    {
+      "type": "text",
+      "id": "auto_link_label",
+      "label": "Texte du lien des cartes",
+      "default": "Lire"
+    },
+    {
+      "type": "header",
+      "content": "Couleurs et espacement"
+    },
+    {
+      "type": "color",
+      "id": "color_bg",
+      "label": "Fond",
+      "default": "#0D0D0D"
+    },
+    {
+      "type": "color",
+      "id": "color_accent",
+      "label": "Accent",
+      "default": "#F0921E"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Marge haute",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Marge basse",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    }
+  ],
+  "blocks": [
+    {
+      "type": "article",
+      "name": "Article",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Photo",
+          "info": "Format paysage conseillé (16:10), 900 × 560 px minimum."
+        },
+        {
+          "type": "text",
+          "id": "image_alt",
+          "label": "Description de la photo (SEO)",
+          "info": "Lue par Google et les lecteurs d'écran. Laisser vide pour utiliser le texte alternatif de l'image."
+        },
+        {
+          "type": "text",
+          "id": "tag",
+          "label": "Étiquette",
+          "default": "Guide",
+          "info": "Affichée sur la photo, par exemple « Guide » ou « Événements »."
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Titre",
+          "default": "Titre de l'article"
+        },
+        {
+          "type": "url",
+          "id": "link",
+          "label": "Lien",
+          "info": "Toute la carte mène à ce lien."
+        },
+        {
+          "type": "text",
+          "id": "link_label",
+          "label": "Texte du lien",
+          "default": "Lire"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "GDM · Articles",
+      "blocks": [
+        { "type": "article", "settings": { "tag": "Guide", "title": "Titre de votre premier article" } },
+        { "type": "article", "settings": { "tag": "Événements", "title": "Titre de votre deuxième article" } },
+        { "type": "article", "settings": { "tag": "Visite", "title": "Titre de votre troisième article" } },
+        { "type": "article", "settings": { "tag": "Brewpub", "title": "Titre de votre quatrième article" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,624 @@
+{%- comment -%}
+  Le Gué des Moines — Univers : carrousel de grandes cartes photo (brasserie,
+  brewpub, e-shop…) avec sur-titre et titre posés sur la photo, texte, pastilles
+  d'info et bouton. 3 cartes visibles sur ordinateur, défilement au doigt sur mobile.
+{%- endcomment -%}
+{%- liquid
+  assign s = section.settings
+  assign heading_tag = s.heading_tag | default: 'h2'
+  assign card_tag = 'h3'
+  if heading_tag == 'h1'
+    assign card_tag = 'h2'
+  endif
+  assign cards = section.blocks | where: 'type', 'card'
+  assign desktop_vw = 92 | divided_by: s.columns | floor
+  assign img_sizes = '(min-width: 990px) ' | append: desktop_vw | append: 'vw, (min-width: 750px) 46vw, 86vw'
+-%}
+{%- render 'gdm-assets' -%}
+
+<gdm-section
+  id="gdm-{{ section.id }}"
+  class="gdm gdm-univers gdm-grain"
+  style="--gdm-bg: {{ s.color_bg }}; --gdm-accent: {{ s.color_accent }}; --gdm-cols: {{ s.columns }}; --gdm-pt: {{ s.padding_top }}px; --gdm-pb: {{ s.padding_bottom }}px;"
+>
+  <div class="gdm-container">
+    <gdm-carousel class="gdm-univers__layout">
+      <div class="gdm-head gdm-univers__head">
+        {%- if s.pill != blank -%}
+          <p class="gdm-pill" data-gdm-reveal>{{ s.pill | escape }}</p>
+        {%- endif -%}
+        {%- if s.title != blank or s.title_accent != blank -%}
+          <{{ heading_tag }} class="gdm-title" data-gdm-reveal style="--gdm-i: 1;">
+            {{- s.title | escape }}{% if s.title_accent != blank %} <em>{{ s.title_accent | escape }}</em>{% endif -%}
+          </{{ heading_tag }}>
+        {%- endif -%}
+        {%- if s.text != blank -%}
+          <p class="gdm-lead" data-gdm-reveal style="--gdm-i: 2;">{{ s.text }}</p>
+        {%- endif -%}
+      </div>
+
+      {%- if cards.size > 0 -%}
+        <div class="gdm-carousel__nav gdm-univers__nav" data-carousel-ui>
+          <button type="button" class="gdm-icon-btn" data-prev aria-label="{{ s.label_prev | escape }}">{% render 'gdm-icon', name: 'chevron-left' %}</button>
+          <button type="button" class="gdm-icon-btn" data-next aria-label="{{ s.label_next | escape }}">{% render 'gdm-icon', name: 'chevron-right' %}</button>
+        </div>
+
+        <div class="gdm-carousel__track gdm-univers__track" data-track tabindex="0" role="region" aria-label="{{ s.label_region | escape }}">
+          {%- for block in cards -%}
+            {%- liquid
+              assign b = block.settings
+              assign image_alt = b.image_alt | default: b.image.alt | default: b.title
+            -%}
+            <article class="gdm-univers__card gdm-card" data-gdm-reveal style="--gdm-i: {{ forloop.index0 | modulo: 3 }};" {{ block.shopify_attributes }}>
+              <div class="gdm-univers__visual">
+                <div class="gdm-univers__media">
+                  {%- if b.image != blank -%}
+                    {{ b.image | image_url: width: 1200 | image_tag: loading: 'lazy', widths: '450, 650, 900, 1200', sizes: img_sizes, alt: image_alt, class: 'gdm-univers__img' }}
+                  {%- else -%}
+                    {{ 'lifestyle-1' | placeholder_svg_tag: 'gdm-placeholder gdm-univers__img' }}
+                  {%- endif -%}
+                  {%- if b.link != blank -%}
+                    <a class="gdm-univers__media-link" href="{{ b.link }}" tabindex="-1" aria-hidden="true"></a>
+                  {%- endif -%}
+                </div>
+                {%- if s.show_numbers -%}
+                  <span class="gdm-univers__num" aria-hidden="true">{% if forloop.index < 10 %}0{% endif %}{{ forloop.index }}</span>
+                {%- endif -%}
+                {%- if b.label != blank or b.title != blank -%}
+                  <div class="gdm-univers__heading">
+                    {%- if b.label != blank -%}
+                      <p class="gdm-univers__label">{{ b.label | escape }}</p>
+                    {%- endif -%}
+                    {%- if b.title != blank -%}
+                      <{{ card_tag }} class="gdm-univers__title">{{ b.title | escape }}</{{ card_tag }}>
+                    {%- endif -%}
+                  </div>
+                {%- endif -%}
+              </div>
+
+              <div class="gdm-univers__body">
+                {%- if b.text != blank -%}
+                  <p class="gdm-univers__text">{{ b.text }}</p>
+                {%- endif -%}
+                {%- if b.detail_1 != blank or b.detail_2 != blank -%}
+                  <ul class="gdm-univers__details">
+                    {%- if b.detail_1 != blank -%}<li class="gdm-univers__detail">{{ b.detail_1 | escape }}</li>{%- endif -%}
+                    {%- if b.detail_2 != blank -%}<li class="gdm-univers__detail">{{ b.detail_2 | escape }}</li>{%- endif -%}
+                  </ul>
+                {%- endif -%}
+                {%- if b.button_label != blank -%}
+                  <a class="gdm-btn gdm-btn--{{ s.button_style }} gdm-univers__btn" href="{{ b.link | default: '#' }}">
+                    {{- b.button_label | escape -}}
+                    {%- render 'gdm-icon', name: 'arrow-right' -%}
+                  </a>
+                {%- endif -%}
+              </div>
+            </article>
+          {%- endfor -%}
+        </div>
+
+        <div class="gdm-carousel__progress gdm-univers__progress" data-progress data-carousel-ui aria-hidden="true"><span></span></div>
+      {%- endif -%}
+    </gdm-carousel>
+  </div>
+</gdm-section>
+
+{% stylesheet %}
+  .gdm.gdm-univers .gdm-univers__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'head head'
+      'track track'
+      'progress nav';
+    column-gap: 24px;
+    align-items: end;
+  }
+
+  .gdm.gdm-univers .gdm-univers__head {
+    grid-area: head;
+    margin-bottom: clamp(28px, 4vw, 48px);
+  }
+
+  .gdm.gdm-univers .gdm-univers__nav {
+    grid-area: nav;
+    margin-top: 24px;
+  }
+
+  .gdm.gdm-univers .gdm-univers__track {
+    grid-area: track;
+    --gdm-slide: 86%;
+    align-items: stretch;
+  }
+
+  .gdm.gdm-univers .gdm-univers__progress {
+    grid-area: progress;
+    align-self: center;
+    margin-top: 24px;
+  }
+
+  @media (min-width: 750px) {
+    .gdm.gdm-univers .gdm-univers__layout {
+      grid-template-areas:
+        'head nav'
+        'track track'
+        'progress progress';
+      column-gap: 32px;
+    }
+
+    .gdm.gdm-univers .gdm-univers__nav {
+      margin-top: 0;
+      margin-bottom: clamp(28px, 4vw, 48px);
+    }
+
+    .gdm.gdm-univers .gdm-univers__progress {
+      margin-top: 32px;
+    }
+
+    .gdm.gdm-univers .gdm-univers__track {
+      --gdm-slide: calc((100% - var(--gdm-gap)) / 2.1);
+    }
+  }
+
+  @media (min-width: 990px) {
+    .gdm.gdm-univers .gdm-univers__track {
+      --gdm-slide: calc((100% - (var(--gdm-cols, 3) - 1) * var(--gdm-gap)) / var(--gdm-cols, 3));
+    }
+  }
+
+  /* ---------- Carte ---------- */
+  .gdm.gdm-univers .gdm-univers__card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .gdm.gdm-univers .gdm-univers__card:hover {
+    background: var(--gdm-surface-2);
+  }
+
+  .gdm.gdm-univers .gdm-univers__visual {
+    position: relative;
+    display: grid;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--gdm-surface-2);
+  }
+
+  .gdm.gdm-univers .gdm-univers__visual > * {
+    grid-area: 1 / 1;
+  }
+
+  .gdm.gdm-univers .gdm-univers__media {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    color: var(--gdm-text);
+  }
+
+  .gdm.gdm-univers .gdm-univers__media-link {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+  }
+
+  .gdm.gdm-univers .gdm-univers__media::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(13, 13, 13, 0.15) 0%, rgba(13, 13, 13, 0) 28%, rgba(13, 13, 13, 0.45) 56%, rgba(13, 13, 13, 0.92) 100%);
+    pointer-events: none;
+  }
+
+  .gdm.gdm-univers .gdm-univers__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.9) saturate(0.95);
+    transition: transform 1.2s var(--gdm-ease), filter 0.6s var(--gdm-ease);
+  }
+
+  .gdm.gdm-univers .gdm-univers__card:hover .gdm-univers__img {
+    transform: scale(1.05);
+    filter: brightness(1) saturate(1.05);
+  }
+
+  .gdm.gdm-univers .gdm-univers__num {
+    z-index: 1;
+    align-self: start;
+    justify-self: end;
+    display: grid;
+    place-items: center;
+    min-width: 44px;
+    height: 32px;
+    margin: 16px;
+    padding: 0 10px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+    background: rgba(13, 13, 13, 0.55);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    color: var(--gdm-text);
+    font-family: var(--gdm-font-display);
+    font-size: 15px;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    pointer-events: none;
+  }
+
+  .gdm.gdm-univers .gdm-univers__heading {
+    z-index: 1;
+    align-self: end;
+    display: grid;
+    gap: 8px;
+    padding: 0 24px 20px;
+    pointer-events: none;
+  }
+
+  .gdm.gdm-univers .gdm-univers__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--gdm-accent);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    text-shadow: 0 1px 12px rgba(0, 0, 0, 0.6);
+  }
+
+  .gdm.gdm-univers .gdm-univers__label::before {
+    content: '';
+    flex: none;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 0 3px var(--gdm-accent-glow);
+  }
+
+  .gdm.gdm-univers .gdm-univers__title {
+    margin: 0;
+    color: var(--gdm-text);
+    font-family: var(--gdm-font-display);
+    font-size: clamp(36px, 24px + 1.6vw, 48px);
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55);
+  }
+
+  .gdm.gdm-univers .gdm-univers__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 18px;
+    padding: 22px 24px 24px;
+  }
+
+  .gdm.gdm-univers .gdm-univers__text {
+    flex: 1;
+    color: var(--gdm-muted);
+    font-size: 15px;
+    line-height: 1.65;
+  }
+
+  .gdm.gdm-univers .gdm-univers__text strong,
+  .gdm.gdm-univers .gdm-univers__text b {
+    color: var(--gdm-text);
+    font-weight: 600;
+  }
+
+  .gdm.gdm-univers .gdm-univers__text a {
+    color: var(--gdm-accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .gdm.gdm-univers .gdm-univers__details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .gdm.gdm-univers .gdm-univers__detail {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border: 1px solid var(--gdm-border);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.03);
+    color: #d6d1c8;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.25;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .gdm.gdm-univers .gdm-univers__detail::before {
+    content: '';
+    flex: none;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--gdm-accent);
+  }
+
+  .gdm.gdm-univers .gdm-univers__btn {
+    width: 100%;
+    justify-content: space-between;
+    padding: 10px 22px 10px 24px;
+    line-height: 1.2;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .gdm.gdm-univers a.gdm-btn--ghost.gdm-univers__btn {
+    color: var(--gdm-text);
+  }
+
+  .gdm.gdm-univers a.gdm-btn--ghost.gdm-univers__btn:hover {
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-univers a.gdm-btn--primary.gdm-univers__btn,
+  .gdm.gdm-univers a.gdm-btn--primary.gdm-univers__btn:hover {
+    color: var(--gdm-on-accent);
+  }
+
+  .gdm.gdm-univers .gdm-univers__btn:hover svg {
+    transform: translateX(3px);
+  }
+
+  @media (max-width: 749px) {
+    .gdm.gdm-univers .gdm-univers__heading {
+      padding: 0 20px 18px;
+    }
+
+    .gdm.gdm-univers .gdm-univers__body {
+      padding: 20px 20px 22px;
+    }
+
+    .gdm.gdm-univers .gdm-univers__btn {
+      padding-inline: 20px 18px;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "GDM · Univers",
+  "tag": "section",
+  "class": "gdm-shopify-section",
+  "max_blocks": 8,
+  "settings": [
+    {
+      "type": "header",
+      "content": "En-tête"
+    },
+    {
+      "type": "text",
+      "id": "pill",
+      "label": "Badge",
+      "default": "Brasserie · Brewpub · E-Shop"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titre",
+      "default": "Explorez notre"
+    },
+    {
+      "type": "text",
+      "id": "title_accent",
+      "label": "Titre — partie orange",
+      "default": "univers"
+    },
+    {
+      "type": "select",
+      "id": "heading_tag",
+      "label": "Niveau du titre (SEO)",
+      "default": "h2",
+      "options": [
+        { "value": "h1", "label": "H1" },
+        { "value": "h2", "label": "H2" }
+      ]
+    },
+    {
+      "type": "inline_richtext",
+      "id": "text",
+      "label": "Texte d'introduction (facultatif)"
+    },
+    {
+      "type": "header",
+      "content": "Cartes"
+    },
+    {
+      "type": "range",
+      "id": "columns",
+      "label": "Cartes visibles sur ordinateur",
+      "min": 2,
+      "max": 4,
+      "step": 1,
+      "default": 3,
+      "info": "Au-delà, les cartes défilent avec les flèches. Sur mobile, elles défilent au doigt."
+    },
+    {
+      "type": "select",
+      "id": "button_style",
+      "label": "Style des boutons",
+      "default": "primary",
+      "options": [
+        { "value": "primary", "label": "Orange" },
+        { "value": "ghost", "label": "Contour" }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "show_numbers",
+      "label": "Numéroter les cartes (01, 02…)",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "label_region",
+      "label": "Nom du carrousel (accessibilité)",
+      "default": "Brasserie, Brewpub et E-Shop — Le Gué des Moines"
+    },
+    {
+      "type": "text",
+      "id": "label_prev",
+      "label": "Flèche précédente (accessibilité)",
+      "default": "Précédent"
+    },
+    {
+      "type": "text",
+      "id": "label_next",
+      "label": "Flèche suivante (accessibilité)",
+      "default": "Suivant"
+    },
+    {
+      "type": "header",
+      "content": "Couleurs et espacement"
+    },
+    {
+      "type": "color",
+      "id": "color_bg",
+      "label": "Fond",
+      "default": "#0D0D0D"
+    },
+    {
+      "type": "color",
+      "id": "color_accent",
+      "label": "Accent",
+      "default": "#F0921E"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Marge haute",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Marge basse",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    }
+  ],
+  "blocks": [
+    {
+      "type": "card",
+      "name": "Carte",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Photo",
+          "info": "Format paysage conseillé (4:3), 1200 × 900 px minimum."
+        },
+        {
+          "type": "text",
+          "id": "image_alt",
+          "label": "Description de la photo (SEO)",
+          "info": "Lue par Google et les lecteurs d'écran. Laisser vide pour utiliser le texte alternatif de l'image."
+        },
+        {
+          "type": "text",
+          "id": "label",
+          "label": "Sur-titre",
+          "default": "Sur-titre"
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Titre",
+          "default": "Titre de la carte"
+        },
+        {
+          "type": "inline_richtext",
+          "id": "text",
+          "label": "Texte",
+          "default": "Présentez ce lieu ou ce service en quelques phrases."
+        },
+        {
+          "type": "text",
+          "id": "detail_1",
+          "label": "Pastille d'info 1",
+          "info": "Par exemple une adresse ou des horaires."
+        },
+        {
+          "type": "text",
+          "id": "detail_2",
+          "label": "Pastille d'info 2"
+        },
+        {
+          "type": "text",
+          "id": "button_label",
+          "label": "Texte du bouton",
+          "default": "Découvrir"
+        },
+        {
+          "type": "url",
+          "id": "link",
+          "label": "Lien",
+          "info": "Utilisé par le bouton et par la photo."
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "GDM · Univers",
+      "blocks": [
+        {
+          "type": "card",
+          "settings": {
+            "label": "Lieu de fabrication",
+            "title": "Brasserie",
+            "text": "Présentez votre brasserie : où et comment vos bières sont brassées.",
+            "button_label": "Vers la brasserie"
+          }
+        },
+        {
+          "type": "card",
+          "settings": {
+            "label": "Bar à bière artisanale",
+            "title": "Brewpub",
+            "text": "Présentez votre bar : bières à la pression, ambiance, horaires.",
+            "button_label": "Vers le brewpub"
+          }
+        },
+        {
+          "type": "card",
+          "settings": {
+            "label": "Commande en ligne",
+            "title": "E-Shop",
+            "text": "Présentez votre boutique en ligne : formats, retrait, livraison.",
+            "button_label": "Vers l'e-shop"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

@@ -1,13 +1,26 @@
 {%- comment -%}
-  Le Gué des Moines — rangée de 5 étoiles.
-  Usage : {% render 'gdm-stars', rating: 5, star_size: 16 %}
+  Le Gué des Moines — rangée de 5 étoiles, par demi-étoile.
+  Usage : {% render 'gdm-stars', rating: 4.5, star_size: 16 %}
+          {% render 'gdm-stars', rating: 4.5, label: '4,75 / 5' %}  (« label » remplace la note lue par les lecteurs d'écran)
+  La note est arrondie à la demi-étoile la plus proche (3,66 → 3,5) ; une
+  note entière donne exactement le même rendu qu'avant.
 {%- endcomment -%}
 {%- liquid
-  assign gdm_rating = rating | default: 5 | round
+  assign gdm_halves = rating | default: 5 | times: 2 | round | at_least: 0 | at_most: 10
+  assign gdm_half = gdm_halves | modulo: 2
+  assign gdm_full = gdm_halves | minus: gdm_half | divided_by: 2
+  assign gdm_half_at = 0
+  if gdm_half == 1
+    assign gdm_half_at = gdm_full | plus: 1
+  endif
   assign gdm_star_size = star_size | default: 16
 -%}
-<span class="gdm-stars" role="img" aria-label="{{ gdm_rating }} / 5">
+<span class="gdm-stars" role="img" aria-label="{% if label != blank %}{{ label | escape }}{% else %}{{ gdm_full }}{% if gdm_half == 1 %},5{% endif %} / 5{% endif %}">
   {%- for i in (1..5) -%}
-    <span{% if i > gdm_rating %} class="is-off"{% endif %}>{% render 'gdm-icon', name: 'star', icon_size: gdm_star_size %}</span>
+    {%- if i == gdm_half_at -%}
+      <span class="is-half"><svg class="gdm-icon gdm-icon--star-half" width="{{ gdm_star_size }}" height="{{ gdm_star_size }}" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="#fff" fill-opacity="0.18" d="M12 2.6l2.9 5.9 6.5.95-4.7 4.6 1.1 6.45L12 17.45l-5.8 3.05 1.1-6.45-4.7-4.6 6.5-.95L12 2.6z"/><path fill="currentColor" d="M12 2.6 9.1 8.5l-6.5.95 4.7 4.6-1.1 6.45 5.8-3.05V2.6z"/></svg></span>
+    {%- else -%}
+      <span{% if i > gdm_full %} class="is-off"{% endif %}>{% render 'gdm-icon', name: 'star', icon_size: gdm_star_size %}</span>
+    {%- endif -%}
   {%- endfor -%}
 </span>

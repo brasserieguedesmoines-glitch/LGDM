@@ -13,11 +13,18 @@ Elles sont autonomes. Elles n'ont besoin ni d'application ni de jQuery, ne touch
 | `gdm-bieres.liquid` | GDM · Nos bières | Cartes bières en carrousel ou en grille : degré, IBU, jauge d'amertume, choix 33 cL / 75 cL, ajout au panier direct |
 | `gdm-histoire.liquid` | GDM · Notre histoire | Photo + médaillon + tampon « 2016 », texte, points forts avec icônes |
 | `gdm-chiffres.liquid` | GDM · Chiffres clés | Grands chiffres orange animés au défilement |
-| `gdm-avis.liquid` | GDM · Avis clients | Note globale, pilules de chiffres, carrousel d'avis |
+| `gdm-avis.liquid` | GDM · Avis clients | Note globale, pilules de chiffres, carrousel d'avis (demi-étoiles, note exacte « 4,75 / 5 », logo, encart d'appel à l'action) |
 | `gdm-promo.liquid` | GDM · Promo + compteur | Bannière promo (Noël, sortie de brassin…) avec compte à rebours à l'heure de Paris |
 | `gdm-evenements.liquid` | GDM · Agenda | Concerts, quiz, dégustations ; les dates passées disparaissent toutes seules |
 | `gdm-brewpub.liquid` | GDM · Venir au brewpub | Horaires avec statut « Ouvert / Fermé » en direct, adresse, itinéraire, carte Google chargée au clic |
 | `gdm-faq.liquid` | GDM · FAQ | Accordéon + encart contact, données structurées FAQ pour Google |
+| `gdm-univers.liquid` | GDM · Univers | Cartes numérotées en carrousel (brasserie, brewpub, e-shop…) avec photo, points clés et bouton |
+| `gdm-service.liquid` | GDM · Service | Présentation d'un service (location de tireuse) : photo encadrée, chiffres, étiquettes, offres, 2 boutons |
+| `gdm-articles.liquid` | GDM · Articles | Articles de blog choisis à la main, ou les derniers articles d'un blog |
+| `gdm-newsletter.liquid` | GDM · Newsletter | Inscription à la newsletter (formulaire client Shopify), messages de succès et d'erreur |
+| `gdm-atouts.liquid` | GDM · Atouts | Rangée d'atouts (paiement sécurisé, livraison, retrait…) avec icônes ou images |
+| `gdm-apps.liquid` | GDM · Application | En-tête GDM autour d'un bloc d'application (flux Instagram Instafeed…) |
+| `gdm-image.liquid` | GDM · Image | Grande image encadrée, cliquable |
 
 Fichiers partagés (obligatoires) :
 
@@ -76,9 +83,9 @@ Les métachamps existants `custom.degre` et `custom.ibu` sont déjà utilisés. 
 
 ## Page d'accueil installée sur la copie du thème
 
-`templates/index.json` est la page d'accueil installée sur le thème « LGDM V2 - nouvelles sections GDM » (copie non publiée). Les nouvelles sections y sont remplies avec les vrais contenus du site : avis, horaires, FAQ, téléphone. Vos sections existantes sont conservées : univers, Untappd, location de tireuse, blog, réseaux sociaux, newsletter.
+`templates/index.json` est la page d'accueil installée sur le thème « LGDM V2 - nouvelles sections GDM » (copie non publiée). Les nouvelles sections y sont remplies avec les vrais contenus du site : avis, horaires, FAQ, téléphone. Les anciennes sections ont été refaites au style GDM, **à la même place et avec les mêmes contenus** : univers, image, Untappd (section « Avis clients »), location de tireuse, articles du blog, newsletter, atouts, flux Instagram. Le bloc d'intro « Nos bières artisanales toulousaines… » est masqué.
 
-Les 4 anciennes sections remplacées (diaporama, collection, avis, FAQ) y sont **masquées, pas supprimées** : vous pouvez les réafficher en un clic dans l'éditeur. Shopify limite une page à 25 sections, alors les sections déjà masquées sur le site en ligne ont été retirées de la copie. Elles restent intactes dans votre thème en ligne. Chiffres clés et Agenda peuvent être ajoutés via « Ajouter une section ».
+Les 4 anciennes sections remplacées en premier (diaporama, collection, avis, FAQ) y sont **masquées, pas supprimées** : vous pouvez les réafficher en un clic dans l'éditeur. Les anciennes versions des 8 sections refaites ensuite restent dans votre thème en ligne, qui n'a pas été modifié. Shopify limite une page à 25 sections, alors les sections déjà masquées sur le site en ligne ont été retirées de la copie. Elles restent intactes dans votre thème en ligne. Chiffres clés et Agenda peuvent être ajoutés via « Ajouter une section ».
 
 ## Aperçu
 

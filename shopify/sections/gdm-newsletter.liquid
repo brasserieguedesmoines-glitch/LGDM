@@ -1,0 +1,657 @@
+{%- comment -%}
+  Le Gué des Moines — Newsletter : inscription par e-mail via le formulaire client natif
+  de Shopify (le contact est tagué « newsletter »), avec message de succès, erreurs et
+  mention RGPD. Après l'envoi, la page revient directement sur le formulaire.
+{%- endcomment -%}
+{%- liquid
+  assign s = section.settings
+  assign heading_tag = s.heading_tag | default: 'h2'
+  assign form_id = 'gdm-newsletter-' | append: section.id
+  assign layout = s.layout | default: 'center'
+
+  assign title = s.title | strip
+  assign title_join = ' '
+  assign title_last = title | slice: -1
+  if title_last == '-' or title_last == "'" or title_last == '’'
+    assign title_join = ''
+  endif
+-%}
+{%- render 'gdm-assets' -%}
+
+<gdm-section
+  id="gdm-{{ section.id }}"
+  class="gdm gdm-newsletter gdm-newsletter--{{ layout }}"
+  style="--gdm-bg: {{ s.color_bg }}; --gdm-accent: {{ s.color_accent }}; --gdm-pt: {{ s.padding_top }}px; --gdm-pb: {{ s.padding_bottom }}px;"
+>
+  <div class="gdm-container">
+    <div class="gdm-newsletter__card gdm-grain" data-gdm-reveal>
+      <div class="gdm-glow gdm-newsletter__glow" aria-hidden="true"></div>
+      <div class="gdm-glow gdm-newsletter__glow gdm-newsletter__glow--low" aria-hidden="true"></div>
+
+      {%- if s.show_decor -%}
+        <div class="gdm-newsletter__hop" aria-hidden="true">{% render 'gdm-icon', name: 'hop', icon_size: 300 %}</div>
+        <svg class="gdm-newsletter__plane" viewBox="0 0 240 170" fill="none" aria-hidden="true" focusable="false">
+          <path class="gdm-newsletter__trail" d="M6 160c38 6 62-14 78-38 18-27 46-40 76-30 20 7 30 1 40-14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="2 9"/>
+          <g transform="translate(176 6) scale(2.5)" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m21 3-6.5 18-4-7.5L3 9.5 21 3z" fill="currentColor" fill-opacity="0.14"/>
+            <path d="M21 3 10.5 13.5"/>
+          </g>
+        </svg>
+      {%- endif -%}
+
+      <div class="gdm-newsletter__inner">
+        <div class="gdm-head gdm-newsletter__head{% if layout == 'center' %} gdm-head--center{% endif %}">
+          {%- if s.pill != blank -%}
+            <p class="gdm-pill">{{ s.pill | escape }}</p>
+          {%- endif -%}
+          {%- if title != blank or s.title_accent != blank -%}
+            <{{ heading_tag }} class="gdm-title gdm-newsletter__title">
+              {{- title | escape | replace: ' !', '&nbsp;!' | replace: ' ?', '&nbsp;?' -}}
+              {%- if s.title_accent != blank -%}
+                {%- if title != blank %}{{ title_join }}{% endif -%}
+                <em>{{ s.title_accent | escape | replace: ' !', '&nbsp;!' | replace: ' ?', '&nbsp;?' }}</em>
+              {%- endif -%}
+            </{{ heading_tag }}>
+          {%- endif -%}
+          {%- if s.text != blank -%}
+            <p class="gdm-lead">{{ s.text | replace: ' !', '&nbsp;!' | replace: ' ?', '&nbsp;?' }}</p>
+          {%- endif -%}
+        </div>
+
+        <div class="gdm-newsletter__body">
+          {%- form 'customer', id: form_id, class: 'gdm-newsletter__form' -%}
+            <input type="hidden" name="contact[tags]" value="newsletter">
+
+            {%- if form.posted_successfully? -%}
+              <div class="gdm-newsletter__msg gdm-newsletter__msg--success" id="{{ form_id }}-success" role="status" tabindex="-1" autofocus>
+                <span class="gdm-newsletter__msg-icon">{% render 'gdm-icon', name: 'check', icon_size: 18 %}</span>
+                <span>{{ s.success_text | escape | replace: ' !', '&nbsp;!' }}</span>
+              </div>
+            {%- endif -%}
+
+            {%- if form.errors -%}
+              <div class="gdm-newsletter__msg gdm-newsletter__msg--error" id="{{ form_id }}-error" role="alert">
+                {{ form.errors | default_errors }}
+              </div>
+            {%- endif -%}
+
+            <div class="gdm-newsletter__row">
+              <div class="gdm-newsletter__field">
+                <label class="gdm-visually-hidden" for="{{ form_id }}-email">{{ s.email_label | escape }}</label>
+                <span class="gdm-newsletter__field-icon">{% render 'gdm-icon', name: 'mail', icon_size: 20 %}</span>
+                <input
+                  class="gdm-newsletter__input"
+                  id="{{ form_id }}-email"
+                  type="email"
+                  name="contact[email]"
+                  value="{{ form.email | escape }}"
+                  placeholder="{{ s.email_label | escape }}"
+                  autocomplete="email"
+                  autocapitalize="off"
+                  autocorrect="off"
+                  spellcheck="false"
+                  required
+                  aria-required="true"
+                  {% if form.errors %}
+                    aria-invalid="true"
+                    autofocus
+                  {% endif %}
+                  {% if s.legal != blank or form.errors %}
+                    aria-describedby="{% if form.errors %}{{ form_id }}-error {% endif %}{% if s.legal != blank %}{{ form_id }}-legal{% endif %}"
+                  {% endif %}
+                >
+              </div>
+              <button type="submit" class="gdm-btn gdm-btn--primary gdm-newsletter__submit">
+                <span>{{ s.button_label | default: "S'abonner" | escape }}</span>
+                {%- render 'gdm-icon', name: 'send' -%}
+              </button>
+            </div>
+
+            {%- if s.legal != blank -%}
+              <p class="gdm-newsletter__legal" id="{{ form_id }}-legal">
+                {%- render 'gdm-icon', name: 'lock', icon_size: 14 -%}
+                <span>{{ s.legal | replace: ' :', '&nbsp;:' | replace: ' !', '&nbsp;!' | replace: ' ?', '&nbsp;?' }}</span>
+              </p>
+            {%- endif -%}
+          {%- endform -%}
+        </div>
+      </div>
+    </div>
+  </div>
+</gdm-section>
+
+{% stylesheet %}
+  .gdm.gdm-newsletter .gdm-newsletter__card {
+    position: relative;
+    isolation: isolate;
+    padding: clamp(44px, 6.4vw, 96px) clamp(22px, 5vw, 72px);
+    border: 1px solid var(--gdm-line);
+    border-radius: 32px;
+    background:
+      radial-gradient(120% 85% at 50% 0%, var(--gdm-surface-2) 0%, var(--gdm-surface) 48%, var(--gdm-bg) 100%);
+    box-shadow: 0 48px 90px -60px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+  }
+
+  /* Halo ambré : un grand au-dessus du titre, un plus discret en bas. */
+  .gdm.gdm-newsletter .gdm-newsletter__glow {
+    top: -62%;
+    left: 50%;
+    width: min(980px, 150%);
+    transform: translateX(-50%);
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__glow--low {
+    top: auto;
+    bottom: -78%;
+    left: 50%;
+    width: min(760px, 120%);
+    opacity: 0.55;
+  }
+
+  .gdm.gdm-newsletter--split .gdm-newsletter__glow {
+    left: 22%;
+  }
+
+  .gdm.gdm-newsletter--split .gdm-newsletter__glow--low {
+    left: 82%;
+  }
+
+  /* Décor : houblon en filigrane + avion en papier et sa traînée. */
+  .gdm.gdm-newsletter .gdm-newsletter__hop {
+    position: absolute;
+    z-index: 0;
+    bottom: -64px;
+    left: -56px;
+    color: var(--gdm-accent);
+    opacity: 0.08;
+    transform: rotate(-18deg);
+    pointer-events: none;
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__hop svg {
+    width: clamp(180px, 22vw, 300px);
+    height: auto;
+    stroke-width: 1;
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__plane {
+    position: absolute;
+    z-index: 0;
+    right: clamp(28px, 3.4vw, 56px);
+    bottom: clamp(36px, 4.4vw, 72px);
+    display: none;
+    width: clamp(150px, 14vw, 220px);
+    height: auto;
+    color: var(--gdm-accent);
+    pointer-events: none;
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__trail {
+    opacity: 0.55;
+  }
+
+  @media (max-width: 989px) {
+    .gdm.gdm-newsletter .gdm-newsletter__hop {
+      display: none;
+    }
+  }
+
+  @media (min-width: 1200px) {
+    .gdm.gdm-newsletter--center .gdm-newsletter__plane {
+      display: block;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .gdm.gdm-newsletter .gdm-newsletter__plane g {
+      transform-box: fill-box;
+      animation: gdm-newsletter-float 5s var(--gdm-ease) infinite alternate;
+    }
+  }
+
+  @keyframes gdm-newsletter-float {
+    from {
+      translate: 0 0;
+    }
+
+    to {
+      translate: 4px -6px;
+    }
+  }
+
+  /* ---------- Contenu ---------- */
+  .gdm.gdm-newsletter .gdm-newsletter__inner {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: clamp(30px, 3.6vw, 44px);
+    max-width: 780px;
+    margin-inline: auto;
+  }
+
+  .gdm.gdm-newsletter--split .gdm-newsletter__inner {
+    max-width: none;
+    margin-inline: 0;
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__head {
+    margin-bottom: 0;
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__title {
+    font-size: clamp(46px, 24px + 4.6vw, 96px);
+    line-height: 1.08;
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__body {
+    width: 100%;
+    max-width: 620px;
+    container: gdm-newsletter-form / inline-size;
+  }
+
+  .gdm.gdm-newsletter--center .gdm-newsletter__body {
+    justify-self: center;
+  }
+
+  @media (min-width: 990px) {
+    .gdm.gdm-newsletter--split .gdm-newsletter__inner {
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+      align-items: center;
+      column-gap: clamp(48px, 6vw, 96px);
+    }
+
+    .gdm.gdm-newsletter--split .gdm-newsletter__body {
+      justify-self: end;
+    }
+  }
+
+  /* ---------- Formulaire ---------- */
+  .gdm.gdm-newsletter .gdm-newsletter__form {
+    display: grid;
+    gap: 16px;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    scroll-margin-top: 140px;
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 6px;
+    border: 1px solid var(--gdm-border-strong);
+    border-radius: 999px;
+    background: rgba(13, 13, 13, 0.72);
+    box-shadow: 0 18px 40px -26px rgba(0, 0, 0, 0.9);
+    transition: border-color 0.25s var(--gdm-ease), box-shadow 0.25s var(--gdm-ease);
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__row:hover {
+    border-color: var(--gdm-line);
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__row:focus-within {
+    border-color: var(--gdm-accent);
+    box-shadow: 0 0 0 4px var(--gdm-accent-glow), 0 18px 40px -26px rgba(0, 0, 0, 0.9);
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__field {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1 1 auto;
+    min-width: 0;
+    border-radius: 999px;
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__field-icon {
+    position: absolute;
+    top: 50%;
+    left: 18px;
+    display: flex;
+    color: var(--gdm-muted);
+    transform: translateY(-50%);
+    pointer-events: none;
+    transition: color 0.25s var(--gdm-ease);
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__field:focus-within .gdm-newsletter__field-icon {
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__input {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    height: 52px;
+    min-height: 52px;
+    margin: 0;
+    padding: 0 16px 0 50px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--gdm-text);
+    box-shadow: none;
+    outline: none;
+    font-family: var(--gdm-font-body);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.2;
+    letter-spacing: normal;
+    text-align: left;
+    text-transform: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__input:focus,
+  .gdm.gdm-newsletter .gdm-newsletter__input:focus-visible {
+    border: 0;
+    outline: none;
+    box-shadow: none;
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__input::placeholder {
+    color: var(--gdm-muted);
+    opacity: 1;
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__input:-webkit-autofill {
+    -webkit-text-fill-color: var(--gdm-text);
+    caret-color: var(--gdm-text);
+    box-shadow: 0 0 0 100px var(--gdm-surface) inset;
+    transition: background-color 9999s ease-out;
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__submit {
+    flex: none;
+    min-height: 52px;
+    padding: 0 28px;
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__legal {
+    color: var(--gdm-muted);
+    font-size: 13px;
+    line-height: 1.55;
+    text-wrap: pretty;
+  }
+
+  .gdm.gdm-newsletter--center .gdm-newsletter__legal {
+    text-align: center;
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__legal svg {
+    display: inline-block;
+    margin-right: 7px;
+    vertical-align: -2px;
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__legal a {
+    color: var(--gdm-text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.2s var(--gdm-ease);
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__legal a:hover {
+    color: var(--gdm-accent);
+  }
+
+  /* ---------- Messages ---------- */
+  .gdm.gdm-newsletter .gdm-newsletter__msg {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border-radius: 18px;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.45;
+    text-align: left;
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__msg:focus {
+    outline: none;
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__msg--success {
+    border: 1px solid var(--gdm-line);
+    background: var(--gdm-accent-soft);
+    color: var(--gdm-text);
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__msg-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--gdm-accent);
+    color: var(--gdm-on-accent);
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__msg--error {
+    display: block;
+    border: 1px solid rgba(248, 113, 113, 0.45);
+    background: rgba(248, 113, 113, 0.08);
+    color: #fecaca;
+  }
+
+  .gdm.gdm-newsletter .gdm-newsletter__msg--error :is(div, ul, li, p) {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font-size: inherit;
+    list-style: none;
+  }
+
+  /* ---------- Petits écrans ---------- */
+  @media (max-width: 749px) {
+    .gdm.gdm-newsletter .gdm-newsletter__card {
+      border-radius: 24px;
+    }
+
+    .gdm.gdm-newsletter .gdm-newsletter__glow {
+      top: -40%;
+      width: 170%;
+    }
+
+    .gdm.gdm-newsletter .gdm-newsletter__glow--low {
+      top: auto;
+      bottom: -55%;
+    }
+
+  }
+
+  /* Champ et bouton empilés dès que le formulaire est étroit
+     (mobile, ou colonne de droite de la disposition en deux colonnes). */
+  @container gdm-newsletter-form (max-width: 419px) {
+    .gdm.gdm-newsletter .gdm-newsletter__row,
+    .gdm.gdm-newsletter .gdm-newsletter__row:hover,
+    .gdm.gdm-newsletter .gdm-newsletter__row:focus-within {
+      display: grid;
+      gap: 10px;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: none;
+      box-shadow: none;
+    }
+
+    .gdm.gdm-newsletter .gdm-newsletter__field {
+      border: 1px solid var(--gdm-border-strong);
+      background: rgba(13, 13, 13, 0.72);
+      transition: border-color 0.25s var(--gdm-ease), box-shadow 0.25s var(--gdm-ease);
+    }
+
+    .gdm.gdm-newsletter .gdm-newsletter__field:hover {
+      border-color: var(--gdm-line);
+    }
+
+    .gdm.gdm-newsletter .gdm-newsletter__field:focus-within {
+      border-color: var(--gdm-accent);
+      box-shadow: 0 0 0 4px var(--gdm-accent-glow);
+    }
+
+    .gdm.gdm-newsletter .gdm-newsletter__input {
+      height: 56px;
+      min-height: 56px;
+    }
+
+    .gdm.gdm-newsletter .gdm-newsletter__submit {
+      width: 100%;
+      min-height: 56px;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "GDM · Newsletter",
+  "tag": "section",
+  "class": "gdm-shopify-section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Texte"
+    },
+    {
+      "type": "text",
+      "id": "pill",
+      "label": "Badge",
+      "default": "Newsletter"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titre",
+      "default": "Rejoignez-",
+      "info": "S'il se termine par un tiret ou une apostrophe, la partie orange est collée sans espace."
+    },
+    {
+      "type": "text",
+      "id": "title_accent",
+      "label": "Titre — partie orange",
+      "default": "nous !"
+    },
+    {
+      "type": "select",
+      "id": "heading_tag",
+      "label": "Niveau du titre (SEO)",
+      "default": "h2",
+      "options": [
+        { "value": "h1", "label": "H1" },
+        { "value": "h2", "label": "H2" }
+      ]
+    },
+    {
+      "type": "inline_richtext",
+      "id": "text",
+      "label": "Texte",
+      "default": "Rejoignez-nous pour ne rien rater de nos actus et des dernières sorties de bières !"
+    },
+    {
+      "type": "header",
+      "content": "Formulaire"
+    },
+    {
+      "type": "paragraph",
+      "content": "Les inscrits sont ajoutés aux clients Shopify avec le tag « newsletter » et l'accord marketing par e-mail."
+    },
+    {
+      "type": "text",
+      "id": "email_label",
+      "label": "Libellé du champ e-mail",
+      "default": "Votre adresse e-mail"
+    },
+    {
+      "type": "text",
+      "id": "button_label",
+      "label": "Bouton",
+      "default": "S'abonner"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "legal",
+      "label": "Mention sous le champ (RGPD)",
+      "default": "Pas de spam : seulement nos actus et nos sorties de bières. Désinscription en un clic.",
+      "info": "Vous pouvez ajouter un lien vers la politique de confidentialité."
+    },
+    {
+      "type": "text",
+      "id": "success_text",
+      "label": "Message après inscription",
+      "default": "Merci ! Vous êtes bien inscrit(e)."
+    },
+    {
+      "type": "header",
+      "content": "Mise en page"
+    },
+    {
+      "type": "select",
+      "id": "layout",
+      "label": "Disposition",
+      "default": "center",
+      "options": [
+        { "value": "center", "label": "Centrée" },
+        { "value": "split", "label": "Texte à gauche, formulaire à droite" }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "show_decor",
+      "label": "Afficher le décor (houblon, avion en papier)",
+      "default": true,
+      "info": "L'avion en papier n'apparaît qu'en disposition centrée, sur grand écran."
+    },
+    {
+      "type": "header",
+      "content": "Couleurs et espacement"
+    },
+    {
+      "type": "color",
+      "id": "color_bg",
+      "label": "Fond",
+      "default": "#0D0D0D"
+    },
+    {
+      "type": "color",
+      "id": "color_accent",
+      "label": "Accent",
+      "default": "#F0921E"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Marge haute",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Marge basse",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    }
+  ],
+  "presets": [
+    {
+      "name": "GDM · Newsletter"
+    }
+  ]
+}
+{% endschema %}

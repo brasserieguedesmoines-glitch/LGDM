@@ -9,663 +9,6 @@
  */
 {
   "sections": {
-    "1646028739ae283905": {
-      "type": "slideshow",
-      "blocks": {
-        "164602873867eb3815-0": {
-          "type": "image_parent",
-          "settings": {
-            "image": "shopify://shop_images/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_4.webp",
-            "image_position": "8",
-            "cl_img": "",
-            "link_img1": "shopify://collections/portrait-personnalise-manga",
-            "open_link": "_blank",
-            "animate_slide": "none",
-            "text_align": "start",
-            "text_align_mb": "start",
-            "content_width": "container",
-            "cv_pos": 50,
-            "ch_pos": 0,
-            "cv_pos_mb": 50,
-            "ch_pos_mb": 0,
-            "bg_overlay": "#000000",
-            "bg_opacity": 0,
-            "bg_content_cl": "rgba(0,0,0,0)",
-            "bg_content_op": 0,
-            "content_radius": 0,
-            "box_square": false,
-            "content_pd_tb": 15,
-            "content_pd_lr": 15,
-            "content_pd_tb_tb": 15,
-            "content_pd_lr_tb": 15,
-            "content_pd_tb_mb": 10,
-            "content_pd_lr_mb": 10,
-            "border_bl": false,
-            "br_color": "#222222",
-            "br_bg": "#ffffff",
-            "br_opacity": 50,
-            "br_style": "solid",
-            "br_pd": 20,
-            "br_pd_mb": 10,
-            "time_animation": 1,
-            "animation_delay": 30
-          }
-        }
-      },
-      "block_order": [
-        "164602873867eb3815-0"
-      ],
-      "settings": {
-        "se_height": "t4s_ratioadapt",
-        "custom_dk": false,
-        "height_dk": 700,
-        "custom_tb": false,
-        "height_tb": 500,
-        "custom_mb": false,
-        "height_mb": 250,
-        "eff": "fade",
-        "loop": true,
-        "au_time": 8.5,
-        "au_hover": true,
-        "nav_btn": false,
-        "btn_vi": "hover",
-        "btn_owl": "default",
-        "btn_icon": "0",
-        "btn_shape": "none",
-        "btn_cl": "dark",
-        "btn_size": "small",
-        "btn_hidden_mobile": false,
-        "nav_dot": true,
-        "dot_owl": "default",
-        "dots_position": "default",
-        "dots_cl": "dark",
-        "dots_round": true,
-        "dots_space": 10,
-        "dots_hidden_mobile": false,
-        "layout": "t4s-container-fluid",
-        "cl_bg": "",
-        "cl_bg_gradient": "",
-        "mg": ",,30px,",
-        "pd": "",
-        "mg_tb": ",50px",
-        "pd_tb": "",
-        "mg_mb": ",,10px,",
-        "pd_mb": "",
-        "use_cus_css": false,
-        "code_cus_css": ".SectionID {\nbackground-color:red\n}"
-      },
-      "disabled": true
-    },
-    "custom_liquid_zcE9dJ": {
-      "type": "custom-liquid",
-      "name": "Custom Liquid",
-      "settings": {
-        "custom_liquid": "<section class=\"gdm-bto\" aria-label=\"Bières artisanales toulousaines — Le Gué des Moines, Bruguières\">\n<style>\n.gdm-bto { background: transparent; padding: 0 20px 56px; font-family: 'DM Sans', sans-serif; color: #f2f0ec; }\n.gdm-bto * { box-sizing: border-box; margin: 0; padding: 0; }\n.gdm-bto-wrap { max-width: 1180px; margin: 0 auto; text-align: center; }\n.gdm-bto-h2 { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(22px, 3vw, 36px); font-weight: 800; text-transform: uppercase; line-height: 1.1; letter-spacing: -.01em; color: #f2f0ec; }\n.gdm-bto-h2 em { font-style: normal; color: #FF9900; }\n.gdm-bto-sub { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }\n</style>\n\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link href=\"https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=DM+Sans:wght@400;500&display=swap\" rel=\"stylesheet\">\n\n<div class=\"gdm-bto-wrap\">\n  <h2 class=\"gdm-bto-h2\">\n    Nos <em>bières artisanales toulousaines</em>,<br>brassées à Bruguières depuis 2016\n  </h2>\n  <p class=\"gdm-bto-sub\">\n    Blonde, IPA, NEIPA, Sour, Stout… des bières artisanales locales de fermentation haute, brassées et embouteillées sur place dans l'ancienne Briqueterie de Bruguières — à deux pas de Toulouse.\n  </p>\n</div>\n</section>",
-        "layout": "t4s-container-wrap",
-        "cl_bg": "",
-        "cl_bg_gradient": "",
-        "mg": ",,50px,",
-        "pd": "",
-        "mg_tb": "",
-        "pd_tb": "",
-        "mg_mb": ",,30px,",
-        "pd_mb": ""
-      },
-      "disabled": true
-    },
-    "custom_liquid_exzC47": {
-      "type": "custom-liquid",
-      "settings": {
-        "custom_liquid": "<h2 id=\"id_div_1\" style=\"display:none;\">Découvrez nos bières artisanales brassées à Bruguières, à deux pas de Toulouse. Blonde, IPA, stout… à déguster sur place au brewpub ou à emporter.</h2>",
-        "layout": "t4s-container-wrap",
-        "cl_bg": "",
-        "cl_bg_gradient": "",
-        "mg": "",
-        "pd": "",
-        "mg_tb": "",
-        "pd_tb": "",
-        "mg_mb": "",
-        "pd_mb": ""
-      }
-    },
-    "featured_collection_pFFBcj": {
-      "type": "featured-collection",
-      "settings": {
-        "design_heading": "8",
-        "heading_align": "t4s-text-center",
-        "top_heading": "",
-        "icon_heading": "las la-gem",
-        "top_subheading": "",
-        "tophead_mb": 30,
-        "head_btn_label": "View All",
-        "head_btn_url": "",
-        "head_btn_icon": false,
-        "head_btn_style": "default",
-        "head_btn_size": "medium",
-        "head_btn_cl": "dark",
-        "head_btn_effect": "default",
-        "head_btn_hidden_mb": false,
-        "collection": "bieres-artisanales-permanentes-brasserie-le-gue-des-moines",
-        "product_des": "3",
-        "show_vendor": false,
-        "use_cdt": false,
-        "image_ratio": "ratio2_3",
-        "image_size": "cover",
-        "image_position": "8",
-        "content_align": "center",
-        "limit": 32,
-        "col_dk": "4",
-        "col_tb": "3",
-        "col_mb": "2",
-        "space_h_item": "40",
-        "space_v_item": "40",
-        "space_h_item_mb": "10",
-        "space_v_item_mb": "30",
-        "layout_des": "2",
-        "loop": true,
-        "au_time": 3.5,
-        "au_hover": true,
-        "center_slide": true,
-        "nav_btn": false,
-        "btns_pos": "default",
-        "btn_vi": "hover",
-        "btn_owl": "default",
-        "btn_shape": "none",
-        "btn_cl": "dark",
-        "btn_size": "small",
-        "btn_hidden_mobile": true,
-        "nav_dot": false,
-        "dot_owl": "default",
-        "dots_cl": "dark",
-        "dots_round": true,
-        "dots_space": 10,
-        "dots_hidden_mobile": false,
-        "use_pagination": "none",
-        "enable_bar_lm": true,
-        "btn_icon": false,
-        "button_style": "default",
-        "btns_size": "large",
-        "btns_cl": "dark",
-        "button_effect": "default",
-        "btn_pos": "t4s-text-center",
-        "layout": "t4s-container-fluid",
-        "cl_bg": "",
-        "cl_bg_gradient": "",
-        "mg": ",,50px,",
-        "pd": "",
-        "mg_tb": "",
-        "pd_tb": "",
-        "mg_mb": ",,30px,",
-        "pd_mb": "",
-        "use_cus_css": false,
-        "code_cus_css": ""
-      },
-      "disabled": true
-    },
-    "custom_liquid_jVggmw": {
-      "type": "custom-liquid",
-      "name": "Custom Liquid",
-      "settings": {
-        "custom_liquid": "<section class=\"gdm-nav3\" aria-label=\"Brasserie, Brewpub et E-Shop — Le Gué des Moines\">\n<style>\n.gdm-nav3{--acc:#FF9900;--acc-g:rgba(255,153,0,.10);--acc-b:rgba(255,153,0,.28);--c:#161616;--ln:rgba(255,255,255,.09);--ln-h:rgba(255,153,0,.35);--tx:#f2f0ec;--mu:rgba(242,240,236,.68);background:transparent;padding:56px 20px;font-family:'DM Sans',sans-serif;}\n.gdm-nav3 *{box-sizing:border-box;margin:0;padding:0;}\n.gdm-nav3 a{text-decoration:none;}\n.gdm-n3-wrap{max-width:1180px;margin:0 auto;}\n \n.gdm-n3-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:28px;flex-wrap:wrap;}\n.gdm-n3-head-left{}\n.gdm-n3-kicker{display:inline-flex;align-items:center;gap:7px;background:var(--acc-g);border:1px solid var(--acc-b);color:#ffc966;padding:5px 14px;border-radius:999px;font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;}\n.gdm-n3-kicker-dot{width:5px;height:5px;border-radius:50%;background:var(--acc);}\n.gdm-n3-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(28px,4vw,44px);font-weight:800;text-transform:uppercase;line-height:1.0;color:var(--tx);letter-spacing:-.01em;}\n.gdm-n3-title em{font-style:normal;color:var(--acc);}\n.gdm-n3-nav{display:flex;gap:8px;align-items:center;flex-shrink:0;}\n.gdm-n3-btn-nav{width:42px;height:42px;border-radius:50%;background:var(--c);border:1px solid var(--ln);color:var(--tx);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;transition:border-color .2s,background .2s,transform .2s;font-family:'DM Sans',sans-serif;}\n.gdm-n3-btn-nav:hover{border-color:var(--acc-b);color:var(--acc);background:var(--acc-g);transform:translateY(-1px);}\n.gdm-n3-btn-nav:disabled{opacity:.3;cursor:not-allowed;transform:none;}\n \n.gdm-n3-viewport{overflow:hidden;border-radius:20px;}\n.gdm-n3-track{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:4px 2px 16px;}\n.gdm-n3-track::-webkit-scrollbar{display:none;}\n \n.gdm-n3-card{scroll-snap-align:start;flex:0 0 clamp(280px,36vw,420px);background:var(--c);border:1px solid var(--ln);border-radius:20px;overflow:hidden;transition:border-color .25s,transform .25s;position:relative;display:flex;flex-direction:column;}\n.gdm-n3-card:hover{border-color:var(--ln-h);transform:translateY(-3px);}\n.gdm-n3-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--acc);opacity:0;transition:opacity .25s;z-index:3;}\n.gdm-n3-card:hover::before{opacity:1;}\n \n.gdm-n3-img-wrap{position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;}\n.gdm-n3-img-wrap img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s ease;filter:brightness(.88) saturate(.95);}\n.gdm-n3-card:hover .gdm-n3-img-wrap img{transform:scale(1.05);filter:brightness(.96) saturate(1.05);}\n.gdm-n3-img-wrap::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(22,22,22,.65) 100%);pointer-events:none;}\n \n.gdm-n3-body{padding:22px 24px 24px;display:flex;flex-direction:column;gap:10px;flex:1;}\n.gdm-n3-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--acc);}\n.gdm-n3-name{font-family:'Barlow Condensed',sans-serif;font-size:clamp(26px,3vw,36px);font-weight:800;text-transform:uppercase;letter-spacing:-.01em;color:var(--tx);line-height:1.0;}\n.gdm-n3-desc{font-size:13.5px;color:var(--mu);line-height:1.65;flex:1;}\n.gdm-n3-details{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;}\n.gdm-n3-detail{font-size:11px;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid var(--ln);color:var(--mu);}\n.gdm-n3-cta{display:inline-flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:13px 18px;border-radius:12px;background:var(--acc);color:#0f0f0f;font-size:13.5px;font-weight:700;font-family:'DM Sans',sans-serif;text-transform:uppercase;letter-spacing:.04em;transition:background .2s,transform .2s,box-shadow .2s;margin-top:4px;}\n.gdm-n3-cta:hover{background:#fff;transform:translateY(-1px);box-shadow:0 6px 20px rgba(255,153,0,.30);}\n.gdm-n3-arrow{font-size:16px;line-height:1;flex-shrink:0;}\n \n.gdm-n3-dots{display:flex;justify-content:center;gap:6px;margin-top:16px;}\n.gdm-n3-dot{width:6px;height:6px;border-radius:50%;background:var(--ln);border:none;padding:0;cursor:pointer;transition:background .2s,width .2s;}\n.gdm-n3-dot.active{background:var(--acc);width:20px;border-radius:3px;}\n \n@media(max-width:640px){.gdm-nav3{padding:40px 16px;}.gdm-n3-head{flex-direction:column;align-items:flex-start;}.gdm-n3-nav{align-self:flex-end;}}\n</style>\n \n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link href=\"https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap\" rel=\"stylesheet\">\n \n<div class=\"gdm-n3-wrap\">\n \n  <div class=\"gdm-n3-head\">\n    <div class=\"gdm-n3-head-left\">\n      <h2 class=\"gdm-n3-title\">Explorez notre <em>univers</em></h2>\n    </div>\n    <div class=\"gdm-n3-nav\">\n      <button class=\"gdm-n3-btn-nav gdm-n3-prev\" type=\"button\" aria-label=\"Précédent\">‹</button>\n      <button class=\"gdm-n3-btn-nav gdm-n3-next\" type=\"button\" aria-label=\"Suivant\">›</button>\n    </div>\n  </div>\n \n  <div class=\"gdm-n3-viewport\">\n    <div class=\"gdm-n3-track\">\n \n      <article class=\"gdm-n3-card\">\n        <div class=\"gdm-n3-img-wrap\">\n          <img src=\"https://cdn.shopify.com/s/files/1/0864/4604/7574/files/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_9e8b0033-e237-4d43-a3a0-75f2ece76781.webp?v=1730104704\" alt=\"Brasserie artisanale Le Gué des Moines à Bruguières — cuves de brassage artisanal Toulouse\" loading=\"lazy\" width=\"800\" height=\"600\">\n        </div>\n        <div class=\"gdm-n3-body\">\n          <span class=\"gdm-n3-label\">Lieu de fabrication</span>\n          <h3 class=\"gdm-n3-name\">Brasserie</h3>\n          <p class=\"gdm-n3-desc\">Découvrez l'ancienne Briqueterie de Bruguières où chaque bière est pensée, brassée et embouteillée sur place depuis 2016. Visites guidées mensuelles gratuites.</p>\n          <div class=\"gdm-n3-details\">\n            <span class=\"gdm-n3-detail\">Visite mensuelle gratuite</span>\n            <span class=\"gdm-n3-detail\">Bruguières (31150)</span>\n          </div>\n          <a href=\"/pages/brasserie-le-gue-des-moines\" class=\"gdm-n3-cta\" title=\"Découvrir la brasserie Le Gué des Moines\">\n            Vers la brasserie <span class=\"gdm-n3-arrow\">→</span>\n          </a>\n        </div>\n      </article>\n \n      <article class=\"gdm-n3-card\">\n        <div class=\"gdm-n3-img-wrap\">\n          <img src=\"https://cdn.shopify.com/s/files/1/0864/4604/7574/files/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_3_28374699-dbe3-428d-8df7-a1c1865ef037.webp?v=1730107631\" alt=\"Brewpub Le Gué des Moines — 10 bières artisanales à la pression à Bruguières, nord Toulouse\" loading=\"lazy\" width=\"800\" height=\"600\">\n        </div>\n        <div class=\"gdm-n3-body\">\n          <span class=\"gdm-n3-label\">Bar à bière artisanale</span>\n          <h3 class=\"gdm-n3-name\">Brewpub</h3>\n          <p class=\"gdm-n3-desc\">+10 bières artisanales à la pression, tapas à partager, diffusion des matchs et concerts. L'adresse conviviale du nord toulousain, ouverte du mardi au samedi.</p>\n          <div class=\"gdm-n3-details\">\n            <span class=\"gdm-n3-detail\">Mar–Mer : 16h–20h30</span>\n            <span class=\"gdm-n3-detail\">Jeu–Sam : 16h–22h30</span>\n          </div>\n          <a href=\"/pages/brewpub\" class=\"gdm-n3-cta\" title=\"Découvrir le brewpub Le Gué des Moines\">\n            Vers le brewpub <span class=\"gdm-n3-arrow\">→</span>\n          </a>\n        </div>\n      </article>\n \n      <article class=\"gdm-n3-card\">\n        <div class=\"gdm-n3-img-wrap\">\n          <img src=\"https://cdn.shopify.com/s/files/1/0864/4604/7574/files/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_2.webp?v=1730104744\" alt=\"Bières artisanales du Gué des Moines — commander en ligne avec click and collect à Bruguières\" loading=\"lazy\" width=\"800\" height=\"600\">\n        </div>\n        <div class=\"gdm-n3-body\">\n          <span class=\"gdm-n3-label\">Commande en ligne</span>\n          <h3 class=\"gdm-n3-name\">E-Shop</h3>\n          <p class=\"gdm-n3-desc\">Commandez nos bières artisanales en 33cl et 75cl depuis chez vous. Retrait en click &amp; collect à la brasserie avec <strong style=\"color:#f2f0ec\">10% de remise</strong>.</p>\n          <div class=\"gdm-n3-details\">\n            <span class=\"gdm-n3-detail\">10% click &amp; collect</span>\n            <span class=\"gdm-n3-detail\">10 bières disponibles</span>\n          </div>\n          <a href=\"/collections/bieres-artisanales-du-gue-des-moines\" class=\"gdm-n3-cta\" title=\"Commander les bières artisanales du Gué des Moines\">\n            Vers l'e-shop <span class=\"gdm-n3-arrow\">→</span>\n          </a>\n        </div>\n      </article>\n \n    </div>\n  </div>\n \n  <div class=\"gdm-n3-dots\" role=\"tablist\" aria-label=\"Navigation\">\n    <button class=\"gdm-n3-dot active\" role=\"tab\" aria-label=\"Brasserie\" aria-selected=\"true\"></button>\n    <button class=\"gdm-n3-dot\" role=\"tab\" aria-label=\"Brewpub\" aria-selected=\"false\"></button>\n    <button class=\"gdm-n3-dot\" role=\"tab\" aria-label=\"E-Shop\" aria-selected=\"false\"></button>\n  </div>\n \n</div>\n</section>\n \n<script>\n(function(){\n  const root = document.querySelector('.gdm-nav3');\n  if(!root) return;\n  const track = root.querySelector('.gdm-n3-track');\n  const cards = Array.from(root.querySelectorAll('.gdm-n3-card'));\n  const prev  = root.querySelector('.gdm-n3-prev');\n  const next  = root.querySelector('.gdm-n3-next');\n  const dots  = Array.from(root.querySelectorAll('.gdm-n3-dot'));\n  if(!track || !cards.length) return;\n \n  let current = 0;\n  const gap  = () => parseFloat(getComputedStyle(track).gap || '16');\n  const step = () => cards[0].getBoundingClientRect().width + gap();\n \n  const go = (idx) => {\n    current = Math.max(0, Math.min(idx, cards.length - 1));\n    track.scrollTo({ left: current * step(), behavior: 'smooth' });\n    update();\n  };\n \n  const update = () => {\n    if(prev) prev.disabled = current <= 0;\n    if(next) next.disabled = current >= cards.length - 1;\n    dots.forEach((d,i) => {\n      d.classList.toggle('active', i === current);\n      d.setAttribute('aria-selected', i === current ? 'true' : 'false');\n    });\n  };\n \n  if(prev) prev.addEventListener('click', () => go(current - 1));\n  if(next) next.addEventListener('click', () => go(current + 1));\n  dots.forEach((d,i) => d.addEventListener('click', () => go(i)));\n \n  track.addEventListener('scroll', () => {\n    const s = step();\n    if(s > 0) current = Math.round(track.scrollLeft / s);\n    update();\n  }, { passive: true });\n \n  update();\n})();\n</script>",
-        "layout": "t4s-container-wrap",
-        "cl_bg": "",
-        "cl_bg_gradient": "",
-        "mg": ",,50px,",
-        "pd": "",
-        "mg_tb": "",
-        "pd_tb": "",
-        "mg_mb": ",,30px,",
-        "pd_mb": ""
-      }
-    },
-    "slideshow_34enek": {
-      "type": "slideshow",
-      "blocks": {
-        "image_parent_fXEPJy": {
-          "type": "image_parent",
-          "settings": {
-            "image": "shopify://shop_images/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_1.webp",
-            "image_position": "8",
-            "cl_img": "",
-            "link_img1": "",
-            "open_link": "_blank",
-            "animate_slide": "none",
-            "text_align": "start",
-            "text_align_mb": "center",
-            "content_width": "auto",
-            "cv_pos": 50,
-            "ch_pos": 50,
-            "cv_pos_mb": 50,
-            "ch_pos_mb": 50,
-            "bg_overlay": "#000000",
-            "bg_opacity": 0,
-            "bg_content_cl": "#ffffff",
-            "bg_content_op": 0,
-            "content_radius": 0,
-            "box_square": false,
-            "content_pd_tb": 15,
-            "content_pd_lr": 15,
-            "content_pd_tb_tb": 15,
-            "content_pd_lr_tb": 15,
-            "content_pd_tb_mb": 10,
-            "content_pd_lr_mb": 10,
-            "border_bl": false,
-            "br_color": "#222222",
-            "br_bg": "#ffffff",
-            "br_opacity": 50,
-            "br_style": "solid",
-            "br_pd": 20,
-            "br_pd_mb": 10,
-            "time_animation": 1,
-            "animation_delay": 40
-          }
-        },
-        "custom_button_zUqWXq": {
-          "type": "custom_button",
-          "settings": {
-            "button_text": "Button label",
-            "button_link": "",
-            "target_link": "_self",
-            "fontf": "inherit",
-            "button_icon_w": 0,
-            "button_style": "default",
-            "button_effect": "default",
-            "pri_cl": "#222222",
-            "second_cl": "",
-            "pri_cl_hover": "#56cfe1",
-            "second_cl_hover": "#ffffff",
-            "fsbutton": 14,
-            "fwbutton": 400,
-            "button_ls": 0,
-            "button_mh": 42,
-            "button_bdr": 0,
-            "button_pd_lr": 20,
-            "button_mgb": 0,
-            "hidden_mobile": false,
-            "button_icon_w_mb": 0,
-            "fsbutton_mb": 10,
-            "button_mh_mb": 36,
-            "button_pd_lr_mb": 15,
-            "button_ls_mb": 0,
-            "button_mgb_mb": 0,
-            "animation": "none"
-          }
-        }
-      },
-      "block_order": [
-        "image_parent_fXEPJy",
-        "custom_button_zUqWXq"
-      ],
-      "settings": {
-        "se_height": "t4s_ratioadapt",
-        "custom_dk": true,
-        "height_dk": 600,
-        "custom_tb": true,
-        "height_tb": 400,
-        "custom_mb": true,
-        "height_mb": 250,
-        "eff": "slide",
-        "loop": true,
-        "au_time": 0,
-        "au_hover": true,
-        "nav_btn": false,
-        "btn_vi": "hover",
-        "btn_owl": "default",
-        "btn_icon": "0",
-        "btn_shape": "none",
-        "btn_cl": "dark",
-        "btn_size": "small",
-        "btn_hidden_mobile": false,
-        "nav_dot": false,
-        "dot_owl": "default",
-        "dots_position": "default",
-        "dots_cl": "dark",
-        "dots_round": false,
-        "dots_space": 10,
-        "dots_hidden_mobile": false,
-        "layout": "t4s-container-fluid",
-        "cl_bg": "",
-        "cl_bg_gradient": "",
-        "mg": ",,50px,",
-        "pd": "",
-        "mg_tb": "",
-        "pd_tb": "",
-        "mg_mb": ",,30px,",
-        "pd_mb": "",
-        "use_cus_css": false,
-        "code_cus_css": ""
-      }
-    },
-    "17118856593ce6dc40": {
-      "type": "apps",
-      "settings": {}
-    },
-    "custom_liquid_bwLB4x": {
-      "type": "custom-liquid",
-      "settings": {
-        "custom_liquid": "<section class=\"gdm-ut-compact\" aria-label=\"Avis Untappd — Le Gué des Moines\">\n<style>\n.gdm-ut-compact {\n  --acc: #FF9900;\n  --acc-g: rgba(255,153,0,0.10);\n  --acc-b: rgba(255,153,0,0.28);\n  --c: #161616;\n  --ln: rgba(255,255,255,0.09);\n  --ln-h: rgba(255,153,0,0.35);\n  --tx: #f2f0ec;\n  --mu: rgba(242,240,236,0.68);\n  --sh: 0 8px 28px rgba(0,0,0,0.28);\n  background: transparent;\n  color: var(--tx);\n  padding: 48px 20px;\n  font-family: 'DM Sans', sans-serif;\n}\n.gdm-ut-compact * { box-sizing: border-box; margin: 0; padding: 0; }\n.gdm-ut-compact a { text-decoration: none; color: inherit; }\n \n.gdm-ut-inner { max-width: 1180px; margin: 0 auto; }\n \n.gdm-ut-topbar {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 20px;\n  margin-bottom: 24px;\n  flex-wrap: wrap;\n}\n.gdm-ut-brand-row { display: flex; align-items: center; gap: 14px; }\n.gdm-ut-logo {\n  width: 48px; height: 48px;\n  border-radius: 12px;\n  border: 1px solid var(--ln);\n  overflow: hidden;\n  flex-shrink: 0;\n  display: block;\n}\n.gdm-ut-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }\n.gdm-ut-eyebrow {\n  font-size: 10px; font-weight: 600;\n  letter-spacing: 0.09em; text-transform: uppercase;\n  color: var(--acc); margin-bottom: 3px;\n}\n.gdm-ut-title {\n  font-family: 'Barlow Condensed', sans-serif;\n  font-size: clamp(20px, 2.5vw, 28px);\n  font-weight: 800; text-transform: uppercase;\n  line-height: 1; color: var(--tx);\n}\n.gdm-ut-title em { font-style: normal; color: var(--acc); }\n.gdm-ut-profile-link {\n  display: inline-flex; align-items: center; gap: 7px;\n  padding: 9px 18px; border-radius: 999px;\n  border: 1px solid var(--ln);\n  font-size: 12.5px; font-weight: 600; color: var(--tx);\n  transition: border-color .2s, color .2s, background .2s;\n  white-space: nowrap;\n}\n.gdm-ut-profile-link:hover { border-color: var(--acc-b); color: var(--acc); background: var(--acc-g); }\n \n.gdm-ut-stats {\n  display: grid;\n  grid-template-columns: repeat(4, 1fr);\n  gap: 10px; margin-bottom: 20px;\n}\n.gdm-ut-stat {\n  background: var(--c);\n  border: 1px solid var(--ln);\n  border-radius: 14px;\n  padding: 14px 16px;\n  transition: border-color .2s;\n}\n.gdm-ut-stat:hover { border-color: var(--ln-h); }\n.gdm-ut-stat-val {\n  font-family: 'Barlow Condensed', sans-serif;\n  font-size: 26px; font-weight: 800;\n  color: var(--acc); line-height: 1;\n  white-space: nowrap; margin-bottom: 3px;\n}\n.gdm-ut-stat-label { font-size: 11px; color: var(--mu); line-height: 1.35; }\n.gdm-stars-sm { display: flex; gap: 2px; margin-top: 5px; }\n.gdm-stars-sm svg { width: 10px; height: 10px; }\n \n.gdm-ut-reviews {\n  display: grid;\n  grid-template-columns: repeat(3, 1fr);\n  gap: 10px; margin-bottom: 20px;\n}\n.gdm-ut-rev {\n  background: var(--c);\n  border: 1px solid var(--ln);\n  border-radius: 16px;\n  padding: 18px 20px;\n  display: flex; flex-direction: column; gap: 12px;\n  box-shadow: var(--sh);\n  transition: border-color .2s, transform .2s;\n}\n.gdm-ut-rev:hover { border-color: var(--ln-h); transform: translateY(-2px); }\n.gdm-ut-rev-head { display: flex; align-items: center; gap: 10px; }\n.gdm-ut-av {\n  width: 36px; height: 36px; border-radius: 50%;\n  border: 1px solid var(--ln); overflow: hidden;\n  background: #222; flex-shrink: 0;\n  display: flex; align-items: center; justify-content: center;\n  font-family: 'Barlow Condensed', sans-serif;\n  font-size: 14px; font-weight: 700; color: var(--acc);\n}\n.gdm-ut-av img { width: 100%; height: 100%; object-fit: cover; display: block; }\n.gdm-ut-rev-meta { flex: 1; min-width: 0; }\n.gdm-ut-rev-name { font-size: 13px; font-weight: 600; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\n.gdm-ut-rev-beer { font-size: 10px; color: var(--acc); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }\n.gdm-ut-rev-score {\n  font-family: 'Barlow Condensed', sans-serif;\n  font-size: 19px; font-weight: 800; color: var(--acc); line-height: 1;\n}\n.gdm-ut-rev-score sup { font-size: 10px; color: var(--mu); font-family: 'DM Sans', sans-serif; font-weight: 400; }\n.gdm-ut-rev-quote {\n  font-size: 13px; color: var(--mu);\n  line-height: 1.65; font-style: italic;\n  border-left: 2px solid rgba(255,153,0,0.30);\n  padding-left: 12px; flex: 1;\n}\n \n.gdm-ut-cta-bar {\n  display: flex; align-items: center;\n  justify-content: space-between; gap: 16px;\n  background: radial-gradient(circle at left, rgba(255,153,0,0.07), transparent 60%), var(--c);\n  border: 1px solid var(--ln);\n  border-radius: 16px; padding: 16px 22px; flex-wrap: wrap;\n}\n.gdm-ut-cta-txt { font-size: 13px; color: var(--mu); line-height: 1.6; }\n.gdm-ut-cta-txt strong { color: var(--tx); font-weight: 600; }\n.gdm-ut-cta-actions { display: flex; gap: 10px; flex-shrink: 0; flex-wrap: wrap; }\n.gdm-btn-sm {\n  display: inline-flex; align-items: center; gap: 6px;\n  padding: 9px 18px; border-radius: 999px;\n  font-size: 12.5px; font-weight: 600;\n  border: 1px solid transparent; transition: all .2s;\n  white-space: nowrap; font-family: 'DM Sans', sans-serif;\n}\n.gdm-btn-sm-p { background: var(--acc); color: #0f0f0f; }\n.gdm-btn-sm-p:hover { background: #fff; box-shadow: 0 4px 16px rgba(255,153,0,.30); }\n.gdm-btn-sm-s { background: transparent; color: var(--tx); border-color: var(--ln); }\n.gdm-btn-sm-s:hover { border-color: var(--acc-b); color: var(--acc); background: var(--acc-g); }\n \n@media (max-width: 900px) {\n  .gdm-ut-stats { grid-template-columns: repeat(2, 1fr); }\n  .gdm-ut-reviews { grid-template-columns: repeat(2, 1fr); }\n}\n@media (max-width: 600px) {\n  .gdm-ut-compact { padding: 36px 16px; }\n  .gdm-ut-topbar { flex-direction: column; align-items: flex-start; }\n  .gdm-ut-stats { grid-template-columns: repeat(2, 1fr); }\n  .gdm-ut-reviews { grid-template-columns: 1fr; }\n  .gdm-ut-cta-bar { flex-direction: column; align-items: flex-start; }\n}\n</style>\n \n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link href=\"https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap\" rel=\"stylesheet\">\n \n<div class=\"gdm-ut-inner\">\n \n  <!-- TOP BAR -->\n  <div class=\"gdm-ut-topbar\">\n    <div class=\"gdm-ut-brand-row\">\n      <a href=\"https://untappd.com/BrasserieLeGueDesMoines\" target=\"_blank\" rel=\"noopener\" class=\"gdm-ut-logo\">\n        <img src=\"https://assets.untappd.com/site/brewery_logos/brewery-270958_04a97.jpeg\" alt=\"Le Gué des Moines sur Untappd\" loading=\"lazy\" width=\"48\" height=\"48\">\n      </a>\n      <div>\n        <div class=\"gdm-ut-eyebrow\">Untappd · Communauté bière</div>\n        <div class=\"gdm-ut-title\">Ce que la communauté dit de nos <em>bières</em></div>\n      </div>\n    </div>\n    <a href=\"https://untappd.com/BrasserieLeGueDesMoines\" target=\"_blank\" rel=\"noopener\" class=\"gdm-ut-profile-link\">\n      Voir le profil ↗\n    </a>\n  </div>\n \n  <!-- STATS -->\n  <div class=\"gdm-ut-stats\">\n    <div class=\"gdm-ut-stat\">\n      <div class=\"gdm-ut-stat-val\">2 245</div>\n      <div class=\"gdm-ut-stat-label\">Check-ins</div>\n    </div>\n    <div class=\"gdm-ut-stat\">\n      <div class=\"gdm-ut-stat-val\">992</div>\n      <div class=\"gdm-ut-stat-label\">Amateurs uniques</div>\n    </div>\n    <div class=\"gdm-ut-stat\">\n      <div class=\"gdm-ut-stat-val\">24</div>\n      <div class=\"gdm-ut-stat-label\">Bières référencées</div>\n    </div>\n    <div class=\"gdm-ut-stat\">\n      <div class=\"gdm-ut-stat-val\">3,66<span style=\"font-size:14px;color:var(--mu);font-weight:400\">/5</span></div>\n      <div class=\"gdm-ut-stat-label\">Note moyenne</div>\n      <div class=\"gdm-stars-sm\" aria-label=\"Note 3,66 sur 5\">\n        <svg viewBox=\"0 0 24 24\" fill=\"#FF9900\"><polygon points=\"12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26\"/></svg>\n        <svg viewBox=\"0 0 24 24\" fill=\"#FF9900\"><polygon points=\"12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26\"/></svg>\n        <svg viewBox=\"0 0 24 24\" fill=\"#FF9900\"><polygon points=\"12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26\"/></svg>\n        <svg viewBox=\"0 0 24 24\">\n          <defs><linearGradient id=\"gdm-hg\" x1=\"0\" x2=\"1\"><stop offset=\"66%\" stop-color=\"#FF9900\"/><stop offset=\"66%\" stop-color=\"rgba(255,255,255,0.15)\"/></linearGradient></defs>\n          <polygon points=\"12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26\" fill=\"url(#gdm-hg)\"/>\n        </svg>\n        <svg viewBox=\"0 0 24 24\" fill=\"rgba(255,255,255,0.15)\"><polygon points=\"12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26\"/></svg>\n      </div>\n    </div>\n  </div>\n \n  <!-- AVIS -->\n  <div class=\"gdm-ut-reviews\">\n \n    <div class=\"gdm-ut-rev\">\n      <div class=\"gdm-ut-rev-head\">\n        <div class=\"gdm-ut-av\">\n          <img src=\"https://assets.untappd.com/profile/468c53ba583ce3885bb986b488ed9fcc_100x100.jpg\" alt=\"Poulpycole\" loading=\"lazy\" width=\"36\" height=\"36\" onerror=\"this.style.display='none';this.parentElement.textContent='PL'\">\n        </div>\n        <div class=\"gdm-ut-rev-meta\">\n          <div class=\"gdm-ut-rev-name\">Poulpycole</div>\n          <div class=\"gdm-ut-rev-beer\">Série Noire</div>\n        </div>\n        <div class=\"gdm-ut-rev-score\">4,5<sup>/5</sup></div>\n      </div>\n      <div class=\"gdm-ut-rev-quote\">Maltée et tourbée, un côté fruits rouges/noirs (cerise griotte, cassis). Finale et rétro olfaction longue. C'est drôlement bien fait.</div>\n    </div>\n \n    <div class=\"gdm-ut-rev\">\n      <div class=\"gdm-ut-rev-head\">\n        <div class=\"gdm-ut-av\">JO</div>\n        <div class=\"gdm-ut-rev-meta\">\n          <div class=\"gdm-ut-rev-name\">Jbouille Ollivier</div>\n          <div class=\"gdm-ut-rev-beer\">Labelle IPA</div>\n        </div>\n        <div class=\"gdm-ut-rev-score\">4,75<sup>/5</sup></div>\n      </div>\n      <div class=\"gdm-ut-rev-quote\">Très fruité avec un bon goût d'ananas, une bonne amertume. Une IPA bien faite.</div>\n    </div>\n \n    <div class=\"gdm-ut-rev\">\n      <div class=\"gdm-ut-rev-head\">\n        <div class=\"gdm-ut-av\">R</div>\n        <div class=\"gdm-ut-rev-meta\">\n          <div class=\"gdm-ut-rev-name\">Romano</div>\n          <div class=\"gdm-ut-rev-beer\">Roi de Coeur</div>\n        </div>\n        <div class=\"gdm-ut-rev-score\">5,0<sup>/5</sup></div>\n      </div>\n      <div class=\"gdm-ut-rev-quote\">Hé beh pas déçu les copains.</div>\n    </div>\n \n  </div>\n \n  <!-- CTA -->\n  <div class=\"gdm-ut-cta-bar\">\n    <div class=\"gdm-ut-cta-txt\">\n      <strong>Dégustez, notez, partagez sur Untappd</strong><br>\n      Scannez nos étiquettes avec l'app et rejoignez 992 amateurs qui suivent nos bières.\n    </div>\n    <div class=\"gdm-ut-cta-actions\">\n      <a href=\"https://untappd.com/BrasserieLeGueDesMoines\" target=\"_blank\" rel=\"noopener\" class=\"gdm-btn-sm gdm-btn-sm-p\">⭐ Notre profil Untappd</a>\n      <a href=\"/collections/bieres-artisanales-du-gue-des-moines\" class=\"gdm-btn-sm gdm-btn-sm-s\">Nos bières →</a>\n    </div>\n  </div>\n \n</div>\n</section>",
-        "layout": "t4s-container-wrap",
-        "cl_bg": "",
-        "cl_bg_gradient": "",
-        "mg": ",,50px,",
-        "pd": "",
-        "mg_tb": "",
-        "pd_tb": "",
-        "mg_mb": ",,30px,",
-        "pd_mb": ""
-      }
-    },
-    "custom_liquid_MfL7Kf": {
-      "type": "custom-liquid",
-      "name": "Custom Liquid",
-      "settings": {
-        "custom_liquid": "<section class=\"gdm-tireuse\" aria-label=\"Location de tireuse à bière à Toulouse\">\n<style>\n.gdm-tireuse {\n  --acc: #FF9900;\n  --acc-g: rgba(255,153,0,0.10);\n  --acc-b: rgba(255,153,0,0.28);\n  --c: #161616;\n  --ln: rgba(255,255,255,0.09);\n  --ln-h: rgba(255,153,0,0.35);\n  --tx: #f2f0ec;\n  --mu: rgba(242,240,236,0.68);\n  background: transparent;\n  color: var(--tx);\n  padding: 48px 20px;\n  font-family: 'DM Sans', sans-serif;\n}\n.gdm-tireuse * { box-sizing: border-box; margin: 0; padding: 0; }\n.gdm-tireuse a { text-decoration: none; color: inherit; }\n \n/* ── GRID ── */\n.gdm-tr-grid {\n  max-width: 1180px;\n  margin: 0 auto;\n  display: grid;\n  grid-template-columns: 1fr 1fr;\n  gap: 48px;\n  align-items: center;\n}\n \n/* ── IMAGE ── */\n.gdm-tr-visual {\n  position: relative;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n \n \n \n.gdm-tr-img {\n  position: relative;\n  z-index: 1;\n  width: 100%;\n  height: auto;\n  display: block;\n  border: none;\n  outline: none;\n  /* Image qui ressort : ombre portée ambrée */\n  filter: drop-shadow(0 24px 48px rgba(0,0,0,0.55));\n  transition: filter 0.4s ease, transform 0.4s ease;\n}\n.gdm-tireuse:hover .gdm-tr-img {\n  filter: drop-shadow(0 32px 56px rgba(0,0,0,0.65));\n  transform: translateY(-4px);\n}\n \n/* Stats flottantes sur l'image */\n.gdm-tr-stats {\n  position: absolute;\n  bottom: -8px;\n  left: 0;\n  right: 0;\n  z-index: 2;\n  display: flex;\n  justify-content: center;\n  gap: 10px;\n}\n.gdm-tr-stat {\n  background: rgba(22,22,22,0.88);\n  border: 1px solid var(--ln-h);\n  backdrop-filter: blur(10px);\n  -webkit-backdrop-filter: blur(10px);\n  border-radius: 12px;\n  padding: 10px 16px;\n  text-align: center;\n}\n.gdm-tr-stat-val {\n  font-family: 'Barlow Condensed', sans-serif;\n  font-size: 20px;\n  font-weight: 800;\n  color: var(--acc);\n  line-height: 1;\n  margin-bottom: 2px;\n}\n.gdm-tr-stat-lbl { font-size: 10px; color: var(--mu); }\n \n/* ── CONTENU DROITE ── */\n.gdm-tr-content {\n  display: flex;\n  flex-direction: column;\n  gap: 0;\n}\n \n.gdm-tr-kicker {\n  display: inline-flex;\n  align-items: center;\n  gap: 7px;\n  background: var(--acc-g);\n  border: 1px solid var(--acc-b);\n  color: #ffc966;\n  padding: 6px 14px;\n  border-radius: 999px;\n  font-size: 10.5px;\n  font-weight: 600;\n  letter-spacing: 0.08em;\n  text-transform: uppercase;\n  margin-bottom: 20px;\n  align-self: flex-start;\n}\n.gdm-tr-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--acc); }\n \n.gdm-tr-h2 {\n  font-family: 'Barlow Condensed', sans-serif;\n  font-size: clamp(34px, 4vw, 54px);\n  font-weight: 800;\n  text-transform: uppercase;\n  line-height: 1.0;\n  letter-spacing: -0.01em;\n  margin-bottom: 18px;\n  color: var(--tx);\n}\n.gdm-tr-h2 em { font-style: normal; color: var(--acc); }\n \n.gdm-tr-desc {\n  font-size: 15px;\n  color: var(--mu);\n  line-height: 1.75;\n  margin-bottom: 24px;\n}\n.gdm-tr-desc strong { color: var(--tx); font-weight: 600; }\n \n/* Événements */\n.gdm-tr-events {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 7px;\n  margin-bottom: 24px;\n}\n.gdm-tr-event {\n  padding: 6px 12px;\n  background: rgba(255,255,255,0.04);\n  border: 1px solid var(--ln);\n  border-radius: 999px;\n  font-size: 12px;\n  color: var(--mu);\n  font-weight: 500;\n  transition: border-color 0.2s, color 0.2s;\n}\n.gdm-tr-event:hover { border-color: var(--acc-b); color: var(--acc); }\n \n/* Fûts */\n.gdm-tr-futs {\n  display: grid;\n  grid-template-columns: 1fr 1fr;\n  gap: 10px;\n  margin-bottom: 28px;\n}\n.gdm-tr-fut {\n  background: var(--c);\n  border: 1px solid var(--ln);\n  border-radius: 14px;\n  padding: 14px 16px;\n  transition: border-color 0.2s;\n}\n.gdm-tr-fut:hover { border-color: var(--ln-h); }\n.gdm-tr-fut-val {\n  font-family: 'Barlow Condensed', sans-serif;\n  font-size: 22px; font-weight: 800;\n  color: var(--acc); line-height: 1; margin-bottom: 3px;\n}\n.gdm-tr-fut-lbl { font-size: 11px; color: var(--mu); }\n \n/* CTAs */\n.gdm-tr-actions { display: flex; flex-wrap: wrap; gap: 12px; }\n.gdm-btn {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 8px;\n  min-height: 50px;\n  padding: 0 26px;\n  border-radius: 999px;\n  font-size: 14.5px;\n  font-weight: 600;\n  border: 1px solid transparent;\n  transition: all 0.22s ease;\n  font-family: 'DM Sans', sans-serif;\n  white-space: nowrap;\n}\n.gdm-btn-p { background: var(--acc); color: #0f0f0f; }\n.gdm-btn-p:hover { background: #fff; transform: translateY(-2px); box-shadow: 0 6px 24px rgba(255,153,0,0.35); }\n.gdm-btn-s { background: transparent; color: var(--tx); border-color: var(--ln); }\n.gdm-btn-s:hover { border-color: var(--acc-b); color: var(--acc); background: var(--acc-g); }\n \n/* ── RESPONSIVE ── */\n@media (max-width: 860px) {\n  .gdm-tr-grid {\n    grid-template-columns: 1fr;\n    gap: 32px;\n  }\n  .gdm-tr-visual { max-width: 480px; margin: 0 auto; }\n  .gdm-tr-stats { bottom: -12px; }\n}\n@media (max-width: 480px) {\n  .gdm-tireuse { padding: 36px 16px; }\n  .gdm-tr-actions { flex-direction: column; }\n  .gdm-btn { width: 100%; }\n}\n</style>\n \n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link href=\"https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap\" rel=\"stylesheet\">\n \n<div class=\"gdm-tr-grid\">\n \n  <!-- VISUEL -->\n  <div class=\"gdm-tr-visual\">\n    <img\n      class=\"gdm-tr-img\"\n      src=\"https://cdn.shopify.com/s/files/1/0864/4604/7574/files/LOCATION_DE_TIREUSE_TOULOUSE.webp?v=1729678213\"\n      alt=\"Location tireuse à bière artisanale pour événements à Toulouse — Le Gué des Moines\"\n      loading=\"lazy\"\n      width=\"800\"\n      height=\"700\"\n    >\n \n    <div class=\"gdm-tr-stats\">\n      <div class=\"gdm-tr-stat\">\n        <div class=\"gdm-tr-stat-val\">20L</div>\n        <div class=\"gdm-tr-stat-lbl\">60–70 verres</div>\n      </div>\n      <div class=\"gdm-tr-stat\">\n        <div class=\"gdm-tr-stat-val\">30L</div>\n        <div class=\"gdm-tr-stat-lbl\">90–110 verres</div>\n      </div>\n      <div class=\"gdm-tr-stat\">\n        <div class=\"gdm-tr-stat-val\">100%</div>\n        <div class=\"gdm-tr-stat-lbl\">Artisanal</div>\n      </div>\n    </div>\n  </div>\n \n  <!-- CONTENU -->\n  <div class=\"gdm-tr-content\">\n \n    <div class=\"gdm-tr-kicker\">\n      <span class=\"gdm-tr-dot\"></span>\n      Location · Tireuse · Fûts · Toulouse (31)\n    </div>\n \n    <h2 class=\"gdm-tr-h2\">\n      Location de<br>tireuse à bière<br>à <em>Toulouse</em>\n    </h2>\n \n    <p class=\"gdm-tr-desc\">\n      Vous organisez un événement et souhaitez proposer une <strong>bière artisanale locale</strong> à vos invités ?\n      Le Gué des Moines, brasserie à <strong>Bruguières près de Toulouse</strong>,\n      propose la vente de fûts et la <strong>location de tireuse à bière</strong>\n      pour tous vos événements en Haute-Garonne.\n    </p>\n \n    <div class=\"gdm-tr-events\">\n      <span class=\"gdm-tr-event\">💍 Mariage</span>\n      <span class=\"gdm-tr-event\">🎂 Anniversaire</span>\n      <span class=\"gdm-tr-event\">🏢 Entreprise</span>\n      <span class=\"gdm-tr-event\">🎪 Association</span>\n      <span class=\"gdm-tr-event\">🎊 Soirée privée</span>\n    </div>\n \n    <div class=\"gdm-tr-futs\">\n      <div class=\"gdm-tr-fut\">\n        <div class=\"gdm-tr-fut-val\">Fût 20L</div>\n        <div class=\"gdm-tr-fut-lbl\">Petits événements</div>\n      </div>\n      <div class=\"gdm-tr-fut\">\n        <div class=\"gdm-tr-fut-val\">Fût 30L</div>\n        <div class=\"gdm-tr-fut-lbl\">Grands événements</div>\n      </div>\n    </div>\n \n    <div class=\"gdm-tr-actions\">\n      <a href=\"/pages/location-de-tireuse-toulouse-31\" class=\"gdm-btn gdm-btn-p\">\n        Réservez ma tireuse →\n      </a>\n      <a href=\"/pages/contact\" class=\"gdm-btn gdm-btn-s\">\n        Demander un devis\n      </a>\n    </div>\n \n  </div>\n</div>\n</section>",
-        "layout": "t4s-container-wrap",
-        "cl_bg": "",
-        "cl_bg_gradient": "",
-        "mg": ",,50px,",
-        "pd": "",
-        "mg_tb": "",
-        "pd_tb": "",
-        "mg_mb": ",,30px,",
-        "pd_mb": ""
-      }
-    },
-    "1742806055908407b6": {
-      "type": "apps",
-      "blocks": {
-        "juniper_tiktok_feed_juniper_autoplay_NacGdq": {
-          "type": "shopify://apps/mintt-tiktok-feed/blocks/juniper-autoplay/fa514c33-5475-4484-b270-5f1e7eb87a9a",
-          "settings": {
-            "title": "",
-            "autoplay": true,
-            "rows_desktop": 1,
-            "columns_desktop": 5,
-            "rows_mobile": 1,
-            "columns_mobile": 2,
-            "html_area": "",
-            "feed_id": ""
-          }
-        }
-      },
-      "block_order": [
-        "juniper_tiktok_feed_juniper_autoplay_NacGdq"
-      ],
-      "settings": {}
-    },
-    "custom_liquid_EJtcXA": {
-      "type": "custom-liquid",
-      "name": "Custom Liquid",
-      "settings": {
-        "custom_liquid": "<script type=\"application/ld+json\">\n{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"FAQPage\",\n  \"mainEntity\": [\n    {\n      \"@type\": \"Question\",\n      \"name\": \"Quels sont les horaires d'ouverture de la brasserie Le Gué des Moines à Bruguières ?\",\n      \"acceptedAnswer\": {\n        \"@type\": \"Answer\",\n        \"text\": \"La brasserie artisanale Le Gué des Moines est ouverte du mardi au samedi de 16h30 à 20h30 (mardi et mercredi), de 16h30 à 22h30 (jeudi et vendredi), et de 16h30 à 21h30 le samedi. Fermée dimanche et lundi.\"\n      }\n    },\n    {\n      \"@type\": \"Question\",\n      \"name\": \"Peut-on déguster des bières artisanales sur place au brewpub ?\",\n      \"acceptedAnswer\": {\n        \"@type\": \"Answer\",\n        \"text\": \"Oui, le brewpub du Gué des Moines à Bruguières propose plus de 10 bières artisanales à la pression. Vous pouvez également y regarder les matchs diffusés selon programmation et profiter d'une ambiance conviviale.\"\n      }\n    },\n    {\n      \"@type\": \"Question\",\n      \"name\": \"Où se trouve la Brasserie Le Gué des Moines ?\",\n      \"acceptedAnswer\": {\n        \"@type\": \"Answer\",\n        \"text\": \"La brasserie artisanale est située au 31 rue de la Briqueterie, 31150 Bruguières, au nord de Toulouse en Haute-Garonne (31). Elle est installée dans l'ancienne Briqueterie de la commune.\"\n      }\n    },\n    {\n      \"@type\": \"Question\",\n      \"name\": \"Proposez-vous la location de tireuse à bière à Toulouse ?\",\n      \"acceptedAnswer\": {\n        \"@type\": \"Answer\",\n        \"text\": \"Oui, Le Gué des Moines propose la location de tireuse à bière et la vente de fûts artisanaux (20L et 30L) pour vos événements à Toulouse et en Haute-Garonne : mariages, anniversaires, soirées d'entreprise, associations.\"\n      }\n    },\n    {\n      \"@type\": \"Question\",\n      \"name\": \"Quels formats de fûts de bière artisanale sont disponibles ?\",\n      \"acceptedAnswer\": {\n        \"@type\": \"Answer\",\n        \"text\": \"Nous proposons des fûts de bière artisanale en 20L (60 à 70 verres de 25cl) et en 30L (90 à 110 verres). Ces fûts sont disponibles pour la vente à emporter ou la location avec tireuse.\"\n      }\n    },\n    {\n      \"@type\": \"Question\",\n      \"name\": \"Comment acheter les bières artisanales du Gué des Moines ?\",\n      \"acceptedAnswer\": {\n        \"@type\": \"Answer\",\n        \"text\": \"Nos bières artisanales sont disponibles en bouteilles 33cl et 75cl sur notre boutique en ligne, ou à emporter directement à la brasserie de Bruguières pendant les horaires d'ouverture.\"\n      }\n    },\n    {\n      \"@type\": \"Question\",\n      \"name\": \"Peut-on visiter la brasserie artisanale Le Gué des Moines ?\",\n      \"acceptedAnswer\": {\n        \"@type\": \"Answer\",\n        \"text\": \"Oui, nous organisons des visites guidées de la brasserie une fois par mois. C'est l'occasion de découvrir le processus de brassage artisanal dans l'ancienne Briqueterie de Bruguières et de déguster nos bières. Inscription obligatoire.\"\n      }\n    },\n    {\n      \"@type\": \"Question\",\n      \"name\": \"Diffusez-vous les matchs au brewpub ?\",\n      \"acceptedAnswer\": {\n        \"@type\": \"Answer\",\n        \"text\": \"Oui, nous diffusons les matchs au brewpub selon la programmation sportive. Consultez nos réseaux sociaux ou contactez-nous pour connaître les prochains événements sportifs diffusés.\"\n      }\n    }\n  ]\n}\n</script>\n \n<!-- Schema LocalBusiness / Brewery -->\n<script type=\"application/ld+json\">\n{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"Brewery\",\n  \"name\": \"Brasserie Le Gué des Moines\",\n  \"url\": \"https://leguedesmoines.com\",\n  \"telephone\": \"+33967489963\",\n  \"address\": {\n    \"@type\": \"PostalAddress\",\n    \"streetAddress\": \"31 rue de la Briqueterie\",\n    \"addressLocality\": \"Bruguières\",\n    \"postalCode\": \"31150\",\n    \"addressCountry\": \"FR\"\n  },\n  \"openingHoursSpecification\": [\n    { \"@type\": \"OpeningHoursSpecification\", \"dayOfWeek\": \"https://schema.org/Tuesday\",   \"opens\": \"16:30\", \"closes\": \"20:30\" },\n    { \"@type\": \"OpeningHoursSpecification\", \"dayOfWeek\": \"https://schema.org/Wednesday\", \"opens\": \"16:30\", \"closes\": \"20:30\" },\n    { \"@type\": \"OpeningHoursSpecification\", \"dayOfWeek\": \"https://schema.org/Thursday\",  \"opens\": \"16:30\", \"closes\": \"22:30\" },\n    { \"@type\": \"OpeningHoursSpecification\", \"dayOfWeek\": \"https://schema.org/Friday\",    \"opens\": \"16:30\", \"closes\": \"22:30\" },\n    { \"@type\": \"OpeningHoursSpecification\", \"dayOfWeek\": \"https://schema.org/Saturday\",  \"opens\": \"16:30\", \"closes\": \"21:30\" }\n  ]\n}\n</script>\n \n<section class=\"gdmfaq\" aria-label=\"FAQ — Brasserie artisanale Le Gué des Moines, Bruguières\">\n<style>\n.gdmfaq {\n  --acc: #FF9900;\n  --acc-g: rgba(255,153,0,0.10);\n  --acc-b: rgba(255,153,0,0.28);\n  --c: #161616;\n  --c-h: #1c1c1c;\n  --ln: rgba(255,255,255,0.09);\n  --ln-h: rgba(255,153,0,0.35);\n  --tx: #f2f0ec;\n  --mu: rgba(242,240,236,0.68);\n  --sh: 0 8px 28px rgba(0,0,0,0.28);\n  background: transparent;\n  color: var(--tx);\n  padding: 56px 20px;\n  font-family: 'DM Sans', sans-serif;\n}\n.gdmfaq * { box-sizing: border-box; margin: 0; padding: 0; }\n.gdmfaq a { color: var(--acc); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(255,153,0,0.35); transition: text-decoration-color 0.2s; }\n.gdmfaq a:hover { text-decoration-color: var(--acc); }\n \n.gdmfaq__wrap { max-width: 1060px; margin: 0 auto; }\n \n/* ── HEADER ── */\n.gdmfaq__head { margin-bottom: 32px; }\n.gdmfaq__kicker {\n  display: inline-flex;\n  align-items: center;\n  gap: 7px;\n  background: var(--acc-g);\n  border: 1px solid var(--acc-b);\n  color: #ffc966;\n  padding: 5px 13px;\n  border-radius: 999px;\n  font-size: 10.5px;\n  font-weight: 600;\n  letter-spacing: 0.08em;\n  text-transform: uppercase;\n  margin-bottom: 16px;\n}\n.gdmfaq__kicker-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--acc); }\n.gdmfaq__title {\n  font-family: 'Barlow Condensed', sans-serif;\n  font-size: clamp(26px, 3.5vw, 40px);\n  font-weight: 800;\n  text-transform: uppercase;\n  line-height: 1.05;\n  letter-spacing: -0.01em;\n  color: var(--tx);\n  margin-bottom: 10px;\n}\n.gdmfaq__title em { font-style: normal; color: var(--acc); }\n.gdmfaq__subtitle {\n  font-size: 14px;\n  color: var(--mu);\n  line-height: 1.65;\n  max-width: 72ch;\n}\n \n/* ── GRID PRINCIPAL ── */\n.gdmfaq__body {\n  display: grid;\n  grid-template-columns: 5fr 7fr;\n  gap: 20px;\n  align-items: start;\n}\n \n/* ── COLONNE GAUCHE : infos rapides ── */\n.gdmfaq__sidebar {\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n  position: sticky;\n  top: 24px;\n}\n \n.gdmfaq__card {\n  background: var(--c);\n  border: 1px solid var(--ln);\n  border-radius: 16px;\n  padding: 16px;\n  box-shadow: var(--sh);\n  transition: border-color 0.2s;\n}\n.gdmfaq__card:hover { border-color: var(--ln-h); }\n \n.gdmfaq__card-title {\n  font-family: 'Barlow Condensed', sans-serif;\n  font-size: 13px;\n  font-weight: 700;\n  text-transform: uppercase;\n  letter-spacing: 0.05em;\n  color: var(--acc);\n  margin-bottom: 10px;\n  display: flex;\n  align-items: center;\n  gap: 7px;\n}\n.gdmfaq__card-icon { font-size: 13px; }\n \n/* Horaires */\n.gdmfaq__hours { list-style: none; display: flex; flex-direction: column; gap: 0; }\n.gdmfaq__hours li {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  gap: 12px;\n  padding: 7px 0;\n  border-bottom: 1px solid var(--ln);\n  font-size: 12.5px;\n  color: var(--mu);\n}\n.gdmfaq__hours li:last-child { border-bottom: none; padding-bottom: 0; }\n.gdmfaq__hours li span:first-child { color: var(--tx); font-weight: 500; }\n.gdmfaq__hours li span:last-child {\n  font-family: 'Barlow Condensed', sans-serif;\n  font-size: 13px;\n  font-weight: 700;\n  color: var(--acc);\n}\n \n/* Card info texte */\n.gdmfaq__card-text { font-size: 12.5px; color: var(--mu); line-height: 1.6; }\n.gdmfaq__card-text strong { color: var(--tx); font-weight: 600; }\n \n/* Pills maillage interne — grille 2 colonnes */\n.gdmfaq__links {\n  display: grid;\n  grid-template-columns: 1fr 1fr;\n  gap: 6px;\n  margin-top: 2px;\n}\n.gdmfaq__link {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 6px;\n  padding: 8px 10px;\n  background: rgba(255,255,255,0.03);\n  border: 1px solid var(--ln);\n  border-radius: 10px;\n  font-size: 12px;\n  font-weight: 500;\n  color: var(--tx) !important;\n  text-decoration: none !important;\n  transition: border-color 0.2s, background 0.2s, color 0.2s;\n  white-space: nowrap;\n  overflow: hidden;\n}\n.gdmfaq__link:hover {\n  border-color: var(--acc-b);\n  color: var(--acc) !important;\n  background: var(--acc-g);\n  text-decoration: none !important;\n}\n.gdmfaq__link-arrow { color: var(--acc); font-size: 12px; flex-shrink: 0; }\n \n/* ── COLONNE DROITE : FAQ ── */\n.gdmfaq__list { display: flex; flex-direction: column; gap: 8px; }\n \n.gdmfaq__item {\n  background: var(--c);\n  border: 1px solid var(--ln);\n  border-radius: 16px;\n  overflow: hidden;\n  box-shadow: var(--sh);\n  transition: border-color 0.2s;\n}\n.gdmfaq__item:hover { border-color: var(--ln-h); }\n.gdmfaq__item[open] { border-color: rgba(255,153,0,0.22); }\n \n.gdmfaq__q {\n  cursor: pointer;\n  padding: 16px 20px;\n  list-style: none;\n  font-size: 14px;\n  font-weight: 600;\n  color: var(--tx);\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 14px;\n  user-select: none;\n  line-height: 1.4;\n}\n.gdmfaq__q::-webkit-details-marker { display: none; }\n.gdmfaq__q::after {\n  content: '+';\n  font-size: 20px;\n  color: var(--acc);\n  flex-shrink: 0;\n  transition: transform 0.2s ease;\n  font-family: 'DM Sans', sans-serif;\n  font-weight: 400;\n  line-height: 1;\n}\n.gdmfaq__item[open] > .gdmfaq__q::after { transform: rotate(45deg); }\n \n.gdmfaq__a {\n  padding: 0 20px 16px;\n  border-top: 1px solid var(--ln);\n}\n.gdmfaq__a p {\n  font-size: 14px;\n  color: var(--mu);\n  line-height: 1.72;\n  padding-top: 14px;\n}\n.gdmfaq__a p strong { color: var(--tx); font-weight: 600; }\n \n/* ── RESPONSIVE ── */\n@media (max-width: 860px) {\n  .gdmfaq__body { grid-template-columns: 1fr; }\n  .gdmfaq__sidebar {\n    display: grid;\n    grid-template-columns: 1fr 1fr;\n    gap: 10px;\n    position: static;\n  }\n  .gdmfaq__links { grid-template-columns: 1fr; }\n}\n@media (max-width: 540px) {\n  .gdmfaq { padding: 40px 16px; }\n  .gdmfaq__sidebar { grid-template-columns: 1fr; }\n}\n</style>\n \n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link href=\"https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap\" rel=\"stylesheet\">\n \n<div class=\"gdmfaq__wrap\">\n \n  <!-- HEADER -->\n  <header class=\"gdmfaq__head\">\n    <p class=\"gdmfaq__kicker\">\n      <span class=\"gdmfaq__kicker-dot\"></span>\n      Brasserie artisanale · Bruguières · Toulouse (31)\n    </p>\n    <h2 class=\"gdmfaq__title\">Questions fréquentes sur<br>le <em>Gué des Moines</em></h2>\n    <p class=\"gdmfaq__subtitle\">\n      Tout savoir sur notre <a href=\"/pages/brasserie-le-gue-des-moines\">brasserie artisanale à Bruguières</a>,\n      notre <a href=\"/pages/brewpub\">brewpub</a>, la\n      <a href=\"/pages/location-de-tireuse-toulouse-31\">location de tireuse à bière à Toulouse</a>\n      et la commande de <a href=\"/collections/bieres-artisanales-du-gue-des-moines\">bières artisanales en ligne</a>.\n    </p>\n  </header>\n \n  <div class=\"gdmfaq__body\">\n \n    <!-- SIDEBAR -->\n    <aside class=\"gdmfaq__sidebar\" aria-label=\"Informations pratiques\">\n \n      <!-- Horaires -->\n      <div class=\"gdmfaq__card\">\n        <p class=\"gdmfaq__card-title\">\n          <span class=\"gdmfaq__card-icon\">🕓</span>\n          Horaires d'ouverture\n        </p>\n        <ul class=\"gdmfaq__hours\" aria-label=\"Horaires du brewpub Le Gué des Moines\">\n          <li><span>Mardi</span><span>16h30 – 20h30</span></li>\n          <li><span>Mercredi</span><span>16h30 – 20h30</span></li>\n          <li><span>Jeudi</span><span>16h30 – 22h30</span></li>\n          <li><span>Vendredi</span><span>16h30 – 22h30</span></li>\n          <li><span>Samedi</span><span>16h30 – 21h30</span></li>\n        </ul>\n      </div>\n \n      <!-- Au brewpub -->\n      <div class=\"gdmfaq__card\">\n        <p class=\"gdmfaq__card-title\">\n          <span class=\"gdmfaq__card-icon\">🍺</span>\n          Au brewpub\n        </p>\n        <p class=\"gdmfaq__card-text\">\n          <strong>+10 bières à la pression</strong> — diffusion des matchs selon programmation — ambiance conviviale — tapas à partager.\n        </p>\n      </div>\n \n      <!-- Maillage interne -->\n      <div class=\"gdmfaq__card\">\n        <p class=\"gdmfaq__card-title\">\n          <span class=\"gdmfaq__card-icon\">→</span>\n          Explorer\n        </p>\n        <div class=\"gdmfaq__links\">\n          <a href=\"/collections/bieres-artisanales-du-gue-des-moines\" class=\"gdmfaq__link\">\n            Nos bières artisanales\n            <span class=\"gdmfaq__link-arrow\">↗</span>\n          </a>\n          <a href=\"/pages/brewpub\" class=\"gdmfaq__link\">\n            Le brewpub\n            <span class=\"gdmfaq__link-arrow\">↗</span>\n          </a>\n          <a href=\"/pages/location-de-tireuse-toulouse-31\" class=\"gdmfaq__link\">\n            Location de tireuse\n            <span class=\"gdmfaq__link-arrow\">↗</span>\n          </a>\n          <a href=\"/blogs/evenement\" class=\"gdmfaq__link\">\n            Événements & visites\n            <span class=\"gdmfaq__link-arrow\">↗</span>\n          </a>\n          <a href=\"/pages/contact\" class=\"gdmfaq__link\">\n            Nous contacter\n            <span class=\"gdmfaq__link-arrow\">↗</span>\n          </a>\n        </div>\n      </div>\n \n    </aside>\n \n    <!-- FAQ ACCORDÉON -->\n    <div class=\"gdmfaq__list\">\n \n      <details class=\"gdmfaq__item\" open>\n        <summary class=\"gdmfaq__q\">Quels sont les horaires d'ouverture de la brasserie ?</summary>\n        <div class=\"gdmfaq__a\">\n          <p>\n            Le <a href=\"/pages/brewpub\">brewpub du Gué des Moines</a> à <strong>Bruguières</strong> est ouvert\n            <strong>mardi et mercredi de 16h30 à 20h30</strong>,\n            <strong>jeudi et vendredi de 16h30 à 22h30</strong>, et\n            <strong>samedi de 16h30 à 21h30</strong>. Fermé dimanche et lundi.\n            Vous ne pouvez pas vous déplacer ? Commandez nos <a href=\"/collections/bieres-artisanales-du-gue-des-moines\">bières artisanales en ligne</a>.\n          </p>\n        </div>\n      </details>\n \n      <details class=\"gdmfaq__item\">\n        <summary class=\"gdmfaq__q\">Peut-on déguster les bières artisanales sur place ?</summary>\n        <div class=\"gdmfaq__a\">\n          <p>\n            Oui ! Notre <a href=\"/pages/brewpub\">espace brewpub</a> propose <strong>plus de 10 bières artisanales à la pression</strong>,\n            accompagnées de tapas à partager. Une adresse conviviale au cœur de l'ancienne Briqueterie de Bruguières,\n            à <strong>15 minutes au nord de Toulouse</strong>. Idéal pour une sortie bière en soirée ou en week-end.\n          </p>\n        </div>\n      </details>\n \n      <details class=\"gdmfaq__item\">\n        <summary class=\"gdmfaq__q\">Où se trouve la Brasserie Le Gué des Moines ?</summary>\n        <div class=\"gdmfaq__a\">\n          <p>\n            La <strong>brasserie artisanale Le Gué des Moines</strong> est installée au\n            <strong>31 rue de la Briqueterie, 31150 Bruguières</strong>, dans l'ancienne Briqueterie de la commune\n            — à <strong>15 minutes au nord de Toulouse</strong>, en Haute-Garonne (31).\n            Découvrez <a href=\"/blogs/infos/le-gue-des-moines-s-installe-dans-l-ancienne-briqueterie-de-bruguieres\">l'histoire de ce lieu unique</a>\n            ou <a href=\"/pages/contact\">calculez votre itinéraire</a>.\n          </p>\n        </div>\n      </details>\n \n      <details class=\"gdmfaq__item\">\n        <summary class=\"gdmfaq__q\">Proposez-vous la location de tireuse à bière à Toulouse ?</summary>\n        <div class=\"gdmfaq__a\">\n          <p>\n            Oui, Le Gué des Moines propose la <strong><a href=\"/pages/location-de-tireuse-toulouse-31\">location de tireuse à bière à Toulouse</a></strong>\n            et en Haute-Garonne, avec des <strong>fûts de bière artisanale en 20L et 30L</strong>.\n            Idéal pour un mariage, un anniversaire, une soirée d'entreprise ou une fête associative.\n            Contactez-nous avec votre date et le nombre d'invités pour obtenir un devis personnalisé.\n          </p>\n        </div>\n      </details>\n \n      <details class=\"gdmfaq__item\">\n        <summary class=\"gdmfaq__q\">Quels formats de fûts sont disponibles et pour combien de personnes ?</summary>\n        <div class=\"gdmfaq__a\">\n          <p>\n            Nous proposons deux formats de <strong>fûts de bière artisanale</strong> :\n            le <strong>fût 20L</strong> (environ 60 à 70 verres de 25cl) et le <strong>fût 30L</strong>\n            (environ 90 à 110 verres). Ces fûts sont disponibles à la vente ou avec\n            <a href=\"/pages/location-de-tireuse-toulouse-31\">location de tireuse incluse</a>.\n            Nous vous conseillons sur le volume et le style de bière adapté à votre événement.\n          </p>\n        </div>\n      </details>\n \n      <details class=\"gdmfaq__item\">\n        <summary class=\"gdmfaq__q\">Comment acheter les bières artisanales du Gué des Moines ?</summary>\n        <div class=\"gdmfaq__a\">\n          <p>\n            Nos <a href=\"/collections/bieres-artisanales-du-gue-des-moines\">bières artisanales</a> sont disponibles\n            en bouteilles <strong>33cl et 75cl</strong> sur notre boutique en ligne.\n            Vous pouvez également les acheter à emporter directement à Bruguières pendant nos horaires d'ouverture.\n            Retrouvez notre <a href=\"/collections/bieres-artisanales-permanentes-brasserie-le-gue-des-moines\">gamme permanente</a>\n            et nos <a href=\"/collections/bieres-ephemeres-du-gue-des-moines\">brassins éphémères</a>.\n          </p>\n        </div>\n      </details>\n \n      <details class=\"gdmfaq__item\">\n        <summary class=\"gdmfaq__q\">Peut-on visiter la brasserie artisanale ?</summary>\n        <div class=\"gdmfaq__a\">\n          <p>\n            Oui ! Nous organisons des <strong>visites guidées de la brasserie</strong> une fois par mois dans l'ancienne\n            Briqueterie de Bruguières. Au programme : découverte du processus de brassage artisanal\n            (maltage, houblonnage, fermentation) et <strong>dégustation de bières</strong>.\n            <strong>Places limitées, inscription obligatoire.</strong>\n            Consultez <a href=\"/blogs/evenement\">nos prochaines dates</a> pour réserver votre place.\n          </p>\n        </div>\n      </details>\n \n      <details class=\"gdmfaq__item\">\n        <summary class=\"gdmfaq__q\">Diffusez-vous les matchs au brewpub ?</summary>\n        <div class=\"gdmfaq__a\">\n          <p>\n            Oui, nous diffusons les matchs au <a href=\"/pages/brewpub\">brewpub</a> selon la programmation sportive.\n            Football, rugby, matchs du Stade Toulousain — venez profiter de l'ambiance avec une\n            <strong>bière artisanale locale</strong> à la pression. Consultez\n            <a href=\"/blogs/evenement\">nos événements</a> ou suivez-nous sur les réseaux sociaux\n            pour connaître les prochaines diffusions.\n          </p>\n        </div>\n      </details>\n \n    </div>\n  </div>\n \n</div>\n</section>",
-        "layout": "t4s-container-wrap",
-        "cl_bg": "",
-        "cl_bg_gradient": "",
-        "mg": ",,50px,",
-        "pd": "",
-        "mg_tb": "",
-        "pd_tb": "",
-        "mg_mb": ",,30px,",
-        "pd_mb": ""
-      },
-      "disabled": true
-    },
-    "custom_liquid_VAEhhd": {
-      "type": "custom-liquid",
-      "name": "Custom Liquid",
-      "settings": {
-        "custom_liquid": "<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n<link href=\"https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap\" rel=\"stylesheet\">\n\n<style>\n  :root {\n    --acc: #FF9900;\n    --acc-g: rgba(255,153,0,0.10);\n    --acc-b: rgba(255,153,0,0.28);\n    --c: #161616;\n    --ln: rgba(255,255,255,0.09);\n    --ln-h: rgba(255,153,0,0.35);\n    --tx: #f2f0ec;\n    --mu: rgba(242,240,236,0.72);\n  }\n  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }\n\n  .gdm-cr { font-family: 'DM Sans', sans-serif; color: var(--tx); background: transparent; padding: 32px 0; }\n\n  /* Header */\n  .gdm-cr__head {\n    display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;\n  }\n  .gdm-cr__title {\n    font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 800;\n    text-transform: uppercase; color: var(--tx);\n  }\n  .gdm-cr__title em { font-style: normal; color: var(--acc); }\n  .gdm-cr__controls { display: flex; align-items: center; gap: 6px; }\n  .gdm-cr__btn {\n    width: 30px; height: 30px; border-radius: 8px;\n    background: var(--c); border: 1px solid var(--ln);\n    color: var(--mu); cursor: pointer; display: flex; align-items: center; justify-content: center;\n    font-size: 13px; transition: border-color .15s, color .15s; user-select: none;\n  }\n  .gdm-cr__btn:hover { border-color: var(--acc-b); color: var(--acc); }\n  .gdm-cr__see-all {\n    font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700;\n    letter-spacing: .06em; text-transform: uppercase;\n    color: var(--mu); text-decoration: none; transition: color .15s; margin-right: 6px;\n  }\n  .gdm-cr__see-all:hover { color: var(--acc); }\n\n  /* Track */\n  .gdm-cr__outer { overflow: hidden; }\n  .gdm-cr__track {\n    display: flex; gap: 8px;\n    transition: transform .35s cubic-bezier(.4,0,.2,1);\n    will-change: transform;\n  }\n\n  /* Carte */\n  .gdm-cr__card {\n    flex: 0 0 calc(25% - 6px);\n    background: var(--c); border: 1px solid var(--ln); border-radius: 13px;\n    text-decoration: none; overflow: hidden; display: flex; flex-direction: column;\n    transition: border-color .2s, transform .2s; position: relative;\n  }\n  .gdm-cr__card::before {\n    content: ''; position: absolute; top: 0; left: 0; right: 0;\n    height: 2px; background: var(--acc); opacity: 0; transition: opacity .2s;\n  }\n  .gdm-cr__card:hover { border-color: var(--ln-h); transform: translateY(-2px); }\n  .gdm-cr__card:hover::before { opacity: 1; }\n\n  /* Image */\n  .gdm-cr__card-img { aspect-ratio: 16/9; overflow: hidden; }\n  .gdm-cr__card-img img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s; }\n  .gdm-cr__card:hover .gdm-cr__card-img img { transform: scale(1.05); }\n\n  /* No-image card */\n  .gdm-cr__card-icon {\n    aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center;\n    font-size: 28px; background: rgba(255,153,0,0.06);\n  }\n\n  /* Body */\n  .gdm-cr__card-body { padding: 11px 13px 13px; flex: 1; display: flex; flex-direction: column; gap: 4px; }\n  .gdm-cr__card-tag {\n    font-family: 'Barlow Condensed', sans-serif; font-size: 9px; font-weight: 700;\n    letter-spacing: .12em; text-transform: uppercase; color: var(--acc);\n  }\n  .gdm-cr__card-title {\n    font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 800;\n    text-transform: uppercase; line-height: 1.15; color: var(--tx); flex: 1;\n  }\n  .gdm-cr__card-arr { font-size: 10.5px; color: var(--mu); margin-top: 6px; transition: color .15s; }\n  .gdm-cr__card:hover .gdm-cr__card-arr { color: var(--acc); }\n\n\n  @media (max-width: 768px) {\n    .gdm-cr__card { flex: 0 0 calc(50% - 4px); }\n  }\n  @media (max-width: 480px) {\n    .gdm-cr__card { flex: 0 0 calc(80% - 4px); }\n  }\n</style>\n\n<div class=\"gdm-cr\">\n  <div class=\"gdm-cr__head\">\n    <h2 class=\"gdm-cr__title\">À lire &amp; <em>explorer</em></h2>\n    <div class=\"gdm-cr__controls\">\n      <a href=\"/blogs/infos\" class=\"gdm-cr__see-all\">Tous →</a>\n      <button class=\"gdm-cr__btn\" id=\"gdm-prev\" aria-label=\"Précédent\">‹</button>\n      <button class=\"gdm-cr__btn\" id=\"gdm-next\" aria-label=\"Suivant\">›</button>\n    </div>\n  </div>\n\n  <div class=\"gdm-cr__outer\">\n    <div class=\"gdm-cr__track\" id=\"gdm-track\">\n\n      <a href=\"/blogs/infos/brasserie-artisanale-toulouse\" class=\"gdm-cr__card\">\n        <div class=\"gdm-cr__card-img\">\n          <img src=\"https://cdn.shopify.com/s/files/1/0864/4604/7574/files/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_9e8b0033-e237-4d43-a3a0-75f2ece76781.webp?v=1730104704\" alt=\"Brasserie artisanale Toulouse\" loading=\"lazy\">\n        </div>\n        <div class=\"gdm-cr__card-body\">\n          <div class=\"gdm-cr__card-tag\">Guide</div>\n          <div class=\"gdm-cr__card-title\">Brasserie artisanale à Toulouse en 2026</div>\n          <div class=\"gdm-cr__card-arr\">Lire →</div>\n        </div>\n      </a>\n\n      <a href=\"/blogs/infos/location-tireuse-biere-fut-20l-ou-30l-comment-choisir-le-gue-des-moines\" class=\"gdm-cr__card\">\n        <div class=\"gdm-cr__card-img\">\n          <img src=\"https://cdn.shopify.com/s/files/1/0864/4604/7574/files/unnamedLocation_de_tireuse_bi_re_et_f_t_toulouse.jpg?v=1770288654\" alt=\"Location tireuse bière fût Toulouse\" loading=\"lazy\">\n        </div>\n        <div class=\"gdm-cr__card-body\">\n          <div class=\"gdm-cr__card-tag\">Location tireuse</div>\n          <div class=\"gdm-cr__card-title\">Fût 20L ou 30L — comment choisir ?</div>\n          <div class=\"gdm-cr__card-arr\">Lire →</div>\n        </div>\n      </a>\n\n      <a href=\"/blogs/infos/bar-a-biere-artisanale-au-nord-de-toulouse-le-gue-des-moines\" class=\"gdm-cr__card\">\n        <div class=\"gdm-cr__card-img\">\n          <img src=\"https://cdn.shopify.com/s/files/1/0864/4604/7574/files/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_3_afb49456-691a-4fb8-97b0-a0b1bbde33ab.webp?v=1730104728\" alt=\"Bar à bière nord Toulouse\" loading=\"lazy\">\n        </div>\n        <div class=\"gdm-cr__card-body\">\n          <div class=\"gdm-cr__card-tag\">Bar &amp; Brewpub</div>\n          <div class=\"gdm-cr__card-title\">Bar à bière artisanale au nord de Toulouse</div>\n          <div class=\"gdm-cr__card-arr\">Lire →</div>\n        </div>\n      </a>\n\n      <a href=\"/blogs/infos/biere-artisanale-pour-un-mariage-ou-un-anniversaire-a-toulouse\" class=\"gdm-cr__card\">\n        <div class=\"gdm-cr__card-img\">\n          <img src=\"https://cdn.shopify.com/s/files/1/0864/4604/7574/files/WhatsApp_Image_2026-04-24_at_08.29.58.jpg?v=1777018896\" alt=\"Bière artisanale mariage anniversaire Toulouse\" loading=\"lazy\">\n        </div>\n        <div class=\"gdm-cr__card-body\">\n          <div class=\"gdm-cr__card-tag\">Événements</div>\n          <div class=\"gdm-cr__card-title\">Bière artisanale pour mariage &amp; anniversaire</div>\n          <div class=\"gdm-cr__card-arr\">Lire →</div>\n        </div>\n      </a>\n\n\n      <a href=\"/blogs/infos/visite-brasserie-artisanale-toulouse\" class=\"gdm-cr__card\">\n        <div class=\"gdm-cr__card-img\">\n          <img src=\"https://cdn.shopify.com/s/files/1/0864/4604/7574/files/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_5_1.webp?v=1730113474\" alt=\"Visiter une brasserie artisanale Toulouse\" loading=\"lazy\">\n        </div>\n        <div class=\"gdm-cr__card-body\">\n          <div class=\"gdm-cr__card-tag\">Visite</div>\n          <div class=\"gdm-cr__card-title\">Visiter une brasserie artisanale à Toulouse</div>\n          <div class=\"gdm-cr__card-arr\">Lire →</div>\n        </div>\n      </a>\n\n\n\n    </div>\n  </div>\n\n</div>\n\n<script>\n(function() {\n  const track = document.getElementById('gdm-track');\n  const cards = track.querySelectorAll('.gdm-cr__card');\n  const total = cards.length;\n  let visible = window.innerWidth <= 480 ? 1 : window.innerWidth <= 768 ? 2 : 4;\n  let cur = 0;\n  const max = () => total - visible;\n\n\n  function go(n) {\n    cur = Math.max(0, Math.min(n, max()));\n    const w = cards[0].getBoundingClientRect().width + 8;\n    track.style.transform = `translateX(-${cur * w}px)`;\n  }\n\n  document.getElementById('gdm-prev').addEventListener('click', () => go(cur - visible));\n  document.getElementById('gdm-next').addEventListener('click', () => go(cur + visible));\n\n  // Touch swipe\n  let startX = 0;\n  track.addEventListener('touchstart', e => startX = e.touches[0].clientX, { passive: true });\n  track.addEventListener('touchend', e => {\n    const dx = startX - e.changedTouches[0].clientX;\n    if (Math.abs(dx) > 40) go(dx > 0 ? cur + 1 : cur - 1);\n  });\n\n  window.addEventListener('resize', () => {\n    visible = window.innerWidth <= 480 ? 1 : window.innerWidth <= 768 ? 2 : 4;\n    go(0);\n  });\n\n})();\n</script>",
-        "layout": "t4s-container-wrap",
-        "cl_bg": "",
-        "cl_bg_gradient": "",
-        "mg": ",,50px,",
-        "pd": "",
-        "mg_tb": "",
-        "pd_tb": "",
-        "mg_mb": ",,30px,",
-        "pd_mb": ""
-      }
-    },
-    "custom_liquid_mtrVQD": {
-      "type": "custom-liquid",
-      "name": "Custom Liquid",
-      "settings": {
-        "custom_liquid": "<section class=\"gdmr\" aria-label=\"Avis clients — Le Gué des Moines\">\n<style>\n.gdmr {\n  --acc: #FF9900;\n  --acc-g: rgba(255,153,0,0.10);\n  --acc-b: rgba(255,153,0,0.28);\n  --c: #161616;\n  --ln: rgba(255,255,255,0.09);\n  --ln-h: rgba(255,153,0,0.35);\n  --tx: #f2f0ec;\n  --mu: rgba(242,240,236,0.68);\n  --sh: 0 12px 36px rgba(0,0,0,0.36);\n  background: transparent;\n  color: var(--tx);\n  padding: 56px 20px;\n  font-family: 'DM Sans', sans-serif;\n  position: relative;\n}\n.gdmr * { box-sizing: border-box; margin: 0; padding: 0; }\n \n.gdmr__wrap { max-width: 1180px; margin: 0 auto; }\n \n/* ── HEADER ── */\n.gdmr__head {\n  display: flex;\n  align-items: flex-end;\n  justify-content: space-between;\n  gap: 20px;\n  margin-bottom: 28px;\n  flex-wrap: wrap;\n}\n.gdmr__kicker {\n  display: inline-flex;\n  align-items: center;\n  gap: 7px;\n  background: var(--acc-g);\n  border: 1px solid var(--acc-b);\n  color: #ffc966;\n  padding: 5px 13px;\n  border-radius: 999px;\n  font-size: 10.5px;\n  font-weight: 600;\n  letter-spacing: 0.08em;\n  text-transform: uppercase;\n  margin-bottom: 14px;\n}\n.gdmr__kicker-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--acc); }\n.gdmr__title {\n  font-family: 'Barlow Condensed', sans-serif;\n  font-size: clamp(28px, 4vw, 44px);\n  font-weight: 800;\n  text-transform: uppercase;\n  line-height: 1.0;\n  letter-spacing: -0.01em;\n  color: var(--tx);\n  margin-bottom: 6px;\n}\n.gdmr__title em { font-style: normal; color: var(--acc); }\n.gdmr__subtitle { font-size: 13.5px; color: var(--mu); }\n \n/* Boutons nav */\n.gdmr__nav { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }\n.gdmr__btn {\n  width: 42px; height: 42px;\n  border-radius: 50%;\n  background: var(--c);\n  border: 1px solid var(--ln);\n  color: var(--tx);\n  cursor: pointer;\n  display: flex; align-items: center; justify-content: center;\n  font-size: 18px; line-height: 1;\n  transition: border-color 0.2s, background 0.2s, transform 0.2s;\n  font-family: 'DM Sans', sans-serif;\n}\n.gdmr__btn:hover {\n  border-color: var(--acc-b);\n  color: var(--acc);\n  background: var(--acc-g);\n  transform: translateY(-1px);\n}\n.gdmr__btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }\n \n/* ── STAT GLOBALE ── */\n.gdmr__global {\n  display: flex;\n  align-items: center;\n  gap: 28px;\n  background: var(--c);\n  border: 1px solid var(--ln);\n  border-radius: 16px;\n  padding: 16px 24px;\n  margin-bottom: 20px;\n  flex-wrap: wrap;\n}\n.gdmr__global-score {\n  display: flex;\n  align-items: baseline;\n  gap: 6px;\n}\n.gdmr__score-big {\n  font-family: 'Barlow Condensed', sans-serif;\n  font-size: 48px;\n  font-weight: 800;\n  color: var(--acc);\n  line-height: 1;\n}\n.gdmr__score-max { font-size: 18px; color: var(--mu); }\n.gdmr__global-stars {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n.gdmr__stars { display: flex; gap: 3px; }\n.gdmr__star { font-size: 16px; color: var(--acc); }\n.gdmr__star--empty { color: rgba(255,255,255,0.2); }\n.gdmr__star-count { font-size: 12px; color: var(--mu); }\n.gdmr__global-sep {\n  width: 1px;\n  height: 40px;\n  background: var(--ln);\n  flex-shrink: 0;\n}\n.gdmr__global-badges { display: flex; gap: 10px; flex-wrap: wrap; }\n.gdmr__badge {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  padding: 8px 16px;\n  background: rgba(255,255,255,0.03);\n  border: 1px solid var(--ln);\n  border-radius: 10px;\n}\n.gdmr__badge-val {\n  font-family: 'Barlow Condensed', sans-serif;\n  font-size: 22px;\n  font-weight: 800;\n  color: var(--tx);\n  line-height: 1;\n}\n.gdmr__badge-lbl { font-size: 10px; color: var(--mu); margin-top: 2px; }\n.gdmr__global-cta {\n  margin-left: auto;\n  display: inline-flex;\n  align-items: center;\n  gap: 7px;\n  padding: 10px 20px;\n  border-radius: 999px;\n  background: var(--acc);\n  color: #0f0f0f;\n  font-size: 13px;\n  font-weight: 600;\n  font-family: 'DM Sans', sans-serif;\n  text-decoration: none;\n  transition: background 0.2s, transform 0.2s;\n  white-space: nowrap;\n}\n.gdmr__global-cta:hover { background: #fff; transform: translateY(-1px); }\n \n/* ── CAROUSEL ── */\n.gdmr__viewport {\n  overflow: hidden;\n  position: relative;\n  border-radius: 16px;\n  outline: none;\n}\n.gdmr__track {\n  display: flex;\n  gap: 12px;\n  list-style: none;\n  padding: 6px 2px 14px;\n  overflow-x: auto;\n  scroll-snap-type: x mandatory;\n  -webkit-overflow-scrolling: touch;\n  scrollbar-width: none;\n}\n.gdmr__track::-webkit-scrollbar { display: none; }\n \n/* ── CARD AVIS ── */\n.gdmr__card {\n  scroll-snap-align: start;\n  flex: 0 0 clamp(260px, 30vw, 340px);\n  background: var(--c);\n  border: 1px solid var(--ln);\n  border-radius: 18px;\n  padding: 20px;\n  box-shadow: var(--sh);\n  display: flex;\n  flex-direction: column;\n  gap: 14px;\n  position: relative;\n  overflow: hidden;\n  transition: border-color 0.2s, transform 0.2s;\n}\n.gdmr__card:hover { border-color: var(--ln-h); transform: translateY(-2px); }\n \n/* Trait amber haut de card */\n.gdmr__card::before {\n  content: '';\n  position: absolute;\n  top: 0; left: 20px; right: 20px;\n  height: 1px;\n  background: linear-gradient(90deg, transparent, rgba(255,153,0,0.5), transparent);\n}\n \n.gdmr__card-top {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 10px;\n}\n.gdmr__card-stars { display: flex; gap: 2px; }\n.gdmr__card-stars span { font-size: 13px; color: var(--acc); }\n.gdmr__card-tag {\n  font-size: 10.5px;\n  font-weight: 600;\n  padding: 4px 10px;\n  border-radius: 999px;\n  background: var(--acc-g);\n  border: 1px solid var(--acc-b);\n  color: #ffc966;\n  white-space: nowrap;\n  letter-spacing: 0.04em;\n}\n \n.gdmr__card-text {\n  font-size: 14px;\n  color: var(--tx);\n  line-height: 1.68;\n  flex: 1;\n  font-style: italic;\n  border-left: 2px solid rgba(255,153,0,0.28);\n  padding-left: 12px;\n}\n \n.gdmr__card-meta {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  padding-top: 10px;\n  border-top: 1px solid var(--ln);\n}\n.gdmr__card-avatar {\n  width: 32px; height: 32px;\n  border-radius: 50%;\n  background: rgba(255,153,0,0.12);\n  border: 1px solid var(--acc-b);\n  display: flex; align-items: center; justify-content: center;\n  font-family: 'Barlow Condensed', sans-serif;\n  font-size: 13px;\n  font-weight: 700;\n  color: var(--acc);\n  flex-shrink: 0;\n}\n.gdmr__card-info { display: flex; flex-direction: column; gap: 1px; }\n.gdmr__card-name { font-size: 13px; font-weight: 600; color: var(--tx); }\n.gdmr__card-place { font-size: 11px; color: var(--mu); }\n \n/* Fades latéraux */\n.gdmr__fade {\n  position: absolute;\n  top: 0; bottom: 0;\n  width: 48px;\n  pointer-events: none;\n  z-index: 5;\n}\n.gdmr__fade--l {\n  left: 0;\n  background: linear-gradient(90deg, #0f0f0f, transparent);\n}\n.gdmr__fade--r {\n  right: 0;\n  background: linear-gradient(270deg, #0f0f0f, transparent);\n}\n \n/* Dots de pagination */\n.gdmr__dots {\n  display: flex;\n  justify-content: center;\n  gap: 6px;\n  margin-top: 16px;\n}\n.gdmr__dot {\n  width: 6px; height: 6px;\n  border-radius: 50%;\n  background: var(--ln);\n  transition: background 0.2s, width 0.2s;\n  cursor: pointer;\n  border: none;\n  padding: 0;\n}\n.gdmr__dot.active {\n  background: var(--acc);\n  width: 20px;\n  border-radius: 3px;\n}\n \n/* ── RESPONSIVE ── */\n@media (max-width: 640px) {\n  .gdmr { padding: 40px 16px; }\n  .gdmr__head { align-items: flex-start; }\n  .gdmr__nav { display: none; }\n  .gdmr__global-cta { width: 100%; justify-content: center; margin-left: 0; }\n  .gdmr__global { gap: 16px; }\n}\n</style>\n \n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link href=\"https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap\" rel=\"stylesheet\">\n \n<div class=\"gdmr__wrap\">\n \n  <!-- HEADER -->\n  <div class=\"gdmr__head\">\n    <div>\n      <p class=\"gdmr__kicker\"><span class=\"gdmr__kicker-dot\"></span> Avis clients vérifiés</p>\n      <h2 class=\"gdmr__title\">Ils parlent du<br><em>Gué des Moines</em></h2>\n      <p class=\"gdmr__subtitle\">Bière artisanale · Brewpub · Événements · Bruguières (près de Toulouse)</p>\n    </div>\n    <div class=\"gdmr__nav\">\n      <button class=\"gdmr__btn gdmr__prev\" type=\"button\" aria-label=\"Avis précédent\">‹</button>\n      <button class=\"gdmr__btn gdmr__next\" type=\"button\" aria-label=\"Avis suivant\">›</button>\n    </div>\n  </div>\n \n  <!-- STAT GLOBALE -->\n  <div class=\"gdmr__global\">\n    <div class=\"gdmr__global-score\">\n      <span class=\"gdmr__score-big\">5,0</span>\n      <span class=\"gdmr__score-max\">/5</span>\n    </div>\n    <div class=\"gdmr__global-stars\">\n      <div class=\"gdmr__stars\" aria-label=\"5 étoiles sur 5\">\n        <span class=\"gdmr__star\">★</span>\n        <span class=\"gdmr__star\">★</span>\n        <span class=\"gdmr__star\">★</span>\n        <span class=\"gdmr__star\">★</span>\n        <span class=\"gdmr__star\">★</span>\n      </div>\n      <span class=\"gdmr__star-count\">Avis 5 étoiles · Google & sur place</span>\n    </div>\n    <div class=\"gdmr__global-sep\"></div>\n    <div class=\"gdmr__global-badges\">\n      <div class=\"gdmr__badge\">\n        <span class=\"gdmr__badge-val\">100%</span>\n        <span class=\"gdmr__badge-lbl\">Artisanal</span>\n      </div>\n      <div class=\"gdmr__badge\">\n        <span class=\"gdmr__badge-val\">+10</span>\n        <span class=\"gdmr__badge-lbl\">Bières pression</span>\n      </div>\n      <div class=\"gdmr__badge\">\n        <span class=\"gdmr__badge-val\">2016</span>\n        <span class=\"gdmr__badge-lbl\">Fondée</span>\n      </div>\n    </div>\n    <a href=\"https://www.google.com/search?q=Le+Gué+des+Moines+Bruguières+avis\" target=\"_blank\" rel=\"noopener\" class=\"gdmr__global-cta\">\n      Laisser un avis Google ↗\n    </a>\n  </div>\n \n  <!-- CAROUSEL -->\n  <div class=\"gdmr__viewport\" tabindex=\"0\" aria-roledescription=\"carousel\" aria-label=\"Carrousel d'avis clients\">\n    <ul class=\"gdmr__track\" role=\"list\">\n \n      <li class=\"gdmr__card\" role=\"listitem\">\n        <div class=\"gdmr__card-top\">\n          <div class=\"gdmr__card-stars\" aria-label=\"5 étoiles sur 5\">\n            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>\n          </div>\n          <span class=\"gdmr__card-tag\">Google</span>\n        </div>\n        <p class=\"gdmr__card-text\">Ambiance au top, bières excellentes et équipe super accueillante. Un vrai spot près de Toulouse.</p>\n        <div class=\"gdmr__card-meta\">\n          <div class=\"gdmr__card-avatar\">C</div>\n          <div class=\"gdmr__card-info\">\n            <span class=\"gdmr__card-name\">Camille</span>\n            <span class=\"gdmr__card-place\">Brewpub · Bruguières</span>\n          </div>\n        </div>\n      </li>\n \n      <li class=\"gdmr__card\" role=\"listitem\">\n        <div class=\"gdmr__card-top\">\n          <div class=\"gdmr__card-stars\" aria-label=\"5 étoiles sur 5\">\n            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>\n          </div>\n          <span class=\"gdmr__card-tag\">Sur place</span>\n        </div>\n        <p class=\"gdmr__card-text\">Grand choix de bières artisanales, planches parfaites, lieu convivial. On revient souvent.</p>\n        <div class=\"gdmr__card-meta\">\n          <div class=\"gdmr__card-avatar\">J</div>\n          <div class=\"gdmr__card-info\">\n            <span class=\"gdmr__card-name\">Julien</span>\n            <span class=\"gdmr__card-place\">Client fidèle · Bruguières</span>\n          </div>\n        </div>\n      </li>\n \n      <li class=\"gdmr__card\" role=\"listitem\">\n        <div class=\"gdmr__card-top\">\n          <div class=\"gdmr__card-stars\" aria-label=\"5 étoiles sur 5\">\n            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>\n          </div>\n          <span class=\"gdmr__card-tag\">Location tireuse</span>\n        </div>\n        <p class=\"gdmr__card-text\">Location de tireuse impeccable pour notre anniversaire. Fût 20L, mise en service rapide. Je recommande !</p>\n        <div class=\"gdmr__card-meta\">\n          <div class=\"gdmr__card-avatar\">S</div>\n          <div class=\"gdmr__card-info\">\n            <span class=\"gdmr__card-name\">Sophie</span>\n            <span class=\"gdmr__card-place\">Événement privé · Toulouse (31)</span>\n          </div>\n        </div>\n      </li>\n \n      <li class=\"gdmr__card\" role=\"listitem\">\n        <div class=\"gdmr__card-top\">\n          <div class=\"gdmr__card-stars\" aria-label=\"5 étoiles sur 5\">\n            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>\n          </div>\n          <span class=\"gdmr__card-tag\">Coup de cœur</span>\n        </div>\n        <p class=\"gdmr__card-text\">Bières locales de grande qualité, service chaleureux, cadre canon. Mention spéciale aux nouveautés éphémères.</p>\n        <div class=\"gdmr__card-meta\">\n          <div class=\"gdmr__card-avatar\">M</div>\n          <div class=\"gdmr__card-info\">\n            <span class=\"gdmr__card-name\">Mathieu</span>\n            <span class=\"gdmr__card-place\">Amateur de bière artisanale</span>\n          </div>\n        </div>\n      </li>\n \n      <li class=\"gdmr__card\" role=\"listitem\">\n        <div class=\"gdmr__card-top\">\n          <div class=\"gdmr__card-stars\" aria-label=\"5 étoiles sur 5\">\n            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>\n          </div>\n          <span class=\"gdmr__card-tag\">Événement pro</span>\n        </div>\n        <p class=\"gdmr__card-text\">Service pro, super conseils pour choisir les fûts 20L/30L. Installation simple et efficace pour notre afterwork.</p>\n        <div class=\"gdmr__card-meta\">\n          <div class=\"gdmr__card-avatar\">N</div>\n          <div class=\"gdmr__card-info\">\n            <span class=\"gdmr__card-name\">Nicolas</span>\n            <span class=\"gdmr__card-place\">Événement entreprise · Toulouse</span>\n          </div>\n        </div>\n      </li>\n \n    </ul>\n \n    <div class=\"gdmr__fade gdmr__fade--l\" aria-hidden=\"true\"></div>\n    <div class=\"gdmr__fade gdmr__fade--r\" aria-hidden=\"true\"></div>\n  </div>\n \n  <!-- DOTS -->\n  <div class=\"gdmr__dots\" role=\"tablist\" aria-label=\"Navigation des avis\">\n    <button class=\"gdmr__dot active\" role=\"tab\" aria-label=\"Avis 1\" aria-selected=\"true\"></button>\n    <button class=\"gdmr__dot\" role=\"tab\" aria-label=\"Avis 2\" aria-selected=\"false\"></button>\n    <button class=\"gdmr__dot\" role=\"tab\" aria-label=\"Avis 3\" aria-selected=\"false\"></button>\n    <button class=\"gdmr__dot\" role=\"tab\" aria-label=\"Avis 4\" aria-selected=\"false\"></button>\n    <button class=\"gdmr__dot\" role=\"tab\" aria-label=\"Avis 5\" aria-selected=\"false\"></button>\n  </div>\n \n</div>\n</section>\n \n<script>\n(function () {\n  const root = document.querySelector('.gdmr');\n  if (!root) return;\n \n  const track   = root.querySelector('.gdmr__track');\n  const cards   = Array.from(root.querySelectorAll('.gdmr__card'));\n  const prev    = root.querySelector('.gdmr__prev');\n  const next    = root.querySelector('.gdmr__next');\n  const dots    = Array.from(root.querySelectorAll('.gdmr__dot'));\n  const viewport = root.querySelector('.gdmr__viewport');\n \n  if (!track || cards.length === 0) return;\n \n  const gap  = () => parseFloat(getComputedStyle(track).gap || '12');\n  const step = () => cards[0].getBoundingClientRect().width + gap();\n \n  let current = 0;\n \n  const scrollTo = (idx) => {\n    current = Math.max(0, Math.min(idx, cards.length - 1));\n    track.scrollTo({ left: current * step(), behavior: 'smooth' });\n    updateUI();\n  };\n \n  const updateUI = () => {\n    const maxScroll = track.scrollWidth - track.clientWidth - 2;\n    if (prev) prev.disabled = current <= 0;\n    if (next) next.disabled = current >= cards.length - 1;\n    dots.forEach((d, i) => {\n      d.classList.toggle('active', i === current);\n      d.setAttribute('aria-selected', i === current ? 'true' : 'false');\n    });\n  };\n \n  if (prev) prev.addEventListener('click', () => { scrollTo(current - 1); restart(); });\n  if (next) next.addEventListener('click', () => { scrollTo(current + 1); restart(); });\n \n  dots.forEach((d, i) => d.addEventListener('click', () => { scrollTo(i); restart(); }));\n \n  if (viewport) {\n    viewport.addEventListener('keydown', (e) => {\n      if (e.key === 'ArrowLeft')  { scrollTo(current - 1); restart(); }\n      if (e.key === 'ArrowRight') { scrollTo(current + 1); restart(); }\n    });\n  }\n \n  track.addEventListener('scroll', () => {\n    const s = step();\n    if (s > 0) current = Math.round(track.scrollLeft / s);\n    updateUI();\n  }, { passive: true });\n \n  // Autoplay\n  let timer = null;\n  const start = () => {\n    stop();\n    timer = setInterval(() => {\n      scrollTo(current >= cards.length - 1 ? 0 : current + 1);\n    }, 6000);\n  };\n  const stop = () => { clearInterval(timer); timer = null; };\n  const restart = () => start();\n \n  root.addEventListener('mouseenter', stop);\n  root.addEventListener('mouseleave', start);\n \n  updateUI();\n  start();\n})();\n</script>",
-        "layout": "t4s-container-wrap",
-        "cl_bg": "",
-        "cl_bg_gradient": "",
-        "mg": ",,50px,",
-        "pd": "",
-        "mg_tb": "",
-        "pd_tb": "",
-        "mg_mb": ",,30px,",
-        "pd_mb": ""
-      },
-      "disabled": true
-    },
-    "newsletter_xiakf8": {
-      "type": "newsletter",
-      "blocks": {
-        "custom_text_RyGxqz": {
-          "type": "custom_text",
-          "settings": {
-            "text": "REJOIGNEZ-NOUS !",
-            "remove_br_tag": false,
-            "tag": "p",
-            "fontf": "2",
-            "text_cl": "#ff9900",
-            "text_fs": 47,
-            "text_lh": 0,
-            "text_fw": 600,
-            "text_ls": 0,
-            "font_italic": false,
-            "text_shadow": false,
-            "text_mgb": 0,
-            "hidden_mobile": false,
-            "text_fs_mb": 16,
-            "text_lh_mb": 0,
-            "text_ls_mb": 0,
-            "text_mgb_mobile": 10
-          }
-        },
-        "custom_text_HHXXay": {
-          "type": "custom_text",
-          "settings": {
-            "text": "Rejoignez-nous pour ne rien rater de nos actus et des dernières sorties de bières !",
-            "remove_br_tag": false,
-            "tag": "p",
-            "fontf": "inherit",
-            "text_cl": "#878787",
-            "text_fs": 14,
-            "text_lh": 24,
-            "text_fw": 400,
-            "text_ls": 0,
-            "font_italic": false,
-            "text_shadow": false,
-            "text_mgb": 30,
-            "hidden_mobile": false,
-            "text_fs_mb": 16,
-            "text_lh_mb": 0,
-            "text_ls_mb": 0,
-            "text_mgb_mobile": 10
-          }
-        },
-        "newsletter_WETntL": {
-          "type": "newsletter",
-          "settings": {
-            "form_width": 0,
-            "form_width_mb": 0,
-            "newl_des": "1",
-            "news_align": "center",
-            "newl_size": "small",
-            "btn_icon": false,
-            "input_cl": "#eba822",
-            "border_cl": "#eba822",
-            "btn_cl": "#ffffff",
-            "btn_bg_cl": "#ff9900",
-            "btn_hover_cl": "#ffffff",
-            "btn_hover_bg_cl": "#eba822",
-            "hidden_mobile": false,
-            "mgb": 15,
-            "mgb_mb": 10
-          }
-        }
-      },
-      "block_order": [
-        "custom_text_RyGxqz",
-        "custom_text_HHXXay",
-        "newsletter_WETntL"
-      ],
-      "settings": {
-        "design_heading": "8",
-        "heading_align": "t4s-text-center",
-        "top_heading": "",
-        "icon_heading": "las la-gem",
-        "top_subheading": "",
-        "tophead_mb": 30,
-        "content_align": "all-center",
-        "news_overlay": "#000000",
-        "news_overlay_opacity": 0,
-        "layout": "t4s-container-wrap",
-        "cl_bg": "#141414",
-        "cl_bg_gradient": "",
-        "parallax": false,
-        "mg": ",,0px,",
-        "pd": ",,0px,",
-        "mg_tb": ",,0px,",
-        "pd_tb": "",
-        "mg_mb": ",,0px,",
-        "pd_mb": ",,0px,",
-        "use_cus_css": false,
-        "code_cus_css": ""
-      }
-    },
-    "164620932069107a3a": {
-      "type": "shipping",
-      "blocks": {
-        "164620932047c7965f-0": {
-          "type": "shipping",
-          "settings": {
-            "icon_themes": "none",
-            "image_icon": "shopify://shop_images/leguedesmoinesbrasserieartisanal.webp",
-            "icon": "las la-shipping-fast",
-            "title": "PAIEMENTS SÉCURISÉS",
-            "text": "<p>Crypté SSL</p>",
-            "html": ""
-          }
-        },
-        "164620932047c7965f-1": {
-          "type": "shipping",
-          "settings": {
-            "icon_themes": "help",
-            "image_icon": "shopify://shop_images/leguedesmoinesbrasserieartisanal_2.webp",
-            "icon": "las la-life-ring",
-            "title": "CLICK & COLLECT",
-            "text": "<p>à la Brasserie</p>",
-            "html": ""
-          }
-        },
-        "164620932047c7965f-2": {
-          "type": "shipping",
-          "settings": {
-            "icon_themes": "refesh",
-            "image_icon": "shopify://shop_images/leguedesmoinesbrasserieartisanal_4.webp",
-            "icon": "las la-undo-alt",
-            "title": "100% ARTISANAL",
-            "text": "<p>Bruguières (31)</p>",
-            "html": ""
-          }
-        },
-        "164620932047c7965f-3": {
-          "type": "shipping",
-          "settings": {
-            "icon_themes": "none",
-            "image_icon": "shopify://shop_images/leguedesmoinesbrasserieartisanal_3.webp",
-            "icon": "las la-lock",
-            "title": "SERVICE CLIENT 6/7j",
-            "text": "<p>brasserieguedesmoines@gmail.com</p>",
-            "html": ""
-          }
-        }
-      },
-      "block_order": [
-        "164620932047c7965f-0",
-        "164620932047c7965f-1",
-        "164620932047c7965f-2",
-        "164620932047c7965f-3"
-      ],
-      "settings": {
-        "design_heading": "4",
-        "heading_align": "t4s-text-start",
-        "top_heading": "",
-        "icon_heading": "gem",
-        "top_subheading": "",
-        "tophead_mb": 29,
-        "content_align": "text-center",
-        "align_vertical": true,
-        "design_padding": "2",
-        "source": "get_image",
-        "icon_des": "default",
-        "icon_size": "large",
-        "col_dk": "4",
-        "col_tb": "2",
-        "col_mb": "1",
-        "border": false,
-        "cl_bd": "#dddddd",
-        "cl_ic": "#dddddd",
-        "cl_hd": "#ffffff",
-        "cl_cot": "#e6e6e6",
-        "bg_item": "#222222",
-        "hd_fs": 16,
-        "hd_fw": 700,
-        "txt_fs": 13,
-        "space_h_item": "30",
-        "space_v_item": "30",
-        "space_h_item_mb": "30",
-        "space_v_item_mb": "20",
-        "carousel_mobile": true,
-        "dots_cl": "light",
-        "dots_round": true,
-        "layout": "t4s-container-wrap",
-        "cl_bg": "#141414",
-        "cl_bg_gradient": "",
-        "mg": "",
-        "pd": "30px,,25px,",
-        "mg_tb": ",,50px,",
-        "pd_tb": "",
-        "mg_mb": ",,0px",
-        "pd_mb": "40px,,25px,",
-        "use_cus_css": false,
-        "code_cus_css": ".SectionID {\nbackground-color:red\n}"
-      }
-    },
-    "174366675279bc37ca": {
-      "type": "apps",
-      "blocks": {
-        "instafeed_app_block_EHEqFG": {
-          "type": "shopify://apps/instafeed/blocks/app-block/c447db20-095d-4a10-9725-b5977662c9d5",
-          "settings": {
-            "title": "",
-            "title_color": "",
-            "title_size_v2": 0,
-            "alignment": "center",
-            "instafeed_margin_top": 0,
-            "instafeed_margin_bottom": 0,
-            "instafeed_margin_sides": 0,
-            "show_instagram_link": false,
-            "link_alignment": "left",
-            "link_color": "#000000",
-            "background_color": "",
-            "feed_id": "",
-            "html_area": ""
-          }
-        }
-      },
-      "block_order": [
-        "instafeed_app_block_EHEqFG"
-      ],
-      "settings": {}
-    },
     "gdm_hero": {
       "type": "gdm-hero",
       "settings": {
@@ -684,7 +27,8 @@
         "button2_label": "Venir au brewpub",
         "button2_link": "shopify://pages/brewpub",
         "show_stamp": true,
-        "stamp_text": "Brassé à Bruguières • Bière artisanale • Depuis 2016 •"
+        "stamp_text": "Brassé à Bruguières • Bière artisanale • Depuis 2016 •",
+        "padding_top": 64
       },
       "blocks": {
         "hero_1": {
@@ -770,6 +114,38 @@
         "bandeau_5"
       ]
     },
+    "custom_liquid_zcE9dJ": {
+      "type": "custom-liquid",
+      "name": "Custom Liquid",
+      "settings": {
+        "custom_liquid": "<section class=\"gdm-bto\" aria-label=\"Bières artisanales toulousaines — Le Gué des Moines, Bruguières\">\n<style>\n.gdm-bto { background: transparent; padding: 0 20px 56px; font-family: 'DM Sans', sans-serif; color: #f2f0ec; }\n.gdm-bto * { box-sizing: border-box; margin: 0; padding: 0; }\n.gdm-bto-wrap { max-width: 1180px; margin: 0 auto; text-align: center; }\n.gdm-bto-h2 { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(22px, 3vw, 36px); font-weight: 800; text-transform: uppercase; line-height: 1.1; letter-spacing: -.01em; color: #f2f0ec; }\n.gdm-bto-h2 em { font-style: normal; color: #FF9900; }\n.gdm-bto-sub { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }\n</style>\n\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link href=\"https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=DM+Sans:wght@400;500&display=swap\" rel=\"stylesheet\">\n\n<div class=\"gdm-bto-wrap\">\n  <h2 class=\"gdm-bto-h2\">\n    Nos <em>bières artisanales toulousaines</em>,<br>brassées à Bruguières depuis 2016\n  </h2>\n  <p class=\"gdm-bto-sub\">\n    Blonde, IPA, NEIPA, Sour, Stout… des bières artisanales locales de fermentation haute, brassées et embouteillées sur place dans l'ancienne Briqueterie de Bruguières — à deux pas de Toulouse.\n  </p>\n</div>\n</section>",
+        "layout": "t4s-container-wrap",
+        "cl_bg": "",
+        "cl_bg_gradient": "",
+        "mg": ",,50px,",
+        "pd": "",
+        "mg_tb": "",
+        "pd_tb": "",
+        "mg_mb": ",,30px,",
+        "pd_mb": ""
+      },
+      "disabled": true
+    },
+    "custom_liquid_exzC47": {
+      "type": "custom-liquid",
+      "settings": {
+        "custom_liquid": "<h2 id=\"id_div_1\" style=\"display:none;\">Découvrez nos bières artisanales brassées à Bruguières, à deux pas de Toulouse. Blonde, IPA, stout… à déguster sur place au brewpub ou à emporter.</h2>",
+        "layout": "t4s-container-wrap",
+        "cl_bg": "",
+        "cl_bg_gradient": "",
+        "mg": "",
+        "pd": "",
+        "mg_tb": "",
+        "pd_tb": "",
+        "mg_mb": "",
+        "pd_mb": ""
+      }
+    },
     "gdm_bieres": {
       "type": "gdm-bieres",
       "settings": {
@@ -838,6 +214,103 @@
         "histoire_4"
       ]
     },
+    "gdm_univers": {
+      "type": "gdm-univers",
+      "settings": {
+        "pill": "Brasserie · Brewpub · E-Shop",
+        "title": "Explorez notre",
+        "title_accent": "univers",
+        "heading_tag": "h2",
+        "text": "",
+        "columns": 3,
+        "button_style": "primary",
+        "show_numbers": true,
+        "label_region": "Brasserie, Brewpub et E-Shop — Le Gué des Moines",
+        "label_prev": "Précédent",
+        "label_next": "Suivant",
+        "color_bg": "#0D0D0D",
+        "color_accent": "#F0921E",
+        "padding_top": 96,
+        "padding_bottom": 96
+      },
+      "blocks": {
+        "carte_1": {
+          "type": "card",
+          "settings": {
+            "image": "shopify://shop_images/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_9e8b0033-e237-4d43-a3a0-75f2ece76781.webp",
+            "image_alt": "Brasserie artisanale Le Gué des Moines à Bruguières — cuves de brassage artisanal Toulouse",
+            "label": "Lieu de fabrication",
+            "title": "Brasserie",
+            "text": "Découvrez l'ancienne Briqueterie de Bruguières où chaque bière est pensée, brassée et embouteillée sur place depuis 2016. Visites guidées mensuelles gratuites.",
+            "detail_1": "Visite mensuelle gratuite",
+            "detail_2": "Bruguières (31150)",
+            "button_label": "Vers la brasserie",
+            "link": "shopify://pages/brasserie-le-gue-des-moines"
+          }
+        },
+        "carte_2": {
+          "type": "card",
+          "settings": {
+            "image": "shopify://shop_images/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_3_28374699-dbe3-428d-8df7-a1c1865ef037.webp",
+            "image_alt": "Brewpub Le Gué des Moines — 10 bières artisanales à la pression à Bruguières, nord Toulouse",
+            "label": "Bar à bière artisanale",
+            "title": "Brewpub",
+            "text": "+10 bières artisanales à la pression, tapas à partager, diffusion des matchs et concerts. L'adresse conviviale du nord toulousain, ouverte du mardi au samedi.",
+            "detail_1": "Mar–Mer : 16h–20h30",
+            "detail_2": "Jeu–Sam : 16h–22h30",
+            "button_label": "Vers le brewpub",
+            "link": "shopify://pages/brewpub"
+          }
+        },
+        "carte_3": {
+          "type": "card",
+          "settings": {
+            "image": "shopify://shop_images/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_2.webp",
+            "image_alt": "Bières artisanales du Gué des Moines — commander en ligne avec click and collect à Bruguières",
+            "label": "Commande en ligne",
+            "title": "E-Shop",
+            "text": "Commandez nos bières artisanales en 33cl et 75cl depuis chez vous. Retrait en click &amp; collect à la brasserie avec <strong>10% de remise</strong>.",
+            "detail_1": "10% click & collect",
+            "detail_2": "10 bières disponibles",
+            "button_label": "Vers l'e-shop",
+            "link": "shopify://collections/bieres-artisanales-du-gue-des-moines"
+          }
+        }
+      },
+      "block_order": [
+        "carte_1",
+        "carte_2",
+        "carte_3"
+      ]
+    },
+    "gdm_image": {
+      "type": "gdm-image",
+      "settings": {
+        "image": "shopify://shop_images/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_1.webp",
+        "image_alt": "Le Gué des Moines, brasserie artisanale toulousaine : la cour et la terrasse de la brasserie",
+        "link_new_tab": false,
+        "width": "container",
+        "height_mode": "adapt",
+        "height_desktop": 560,
+        "height_mobile": 360,
+        "image_bg": "#1A1714",
+        "show_halo": true,
+        "heading_tag": "h2",
+        "button_style": "primary",
+        "caption_position": "bottom-left",
+        "overlay_opacity": 65,
+        "color_bg": "#0D0D0D",
+        "color_accent": "#F0921E",
+        "padding_top": 48,
+        "padding_bottom": 48
+      },
+      "blocks": {},
+      "block_order": []
+    },
+    "17118856593ce6dc40": {
+      "type": "apps",
+      "settings": {}
+    },
     "gdm_promo": {
       "type": "gdm-promo",
       "settings": {
@@ -858,6 +331,241 @@
         "badge": "Noël"
       }
     },
+    "gdm_untappd": {
+      "type": "gdm-avis",
+      "settings": {
+        "pill": "Untappd · Communauté bière",
+        "title": "Ce que la communauté dit de nos",
+        "title_accent": "bières",
+        "heading_tag": "h2",
+        "rating_value": "3,66",
+        "rating_stars": 3.5,
+        "rating_label": "Note moyenne Untappd",
+        "rating_link_label": "Voir le profil",
+        "rating_link": "https://untappd.com/BrasserieLeGueDesMoines",
+        "columns": 3,
+        "label_region": "Avis de la communauté Untappd",
+        "label_prev": "Avis précédents",
+        "label_next": "Avis suivants",
+        "cta_title": "Dégustez, notez, partagez sur Untappd",
+        "cta_text": "Scannez nos étiquettes avec l'app et rejoignez 992 amateurs qui suivent nos bières.",
+        "cta_button_label": "Notre profil Untappd",
+        "cta_button_link": "https://untappd.com/BrasserieLeGueDesMoines",
+        "cta_button2_label": "Nos bières",
+        "cta_button2_link": "shopify://collections/bieres-artisanales-du-gue-des-moines",
+        "color_bg": "#0D0D0D",
+        "color_accent": "#F0921E",
+        "padding_top": 96,
+        "padding_bottom": 96
+      },
+      "blocks": {
+        "stat_1": {
+          "type": "stat",
+          "settings": {
+            "value": "2 245",
+            "label": "Check-ins",
+            "highlight": true
+          }
+        },
+        "stat_2": {
+          "type": "stat",
+          "settings": {
+            "value": "992",
+            "label": "Amateurs uniques",
+            "highlight": true
+          }
+        },
+        "stat_3": {
+          "type": "stat",
+          "settings": {
+            "value": "24",
+            "label": "Bières référencées",
+            "highlight": true
+          }
+        },
+        "avis_1": {
+          "type": "review",
+          "settings": {
+            "rating": 4.5,
+            "score": "4,5 / 5",
+            "title": "",
+            "text": "<p>Maltée et tourbée, un côté fruits rouges/noirs (cerise griotte, cassis). Finale et rétro olfaction longue. C'est drôlement bien fait.</p>",
+            "author": "Poulpycole",
+            "subject": "Série Noire",
+            "meta": "",
+            "source": "Untappd"
+          }
+        },
+        "avis_2": {
+          "type": "review",
+          "settings": {
+            "rating": 4.5,
+            "score": "4,75 / 5",
+            "title": "",
+            "text": "<p>Très fruité avec un bon goût d'ananas, une bonne amertume. Une IPA bien faite.</p>",
+            "author": "Jbouille Ollivier",
+            "subject": "Labelle IPA",
+            "meta": "",
+            "source": "Untappd"
+          }
+        },
+        "avis_3": {
+          "type": "review",
+          "settings": {
+            "rating": 5,
+            "score": "5,0 / 5",
+            "title": "",
+            "text": "<p>Hé beh pas déçu les copains.</p>",
+            "author": "Romano",
+            "subject": "Roi de Coeur",
+            "meta": "",
+            "source": "Untappd"
+          }
+        }
+      },
+      "block_order": [
+        "stat_1",
+        "stat_2",
+        "stat_3",
+        "avis_1",
+        "avis_2",
+        "avis_3"
+      ]
+    },
+    "gdm_tireuse": {
+      "type": "gdm-service",
+      "settings": {
+        "image": "shopify://shop_images/LOCATION_DE_TIREUSE_TOULOUSE.webp",
+        "image_alt": "Location tireuse à bière artisanale pour événements à Toulouse — Le Gué des Moines",
+        "image_position": "left",
+        "image_ratio": "1/1",
+        "image_fit": "contain",
+        "image_frame": true,
+        "image_bg": "#141414",
+        "pill": "Location · Tireuse · Fûts · Toulouse (31)",
+        "title": "Location de tireuse à bière",
+        "title_accent": "à Toulouse",
+        "heading_tag": "h2",
+        "text": "<p>Vous organisez un événement et souhaitez proposer une <strong>bière artisanale locale</strong> à vos invités ? Le Gué des Moines, brasserie à <strong>Bruguières près de Toulouse</strong>, propose la vente de fûts et la <strong>location de tireuse à bière</strong> pour tous vos événements en Haute-Garonne.</p>",
+        "tags_label": "Occasions",
+        "button_label": "Réservez ma tireuse",
+        "button_link": "shopify://pages/location-de-tireuse-toulouse-31",
+        "button2_label": "Demander un devis",
+        "button2_link": "shopify://pages/contact",
+        "color_bg": "#0D0D0D",
+        "color_accent": "#F0921E",
+        "padding_top": 96,
+        "padding_bottom": 96
+      },
+      "blocks": {
+        "stat_1": {
+          "type": "stat",
+          "settings": {
+            "value": "20L",
+            "label": "60–70 verres"
+          }
+        },
+        "stat_2": {
+          "type": "stat",
+          "settings": {
+            "value": "30L",
+            "label": "90–110 verres"
+          }
+        },
+        "stat_3": {
+          "type": "stat",
+          "settings": {
+            "value": "100%",
+            "label": "Artisanal"
+          }
+        },
+        "tag_1": {
+          "type": "tag",
+          "settings": {
+            "emoji": "💍",
+            "label": "Mariage"
+          }
+        },
+        "tag_2": {
+          "type": "tag",
+          "settings": {
+            "emoji": "🎂",
+            "label": "Anniversaire"
+          }
+        },
+        "tag_3": {
+          "type": "tag",
+          "settings": {
+            "emoji": "🏢",
+            "label": "Entreprise"
+          }
+        },
+        "tag_4": {
+          "type": "tag",
+          "settings": {
+            "emoji": "🎪",
+            "label": "Association"
+          }
+        },
+        "tag_5": {
+          "type": "tag",
+          "settings": {
+            "emoji": "🎊",
+            "label": "Soirée privée"
+          }
+        },
+        "offer_1": {
+          "type": "offer",
+          "settings": {
+            "icon": "barrel",
+            "title": "Fût 20L",
+            "text": "Petits événements"
+          }
+        },
+        "offer_2": {
+          "type": "offer",
+          "settings": {
+            "icon": "barrel",
+            "title": "Fût 30L",
+            "text": "Grands événements"
+          }
+        }
+      },
+      "block_order": [
+        "stat_1",
+        "stat_2",
+        "stat_3",
+        "tag_1",
+        "tag_2",
+        "tag_3",
+        "tag_4",
+        "tag_5",
+        "offer_1",
+        "offer_2"
+      ]
+    },
+    "1742806055908407b6": {
+      "type": "apps",
+      "blocks": {
+        "juniper_tiktok_feed_juniper_autoplay_NacGdq": {
+          "type": "shopify://apps/mintt-tiktok-feed/blocks/juniper-autoplay/fa514c33-5475-4484-b270-5f1e7eb87a9a",
+          "settings": {
+            "title": "",
+            "autoplay": true,
+            "rows_desktop": 1,
+            "columns_desktop": 5,
+            "rows_mobile": 1,
+            "columns_mobile": 2,
+            "html_area": "",
+            "feed_id": ""
+          }
+        }
+      },
+      "block_order": [
+        "juniper_tiktok_feed_juniper_autoplay_NacGdq"
+      ],
+      "settings": {}
+    },
     "gdm_avis": {
       "type": "gdm-avis",
       "settings": {
@@ -866,7 +574,7 @@
         "title_accent": "Gué des Moines",
         "rating_value": "5,0",
         "rating_stars": 5,
-        "rating_label": "Avis 5 étoiles · Google & sur place",
+        "rating_label": "Avis 5 étoiles · Google & sur place",
         "rating_link_label": "Laisser un avis Google",
         "rating_link": "https://www.google.com/search?q=Le+Gu%C3%A9+des+Moines+Brugui%C3%A8res+avis"
       },
@@ -877,7 +585,7 @@
             "rating": 5,
             "text": "<p>Ambiance au top, bières excellentes et équipe super accueillante. Un vrai spot près de Toulouse.</p>",
             "author": "Camille",
-            "meta": "Brewpub · Bruguières",
+            "meta": "Brewpub · Bruguières",
             "source": "Google"
           }
         },
@@ -887,7 +595,7 @@
             "rating": 5,
             "text": "<p>Grand choix de bières artisanales, planches parfaites, lieu convivial. On revient souvent.</p>",
             "author": "Julien",
-            "meta": "Client fidèle · Bruguières",
+            "meta": "Client fidèle · Bruguières",
             "source": "none"
           }
         },
@@ -897,7 +605,7 @@
             "rating": 5,
             "text": "<p>Location de tireuse impeccable pour notre anniversaire. Fût 20L, mise en service rapide. Je recommande !</p>",
             "author": "Sophie",
-            "meta": "Événement privé · Toulouse (31)",
+            "meta": "Événement privé · Toulouse (31)",
             "source": "none"
           }
         },
@@ -917,7 +625,7 @@
             "rating": 5,
             "text": "<p>Service pro, super conseils pour choisir les fûts 20L/30L. Installation simple et efficace pour notre afterwork.</p>",
             "author": "Nicolas",
-            "meta": "Événement entreprise · Toulouse",
+            "meta": "Événement entreprise · Toulouse",
             "source": "none"
           }
         }
@@ -1019,7 +727,7 @@
         "title_accent": "nos réponses",
         "text": "Tout savoir sur notre brasserie artisanale à Bruguières, notre brewpub, la location de tireuse à bière à Toulouse et la commande de bières en ligne.",
         "contact_title": "Une autre question ?",
-        "contact_text": "Écrivez-nous ou appelez le 09 67 48 99 63.",
+        "contact_text": "Écrivez-nous ou appelez le <a href=\"tel:+33967489963\">09 67 48 99 63</a>.",
         "contact_label": "Nous contacter",
         "contact_link": "shopify://pages/contact",
         "structured_data": true
@@ -1092,6 +800,413 @@
         "faq_7",
         "faq_8"
       ]
+    },
+    "gdm_articles": {
+      "type": "gdm-articles",
+      "settings": {
+        "pill": "Le blog",
+        "title": "À lire &",
+        "title_accent": "explorer",
+        "heading_tag": "h2",
+        "text": "",
+        "all_label": "Tous",
+        "all_link": "shopify://blogs/infos",
+        "columns": 4,
+        "label_region": "À lire & explorer — articles du blog",
+        "label_prev": "Précédent",
+        "label_next": "Suivant",
+        "blog": "infos",
+        "articles_count": 6,
+        "auto_link_label": "Lire",
+        "color_bg": "#0D0D0D",
+        "color_accent": "#F0921E",
+        "padding_top": 96,
+        "padding_bottom": 96
+      },
+      "blocks": {
+        "article_1": {
+          "type": "article",
+          "settings": {
+            "image": "shopify://shop_images/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_9e8b0033-e237-4d43-a3a0-75f2ece76781.webp",
+            "image_alt": "Brasserie artisanale Toulouse",
+            "tag": "Guide",
+            "title": "Brasserie artisanale à Toulouse en 2026",
+            "link": "shopify://blogs/infos/brasserie-artisanale-toulouse",
+            "link_label": "Lire"
+          }
+        },
+        "article_2": {
+          "type": "article",
+          "settings": {
+            "image": "shopify://shop_images/unnamedLocation_de_tireuse_bi_re_et_f_t_toulouse.jpg",
+            "image_alt": "Location tireuse bière fût Toulouse",
+            "tag": "Location tireuse",
+            "title": "Fût 20L ou 30L — comment choisir ?",
+            "link": "shopify://blogs/infos/location-tireuse-biere-fut-20l-ou-30l-comment-choisir-le-gue-des-moines",
+            "link_label": "Lire"
+          }
+        },
+        "article_3": {
+          "type": "article",
+          "settings": {
+            "image": "shopify://shop_images/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_3_afb49456-691a-4fb8-97b0-a0b1bbde33ab.webp",
+            "image_alt": "Bar à bière nord Toulouse",
+            "tag": "Bar & Brewpub",
+            "title": "Bar à bière artisanale au nord de Toulouse",
+            "link": "shopify://blogs/infos/bar-a-biere-artisanale-au-nord-de-toulouse-le-gue-des-moines",
+            "link_label": "Lire"
+          }
+        },
+        "article_4": {
+          "type": "article",
+          "settings": {
+            "image": "shopify://shop_images/WhatsApp_Image_2026-04-24_at_08.29.58.jpg",
+            "image_alt": "Bière artisanale mariage anniversaire Toulouse",
+            "tag": "Événements",
+            "title": "Bière artisanale pour mariage & anniversaire",
+            "link": "shopify://blogs/infos/biere-artisanale-pour-un-mariage-ou-anniversaire-a-toulouse-le-gue-des-moines",
+            "link_label": "Lire"
+          }
+        },
+        "article_5": {
+          "type": "article",
+          "settings": {
+            "image": "shopify://shop_images/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_5_1.webp",
+            "image_alt": "Visiter une brasserie artisanale Toulouse",
+            "tag": "Visite",
+            "title": "Visiter une brasserie artisanale à Toulouse",
+            "link": "shopify://blogs/infos/visite-brasserie-artisanale-toulouse",
+            "link_label": "Lire"
+          }
+        }
+      },
+      "block_order": [
+        "article_1",
+        "article_2",
+        "article_3",
+        "article_4",
+        "article_5"
+      ]
+    },
+    "gdm_newsletter": {
+      "type": "gdm-newsletter",
+      "settings": {
+        "pill": "Newsletter",
+        "title": "Rejoignez-",
+        "title_accent": "nous !",
+        "heading_tag": "h2",
+        "text": "Rejoignez-nous pour ne rien rater de nos actus et des dernières sorties de bières !",
+        "email_label": "Votre adresse e-mail",
+        "button_label": "S'abonner",
+        "legal": "Pas de spam : seulement nos actus et nos sorties de bières. Désinscription en un clic.",
+        "success_text": "Merci ! Vous êtes bien inscrit(e).",
+        "layout": "center",
+        "show_decor": true,
+        "color_bg": "#0D0D0D",
+        "color_accent": "#F0921E",
+        "padding_top": 96,
+        "padding_bottom": 96
+      },
+      "blocks": {},
+      "block_order": []
+    },
+    "gdm_atouts": {
+      "type": "gdm-atouts",
+      "settings": {
+        "pill": "",
+        "title": "",
+        "title_accent": "",
+        "heading_tag": "h2",
+        "text": "",
+        "layout": "divided",
+        "alignment": "center",
+        "list_label": "Nos engagements",
+        "color_bg": "#0D0D0D",
+        "color_accent": "#F0921E",
+        "padding_top": 48,
+        "padding_bottom": 48
+      },
+      "blocks": {
+        "atout_1": {
+          "type": "atout",
+          "settings": {
+            "icon": "lock",
+            "title": "PAIEMENTS SÉCURISÉS",
+            "text": "Crypté SSL"
+          }
+        },
+        "atout_2": {
+          "type": "atout",
+          "settings": {
+            "icon": "store",
+            "title": "CLICK & COLLECT",
+            "text": "à la Brasserie"
+          }
+        },
+        "atout_3": {
+          "type": "atout",
+          "settings": {
+            "icon": "award",
+            "title": "100% ARTISANAL",
+            "text": "Bruguières (31)"
+          }
+        },
+        "atout_4": {
+          "type": "atout",
+          "settings": {
+            "icon": "mail",
+            "title": "SERVICE CLIENT 6/7j",
+            "text": "<a href=\"mailto:brasserieguedesmoines@gmail.com\">brasserieguedesmoines@gmail.com</a>"
+          }
+        }
+      },
+      "block_order": [
+        "atout_1",
+        "atout_2",
+        "atout_3",
+        "atout_4"
+      ]
+    },
+    "gdm_instagram": {
+      "type": "gdm-apps",
+      "settings": {
+        "pill": "Instagram",
+        "title": "Suivez-nous sur",
+        "title_accent": "Instagram",
+        "heading_tag": "h2",
+        "text": "",
+        "head_align": "left",
+        "link_label": "@brasserieleguedesmoines",
+        "link": "https://www.instagram.com/brasserieleguedesmoines/",
+        "link_icon": "instagram",
+        "link_style": "ghost",
+        "content_width": "full",
+        "frame": "card",
+        "frame_padding": 16,
+        "color_bg": "#0D0D0D",
+        "color_accent": "#F0921E",
+        "color_frame": "#1A1714",
+        "padding_top": 96,
+        "padding_bottom": 96
+      },
+      "blocks": {
+        "instafeed_1": {
+          "type": "shopify://apps/instafeed/blocks/app-block/c447db20-095d-4a10-9725-b5977662c9d5",
+          "settings": {
+            "title": "",
+            "title_color": "",
+            "title_size_v2": 0,
+            "alignment": "center",
+            "instafeed_margin_top": 0,
+            "instafeed_margin_bottom": 0,
+            "instafeed_margin_sides": 0,
+            "show_instagram_link": false,
+            "link_alignment": "left",
+            "link_color": "#000000",
+            "background_color": "",
+            "feed_id": "",
+            "html_area": ""
+          }
+        }
+      },
+      "block_order": [
+        "instafeed_1"
+      ]
+    },
+    "1646028739ae283905": {
+      "type": "slideshow",
+      "blocks": {
+        "164602873867eb3815-0": {
+          "type": "image_parent",
+          "settings": {
+            "image": "shopify://shop_images/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_4.webp",
+            "image_position": "8",
+            "cl_img": "",
+            "link_img1": "shopify://collections/portrait-personnalise-manga",
+            "open_link": "_blank",
+            "animate_slide": "none",
+            "text_align": "start",
+            "text_align_mb": "start",
+            "content_width": "container",
+            "cv_pos": 50,
+            "ch_pos": 0,
+            "cv_pos_mb": 50,
+            "ch_pos_mb": 0,
+            "bg_overlay": "#000000",
+            "bg_opacity": 0,
+            "bg_content_cl": "rgba(0,0,0,0)",
+            "bg_content_op": 0,
+            "content_radius": 0,
+            "box_square": false,
+            "content_pd_tb": 15,
+            "content_pd_lr": 15,
+            "content_pd_tb_tb": 15,
+            "content_pd_lr_tb": 15,
+            "content_pd_tb_mb": 10,
+            "content_pd_lr_mb": 10,
+            "border_bl": false,
+            "br_color": "#222222",
+            "br_bg": "#ffffff",
+            "br_opacity": 50,
+            "br_style": "solid",
+            "br_pd": 20,
+            "br_pd_mb": 10,
+            "time_animation": 1,
+            "animation_delay": 30
+          }
+        }
+      },
+      "block_order": [
+        "164602873867eb3815-0"
+      ],
+      "settings": {
+        "se_height": "t4s_ratioadapt",
+        "custom_dk": false,
+        "height_dk": 700,
+        "custom_tb": false,
+        "height_tb": 500,
+        "custom_mb": false,
+        "height_mb": 250,
+        "eff": "fade",
+        "loop": true,
+        "au_time": 8.5,
+        "au_hover": true,
+        "nav_btn": false,
+        "btn_vi": "hover",
+        "btn_owl": "default",
+        "btn_icon": "0",
+        "btn_shape": "none",
+        "btn_cl": "dark",
+        "btn_size": "small",
+        "btn_hidden_mobile": false,
+        "nav_dot": true,
+        "dot_owl": "default",
+        "dots_position": "default",
+        "dots_cl": "dark",
+        "dots_round": true,
+        "dots_space": 10,
+        "dots_hidden_mobile": false,
+        "layout": "t4s-container-fluid",
+        "cl_bg": "",
+        "cl_bg_gradient": "",
+        "mg": ",,30px,",
+        "pd": "",
+        "mg_tb": ",50px",
+        "pd_tb": "",
+        "mg_mb": ",,10px,",
+        "pd_mb": "",
+        "use_cus_css": false,
+        "code_cus_css": ".SectionID {\nbackground-color:red\n}"
+      },
+      "disabled": true
+    },
+    "featured_collection_pFFBcj": {
+      "type": "featured-collection",
+      "settings": {
+        "design_heading": "8",
+        "heading_align": "t4s-text-center",
+        "top_heading": "",
+        "icon_heading": "las la-gem",
+        "top_subheading": "",
+        "tophead_mb": 30,
+        "head_btn_label": "View All",
+        "head_btn_url": "",
+        "head_btn_icon": false,
+        "head_btn_style": "default",
+        "head_btn_size": "medium",
+        "head_btn_cl": "dark",
+        "head_btn_effect": "default",
+        "head_btn_hidden_mb": false,
+        "collection": "bieres-artisanales-permanentes-brasserie-le-gue-des-moines",
+        "product_des": "3",
+        "show_vendor": false,
+        "use_cdt": false,
+        "image_ratio": "ratio2_3",
+        "image_size": "cover",
+        "image_position": "8",
+        "content_align": "center",
+        "limit": 32,
+        "col_dk": "4",
+        "col_tb": "3",
+        "col_mb": "2",
+        "space_h_item": "40",
+        "space_v_item": "40",
+        "space_h_item_mb": "10",
+        "space_v_item_mb": "30",
+        "layout_des": "2",
+        "loop": true,
+        "au_time": 3.5,
+        "au_hover": true,
+        "center_slide": true,
+        "nav_btn": false,
+        "btns_pos": "default",
+        "btn_vi": "hover",
+        "btn_owl": "default",
+        "btn_shape": "none",
+        "btn_cl": "dark",
+        "btn_size": "small",
+        "btn_hidden_mobile": true,
+        "nav_dot": false,
+        "dot_owl": "default",
+        "dots_cl": "dark",
+        "dots_round": true,
+        "dots_space": 10,
+        "dots_hidden_mobile": false,
+        "use_pagination": "none",
+        "enable_bar_lm": true,
+        "btn_icon": false,
+        "button_style": "default",
+        "btns_size": "large",
+        "btns_cl": "dark",
+        "button_effect": "default",
+        "btn_pos": "t4s-text-center",
+        "layout": "t4s-container-fluid",
+        "cl_bg": "",
+        "cl_bg_gradient": "",
+        "mg": ",,50px,",
+        "pd": "",
+        "mg_tb": "",
+        "pd_tb": "",
+        "mg_mb": ",,30px,",
+        "pd_mb": "",
+        "use_cus_css": false,
+        "code_cus_css": ""
+      },
+      "disabled": true
+    },
+    "custom_liquid_EJtcXA": {
+      "type": "custom-liquid",
+      "name": "Custom Liquid",
+      "settings": {
+        "custom_liquid": "<script type=\"application/ld+json\">\n{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"FAQPage\",\n  \"mainEntity\": [\n    {\n      \"@type\": \"Question\",\n      \"name\": \"Quels sont les horaires d'ouverture de la brasserie Le Gué des Moines à Bruguières ?\",\n      \"acceptedAnswer\": {\n        \"@type\": \"Answer\",\n        \"text\": \"La brasserie artisanale Le Gué des Moines est ouverte du mardi au samedi de 16h30 à 20h30 (mardi et mercredi), de 16h30 à 22h30 (jeudi et vendredi), et de 16h30 à 21h30 le samedi. Fermée dimanche et lundi.\"\n      }\n    },\n    {\n      \"@type\": \"Question\",\n      \"name\": \"Peut-on déguster des bières artisanales sur place au brewpub ?\",\n      \"acceptedAnswer\": {\n        \"@type\": \"Answer\",\n        \"text\": \"Oui, le brewpub du Gué des Moines à Bruguières propose plus de 10 bières artisanales à la pression. Vous pouvez également y regarder les matchs diffusés selon programmation et profiter d'une ambiance conviviale.\"\n      }\n    },\n    {\n      \"@type\": \"Question\",\n      \"name\": \"Où se trouve la Brasserie Le Gué des Moines ?\",\n      \"acceptedAnswer\": {\n        \"@type\": \"Answer\",\n        \"text\": \"La brasserie artisanale est située au 31 rue de la Briqueterie, 31150 Bruguières, au nord de Toulouse en Haute-Garonne (31). Elle est installée dans l'ancienne Briqueterie de la commune.\"\n      }\n    },\n    {\n      \"@type\": \"Question\",\n      \"name\": \"Proposez-vous la location de tireuse à bière à Toulouse ?\",\n      \"acceptedAnswer\": {\n        \"@type\": \"Answer\",\n        \"text\": \"Oui, Le Gué des Moines propose la location de tireuse à bière et la vente de fûts artisanaux (20L et 30L) pour vos événements à Toulouse et en Haute-Garonne : mariages, anniversaires, soirées d'entreprise, associations.\"\n      }\n    },\n    {\n      \"@type\": \"Question\",\n      \"name\": \"Quels formats de fûts de bière artisanale sont disponibles ?\",\n      \"acceptedAnswer\": {\n        \"@type\": \"Answer\",\n        \"text\": \"Nous proposons des fûts de bière artisanale en 20L (60 à 70 verres de 25cl) et en 30L (90 à 110 verres). Ces fûts sont disponibles pour la vente à emporter ou la location avec tireuse.\"\n      }\n    },\n    {\n      \"@type\": \"Question\",\n      \"name\": \"Comment acheter les bières artisanales du Gué des Moines ?\",\n      \"acceptedAnswer\": {\n        \"@type\": \"Answer\",\n        \"text\": \"Nos bières artisanales sont disponibles en bouteilles 33cl et 75cl sur notre boutique en ligne, ou à emporter directement à la brasserie de Bruguières pendant les horaires d'ouverture.\"\n      }\n    },\n    {\n      \"@type\": \"Question\",\n      \"name\": \"Peut-on visiter la brasserie artisanale Le Gué des Moines ?\",\n      \"acceptedAnswer\": {\n        \"@type\": \"Answer\",\n        \"text\": \"Oui, nous organisons des visites guidées de la brasserie une fois par mois. C'est l'occasion de découvrir le processus de brassage artisanal dans l'ancienne Briqueterie de Bruguières et de déguster nos bières. Inscription obligatoire.\"\n      }\n    },\n    {\n      \"@type\": \"Question\",\n      \"name\": \"Diffusez-vous les matchs au brewpub ?\",\n      \"acceptedAnswer\": {\n        \"@type\": \"Answer\",\n        \"text\": \"Oui, nous diffusons les matchs au brewpub selon la programmation sportive. Consultez nos réseaux sociaux ou contactez-nous pour connaître les prochains événements sportifs diffusés.\"\n      }\n    }\n  ]\n}\n</script>\n \n<!-- Schema LocalBusiness / Brewery -->\n<script type=\"application/ld+json\">\n{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"Brewery\",\n  \"name\": \"Brasserie Le Gué des Moines\",\n  \"url\": \"https://leguedesmoines.com\",\n  \"telephone\": \"+33967489963\",\n  \"address\": {\n    \"@type\": \"PostalAddress\",\n    \"streetAddress\": \"31 rue de la Briqueterie\",\n    \"addressLocality\": \"Bruguières\",\n    \"postalCode\": \"31150\",\n    \"addressCountry\": \"FR\"\n  },\n  \"openingHoursSpecification\": [\n    { \"@type\": \"OpeningHoursSpecification\", \"dayOfWeek\": \"https://schema.org/Tuesday\",   \"opens\": \"16:30\", \"closes\": \"20:30\" },\n    { \"@type\": \"OpeningHoursSpecification\", \"dayOfWeek\": \"https://schema.org/Wednesday\", \"opens\": \"16:30\", \"closes\": \"20:30\" },\n    { \"@type\": \"OpeningHoursSpecification\", \"dayOfWeek\": \"https://schema.org/Thursday\",  \"opens\": \"16:30\", \"closes\": \"22:30\" },\n    { \"@type\": \"OpeningHoursSpecification\", \"dayOfWeek\": \"https://schema.org/Friday\",    \"opens\": \"16:30\", \"closes\": \"22:30\" },\n    { \"@type\": \"OpeningHoursSpecification\", \"dayOfWeek\": \"https://schema.org/Saturday\",  \"opens\": \"16:30\", \"closes\": \"21:30\" }\n  ]\n}\n</script>\n \n<section class=\"gdmfaq\" aria-label=\"FAQ — Brasserie artisanale Le Gué des Moines, Bruguières\">\n<style>\n.gdmfaq {\n  --acc: #FF9900;\n  --acc-g: rgba(255,153,0,0.10);\n  --acc-b: rgba(255,153,0,0.28);\n  --c: #161616;\n  --c-h: #1c1c1c;\n  --ln: rgba(255,255,255,0.09);\n  --ln-h: rgba(255,153,0,0.35);\n  --tx: #f2f0ec;\n  --mu: rgba(242,240,236,0.68);\n  --sh: 0 8px 28px rgba(0,0,0,0.28);\n  background: transparent;\n  color: var(--tx);\n  padding: 56px 20px;\n  font-family: 'DM Sans', sans-serif;\n}\n.gdmfaq * { box-sizing: border-box; margin: 0; padding: 0; }\n.gdmfaq a { color: var(--acc); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(255,153,0,0.35); transition: text-decoration-color 0.2s; }\n.gdmfaq a:hover { text-decoration-color: var(--acc); }\n \n.gdmfaq__wrap { max-width: 1060px; margin: 0 auto; }\n \n/* ── HEADER ── */\n.gdmfaq__head { margin-bottom: 32px; }\n.gdmfaq__kicker {\n  display: inline-flex;\n  align-items: center;\n  gap: 7px;\n  background: var(--acc-g);\n  border: 1px solid var(--acc-b);\n  color: #ffc966;\n  padding: 5px 13px;\n  border-radius: 999px;\n  font-size: 10.5px;\n  font-weight: 600;\n  letter-spacing: 0.08em;\n  text-transform: uppercase;\n  margin-bottom: 16px;\n}\n.gdmfaq__kicker-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--acc); }\n.gdmfaq__title {\n  font-family: 'Barlow Condensed', sans-serif;\n  font-size: clamp(26px, 3.5vw, 40px);\n  font-weight: 800;\n  text-transform: uppercase;\n  line-height: 1.05;\n  letter-spacing: -0.01em;\n  color: var(--tx);\n  margin-bottom: 10px;\n}\n.gdmfaq__title em { font-style: normal; color: var(--acc); }\n.gdmfaq__subtitle {\n  font-size: 14px;\n  color: var(--mu);\n  line-height: 1.65;\n  max-width: 72ch;\n}\n \n/* ── GRID PRINCIPAL ── */\n.gdmfaq__body {\n  display: grid;\n  grid-template-columns: 5fr 7fr;\n  gap: 20px;\n  align-items: start;\n}\n \n/* ── COLONNE GAUCHE : infos rapides ── */\n.gdmfaq__sidebar {\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n  position: sticky;\n  top: 24px;\n}\n \n.gdmfaq__card {\n  background: var(--c);\n  border: 1px solid var(--ln);\n  border-radius: 16px;\n  padding: 16px;\n  box-shadow: var(--sh);\n  transition: border-color 0.2s;\n}\n.gdmfaq__card:hover { border-color: var(--ln-h); }\n \n.gdmfaq__card-title {\n  font-family: 'Barlow Condensed', sans-serif;\n  font-size: 13px;\n  font-weight: 700;\n  text-transform: uppercase;\n  letter-spacing: 0.05em;\n  color: var(--acc);\n  margin-bottom: 10px;\n  display: flex;\n  align-items: center;\n  gap: 7px;\n}\n.gdmfaq__card-icon { font-size: 13px; }\n \n/* Horaires */\n.gdmfaq__hours { list-style: none; display: flex; flex-direction: column; gap: 0; }\n.gdmfaq__hours li {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  gap: 12px;\n  padding: 7px 0;\n  border-bottom: 1px solid var(--ln);\n  font-size: 12.5px;\n  color: var(--mu);\n}\n.gdmfaq__hours li:last-child { border-bottom: none; padding-bottom: 0; }\n.gdmfaq__hours li span:first-child { color: var(--tx); font-weight: 500; }\n.gdmfaq__hours li span:last-child {\n  font-family: 'Barlow Condensed', sans-serif;\n  font-size: 13px;\n  font-weight: 700;\n  color: var(--acc);\n}\n \n/* Card info texte */\n.gdmfaq__card-text { font-size: 12.5px; color: var(--mu); line-height: 1.6; }\n.gdmfaq__card-text strong { color: var(--tx); font-weight: 600; }\n \n/* Pills maillage interne — grille 2 colonnes */\n.gdmfaq__links {\n  display: grid;\n  grid-template-columns: 1fr 1fr;\n  gap: 6px;\n  margin-top: 2px;\n}\n.gdmfaq__link {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 6px;\n  padding: 8px 10px;\n  background: rgba(255,255,255,0.03);\n  border: 1px solid var(--ln);\n  border-radius: 10px;\n  font-size: 12px;\n  font-weight: 500;\n  color: var(--tx) !important;\n  text-decoration: none !important;\n  transition: border-color 0.2s, background 0.2s, color 0.2s;\n  white-space: nowrap;\n  overflow: hidden;\n}\n.gdmfaq__link:hover {\n  border-color: var(--acc-b);\n  color: var(--acc) !important;\n  background: var(--acc-g);\n  text-decoration: none !important;\n}\n.gdmfaq__link-arrow { color: var(--acc); font-size: 12px; flex-shrink: 0; }\n \n/* ── COLONNE DROITE : FAQ ── */\n.gdmfaq__list { display: flex; flex-direction: column; gap: 8px; }\n \n.gdmfaq__item {\n  background: var(--c);\n  border: 1px solid var(--ln);\n  border-radius: 16px;\n  overflow: hidden;\n  box-shadow: var(--sh);\n  transition: border-color 0.2s;\n}\n.gdmfaq__item:hover { border-color: var(--ln-h); }\n.gdmfaq__item[open] { border-color: rgba(255,153,0,0.22); }\n \n.gdmfaq__q {\n  cursor: pointer;\n  padding: 16px 20px;\n  list-style: none;\n  font-size: 14px;\n  font-weight: 600;\n  color: var(--tx);\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 14px;\n  user-select: none;\n  line-height: 1.4;\n}\n.gdmfaq__q::-webkit-details-marker { display: none; }\n.gdmfaq__q::after {\n  content: '+';\n  font-size: 20px;\n  color: var(--acc);\n  flex-shrink: 0;\n  transition: transform 0.2s ease;\n  font-family: 'DM Sans', sans-serif;\n  font-weight: 400;\n  line-height: 1;\n}\n.gdmfaq__item[open] > .gdmfaq__q::after { transform: rotate(45deg); }\n \n.gdmfaq__a {\n  padding: 0 20px 16px;\n  border-top: 1px solid var(--ln);\n}\n.gdmfaq__a p {\n  font-size: 14px;\n  color: var(--mu);\n  line-height: 1.72;\n  padding-top: 14px;\n}\n.gdmfaq__a p strong { color: var(--tx); font-weight: 600; }\n \n/* ── RESPONSIVE ── */\n@media (max-width: 860px) {\n  .gdmfaq__body { grid-template-columns: 1fr; }\n  .gdmfaq__sidebar {\n    display: grid;\n    grid-template-columns: 1fr 1fr;\n    gap: 10px;\n    position: static;\n  }\n  .gdmfaq__links { grid-template-columns: 1fr; }\n}\n@media (max-width: 540px) {\n  .gdmfaq { padding: 40px 16px; }\n  .gdmfaq__sidebar { grid-template-columns: 1fr; }\n}\n</style>\n \n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link href=\"https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap\" rel=\"stylesheet\">\n \n<div class=\"gdmfaq__wrap\">\n \n  <!-- HEADER -->\n  <header class=\"gdmfaq__head\">\n    <p class=\"gdmfaq__kicker\">\n      <span class=\"gdmfaq__kicker-dot\"></span>\n      Brasserie artisanale · Bruguières · Toulouse (31)\n    </p>\n    <h2 class=\"gdmfaq__title\">Questions fréquentes sur<br>le <em>Gué des Moines</em></h2>\n    <p class=\"gdmfaq__subtitle\">\n      Tout savoir sur notre <a href=\"/pages/brasserie-le-gue-des-moines\">brasserie artisanale à Bruguières</a>,\n      notre <a href=\"/pages/brewpub\">brewpub</a>, la\n      <a href=\"/pages/location-de-tireuse-toulouse-31\">location de tireuse à bière à Toulouse</a>\n      et la commande de <a href=\"/collections/bieres-artisanales-du-gue-des-moines\">bières artisanales en ligne</a>.\n    </p>\n  </header>\n \n  <div class=\"gdmfaq__body\">\n \n    <!-- SIDEBAR -->\n    <aside class=\"gdmfaq__sidebar\" aria-label=\"Informations pratiques\">\n \n      <!-- Horaires -->\n      <div class=\"gdmfaq__card\">\n        <p class=\"gdmfaq__card-title\">\n          <span class=\"gdmfaq__card-icon\">🕓</span>\n          Horaires d'ouverture\n        </p>\n        <ul class=\"gdmfaq__hours\" aria-label=\"Horaires du brewpub Le Gué des Moines\">\n          <li><span>Mardi</span><span>16h30 – 20h30</span></li>\n          <li><span>Mercredi</span><span>16h30 – 20h30</span></li>\n          <li><span>Jeudi</span><span>16h30 – 22h30</span></li>\n          <li><span>Vendredi</span><span>16h30 – 22h30</span></li>\n          <li><span>Samedi</span><span>16h30 – 21h30</span></li>\n        </ul>\n      </div>\n \n      <!-- Au brewpub -->\n      <div class=\"gdmfaq__card\">\n        <p class=\"gdmfaq__card-title\">\n          <span class=\"gdmfaq__card-icon\">🍺</span>\n          Au brewpub\n        </p>\n        <p class=\"gdmfaq__card-text\">\n          <strong>+10 bières à la pression</strong> — diffusion des matchs selon programmation — ambiance conviviale — tapas à partager.\n        </p>\n      </div>\n \n      <!-- Maillage interne -->\n      <div class=\"gdmfaq__card\">\n        <p class=\"gdmfaq__card-title\">\n          <span class=\"gdmfaq__card-icon\">→</span>\n          Explorer\n        </p>\n        <div class=\"gdmfaq__links\">\n          <a href=\"/collections/bieres-artisanales-du-gue-des-moines\" class=\"gdmfaq__link\">\n            Nos bières artisanales\n            <span class=\"gdmfaq__link-arrow\">↗</span>\n          </a>\n          <a href=\"/pages/brewpub\" class=\"gdmfaq__link\">\n            Le brewpub\n            <span class=\"gdmfaq__link-arrow\">↗</span>\n          </a>\n          <a href=\"/pages/location-de-tireuse-toulouse-31\" class=\"gdmfaq__link\">\n            Location de tireuse\n            <span class=\"gdmfaq__link-arrow\">↗</span>\n          </a>\n          <a href=\"/blogs/evenement\" class=\"gdmfaq__link\">\n            Événements & visites\n            <span class=\"gdmfaq__link-arrow\">↗</span>\n          </a>\n          <a href=\"/pages/contact\" class=\"gdmfaq__link\">\n            Nous contacter\n            <span class=\"gdmfaq__link-arrow\">↗</span>\n          </a>\n        </div>\n      </div>\n \n    </aside>\n \n    <!-- FAQ ACCORDÉON -->\n    <div class=\"gdmfaq__list\">\n \n      <details class=\"gdmfaq__item\" open>\n        <summary class=\"gdmfaq__q\">Quels sont les horaires d'ouverture de la brasserie ?</summary>\n        <div class=\"gdmfaq__a\">\n          <p>\n            Le <a href=\"/pages/brewpub\">brewpub du Gué des Moines</a> à <strong>Bruguières</strong> est ouvert\n            <strong>mardi et mercredi de 16h30 à 20h30</strong>,\n            <strong>jeudi et vendredi de 16h30 à 22h30</strong>, et\n            <strong>samedi de 16h30 à 21h30</strong>. Fermé dimanche et lundi.\n            Vous ne pouvez pas vous déplacer ? Commandez nos <a href=\"/collections/bieres-artisanales-du-gue-des-moines\">bières artisanales en ligne</a>.\n          </p>\n        </div>\n      </details>\n \n      <details class=\"gdmfaq__item\">\n        <summary class=\"gdmfaq__q\">Peut-on déguster les bières artisanales sur place ?</summary>\n        <div class=\"gdmfaq__a\">\n          <p>\n            Oui ! Notre <a href=\"/pages/brewpub\">espace brewpub</a> propose <strong>plus de 10 bières artisanales à la pression</strong>,\n            accompagnées de tapas à partager. Une adresse conviviale au cœur de l'ancienne Briqueterie de Bruguières,\n            à <strong>15 minutes au nord de Toulouse</strong>. Idéal pour une sortie bière en soirée ou en week-end.\n          </p>\n        </div>\n      </details>\n \n      <details class=\"gdmfaq__item\">\n        <summary class=\"gdmfaq__q\">Où se trouve la Brasserie Le Gué des Moines ?</summary>\n        <div class=\"gdmfaq__a\">\n          <p>\n            La <strong>brasserie artisanale Le Gué des Moines</strong> est installée au\n            <strong>31 rue de la Briqueterie, 31150 Bruguières</strong>, dans l'ancienne Briqueterie de la commune\n            — à <strong>15 minutes au nord de Toulouse</strong>, en Haute-Garonne (31).\n            Découvrez <a href=\"/blogs/infos/le-gue-des-moines-s-installe-dans-l-ancienne-briqueterie-de-bruguieres\">l'histoire de ce lieu unique</a>\n            ou <a href=\"/pages/contact\">calculez votre itinéraire</a>.\n          </p>\n        </div>\n      </details>\n \n      <details class=\"gdmfaq__item\">\n        <summary class=\"gdmfaq__q\">Proposez-vous la location de tireuse à bière à Toulouse ?</summary>\n        <div class=\"gdmfaq__a\">\n          <p>\n            Oui, Le Gué des Moines propose la <strong><a href=\"/pages/location-de-tireuse-toulouse-31\">location de tireuse à bière à Toulouse</a></strong>\n            et en Haute-Garonne, avec des <strong>fûts de bière artisanale en 20L et 30L</strong>.\n            Idéal pour un mariage, un anniversaire, une soirée d'entreprise ou une fête associative.\n            Contactez-nous avec votre date et le nombre d'invités pour obtenir un devis personnalisé.\n          </p>\n        </div>\n      </details>\n \n      <details class=\"gdmfaq__item\">\n        <summary class=\"gdmfaq__q\">Quels formats de fûts sont disponibles et pour combien de personnes ?</summary>\n        <div class=\"gdmfaq__a\">\n          <p>\n            Nous proposons deux formats de <strong>fûts de bière artisanale</strong> :\n            le <strong>fût 20L</strong> (environ 60 à 70 verres de 25cl) et le <strong>fût 30L</strong>\n            (environ 90 à 110 verres). Ces fûts sont disponibles à la vente ou avec\n            <a href=\"/pages/location-de-tireuse-toulouse-31\">location de tireuse incluse</a>.\n            Nous vous conseillons sur le volume et le style de bière adapté à votre événement.\n          </p>\n        </div>\n      </details>\n \n      <details class=\"gdmfaq__item\">\n        <summary class=\"gdmfaq__q\">Comment acheter les bières artisanales du Gué des Moines ?</summary>\n        <div class=\"gdmfaq__a\">\n          <p>\n            Nos <a href=\"/collections/bieres-artisanales-du-gue-des-moines\">bières artisanales</a> sont disponibles\n            en bouteilles <strong>33cl et 75cl</strong> sur notre boutique en ligne.\n            Vous pouvez également les acheter à emporter directement à Bruguières pendant nos horaires d'ouverture.\n            Retrouvez notre <a href=\"/collections/bieres-artisanales-permanentes-brasserie-le-gue-des-moines\">gamme permanente</a>\n            et nos <a href=\"/collections/bieres-ephemeres-du-gue-des-moines\">brassins éphémères</a>.\n          </p>\n        </div>\n      </details>\n \n      <details class=\"gdmfaq__item\">\n        <summary class=\"gdmfaq__q\">Peut-on visiter la brasserie artisanale ?</summary>\n        <div class=\"gdmfaq__a\">\n          <p>\n            Oui ! Nous organisons des <strong>visites guidées de la brasserie</strong> une fois par mois dans l'ancienne\n            Briqueterie de Bruguières. Au programme : découverte du processus de brassage artisanal\n            (maltage, houblonnage, fermentation) et <strong>dégustation de bières</strong>.\n            <strong>Places limitées, inscription obligatoire.</strong>\n            Consultez <a href=\"/blogs/evenement\">nos prochaines dates</a> pour réserver votre place.\n          </p>\n        </div>\n      </details>\n \n      <details class=\"gdmfaq__item\">\n        <summary class=\"gdmfaq__q\">Diffusez-vous les matchs au brewpub ?</summary>\n        <div class=\"gdmfaq__a\">\n          <p>\n            Oui, nous diffusons les matchs au <a href=\"/pages/brewpub\">brewpub</a> selon la programmation sportive.\n            Football, rugby, matchs du Stade Toulousain — venez profiter de l'ambiance avec une\n            <strong>bière artisanale locale</strong> à la pression. Consultez\n            <a href=\"/blogs/evenement\">nos événements</a> ou suivez-nous sur les réseaux sociaux\n            pour connaître les prochaines diffusions.\n          </p>\n        </div>\n      </details>\n \n    </div>\n  </div>\n \n</div>\n</section>",
+        "layout": "t4s-container-wrap",
+        "cl_bg": "",
+        "cl_bg_gradient": "",
+        "mg": ",,50px,",
+        "pd": "",
+        "mg_tb": "",
+        "pd_tb": "",
+        "mg_mb": ",,30px,",
+        "pd_mb": ""
+      },
+      "disabled": true
+    },
+    "custom_liquid_mtrVQD": {
+      "type": "custom-liquid",
+      "name": "Custom Liquid",
+      "settings": {
+        "custom_liquid": "<section class=\"gdmr\" aria-label=\"Avis clients — Le Gué des Moines\">\n<style>\n.gdmr {\n  --acc: #FF9900;\n  --acc-g: rgba(255,153,0,0.10);\n  --acc-b: rgba(255,153,0,0.28);\n  --c: #161616;\n  --ln: rgba(255,255,255,0.09);\n  --ln-h: rgba(255,153,0,0.35);\n  --tx: #f2f0ec;\n  --mu: rgba(242,240,236,0.68);\n  --sh: 0 12px 36px rgba(0,0,0,0.36);\n  background: transparent;\n  color: var(--tx);\n  padding: 56px 20px;\n  font-family: 'DM Sans', sans-serif;\n  position: relative;\n}\n.gdmr * { box-sizing: border-box; margin: 0; padding: 0; }\n \n.gdmr__wrap { max-width: 1180px; margin: 0 auto; }\n \n/* ── HEADER ── */\n.gdmr__head {\n  display: flex;\n  align-items: flex-end;\n  justify-content: space-between;\n  gap: 20px;\n  margin-bottom: 28px;\n  flex-wrap: wrap;\n}\n.gdmr__kicker {\n  display: inline-flex;\n  align-items: center;\n  gap: 7px;\n  background: var(--acc-g);\n  border: 1px solid var(--acc-b);\n  color: #ffc966;\n  padding: 5px 13px;\n  border-radius: 999px;\n  font-size: 10.5px;\n  font-weight: 600;\n  letter-spacing: 0.08em;\n  text-transform: uppercase;\n  margin-bottom: 14px;\n}\n.gdmr__kicker-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--acc); }\n.gdmr__title {\n  font-family: 'Barlow Condensed', sans-serif;\n  font-size: clamp(28px, 4vw, 44px);\n  font-weight: 800;\n  text-transform: uppercase;\n  line-height: 1.0;\n  letter-spacing: -0.01em;\n  color: var(--tx);\n  margin-bottom: 6px;\n}\n.gdmr__title em { font-style: normal; color: var(--acc); }\n.gdmr__subtitle { font-size: 13.5px; color: var(--mu); }\n \n/* Boutons nav */\n.gdmr__nav { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }\n.gdmr__btn {\n  width: 42px; height: 42px;\n  border-radius: 50%;\n  background: var(--c);\n  border: 1px solid var(--ln);\n  color: var(--tx);\n  cursor: pointer;\n  display: flex; align-items: center; justify-content: center;\n  font-size: 18px; line-height: 1;\n  transition: border-color 0.2s, background 0.2s, transform 0.2s;\n  font-family: 'DM Sans', sans-serif;\n}\n.gdmr__btn:hover {\n  border-color: var(--acc-b);\n  color: var(--acc);\n  background: var(--acc-g);\n  transform: translateY(-1px);\n}\n.gdmr__btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }\n \n/* ── STAT GLOBALE ── */\n.gdmr__global {\n  display: flex;\n  align-items: center;\n  gap: 28px;\n  background: var(--c);\n  border: 1px solid var(--ln);\n  border-radius: 16px;\n  padding: 16px 24px;\n  margin-bottom: 20px;\n  flex-wrap: wrap;\n}\n.gdmr__global-score {\n  display: flex;\n  align-items: baseline;\n  gap: 6px;\n}\n.gdmr__score-big {\n  font-family: 'Barlow Condensed', sans-serif;\n  font-size: 48px;\n  font-weight: 800;\n  color: var(--acc);\n  line-height: 1;\n}\n.gdmr__score-max { font-size: 18px; color: var(--mu); }\n.gdmr__global-stars {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n.gdmr__stars { display: flex; gap: 3px; }\n.gdmr__star { font-size: 16px; color: var(--acc); }\n.gdmr__star--empty { color: rgba(255,255,255,0.2); }\n.gdmr__star-count { font-size: 12px; color: var(--mu); }\n.gdmr__global-sep {\n  width: 1px;\n  height: 40px;\n  background: var(--ln);\n  flex-shrink: 0;\n}\n.gdmr__global-badges { display: flex; gap: 10px; flex-wrap: wrap; }\n.gdmr__badge {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  padding: 8px 16px;\n  background: rgba(255,255,255,0.03);\n  border: 1px solid var(--ln);\n  border-radius: 10px;\n}\n.gdmr__badge-val {\n  font-family: 'Barlow Condensed', sans-serif;\n  font-size: 22px;\n  font-weight: 800;\n  color: var(--tx);\n  line-height: 1;\n}\n.gdmr__badge-lbl { font-size: 10px; color: var(--mu); margin-top: 2px; }\n.gdmr__global-cta {\n  margin-left: auto;\n  display: inline-flex;\n  align-items: center;\n  gap: 7px;\n  padding: 10px 20px;\n  border-radius: 999px;\n  background: var(--acc);\n  color: #0f0f0f;\n  font-size: 13px;\n  font-weight: 600;\n  font-family: 'DM Sans', sans-serif;\n  text-decoration: none;\n  transition: background 0.2s, transform 0.2s;\n  white-space: nowrap;\n}\n.gdmr__global-cta:hover { background: #fff; transform: translateY(-1px); }\n \n/* ── CAROUSEL ── */\n.gdmr__viewport {\n  overflow: hidden;\n  position: relative;\n  border-radius: 16px;\n  outline: none;\n}\n.gdmr__track {\n  display: flex;\n  gap: 12px;\n  list-style: none;\n  padding: 6px 2px 14px;\n  overflow-x: auto;\n  scroll-snap-type: x mandatory;\n  -webkit-overflow-scrolling: touch;\n  scrollbar-width: none;\n}\n.gdmr__track::-webkit-scrollbar { display: none; }\n \n/* ── CARD AVIS ── */\n.gdmr__card {\n  scroll-snap-align: start;\n  flex: 0 0 clamp(260px, 30vw, 340px);\n  background: var(--c);\n  border: 1px solid var(--ln);\n  border-radius: 18px;\n  padding: 20px;\n  box-shadow: var(--sh);\n  display: flex;\n  flex-direction: column;\n  gap: 14px;\n  position: relative;\n  overflow: hidden;\n  transition: border-color 0.2s, transform 0.2s;\n}\n.gdmr__card:hover { border-color: var(--ln-h); transform: translateY(-2px); }\n \n/* Trait amber haut de card */\n.gdmr__card::before {\n  content: '';\n  position: absolute;\n  top: 0; left: 20px; right: 20px;\n  height: 1px;\n  background: linear-gradient(90deg, transparent, rgba(255,153,0,0.5), transparent);\n}\n \n.gdmr__card-top {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 10px;\n}\n.gdmr__card-stars { display: flex; gap: 2px; }\n.gdmr__card-stars span { font-size: 13px; color: var(--acc); }\n.gdmr__card-tag {\n  font-size: 10.5px;\n  font-weight: 600;\n  padding: 4px 10px;\n  border-radius: 999px;\n  background: var(--acc-g);\n  border: 1px solid var(--acc-b);\n  color: #ffc966;\n  white-space: nowrap;\n  letter-spacing: 0.04em;\n}\n \n.gdmr__card-text {\n  font-size: 14px;\n  color: var(--tx);\n  line-height: 1.68;\n  flex: 1;\n  font-style: italic;\n  border-left: 2px solid rgba(255,153,0,0.28);\n  padding-left: 12px;\n}\n \n.gdmr__card-meta {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  padding-top: 10px;\n  border-top: 1px solid var(--ln);\n}\n.gdmr__card-avatar {\n  width: 32px; height: 32px;\n  border-radius: 50%;\n  background: rgba(255,153,0,0.12);\n  border: 1px solid var(--acc-b);\n  display: flex; align-items: center; justify-content: center;\n  font-family: 'Barlow Condensed', sans-serif;\n  font-size: 13px;\n  font-weight: 700;\n  color: var(--acc);\n  flex-shrink: 0;\n}\n.gdmr__card-info { display: flex; flex-direction: column; gap: 1px; }\n.gdmr__card-name { font-size: 13px; font-weight: 600; color: var(--tx); }\n.gdmr__card-place { font-size: 11px; color: var(--mu); }\n \n/* Fades latéraux */\n.gdmr__fade {\n  position: absolute;\n  top: 0; bottom: 0;\n  width: 48px;\n  pointer-events: none;\n  z-index: 5;\n}\n.gdmr__fade--l {\n  left: 0;\n  background: linear-gradient(90deg, #0f0f0f, transparent);\n}\n.gdmr__fade--r {\n  right: 0;\n  background: linear-gradient(270deg, #0f0f0f, transparent);\n}\n \n/* Dots de pagination */\n.gdmr__dots {\n  display: flex;\n  justify-content: center;\n  gap: 6px;\n  margin-top: 16px;\n}\n.gdmr__dot {\n  width: 6px; height: 6px;\n  border-radius: 50%;\n  background: var(--ln);\n  transition: background 0.2s, width 0.2s;\n  cursor: pointer;\n  border: none;\n  padding: 0;\n}\n.gdmr__dot.active {\n  background: var(--acc);\n  width: 20px;\n  border-radius: 3px;\n}\n \n/* ── RESPONSIVE ── */\n@media (max-width: 640px) {\n  .gdmr { padding: 40px 16px; }\n  .gdmr__head { align-items: flex-start; }\n  .gdmr__nav { display: none; }\n  .gdmr__global-cta { width: 100%; justify-content: center; margin-left: 0; }\n  .gdmr__global { gap: 16px; }\n}\n</style>\n \n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link href=\"https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap\" rel=\"stylesheet\">\n \n<div class=\"gdmr__wrap\">\n \n  <!-- HEADER -->\n  <div class=\"gdmr__head\">\n    <div>\n      <p class=\"gdmr__kicker\"><span class=\"gdmr__kicker-dot\"></span> Avis clients vérifiés</p>\n      <h2 class=\"gdmr__title\">Ils parlent du<br><em>Gué des Moines</em></h2>\n      <p class=\"gdmr__subtitle\">Bière artisanale · Brewpub · Événements · Bruguières (près de Toulouse)</p>\n    </div>\n    <div class=\"gdmr__nav\">\n      <button class=\"gdmr__btn gdmr__prev\" type=\"button\" aria-label=\"Avis précédent\">‹</button>\n      <button class=\"gdmr__btn gdmr__next\" type=\"button\" aria-label=\"Avis suivant\">›</button>\n    </div>\n  </div>\n \n  <!-- STAT GLOBALE -->\n  <div class=\"gdmr__global\">\n    <div class=\"gdmr__global-score\">\n      <span class=\"gdmr__score-big\">5,0</span>\n      <span class=\"gdmr__score-max\">/5</span>\n    </div>\n    <div class=\"gdmr__global-stars\">\n      <div class=\"gdmr__stars\" aria-label=\"5 étoiles sur 5\">\n        <span class=\"gdmr__star\">★</span>\n        <span class=\"gdmr__star\">★</span>\n        <span class=\"gdmr__star\">★</span>\n        <span class=\"gdmr__star\">★</span>\n        <span class=\"gdmr__star\">★</span>\n      </div>\n      <span class=\"gdmr__star-count\">Avis 5 étoiles · Google & sur place</span>\n    </div>\n    <div class=\"gdmr__global-sep\"></div>\n    <div class=\"gdmr__global-badges\">\n      <div class=\"gdmr__badge\">\n        <span class=\"gdmr__badge-val\">100%</span>\n        <span class=\"gdmr__badge-lbl\">Artisanal</span>\n      </div>\n      <div class=\"gdmr__badge\">\n        <span class=\"gdmr__badge-val\">+10</span>\n        <span class=\"gdmr__badge-lbl\">Bières pression</span>\n      </div>\n      <div class=\"gdmr__badge\">\n        <span class=\"gdmr__badge-val\">2016</span>\n        <span class=\"gdmr__badge-lbl\">Fondée</span>\n      </div>\n    </div>\n    <a href=\"https://www.google.com/search?q=Le+Gué+des+Moines+Bruguières+avis\" target=\"_blank\" rel=\"noopener\" class=\"gdmr__global-cta\">\n      Laisser un avis Google ↗\n    </a>\n  </div>\n \n  <!-- CAROUSEL -->\n  <div class=\"gdmr__viewport\" tabindex=\"0\" aria-roledescription=\"carousel\" aria-label=\"Carrousel d'avis clients\">\n    <ul class=\"gdmr__track\" role=\"list\">\n \n      <li class=\"gdmr__card\" role=\"listitem\">\n        <div class=\"gdmr__card-top\">\n          <div class=\"gdmr__card-stars\" aria-label=\"5 étoiles sur 5\">\n            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>\n          </div>\n          <span class=\"gdmr__card-tag\">Google</span>\n        </div>\n        <p class=\"gdmr__card-text\">Ambiance au top, bières excellentes et équipe super accueillante. Un vrai spot près de Toulouse.</p>\n        <div class=\"gdmr__card-meta\">\n          <div class=\"gdmr__card-avatar\">C</div>\n          <div class=\"gdmr__card-info\">\n            <span class=\"gdmr__card-name\">Camille</span>\n            <span class=\"gdmr__card-place\">Brewpub · Bruguières</span>\n          </div>\n        </div>\n      </li>\n \n      <li class=\"gdmr__card\" role=\"listitem\">\n        <div class=\"gdmr__card-top\">\n          <div class=\"gdmr__card-stars\" aria-label=\"5 étoiles sur 5\">\n            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>\n          </div>\n          <span class=\"gdmr__card-tag\">Sur place</span>\n        </div>\n        <p class=\"gdmr__card-text\">Grand choix de bières artisanales, planches parfaites, lieu convivial. On revient souvent.</p>\n        <div class=\"gdmr__card-meta\">\n          <div class=\"gdmr__card-avatar\">J</div>\n          <div class=\"gdmr__card-info\">\n            <span class=\"gdmr__card-name\">Julien</span>\n            <span class=\"gdmr__card-place\">Client fidèle · Bruguières</span>\n          </div>\n        </div>\n      </li>\n \n      <li class=\"gdmr__card\" role=\"listitem\">\n        <div class=\"gdmr__card-top\">\n          <div class=\"gdmr__card-stars\" aria-label=\"5 étoiles sur 5\">\n            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>\n          </div>\n          <span class=\"gdmr__card-tag\">Location tireuse</span>\n        </div>\n        <p class=\"gdmr__card-text\">Location de tireuse impeccable pour notre anniversaire. Fût 20L, mise en service rapide. Je recommande !</p>\n        <div class=\"gdmr__card-meta\">\n          <div class=\"gdmr__card-avatar\">S</div>\n          <div class=\"gdmr__card-info\">\n            <span class=\"gdmr__card-name\">Sophie</span>\n            <span class=\"gdmr__card-place\">Événement privé · Toulouse (31)</span>\n          </div>\n        </div>\n      </li>\n \n      <li class=\"gdmr__card\" role=\"listitem\">\n        <div class=\"gdmr__card-top\">\n          <div class=\"gdmr__card-stars\" aria-label=\"5 étoiles sur 5\">\n            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>\n          </div>\n          <span class=\"gdmr__card-tag\">Coup de cœur</span>\n        </div>\n        <p class=\"gdmr__card-text\">Bières locales de grande qualité, service chaleureux, cadre canon. Mention spéciale aux nouveautés éphémères.</p>\n        <div class=\"gdmr__card-meta\">\n          <div class=\"gdmr__card-avatar\">M</div>\n          <div class=\"gdmr__card-info\">\n            <span class=\"gdmr__card-name\">Mathieu</span>\n            <span class=\"gdmr__card-place\">Amateur de bière artisanale</span>\n          </div>\n        </div>\n      </li>\n \n      <li class=\"gdmr__card\" role=\"listitem\">\n        <div class=\"gdmr__card-top\">\n          <div class=\"gdmr__card-stars\" aria-label=\"5 étoiles sur 5\">\n            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>\n          </div>\n          <span class=\"gdmr__card-tag\">Événement pro</span>\n        </div>\n        <p class=\"gdmr__card-text\">Service pro, super conseils pour choisir les fûts 20L/30L. Installation simple et efficace pour notre afterwork.</p>\n        <div class=\"gdmr__card-meta\">\n          <div class=\"gdmr__card-avatar\">N</div>\n          <div class=\"gdmr__card-info\">\n            <span class=\"gdmr__card-name\">Nicolas</span>\n            <span class=\"gdmr__card-place\">Événement entreprise · Toulouse</span>\n          </div>\n        </div>\n      </li>\n \n    </ul>\n \n    <div class=\"gdmr__fade gdmr__fade--l\" aria-hidden=\"true\"></div>\n    <div class=\"gdmr__fade gdmr__fade--r\" aria-hidden=\"true\"></div>\n  </div>\n \n  <!-- DOTS -->\n  <div class=\"gdmr__dots\" role=\"tablist\" aria-label=\"Navigation des avis\">\n    <button class=\"gdmr__dot active\" role=\"tab\" aria-label=\"Avis 1\" aria-selected=\"true\"></button>\n    <button class=\"gdmr__dot\" role=\"tab\" aria-label=\"Avis 2\" aria-selected=\"false\"></button>\n    <button class=\"gdmr__dot\" role=\"tab\" aria-label=\"Avis 3\" aria-selected=\"false\"></button>\n    <button class=\"gdmr__dot\" role=\"tab\" aria-label=\"Avis 4\" aria-selected=\"false\"></button>\n    <button class=\"gdmr__dot\" role=\"tab\" aria-label=\"Avis 5\" aria-selected=\"false\"></button>\n  </div>\n \n</div>\n</section>\n \n<script>\n(function () {\n  const root = document.querySelector('.gdmr');\n  if (!root) return;\n \n  const track   = root.querySelector('.gdmr__track');\n  const cards   = Array.from(root.querySelectorAll('.gdmr__card'));\n  const prev    = root.querySelector('.gdmr__prev');\n  const next    = root.querySelector('.gdmr__next');\n  const dots    = Array.from(root.querySelectorAll('.gdmr__dot'));\n  const viewport = root.querySelector('.gdmr__viewport');\n \n  if (!track || cards.length === 0) return;\n \n  const gap  = () => parseFloat(getComputedStyle(track).gap || '12');\n  const step = () => cards[0].getBoundingClientRect().width + gap();\n \n  let current = 0;\n \n  const scrollTo = (idx) => {\n    current = Math.max(0, Math.min(idx, cards.length - 1));\n    track.scrollTo({ left: current * step(), behavior: 'smooth' });\n    updateUI();\n  };\n \n  const updateUI = () => {\n    const maxScroll = track.scrollWidth - track.clientWidth - 2;\n    if (prev) prev.disabled = current <= 0;\n    if (next) next.disabled = current >= cards.length - 1;\n    dots.forEach((d, i) => {\n      d.classList.toggle('active', i === current);\n      d.setAttribute('aria-selected', i === current ? 'true' : 'false');\n    });\n  };\n \n  if (prev) prev.addEventListener('click', () => { scrollTo(current - 1); restart(); });\n  if (next) next.addEventListener('click', () => { scrollTo(current + 1); restart(); });\n \n  dots.forEach((d, i) => d.addEventListener('click', () => { scrollTo(i); restart(); }));\n \n  if (viewport) {\n    viewport.addEventListener('keydown', (e) => {\n      if (e.key === 'ArrowLeft')  { scrollTo(current - 1); restart(); }\n      if (e.key === 'ArrowRight') { scrollTo(current + 1); restart(); }\n    });\n  }\n \n  track.addEventListener('scroll', () => {\n    const s = step();\n    if (s > 0) current = Math.round(track.scrollLeft / s);\n    updateUI();\n  }, { passive: true });\n \n  // Autoplay\n  let timer = null;\n  const start = () => {\n    stop();\n    timer = setInterval(() => {\n      scrollTo(current >= cards.length - 1 ? 0 : current + 1);\n    }, 6000);\n  };\n  const stop = () => { clearInterval(timer); timer = null; };\n  const restart = () => start();\n \n  root.addEventListener('mouseenter', stop);\n  root.addEventListener('mouseleave', start);\n \n  updateUI();\n  start();\n})();\n</script>",
+        "layout": "t4s-container-wrap",
+        "cl_bg": "",
+        "cl_bg_gradient": "",
+        "mg": ",,50px,",
+        "pd": "",
+        "mg_tb": "",
+        "pd_tb": "",
+        "mg_mb": ",,30px,",
+        "pd_mb": ""
+      },
+      "disabled": true
     }
   },
   "order": [
@@ -1101,20 +1216,20 @@
     "custom_liquid_exzC47",
     "gdm_bieres",
     "gdm_histoire",
-    "custom_liquid_jVggmw",
-    "slideshow_34enek",
+    "gdm_univers",
+    "gdm_image",
     "17118856593ce6dc40",
     "gdm_promo",
-    "custom_liquid_bwLB4x",
-    "custom_liquid_MfL7Kf",
+    "gdm_untappd",
+    "gdm_tireuse",
     "1742806055908407b6",
     "gdm_avis",
     "gdm_brewpub",
     "gdm_faq",
-    "custom_liquid_VAEhhd",
-    "newsletter_xiakf8",
-    "164620932069107a3a",
-    "174366675279bc37ca",
+    "gdm_articles",
+    "gdm_newsletter",
+    "gdm_atouts",
+    "gdm_instagram",
     "1646028739ae283905",
     "featured_collection_pFFBcj",
     "custom_liquid_EJtcXA",

@@ -1,0 +1,712 @@
+{%- comment -%}
+  Le Gué des Moines — Service : grande image avec chiffres superposés et,
+  à côté, badge, titre, texte riche, occasions, offres et deux boutons
+  (ex. location de tireuse à bière).
+{%- endcomment -%}
+{%- liquid
+  assign s = section.settings
+  assign heading_tag = s.heading_tag | default: 'h2'
+  assign stats = section.blocks | where: 'type', 'stat'
+  assign tags = section.blocks | where: 'type', 'tag'
+  assign offers = section.blocks | where: 'type', 'offer'
+
+  assign ratio = s.image_ratio
+  if ratio == 'adapt'
+    assign ratio = s.image.aspect_ratio | default: 1
+  endif
+
+  assign image_alt = s.image_alt | default: s.image.alt
+
+  assign classes = 'gdm gdm-service gdm-service--image-' | append: s.image_position | append: ' gdm-service--fit-' | append: s.image_fit
+  unless s.image_frame
+    assign classes = classes | append: ' gdm-service--frameless'
+  endunless
+  if stats.size > 0
+    assign classes = classes | append: ' gdm-service--has-stats'
+  endif
+-%}
+{%- render 'gdm-assets' -%}
+
+<gdm-section
+  id="gdm-{{ section.id }}"
+  class="{{ classes }}"
+  style="--gdm-bg: {{ s.color_bg }}; --gdm-accent: {{ s.color_accent }}; --gdm-pt: {{ s.padding_top }}px; --gdm-pb: {{ s.padding_bottom }}px; --gdm-service-ratio: {{ ratio }}; --gdm-service-img-bg: {{ s.image_bg }};"
+>
+  <div class="gdm-container gdm-service__grid">
+    <div class="gdm-service__visual" data-gdm-reveal>
+      <div class="gdm-service__halo" aria-hidden="true"></div>
+      <div class="gdm-service__frame">
+        {%- if s.image != blank -%}
+          {{ s.image | image_url: width: 1600 | image_tag: loading: 'lazy', widths: '500, 800, 1100, 1400, 1600', sizes: '(min-width: 990px) 46vw, (min-width: 750px) 560px, 100vw', class: 'gdm-service__img', alt: image_alt }}
+        {%- else -%}
+          {{ 'product-1' | placeholder_svg_tag: 'gdm-placeholder gdm-service__img' }}
+        {%- endif -%}
+      </div>
+
+      {%- if stats.size > 0 -%}
+        <ul class="gdm-service__stats">
+          {%- for block in stats -%}
+            <li class="gdm-service__stat" {{ block.shopify_attributes }}>
+              <span class="gdm-service__stat-value">{{ block.settings.value | escape }}</span>
+              {%- if block.settings.label != blank -%}
+                <span class="gdm-service__stat-label">{{ block.settings.label | escape }}</span>
+              {%- endif -%}
+            </li>
+          {%- endfor -%}
+        </ul>
+      {%- endif -%}
+    </div>
+
+    <div class="gdm-service__content">
+      {%- if s.pill != blank -%}
+        <p class="gdm-pill gdm-service__pill" data-gdm-reveal>{{ s.pill | escape }}</p>
+      {%- endif -%}
+      {%- if s.title != blank or s.title_accent != blank -%}
+        <{{ heading_tag }} class="gdm-title gdm-service__title" data-gdm-reveal style="--gdm-i: 1;">
+          {{- s.title | escape }}{% if s.title_accent != blank %} <em>{{ s.title_accent | escape }}</em>{% endif -%}
+        </{{ heading_tag }}>
+      {%- endif -%}
+      {%- if s.text != blank -%}
+        <div class="gdm-rte gdm-service__text" data-gdm-reveal style="--gdm-i: 2;">{{ s.text }}</div>
+      {%- endif -%}
+
+      {%- if tags.size > 0 -%}
+        <ul class="gdm-service__tags" data-gdm-reveal style="--gdm-i: 3;"{% if s.tags_label != blank %} aria-label="{{ s.tags_label | escape }}"{% endif %}>
+          {%- for block in tags -%}
+            <li class="gdm-service__tag" {{ block.shopify_attributes }}>
+              {%- if block.settings.emoji != blank -%}
+                <span class="gdm-service__tag-emoji" aria-hidden="true">{{ block.settings.emoji | escape }}</span>
+              {%- endif -%}
+              <span>{{ block.settings.label | escape }}</span>
+            </li>
+          {%- endfor -%}
+        </ul>
+      {%- endif -%}
+
+      {%- if offers.size > 0 -%}
+        <ul class="gdm-service__offers">
+          {%- for block in offers -%}
+            {%- assign b = block.settings -%}
+            <li class="gdm-service__offer gdm-card" data-gdm-reveal style="--gdm-i: {{ forloop.index | plus: 3 }};" {{ block.shopify_attributes }}>
+              {%- if b.icon != 'none' -%}
+                <span class="gdm-service__offer-icon">{% render 'gdm-icon', name: b.icon, icon_size: 22 %}</span>
+              {%- endif -%}
+              <span class="gdm-service__offer-body">
+                <span class="gdm-service__offer-title">{{ b.title | escape }}</span>
+                {%- if b.text != blank -%}
+                  <span class="gdm-service__offer-text">{{ b.text | escape }}</span>
+                {%- endif -%}
+              </span>
+            </li>
+          {%- endfor -%}
+        </ul>
+      {%- endif -%}
+
+      {%- if s.button_label != blank or s.button2_label != blank -%}
+        <div class="gdm-actions gdm-service__actions" data-gdm-reveal style="--gdm-i: 6;">
+          {%- if s.button_label != blank -%}
+            <a class="gdm-btn gdm-btn--primary" href="{{ s.button_link | default: '#' }}">
+              {{- s.button_label | escape -}}
+              {%- render 'gdm-icon', name: 'arrow-right' -%}
+            </a>
+          {%- endif -%}
+          {%- if s.button2_label != blank -%}
+            <a class="gdm-btn gdm-btn--ghost" href="{{ s.button2_link | default: '#' }}">{{ s.button2_label | escape }}</a>
+          {%- endif -%}
+        </div>
+      {%- endif -%}
+    </div>
+  </div>
+</gdm-section>
+
+{% stylesheet %}
+  .gdm.gdm-service .gdm-service__grid {
+    display: grid;
+    gap: clamp(48px, 6vw, 96px);
+    align-items: center;
+  }
+
+  @media (min-width: 990px) {
+    .gdm.gdm-service .gdm-service__grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .gdm.gdm-service--image-right .gdm-service__visual {
+      order: 2;
+    }
+  }
+
+  /* ---------- Visuel ---------- */
+  .gdm.gdm-service .gdm-service__visual {
+    position: relative;
+    display: grid;
+    justify-items: center;
+  }
+
+  .gdm.gdm-service .gdm-service__halo {
+    position: absolute;
+    inset: -12% -8%;
+    z-index: -1;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, var(--gdm-accent-glow), transparent);
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  .gdm.gdm-service .gdm-service__frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: var(--gdm-service-ratio, 1);
+    border-radius: 28px;
+    overflow: hidden;
+    background: var(--gdm-service-img-bg, var(--gdm-surface));
+    box-shadow: 0 40px 80px -40px rgba(0, 0, 0, 0.9);
+  }
+
+  /* Liseré + fin passe-partout de la couleur du cadre : masque les bords irréguliers des visuels. */
+  .gdm.gdm-service .gdm-service__frame::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px var(--gdm-border), inset 0 0 0 3px var(--gdm-service-img-bg, var(--gdm-surface));
+    pointer-events: none;
+  }
+
+  .gdm.gdm-service .gdm-service__img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 1.2s var(--gdm-ease);
+  }
+
+  .gdm.gdm-service--fit-cover .gdm-service__img {
+    object-fit: cover;
+  }
+
+  .gdm.gdm-service .gdm-service__visual:hover .gdm-service__img {
+    transform: scale(1.035);
+  }
+
+  /* Visuel détouré : pas de cadre, simple ombre portée. */
+  .gdm.gdm-service--frameless .gdm-service__frame {
+    overflow: visible;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .gdm.gdm-service--frameless .gdm-service__frame::after {
+    display: none;
+  }
+
+  .gdm.gdm-service--frameless .gdm-service__img {
+    filter: drop-shadow(0 24px 48px rgba(0, 0, 0, 0.55));
+  }
+
+  /* ---------- Pastilles de chiffres ---------- */
+  .gdm.gdm-service .gdm-service__stats {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    width: calc(100% - 24px);
+    margin-top: -42px;
+  }
+
+  .gdm.gdm-service .gdm-service__stat {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 6px;
+    flex: 0 1 168px;
+    min-width: 0;
+    padding: 14px 16px;
+    border: 1px solid var(--gdm-line);
+    border-radius: 18px;
+    background: rgba(13, 13, 13, 0.82);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 24px 40px -24px rgba(0, 0, 0, 0.9);
+    text-align: center;
+  }
+
+  .gdm.gdm-service .gdm-service__stat-value {
+    color: var(--gdm-accent);
+    font-family: var(--gdm-font-display);
+    font-size: clamp(24px, 20px + 0.8vw, 32px);
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .gdm.gdm-service .gdm-service__stat-label {
+    color: var(--gdm-muted);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* ---------- Contenu ---------- */
+  .gdm.gdm-service .gdm-service__content {
+    display: grid;
+    justify-items: start;
+    gap: 24px;
+    min-width: 0;
+  }
+
+  .gdm.gdm-service .gdm-service__title {
+    font-size: clamp(40px, 24px + 3.4vw, 72px);
+  }
+
+  .gdm.gdm-service .gdm-service__text {
+    max-width: 60ch;
+    font-size: 17px;
+  }
+
+  .gdm.gdm-service .gdm-service__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .gdm.gdm-service .gdm-service__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 8px 16px;
+    border: 1px solid var(--gdm-border);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--gdm-text);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.2;
+    transition: border-color 0.25s var(--gdm-ease), background-color 0.25s var(--gdm-ease);
+  }
+
+  .gdm.gdm-service .gdm-service__tag:hover {
+    border-color: var(--gdm-line);
+    background: var(--gdm-accent-soft);
+  }
+
+  .gdm.gdm-service .gdm-service__tag-emoji {
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .gdm.gdm-service .gdm-service__offers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+    width: 100%;
+  }
+
+  .gdm.gdm-service .gdm-service__offer {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 20px;
+    border-radius: 20px;
+  }
+
+  .gdm.gdm-service .gdm-service__offer-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--gdm-accent-soft);
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-service .gdm-service__offer-body {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .gdm.gdm-service .gdm-service__offer-title {
+    color: var(--gdm-text);
+    font-family: var(--gdm-font-display);
+    font-size: 24px;
+    line-height: 1.1;
+    text-transform: uppercase;
+  }
+
+  .gdm.gdm-service .gdm-service__offer-text {
+    color: var(--gdm-muted);
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .gdm.gdm-service .gdm-service__actions {
+    margin-top: 4px;
+  }
+
+  .gdm.gdm-service .gdm-service__actions a.gdm-btn--primary {
+    color: var(--gdm-on-accent);
+  }
+
+  .gdm.gdm-service .gdm-service__actions a.gdm-btn--ghost {
+    color: var(--gdm-text);
+  }
+
+  .gdm.gdm-service .gdm-service__actions a.gdm-btn--ghost:hover {
+    color: var(--gdm-accent);
+  }
+
+  @media (min-width: 990px) and (max-width: 1199px) {
+    .gdm.gdm-service .gdm-service__stat {
+      padding: 12px 10px;
+    }
+
+    .gdm.gdm-service .gdm-service__stat-label {
+      font-size: 11px;
+      letter-spacing: 0.04em;
+    }
+  }
+
+  @media (max-width: 989px) {
+    .gdm.gdm-service .gdm-service__visual {
+      width: 100%;
+      max-width: 560px;
+      margin-inline: auto;
+    }
+  }
+
+  @media (max-width: 749px) {
+    .gdm.gdm-service .gdm-service__frame {
+      border-radius: 22px;
+    }
+
+    .gdm.gdm-service .gdm-service__stats {
+      gap: 8px;
+      width: calc(100% - 16px);
+      margin-top: -36px;
+    }
+
+    .gdm.gdm-service .gdm-service__stat {
+      flex: 1 1 0;
+      padding: 12px 8px;
+      border-radius: 16px;
+    }
+
+    .gdm.gdm-service .gdm-service__stat-label {
+      font-size: 11px;
+      letter-spacing: 0.03em;
+    }
+
+    .gdm.gdm-service .gdm-service__pill {
+      border-radius: 18px;
+      letter-spacing: 0.1em;
+    }
+
+    .gdm.gdm-service .gdm-service__text {
+      font-size: 16px;
+    }
+
+    .gdm.gdm-service .gdm-service__offer {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 16px;
+    }
+
+    .gdm.gdm-service .gdm-service__offer-icon {
+      width: 42px;
+      height: 42px;
+    }
+
+    .gdm.gdm-service .gdm-service__offer-title {
+      font-size: 22px;
+    }
+
+    .gdm.gdm-service .gdm-service__actions,
+    .gdm.gdm-service .gdm-service__actions .gdm-btn {
+      width: 100%;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "GDM · Service",
+  "tag": "section",
+  "class": "gdm-shopify-section",
+  "max_blocks": 16,
+  "settings": [
+    {
+      "type": "header",
+      "content": "Image"
+    },
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Image",
+      "info": "Format carré conseillé : 1600 × 1600 px."
+    },
+    {
+      "type": "text",
+      "id": "image_alt",
+      "label": "Texte alternatif de l'image",
+      "info": "Décrit l'image pour les moteurs de recherche et les lecteurs d'écran. Par défaut : celui de la bibliothèque de fichiers."
+    },
+    {
+      "type": "select",
+      "id": "image_position",
+      "label": "Position de l'image",
+      "default": "left",
+      "options": [
+        { "value": "left", "label": "À gauche" },
+        { "value": "right", "label": "À droite" }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "image_ratio",
+      "label": "Format du cadre",
+      "default": "1/1",
+      "options": [
+        { "value": "1/1", "label": "Carré" },
+        { "value": "4/5", "label": "Portrait" },
+        { "value": "4/3", "label": "Paysage" },
+        { "value": "adapt", "label": "Selon l'image" }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "image_fit",
+      "label": "Ajustement de l'image",
+      "default": "contain",
+      "options": [
+        { "value": "contain", "label": "Image entière (contain)" },
+        { "value": "cover", "label": "Remplir le cadre (cover)" }
+      ],
+      "info": "« Image entière » convient aux visuels détourés : rien n'est rogné."
+    },
+    {
+      "type": "checkbox",
+      "id": "image_frame",
+      "label": "Afficher le cadre arrondi",
+      "default": true,
+      "info": "Décochez pour un visuel détouré sur fond transparent : il flotte alors avec une ombre portée."
+    },
+    {
+      "type": "color",
+      "id": "image_bg",
+      "label": "Fond du cadre",
+      "default": "#141414",
+      "info": "Mettez la couleur de fond de votre visuel pour qu'il se fonde dans le cadre."
+    },
+    {
+      "type": "header",
+      "content": "Texte"
+    },
+    {
+      "type": "text",
+      "id": "pill",
+      "label": "Badge",
+      "default": "Location · Tireuse · Fûts"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titre",
+      "default": "Location de tireuse"
+    },
+    {
+      "type": "text",
+      "id": "title_accent",
+      "label": "Titre — partie orange",
+      "default": "à bière"
+    },
+    {
+      "type": "select",
+      "id": "heading_tag",
+      "label": "Niveau du titre (SEO)",
+      "default": "h2",
+      "options": [
+        { "value": "h1", "label": "H1" },
+        { "value": "h2", "label": "H2" }
+      ]
+    },
+    {
+      "type": "richtext",
+      "id": "text",
+      "label": "Texte",
+      "default": "<p>Présentez votre service en quelques phrases et mettez en <strong>gras</strong> les mots importants.</p>"
+    },
+    {
+      "type": "text",
+      "id": "tags_label",
+      "label": "Intitulé de la liste d'occasions (accessibilité)",
+      "default": "Occasions"
+    },
+    {
+      "type": "paragraph",
+      "content": "Ajoutez des blocs « Chiffre » (sur l'image), « Occasion » (pastilles) et « Offre » (cartes)."
+    },
+    {
+      "type": "header",
+      "content": "Boutons"
+    },
+    {
+      "type": "text",
+      "id": "button_label",
+      "label": "Bouton principal",
+      "default": "Réserver"
+    },
+    {
+      "type": "url",
+      "id": "button_link",
+      "label": "Lien du bouton principal"
+    },
+    {
+      "type": "text",
+      "id": "button2_label",
+      "label": "Bouton secondaire",
+      "default": "Demander un devis"
+    },
+    {
+      "type": "url",
+      "id": "button2_link",
+      "label": "Lien du bouton secondaire"
+    },
+    {
+      "type": "header",
+      "content": "Couleurs et espacement"
+    },
+    {
+      "type": "color",
+      "id": "color_bg",
+      "label": "Fond",
+      "default": "#0D0D0D"
+    },
+    {
+      "type": "color",
+      "id": "color_accent",
+      "label": "Accent",
+      "default": "#F0921E"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Marge haute",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Marge basse",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    }
+  ],
+  "blocks": [
+    {
+      "type": "stat",
+      "name": "Chiffre",
+      "limit": 4,
+      "settings": [
+        {
+          "type": "paragraph",
+          "content": "Pastille affichée sur le bas de l'image."
+        },
+        {
+          "type": "text",
+          "id": "value",
+          "label": "Valeur",
+          "default": "20L"
+        },
+        {
+          "type": "text",
+          "id": "label",
+          "label": "Légende",
+          "default": "Fût"
+        }
+      ]
+    },
+    {
+      "type": "tag",
+      "name": "Occasion",
+      "limit": 10,
+      "settings": [
+        {
+          "type": "text",
+          "id": "emoji",
+          "label": "Emoji",
+          "default": "🎉"
+        },
+        {
+          "type": "text",
+          "id": "label",
+          "label": "Libellé",
+          "default": "Soirée"
+        }
+      ]
+    },
+    {
+      "type": "offer",
+      "name": "Offre",
+      "limit": 4,
+      "settings": [
+        {
+          "type": "select",
+          "id": "icon",
+          "label": "Icône",
+          "default": "barrel",
+          "options": [
+            { "value": "none", "label": "Aucune" },
+            { "value": "barrel", "label": "Fût" },
+            { "value": "beer", "label": "Chope" },
+            { "value": "users", "label": "Groupe" },
+            { "value": "calendar", "label": "Calendrier" },
+            { "value": "truck", "label": "Livraison" },
+            { "value": "gift", "label": "Cadeau" },
+            { "value": "sparkle", "label": "Étincelle" },
+            { "value": "check", "label": "Coche" }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Titre",
+          "default": "Fût 20L"
+        },
+        {
+          "type": "text",
+          "id": "text",
+          "label": "Description",
+          "default": "Petits événements"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "GDM · Service",
+      "blocks": [
+        { "type": "stat", "settings": { "value": "20L", "label": "Fût" } },
+        { "type": "stat", "settings": { "value": "30L", "label": "Fût" } },
+        { "type": "tag", "settings": { "emoji": "💍", "label": "Mariage" } },
+        { "type": "tag", "settings": { "emoji": "🎂", "label": "Anniversaire" } },
+        { "type": "tag", "settings": { "emoji": "🏢", "label": "Entreprise" } },
+        { "type": "offer", "settings": { "icon": "barrel", "title": "Fût 20L", "text": "Petits événements" } },
+        { "type": "offer", "settings": { "icon": "barrel", "title": "Fût 30L", "text": "Grands événements" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,485 @@
+{%- comment -%}
+  Le Gué des Moines — Application : accueille les blocs d'applications Shopify
+  (flux Instagram Instafeed, avis, formulaires…) dans un cadre arrondi aux
+  couleurs du Gué, avec un en-tête GDM facultatif (badge, titre, texte, lien).
+
+  Les blocs d'application sont enveloppés par Shopify lui-même (div
+  .shopify-app-block avec les attributs de l'éditeur) : pas de
+  block.shopify_attributes à ajouter ici.
+{%- endcomment -%}
+{%- liquid
+  assign s = section.settings
+  assign heading_tag = s.heading_tag | default: 'h2'
+
+  assign has_head = false
+  if s.pill != blank or s.title != blank or s.title_accent != blank or s.text != blank
+    assign has_head = true
+  endif
+
+  assign has_link = false
+  if s.link_label != blank and s.link != blank
+    assign has_link = true
+  endif
+
+  assign link_external = false
+  if s.link contains '://'
+    assign link_external = true
+  endif
+
+  assign link_class = 'gdm-btn gdm-btn--ghost'
+  case s.link_style
+    when 'primary'
+      assign link_class = 'gdm-btn gdm-btn--primary'
+    when 'link'
+      assign link_class = 'gdm-link'
+  endcase
+
+  assign max_width = '1280px'
+  case s.content_width
+    when 'medium'
+      assign max_width = '1040px'
+    when 'narrow'
+      assign max_width = '820px'
+  endcase
+-%}
+{%- render 'gdm-assets' -%}
+
+<gdm-section
+  id="gdm-{{ section.id }}"
+  class="gdm gdm-apps gdm-grain gdm-apps--{{ s.head_align }} gdm-apps--frame-{{ s.frame }}"
+  style="--gdm-bg: {{ s.color_bg }}; --gdm-accent: {{ s.color_accent }}; --gdm-max: {{ max_width }}; --gdm-apps-frame: {{ s.color_frame }}; --gdm-apps-pad: {{ s.frame_padding }}px; --gdm-pt: {{ s.padding_top }}px; --gdm-pb: {{ s.padding_bottom }}px;"
+>
+  <div class="gdm-container">
+    {%- if has_head or has_link -%}
+      <div class="gdm-apps__top{% if has_head and has_link %} gdm-apps__top--split{% endif %}">
+        {%- if has_head -%}
+          <div class="gdm-head gdm-apps__head{% if s.head_align == 'center' %} gdm-head--center{% endif %}">
+            {%- if s.pill != blank -%}
+              <p class="gdm-pill" data-gdm-reveal>{{ s.pill | escape }}</p>
+            {%- endif -%}
+            {%- if s.title != blank or s.title_accent != blank -%}
+              <{{ heading_tag }} class="gdm-title" data-gdm-reveal style="--gdm-i: 1;">
+                {{- s.title | escape }}{% if s.title_accent != blank %} <em>{{ s.title_accent | escape }}</em>{% endif -%}
+              </{{ heading_tag }}>
+            {%- endif -%}
+            {%- if s.text != blank -%}
+              <p class="gdm-lead gdm-apps__lead" data-gdm-reveal style="--gdm-i: 2;">{{ s.text }}</p>
+            {%- endif -%}
+          </div>
+        {%- endif -%}
+
+        {%- if has_link -%}
+          <div class="gdm-apps__aside" data-gdm-reveal style="--gdm-i: 2;">
+            <a
+              class="{{ link_class }} gdm-apps__link{% if s.link_label contains '@' %} is-handle{% endif %}"
+              href="{{ s.link }}"
+              {% if link_external %}
+                target="_blank" rel="noopener"
+              {% endif %}
+            >
+              {%- if s.link_icon != 'none' -%}
+                <span class="gdm-apps__link-icon">{%- render 'gdm-icon', name: s.link_icon, icon_size: 20 -%}</span>
+              {%- endif -%}
+              <span class="gdm-apps__link-label">{{ s.link_label | escape }}</span>
+              {%- if link_external -%}
+                {%- render 'gdm-icon', name: 'arrow-up-right' -%}
+                <span class="gdm-visually-hidden"> (nouvel onglet)</span>
+              {%- else -%}
+                {%- render 'gdm-icon', name: 'arrow-right' -%}
+              {%- endif -%}
+            </a>
+          </div>
+        {%- endif -%}
+      </div>
+    {%- endif -%}
+
+    {%- if section.blocks.size > 0 -%}
+      <div class="gdm-apps__frame" data-gdm-reveal style="--gdm-i: 3;">
+        <div class="gdm-apps__content">
+          {% for block in section.blocks %}{% render block %}{% endfor %}
+        </div>
+      </div>
+    {%- elsif request.design_mode -%}
+      <div class="gdm-apps__frame">
+        <p class="gdm-apps__empty">
+          Ajoutez le bloc de votre application (par exemple Instafeed pour Instagram) avec « Ajouter un bloc ».
+          Ce message n'apparaît que dans l'éditeur.
+        </p>
+      </div>
+    {%- endif -%}
+  </div>
+</gdm-section>
+
+{% stylesheet %}
+  /* Pas de contexte d'empilement isolé : les fenêtres des applications
+     (agrandissement d'une publication Instagram…) passent au-dessus de la page. */
+  .gdm.gdm-apps {
+    isolation: auto;
+  }
+
+  /* ---------- En-tête ---------- */
+  .gdm.gdm-apps .gdm-apps__top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    margin-bottom: clamp(28px, 4vw, 48px);
+  }
+
+  .gdm.gdm-apps .gdm-apps__head {
+    margin-bottom: 0;
+  }
+
+  .gdm.gdm-apps .gdm-apps__aside {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .gdm.gdm-apps.gdm-apps--center .gdm-apps__top {
+    justify-items: center;
+    text-align: center;
+  }
+
+  .gdm.gdm-apps.gdm-apps--center .gdm-apps__aside {
+    justify-content: center;
+  }
+
+  @media (min-width: 750px) {
+    .gdm.gdm-apps.gdm-apps--left .gdm-apps__top--split {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      column-gap: 32px;
+    }
+
+    .gdm.gdm-apps.gdm-apps--left .gdm-apps__top--split .gdm-apps__aside {
+      justify-content: flex-end;
+    }
+  }
+
+  .gdm.gdm-apps .gdm-apps__lead a {
+    color: var(--gdm-text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .gdm.gdm-apps .gdm-apps__lead a:hover {
+    color: var(--gdm-accent);
+  }
+
+  /* ---------- Lien ---------- */
+  .gdm.gdm-apps .gdm-apps__link {
+    max-width: 100%;
+  }
+
+  .gdm.gdm-apps .gdm-apps__link.gdm-btn {
+    padding-block: 14px;
+    line-height: 1.2;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .gdm.gdm-apps a.gdm-apps__link.gdm-link {
+    color: var(--gdm-text);
+  }
+
+  .gdm.gdm-apps a.gdm-apps__link.gdm-link:hover {
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-apps .gdm-apps__link-label {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  /* Un identifiant de compte (@…) garde ses minuscules. */
+  .gdm.gdm-apps .gdm-apps__link.is-handle {
+    font-size: 15px;
+    letter-spacing: 0.01em;
+    text-transform: none;
+  }
+
+  .gdm.gdm-apps .gdm-apps__link-icon {
+    display: inline-flex;
+    flex: none;
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-apps .gdm-apps__link-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .gdm.gdm-apps .gdm-btn--primary .gdm-apps__link-icon {
+    color: currentColor;
+  }
+
+  .gdm.gdm-apps .gdm-apps__link:hover .gdm-apps__link-icon svg {
+    transform: none;
+  }
+
+  /* ---------- Cadre de l'application ---------- */
+  .gdm.gdm-apps .gdm-apps__frame {
+    --_radius: 28px;
+    --_pad: var(--gdm-apps-pad, 16px);
+    position: relative;
+    padding: var(--_pad);
+    border: 1px solid var(--gdm-border);
+    border-radius: var(--_radius);
+    background: var(--gdm-apps-frame, var(--gdm-surface));
+    color: var(--gdm-text);
+    box-shadow: 0 32px 64px -44px rgba(0, 0, 0, 0.9);
+  }
+
+  .gdm.gdm-apps.gdm-apps--frame-outline .gdm-apps__frame {
+    border-color: var(--gdm-line);
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .gdm.gdm-apps.gdm-apps--frame-none .gdm-apps__frame {
+    --_radius: 18px;
+    --_pad: 0px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  /* Coins intérieurs concentriques : le contenu de l'application est arrondi lui aussi. */
+  .gdm.gdm-apps .gdm-apps__content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    min-width: 0;
+    border-radius: max(6px, calc(var(--_radius) - var(--_pad)));
+    overflow: hidden;
+    overflow: clip;
+  }
+
+  .gdm.gdm-apps .gdm-apps__content > * {
+    min-width: 0;
+  }
+
+  .gdm.gdm-apps .gdm-apps__empty {
+    padding: 28px;
+    border: 1px dashed var(--gdm-line);
+    border-radius: max(6px, calc(var(--_radius) - var(--_pad)));
+    color: var(--gdm-muted);
+    font-size: 15px;
+    line-height: 1.6;
+    text-align: center;
+  }
+
+  @media (max-width: 749px) {
+    .gdm.gdm-apps .gdm-apps__frame {
+      --_radius: 22px;
+      --_pad: calc(var(--gdm-apps-pad, 16px) * 0.75);
+    }
+
+    .gdm.gdm-apps .gdm-apps__top {
+      gap: 20px;
+    }
+
+    .gdm.gdm-apps .gdm-apps__aside,
+    .gdm.gdm-apps .gdm-apps__link.gdm-btn {
+      width: 100%;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "GDM · Application",
+  "tag": "section",
+  "class": "gdm-shopify-section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "En-tête"
+    },
+    {
+      "type": "paragraph",
+      "content": "Facultatif : videz ces champs pour n'afficher que l'application."
+    },
+    {
+      "type": "text",
+      "id": "pill",
+      "label": "Badge",
+      "default": "Réseaux sociaux"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titre",
+      "default": "Suivez-nous sur"
+    },
+    {
+      "type": "text",
+      "id": "title_accent",
+      "label": "Titre — partie orange",
+      "default": "Instagram"
+    },
+    {
+      "type": "select",
+      "id": "heading_tag",
+      "label": "Niveau du titre (SEO)",
+      "default": "h2",
+      "options": [
+        { "value": "h1", "label": "H1" },
+        { "value": "h2", "label": "H2" }
+      ]
+    },
+    {
+      "type": "inline_richtext",
+      "id": "text",
+      "label": "Texte d'introduction (facultatif)"
+    },
+    {
+      "type": "select",
+      "id": "head_align",
+      "label": "Alignement de l'en-tête",
+      "default": "left",
+      "options": [
+        { "value": "left", "label": "À gauche (lien à droite)" },
+        { "value": "center", "label": "Centré" }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "Lien"
+    },
+    {
+      "type": "text",
+      "id": "link_label",
+      "label": "Lien — texte",
+      "info": "Par exemple « @votrecompte » : un texte avec @ garde ses minuscules."
+    },
+    {
+      "type": "url",
+      "id": "link",
+      "label": "Lien — destination",
+      "info": "Les liens vers un autre site s'ouvrent dans un nouvel onglet."
+    },
+    {
+      "type": "select",
+      "id": "link_icon",
+      "label": "Icône du lien",
+      "default": "none",
+      "options": [
+        { "value": "none", "label": "Aucune" },
+        { "value": "instagram", "label": "Instagram" },
+        { "value": "star", "label": "Étoile" },
+        { "value": "heart", "label": "Cœur" },
+        { "value": "mail", "label": "Enveloppe" },
+        { "value": "calendar", "label": "Calendrier" },
+        { "value": "bag", "label": "Sac" },
+        { "value": "users", "label": "Communauté" }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "link_style",
+      "label": "Style du lien",
+      "default": "ghost",
+      "options": [
+        { "value": "ghost", "label": "Bouton contour" },
+        { "value": "primary", "label": "Bouton orange" },
+        { "value": "link", "label": "Lien simple" }
+      ]
+    },
+    {
+      "type": "header",
+      "content": "Application"
+    },
+    {
+      "type": "paragraph",
+      "content": "Ajoutez le bloc de votre application (Instafeed, avis, formulaire…) avec « Ajouter un bloc ». Ses réglages se font dans le bloc lui-même."
+    },
+    {
+      "type": "select",
+      "id": "content_width",
+      "label": "Largeur",
+      "default": "full",
+      "options": [
+        { "value": "full", "label": "Pleine largeur" },
+        { "value": "medium", "label": "Moyenne" },
+        { "value": "narrow", "label": "Étroite" }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "frame",
+      "label": "Cadre",
+      "default": "card",
+      "options": [
+        { "value": "card", "label": "Carte arrondie" },
+        { "value": "outline", "label": "Contour arrondi" },
+        { "value": "none", "label": "Sans cadre" }
+      ]
+    },
+    {
+      "type": "range",
+      "id": "frame_padding",
+      "label": "Marge intérieure du cadre",
+      "min": 0,
+      "max": 48,
+      "step": 4,
+      "unit": "px",
+      "default": 16
+    },
+    {
+      "type": "header",
+      "content": "Couleurs et espacement"
+    },
+    {
+      "type": "color",
+      "id": "color_bg",
+      "label": "Fond",
+      "default": "#0D0D0D"
+    },
+    {
+      "type": "color",
+      "id": "color_accent",
+      "label": "Accent",
+      "default": "#F0921E"
+    },
+    {
+      "type": "color",
+      "id": "color_frame",
+      "label": "Fond du cadre",
+      "default": "#1A1714"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Marge haute",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Marge basse",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    }
+  ],
+  "blocks": [
+    {
+      "type": "@app"
+    }
+  ],
+  "presets": [
+    {
+      "name": "GDM · Application"
+    }
+  ]
+}
+{% endschema %}

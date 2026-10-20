@@ -1,7 +1,9 @@
 {%- comment -%}
   Le Gué des Moines — Avis clients
-  « Ils parlent du Gué des Moines » : note globale en grand, bandeau de
-  chiffres clés en pilules et carrousel de témoignages.
+  « Ils parlent du Gué des Moines » : note globale en grand (demi-étoiles
+  possibles), logo facultatif à côté du badge, bandeau de chiffres clés en
+  pilules, carrousel de témoignages (bière notée et note chiffrée facultatives)
+  et bandeau d'appel à l'action facultatif. Sert aussi pour les avis Untappd.
 {%- endcomment -%}
 {%- liquid
   assign s = section.settings
@@ -21,7 +23,16 @@
     <gdm-carousel>
       <div class="gdm-avis__top">
         <div class="gdm-head gdm-avis__head">
-          {%- if s.pill != blank -%}
+          {%- if s.logo != blank -%}
+            <div class="gdm-avis__brand" data-gdm-reveal>
+              <span class="gdm-avis__logo">
+                {{- s.logo | image_url: width: 160 | image_tag: loading: 'lazy', width: 48, height: 48 -}}
+              </span>
+              {%- if s.pill != blank -%}
+                <p class="gdm-pill">{{ s.pill | escape }}</p>
+              {%- endif -%}
+            </div>
+          {%- elsif s.pill != blank -%}
             <p class="gdm-pill" data-gdm-reveal>{{ s.pill | escape }}</p>
           {%- endif -%}
           {%- if s.title != blank or s.title_accent != blank -%}
@@ -36,13 +47,15 @@
             <div class="gdm-rating">
               <span class="gdm-rating__value">{{ s.rating_value | escape }}</span>
               <span class="gdm-rating__meta">
-                {%- render 'gdm-stars', rating: s.rating_stars, star_size: 18 -%}
+                {%- assign rating_label_sr = s.rating_value | append: ' / 5' -%}
+                {%- render 'gdm-stars', rating: s.rating_stars, star_size: 18, label: rating_label_sr -%}
                 <span class="gdm-rating__label">{{ s.rating_label | escape }}</span>
               </span>
             </div>
             {%- if s.rating_link_label != blank and s.rating_link != blank -%}
               <a class="gdm-link" href="{{ s.rating_link }}" target="_blank" rel="noopener">
                 {{- s.rating_link_label | escape -}}
+                <span class="gdm-visually-hidden"> (nouvel onglet)</span>
                 {%- render 'gdm-icon', name: 'arrow-up-right' -%}
               </a>
             {%- endif -%}
@@ -67,8 +80,18 @@
             {%- assign b = block.settings -%}
             <figure class="gdm-review gdm-card" data-gdm-reveal style="--gdm-i: {{ forloop.index0 | modulo: 3 }};" {{ block.shopify_attributes }}>
               <div class="gdm-review__top">
-                {%- render 'gdm-stars', rating: b.rating -%}
-                <span class="gdm-review__quote">{% render 'gdm-icon', name: 'quote', icon_size: 34 %}</span>
+                {%- render 'gdm-stars', rating: b.rating, label: b.score -%}
+                {%- if b.score != blank -%}
+                  {%- assign score_parts = b.score | split: '/' -%}
+                  {%- assign score_main = score_parts.first | strip -%}
+                  {%- assign score_rest = b.score | remove_first: score_parts.first | strip -%}
+                  <span class="gdm-review__score">
+                    {{- score_main | escape -}}
+                    {%- if score_rest != blank -%}<span class="gdm-review__score-max">{{ score_rest | remove: ' ' | escape }}</span>{%- endif -%}
+                  </span>
+                {%- else -%}
+                  <span class="gdm-review__quote">{% render 'gdm-icon', name: 'quote', icon_size: 34 %}</span>
+                {%- endif -%}
               </div>
               {%- if b.title != blank -%}
                 <p class="gdm-review__title">{{ b.title | escape }}</p>
@@ -84,6 +107,7 @@
                 </span>
                 <span class="gdm-review__who">
                   <span class="gdm-review__name">{{ b.author | escape }}</span>
+                  {%- if b.subject != blank -%}<span class="gdm-review__subject">{{ b.subject | escape }}</span>{%- endif -%}
                   {%- if b.meta != blank -%}<span class="gdm-review__meta">{{ b.meta | escape }}</span>{%- endif -%}
                 </span>
                 {%- if b.source != 'none' -%}
@@ -103,6 +127,36 @@
         </div>
       {%- endif -%}
     </gdm-carousel>
+
+    {%- if s.cta_title != blank -%}
+      <div class="gdm-avis__cta" data-gdm-reveal>
+        <div class="gdm-avis__cta-copy">
+          <p class="gdm-avis__cta-title">{{ s.cta_title | escape }}</p>
+          {%- if s.cta_text != blank -%}
+            <p class="gdm-avis__cta-text">{{ s.cta_text }}</p>
+          {%- endif -%}
+        </div>
+        {%- if s.cta_button_label != blank or s.cta_button2_label != blank -%}
+          <div class="gdm-actions gdm-avis__cta-actions">
+            {%- if s.cta_button_label != blank -%}
+              {%- assign cta_link = s.cta_button_link | default: '#' -%}
+              <a class="gdm-btn gdm-btn--primary" href="{{ cta_link }}"{% if cta_link contains '://' %} target="_blank" rel="noopener"{% endif %}>
+                {{- s.cta_button_label | escape -}}
+                {%- if cta_link contains '://' %}<span class="gdm-visually-hidden"> (nouvel onglet)</span>{% endif -%}
+                {%- render 'gdm-icon', name: 'arrow-up-right' -%}
+              </a>
+            {%- endif -%}
+            {%- if s.cta_button2_label != blank -%}
+              {%- assign cta_link = s.cta_button2_link | default: '#' -%}
+              <a class="gdm-btn gdm-btn--ghost" href="{{ cta_link }}"{% if cta_link contains '://' %} target="_blank" rel="noopener"{% endif %}>
+                {{- s.cta_button2_label | escape -}}
+                {%- if cta_link contains '://' %}<span class="gdm-visually-hidden"> (nouvel onglet)</span>{% endif -%}
+              </a>
+            {%- endif -%}
+          </div>
+        {%- endif -%}
+      </div>
+    {%- endif -%}
   </div>
 </gdm-section>
 
@@ -130,6 +184,30 @@
 
   .gdm.gdm-avis .gdm-avis__head {
     margin-bottom: 0;
+  }
+
+  .gdm.gdm-avis .gdm-avis__brand {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .gdm.gdm-avis .gdm-avis__logo {
+    display: block;
+    flex: none;
+    width: 48px;
+    height: 48px;
+    overflow: hidden;
+    border: 1px solid var(--gdm-line);
+    border-radius: 14px;
+    background: var(--gdm-surface);
+  }
+
+  .gdm.gdm-avis .gdm-avis__logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 
   .gdm.gdm-avis .gdm-avis__score {
@@ -196,6 +274,26 @@
     color: var(--gdm-accent);
   }
 
+  .gdm.gdm-avis .gdm-review__score {
+    display: inline-flex;
+    align-items: baseline;
+    flex: none;
+    gap: 3px;
+    margin-top: -6px;
+    color: var(--gdm-accent);
+    font-family: var(--gdm-font-display);
+    font-size: 36px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .gdm.gdm-avis .gdm-review__score-max {
+    color: var(--gdm-muted);
+    font-family: var(--gdm-font-body);
+    font-size: 14px;
+    font-weight: 500;
+  }
+
   .gdm.gdm-avis .gdm-review__title {
     font-family: var(--gdm-font-display);
     font-size: 24px;
@@ -259,6 +357,16 @@
     color: var(--gdm-text);
     font-weight: 600;
     line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+
+  .gdm.gdm-avis .gdm-review__subject {
+    color: var(--gdm-accent);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
   }
 
   .gdm.gdm-avis .gdm-review__meta {
@@ -273,9 +381,9 @@
     border: 1px solid var(--gdm-border);
     border-radius: 999px;
     color: var(--gdm-muted);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
   }
 
@@ -289,6 +397,78 @@
   .gdm.gdm-avis .gdm-avis__foot .gdm-carousel__progress {
     flex: 1;
     margin-top: 0;
+  }
+
+  .gdm.gdm-avis .gdm-avis__cta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: center;
+    gap: 22px;
+    margin-top: clamp(32px, 4vw, 48px);
+    padding: 26px 24px;
+    border: 1px solid var(--gdm-border);
+    border-radius: var(--gdm-radius);
+    background: radial-gradient(120% 160% at 0% 50%, var(--gdm-accent-soft), transparent 62%), var(--gdm-surface);
+  }
+
+  @media (min-width: 990px) {
+    .gdm.gdm-avis .gdm-avis__cta {
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 40px;
+      padding: 30px 36px;
+    }
+  }
+
+  .gdm.gdm-avis .gdm-avis__cta-copy {
+    display: grid;
+    gap: 8px;
+  }
+
+  .gdm.gdm-avis .gdm-avis__cta-title {
+    color: var(--gdm-text);
+    font-family: var(--gdm-font-display);
+    font-size: clamp(24px, 18px + 1.2vw, 34px);
+    line-height: 1.08;
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+
+  .gdm.gdm-avis .gdm-avis__cta-text {
+    max-width: 62ch;
+    color: var(--gdm-muted);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .gdm.gdm-avis .gdm-avis__cta-text strong {
+    color: var(--gdm-text);
+    font-weight: 600;
+  }
+
+  .gdm.gdm-avis .gdm-avis__cta-text a {
+    color: var(--gdm-accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  @media (max-width: 749px) {
+    .gdm.gdm-avis .gdm-avis__cta-actions,
+    .gdm.gdm-avis .gdm-avis__cta-actions .gdm-btn {
+      width: 100%;
+    }
+
+    .gdm.gdm-avis .gdm-avis__cta-actions .gdm-btn {
+      padding-inline: 20px;
+      white-space: normal;
+      letter-spacing: 0.06em;
+      text-align: center;
+    }
+  }
+
+  @media (max-width: 399px) {
+    .gdm.gdm-avis .gdm-review__author {
+      flex-wrap: wrap;
+    }
   }
 {% endstylesheet %}
 
@@ -308,6 +488,12 @@
       "id": "pill",
       "label": "Badge",
       "default": "Avis clients vérifiés"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo",
+      "label": "Logo à côté du badge (facultatif)",
+      "info": "Par exemple le logo Untappd ou celui de la brasserie. Image carrée conseillée."
     },
     {
       "type": "text",
@@ -345,11 +531,12 @@
     {
       "type": "range",
       "id": "rating_stars",
-      "label": "Étoiles pleines",
+      "label": "Étoiles",
       "min": 0,
       "max": 5,
-      "step": 1,
-      "default": 5
+      "step": 0.5,
+      "default": 5,
+      "info": "Par demi-étoile : 3,5 affiche trois étoiles et demie."
     },
     {
       "type": "text",
@@ -399,6 +586,42 @@
       "id": "label_next",
       "label": "Flèche suivante (accessibilité)",
       "default": "Avis suivants"
+    },
+    {
+      "type": "header",
+      "content": "Bandeau d'appel à l'action"
+    },
+    {
+      "type": "text",
+      "id": "cta_title",
+      "label": "Titre du bandeau",
+      "info": "Laisser vide pour masquer le bandeau en bas de section."
+    },
+    {
+      "type": "inline_richtext",
+      "id": "cta_text",
+      "label": "Texte du bandeau"
+    },
+    {
+      "type": "text",
+      "id": "cta_button_label",
+      "label": "Bouton principal — texte"
+    },
+    {
+      "type": "url",
+      "id": "cta_button_link",
+      "label": "Bouton principal — lien",
+      "info": "Un lien externe (https://…) s'ouvre dans un nouvel onglet."
+    },
+    {
+      "type": "text",
+      "id": "cta_button2_label",
+      "label": "Bouton secondaire — texte"
+    },
+    {
+      "type": "url",
+      "id": "cta_button2_link",
+      "label": "Bouton secondaire — lien"
     },
     {
       "type": "header",
@@ -473,8 +696,15 @@
           "label": "Étoiles",
           "min": 1,
           "max": 5,
-          "step": 1,
-          "default": 5
+          "step": 0.5,
+          "default": 5,
+          "info": "Par demi-étoile : 4,5 affiche quatre étoiles et demie."
+        },
+        {
+          "type": "text",
+          "id": "score",
+          "label": "Note chiffrée (facultatif)",
+          "info": "Texte libre affiché en grand en haut à droite, par exemple « 4,75 / 5 »."
         },
         {
           "type": "text",
@@ -492,6 +722,12 @@
           "id": "author",
           "label": "Nom",
           "default": "Prénom N."
+        },
+        {
+          "type": "text",
+          "id": "subject",
+          "label": "Bière ou produit noté (facultatif)",
+          "info": "Affiché en orange sous le nom."
         },
         {
           "type": "text",

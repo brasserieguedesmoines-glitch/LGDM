@@ -1,0 +1,596 @@
+{%- comment -%}
+  Le Gué des Moines — Image : bannière photo dans un cadre arrondi à liseré et halo ambré,
+  dans le conteneur ou pleine largeur, avec image mobile, lien sur toute l'image et
+  légende facultatives (badge, titre et bouton sur un dégradé sombre).
+{%- endcomment -%}
+{%- liquid
+  assign s = section.settings
+  assign heading_tag = s.heading_tag | default: 'h2'
+  assign image_alt = s.image_alt | default: s.image.alt
+  assign overlay = s.overlay_opacity | divided_by: 100.0
+
+  assign has_link = false
+  if s.link != blank
+    assign has_link = true
+  endif
+
+  assign show_button = false
+  if has_link and s.button_label != blank
+    assign show_button = true
+  endif
+
+  assign has_caption = false
+  if s.pill != blank or s.title != blank or s.title_accent != blank or show_button
+    assign has_caption = true
+  endif
+
+  assign img_loading = 'lazy'
+  assign img_priority = 'auto'
+  if section.index and section.index <= 2
+    assign img_loading = 'eager'
+    assign img_priority = 'high'
+  endif
+
+  if s.width == 'full'
+    assign img_sizes = '100vw'
+  else
+    assign img_sizes = '(min-width: 1280px) 1200px, 94vw'
+  endif
+
+  assign classes = 'gdm gdm-image gdm-image--' | append: s.width | append: ' gdm-image--h-' | append: s.height_mode | append: ' gdm-image--caption-' | append: s.caption_position
+  if has_caption
+    assign classes = classes | append: ' gdm-image--has-caption'
+  endif
+  if has_link
+    assign classes = classes | append: ' gdm-image--linked'
+  endif
+  unless s.show_halo
+    assign classes = classes | append: ' gdm-image--no-halo'
+  endunless
+-%}
+{%- render 'gdm-assets' -%}
+
+<gdm-section
+  id="gdm-{{ section.id }}"
+  class="{{ classes }}"
+  style="--gdm-bg: {{ s.color_bg }}; --gdm-accent: {{ s.color_accent }}; --gdm-pt: {{ s.padding_top }}px; --gdm-pb: {{ s.padding_bottom }}px; --gdm-image-bg: {{ s.image_bg }}; --gdm-image-overlay: {{ overlay }}; --gdm-image-h: {{ s.height_desktop }}px; --gdm-image-h-mobile: {{ s.height_mobile }}px;"
+>
+  <div class="{% if s.width != 'full' %}gdm-container {% endif %}gdm-image__wrap" data-gdm-reveal>
+    {%- if s.show_halo -%}
+      <div class="gdm-image__halo" aria-hidden="true"></div>
+    {%- endif -%}
+
+    {%- if has_link -%}
+      <a
+        class="gdm-image__frame"
+        href="{{ s.link }}"
+        {% if s.link_new_tab %}
+          target="_blank" rel="noopener"
+        {% endif %}
+        {% unless has_caption or image_alt != blank %}
+          aria-label="En savoir plus"
+        {% endunless %}
+      >
+    {%- else -%}
+      <div class="gdm-image__frame">
+    {%- endif -%}
+
+    {%- if s.image != blank -%}
+      <picture class="gdm-image__media">
+        {%- if s.image_mobile != blank -%}
+          <source
+            media="(max-width: 749px)"
+            srcset="{{ s.image_mobile | image_url: width: 750 }} 750w, {{ s.image_mobile | image_url: width: 1100 }} 1100w, {{ s.image_mobile | image_url: width: 1500 }} 1500w"
+            sizes="{% if s.width == 'full' %}100vw{% else %}92vw{% endif %}"
+            width="{{ s.image_mobile.width }}"
+            height="{{ s.image_mobile.height }}"
+          >
+        {%- endif -%}
+        {{ s.image | image_url: width: 2400 | image_tag: loading: img_loading, fetchpriority: img_priority, widths: '750, 1100, 1500, 1920, 2400', sizes: img_sizes, alt: image_alt, class: 'gdm-image__img' }}
+      </picture>
+    {%- else -%}
+      <div class="gdm-image__media">
+        {{ 'lifestyle-1' | placeholder_svg_tag: 'gdm-placeholder gdm-image__img gdm-image__img--placeholder' }}
+      </div>
+    {%- endif -%}
+
+    {%- if has_caption -%}
+      <div class="gdm-image__shade" aria-hidden="true"></div>
+      <div class="gdm-image__caption">
+        {%- if s.pill != blank -%}
+          <p class="gdm-pill gdm-image__pill">{{ s.pill | escape }}</p>
+        {%- endif -%}
+        {%- if s.title != blank or s.title_accent != blank -%}
+          <{{ heading_tag }} class="gdm-title gdm-image__title">
+            {{- s.title | escape }}{% if s.title_accent != blank %} <em>{{ s.title_accent | escape }}</em>{% endif -%}
+          </{{ heading_tag }}>
+        {%- endif -%}
+        {%- if show_button -%}
+          <span class="gdm-btn gdm-btn--{{ s.button_style }} gdm-image__btn">
+            {{- s.button_label | escape -}}
+            {%- render 'gdm-icon', name: 'arrow-up-right' -%}
+          </span>
+        {%- endif -%}
+      </div>
+    {%- endif -%}
+
+    {%- if has_link and s.link_new_tab -%}
+      <span class="gdm-visually-hidden">(s'ouvre dans un nouvel onglet)</span>
+    {%- endif -%}
+
+    {%- if has_link -%}
+      </a>
+    {%- else -%}
+      </div>
+    {%- endif -%}
+  </div>
+</gdm-section>
+
+{% stylesheet %}
+  .gdm.gdm-image .gdm-image__wrap {
+    position: relative;
+  }
+
+  /* ---------- Halo ambré ---------- */
+  .gdm.gdm-image .gdm-image__halo {
+    position: absolute;
+    inset: -12% 0;
+    z-index: -1;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, var(--gdm-accent-glow), transparent);
+    filter: blur(24px);
+    pointer-events: none;
+  }
+
+  .gdm.gdm-image--full .gdm-image__halo {
+    inset: -16% 10%;
+  }
+
+  /* ---------- Cadre ---------- */
+  .gdm.gdm-image .gdm-image__frame {
+    --gdm-image-line: color-mix(in srgb, var(--gdm-accent) 28%, transparent);
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 28px;
+    background: var(--gdm-image-bg, var(--gdm-surface));
+    color: var(--gdm-text);
+    text-decoration: none;
+    box-shadow: 0 40px 80px -40px rgba(0, 0, 0, 0.9), 0 0 70px -24px var(--gdm-accent-glow);
+    transition: box-shadow 0.4s var(--gdm-ease);
+  }
+
+  .gdm.gdm-image--no-halo .gdm-image__frame {
+    box-shadow: 0 40px 80px -40px rgba(0, 0, 0, 0.9);
+  }
+
+  .gdm.gdm-image .gdm-image__frame:hover,
+  .gdm.gdm-image .gdm-image__frame:focus {
+    color: var(--gdm-text);
+    text-decoration: none;
+  }
+
+  /* Image et légende superposées dans la même case : si la légende est plus haute
+     que l'image (petits écrans), le cadre s'agrandit et l'image le remplit. */
+  .gdm.gdm-image .gdm-image__frame > .gdm-image__media,
+  .gdm.gdm-image .gdm-image__frame > .gdm-image__caption {
+    grid-area: 1 / 1;
+    min-width: 0;
+  }
+
+  /* Liseré, au-dessus de l'image. */
+  .gdm.gdm-image .gdm-image__frame::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px var(--gdm-image-line);
+    pointer-events: none;
+    transition: box-shadow 0.4s var(--gdm-ease);
+  }
+
+  .gdm.gdm-image .gdm-image__media {
+    position: relative;
+    z-index: 0;
+    display: block;
+    overflow: hidden;
+  }
+
+  .gdm.gdm-image .gdm-image__img {
+    display: block;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 1.2s var(--gdm-ease);
+  }
+
+  .gdm.gdm-image--h-adapt .gdm-image__img--placeholder {
+    aspect-ratio: 2 / 1;
+  }
+
+  /* ---------- Hauteur fixe ---------- */
+  .gdm.gdm-image--h-fixed .gdm-image__frame {
+    min-height: var(--gdm-image-h-mobile);
+  }
+
+  .gdm.gdm-image--h-fixed .gdm-image__media {
+    position: absolute;
+    inset: 0;
+  }
+
+  @media (min-width: 750px) {
+    .gdm.gdm-image--h-fixed .gdm-image__frame {
+      min-height: calc((var(--gdm-image-h) + var(--gdm-image-h-mobile)) / 2);
+    }
+  }
+
+  @media (min-width: 990px) {
+    .gdm.gdm-image--h-fixed .gdm-image__frame {
+      min-height: var(--gdm-image-h);
+    }
+  }
+
+  /* ---------- Pleine largeur ---------- */
+  .gdm.gdm-image--full .gdm-image__frame {
+    border-radius: 0;
+  }
+
+  .gdm.gdm-image--full .gdm-image__frame::after {
+    box-shadow: inset 0 1px 0 var(--gdm-image-line), inset 0 -1px 0 var(--gdm-image-line);
+  }
+
+  /* ---------- Lien sur toute l'image ---------- */
+  .gdm.gdm-image a.gdm-image__frame {
+    cursor: pointer;
+  }
+
+  .gdm.gdm-image a.gdm-image__frame:hover {
+    --gdm-image-line: color-mix(in srgb, var(--gdm-accent) 60%, transparent);
+    box-shadow: 0 40px 80px -40px rgba(0, 0, 0, 0.9), 0 0 90px -16px var(--gdm-accent-glow);
+  }
+
+  .gdm.gdm-image a.gdm-image__frame:hover .gdm-image__img {
+    transform: scale(1.03);
+  }
+
+  .gdm.gdm-image a.gdm-image__frame:focus-visible {
+    outline: 2px solid var(--gdm-accent);
+    outline-offset: 4px;
+    border-radius: 28px;
+  }
+
+  .gdm.gdm-image--full a.gdm-image__frame:focus-visible {
+    outline-offset: -4px;
+    border-radius: 0;
+  }
+
+  /* ---------- Légende ---------- */
+  .gdm.gdm-image .gdm-image__shade {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+      linear-gradient(90deg, rgb(13 13 13 / calc(var(--gdm-image-overlay) * 0.7)) 0%, rgb(13 13 13 / calc(var(--gdm-image-overlay) * 0.2)) 60%, transparent 100%),
+      linear-gradient(180deg, transparent 25%, rgb(13 13 13 / calc(var(--gdm-image-overlay) * 0.6)) 60%, rgb(13 13 13 / var(--gdm-image-overlay)) 100%);
+    pointer-events: none;
+  }
+
+  .gdm.gdm-image--caption-bottom-center .gdm-image__shade {
+    background: linear-gradient(180deg, transparent 20%, rgb(13 13 13 / calc(var(--gdm-image-overlay) * 0.6)) 58%, rgb(13 13 13 / var(--gdm-image-overlay)) 100%);
+  }
+
+  .gdm.gdm-image--caption-center .gdm-image__shade {
+    background:
+      radial-gradient(closest-side, rgb(13 13 13 / var(--gdm-image-overlay)), rgb(13 13 13 / calc(var(--gdm-image-overlay) * 0.45))),
+      rgb(13 13 13 / calc(var(--gdm-image-overlay) * 0.25));
+  }
+
+  .gdm.gdm-image .gdm-image__caption {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-start;
+    gap: 18px;
+    padding: clamp(24px, 4vw, 56px);
+  }
+
+  .gdm.gdm-image--caption-bottom-center .gdm-image__caption {
+    align-items: center;
+    text-align: center;
+  }
+
+  .gdm.gdm-image--caption-center .gdm-image__caption {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+
+  .gdm.gdm-image .gdm-image__pill {
+    background: rgba(13, 13, 13, 0.62);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+
+  .gdm.gdm-image .gdm-image__title {
+    max-width: 20ch;
+    font-size: clamp(30px, 18px + 3.2vw, 64px);
+    line-height: 1.1;
+    text-shadow: 0 2px 28px rgba(0, 0, 0, 0.45);
+  }
+
+  .gdm.gdm-image .gdm-image__btn {
+    margin-top: 4px;
+  }
+
+  .gdm.gdm-image .gdm-image__btn.gdm-btn--ghost {
+    background: rgba(13, 13, 13, 0.4);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+
+  /* Le bouton suit le survol de toute l'image (c'est l'image entière qui est cliquable). */
+  .gdm.gdm-image a.gdm-image__frame:hover .gdm-btn--primary {
+    --_bg: var(--gdm-accent-hover);
+    --_bd: var(--gdm-accent-hover);
+    box-shadow: 0 14px 32px -14px var(--gdm-accent);
+  }
+
+  .gdm.gdm-image a.gdm-image__frame:hover .gdm-btn--ghost {
+    --_bd: var(--gdm-accent);
+    --_fg: var(--gdm-accent);
+  }
+
+  .gdm.gdm-image a.gdm-image__frame:hover .gdm-btn svg {
+    transform: translate(2px, -2px);
+  }
+
+  /* ---------- Mobile ---------- */
+  @media (max-width: 749px) {
+    .gdm.gdm-image .gdm-image__frame {
+      border-radius: 20px;
+    }
+
+    .gdm.gdm-image a.gdm-image__frame:focus-visible {
+      border-radius: 20px;
+    }
+
+    .gdm.gdm-image--full .gdm-image__frame,
+    .gdm.gdm-image--full a.gdm-image__frame:focus-visible {
+      border-radius: 0;
+    }
+
+    .gdm.gdm-image .gdm-image__caption {
+      gap: 12px;
+      padding: 20px;
+    }
+
+    .gdm.gdm-image .gdm-image__btn {
+      min-height: 48px;
+      padding: 0 20px;
+      font-size: 13px;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "GDM · Image",
+  "tag": "section",
+  "class": "gdm-shopify-section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Image"
+    },
+    {
+      "type": "image_picker",
+      "id": "image",
+      "label": "Image",
+      "info": "Format paysage conseillé : 2400 × 1200 px."
+    },
+    {
+      "type": "image_picker",
+      "id": "image_mobile",
+      "label": "Image mobile (facultatif)",
+      "info": "Affichée sur les écrans de moins de 750 px. Utile si l'image contient du texte : format conseillé 1200 × 1500 px."
+    },
+    {
+      "type": "text",
+      "id": "image_alt",
+      "label": "Texte alternatif de l'image",
+      "info": "Décrit l'image (et le texte qu'elle contient) pour Google et les lecteurs d'écran. Par défaut : celui de la bibliothèque de fichiers."
+    },
+    {
+      "type": "url",
+      "id": "link",
+      "label": "Lien sur l'image (facultatif)",
+      "info": "Toute l'image devient cliquable."
+    },
+    {
+      "type": "checkbox",
+      "id": "link_new_tab",
+      "label": "Ouvrir le lien dans un nouvel onglet",
+      "default": false
+    },
+    {
+      "type": "header",
+      "content": "Mise en page"
+    },
+    {
+      "type": "select",
+      "id": "width",
+      "label": "Largeur",
+      "default": "container",
+      "options": [
+        { "value": "container", "label": "Dans le conteneur" },
+        { "value": "full", "label": "Pleine largeur" }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "height_mode",
+      "label": "Hauteur",
+      "default": "adapt",
+      "options": [
+        { "value": "adapt", "label": "Adaptée à l'image" },
+        { "value": "fixed", "label": "Hauteur fixe" }
+      ],
+      "info": "« Adaptée à l'image » montre l'image entière, sans recadrage. « Hauteur fixe » recadre l'image autour de son point focal."
+    },
+    {
+      "type": "range",
+      "id": "height_desktop",
+      "label": "Hauteur fixe sur ordinateur",
+      "min": 200,
+      "max": 1000,
+      "step": 20,
+      "unit": "px",
+      "default": 560
+    },
+    {
+      "type": "range",
+      "id": "height_mobile",
+      "label": "Hauteur fixe sur mobile",
+      "min": 160,
+      "max": 800,
+      "step": 10,
+      "unit": "px",
+      "default": 360,
+      "info": "Sur tablette, la hauteur est intermédiaire."
+    },
+    {
+      "type": "color",
+      "id": "image_bg",
+      "label": "Fond du cadre",
+      "default": "#1A1714",
+      "info": "Visible derrière les zones transparentes de l'image."
+    },
+    {
+      "type": "checkbox",
+      "id": "show_halo",
+      "label": "Halo ambré autour de l'image",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Légende (facultatif)"
+    },
+    {
+      "type": "text",
+      "id": "pill",
+      "label": "Badge",
+      "info": "Laissez le badge, le titre et le bouton vides si le texte est déjà dans l'image."
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titre"
+    },
+    {
+      "type": "text",
+      "id": "title_accent",
+      "label": "Titre — partie orange"
+    },
+    {
+      "type": "select",
+      "id": "heading_tag",
+      "label": "Niveau du titre (SEO)",
+      "default": "h2",
+      "options": [
+        { "value": "h1", "label": "H1" },
+        { "value": "h2", "label": "H2" }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "button_label",
+      "label": "Bouton",
+      "info": "Affiché seulement si un lien est défini sur l'image."
+    },
+    {
+      "type": "select",
+      "id": "button_style",
+      "label": "Style du bouton",
+      "default": "primary",
+      "options": [
+        { "value": "primary", "label": "Orange" },
+        { "value": "ghost", "label": "Contour" }
+      ]
+    },
+    {
+      "type": "select",
+      "id": "caption_position",
+      "label": "Position de la légende",
+      "default": "bottom-left",
+      "options": [
+        { "value": "bottom-left", "label": "En bas à gauche" },
+        { "value": "bottom-center", "label": "En bas au centre" },
+        { "value": "center", "label": "Au centre" }
+      ]
+    },
+    {
+      "type": "range",
+      "id": "overlay_opacity",
+      "label": "Assombrissement sous la légende",
+      "min": 0,
+      "max": 90,
+      "step": 5,
+      "unit": "%",
+      "default": 65
+    },
+    {
+      "type": "header",
+      "content": "Couleurs et espacement"
+    },
+    {
+      "type": "color",
+      "id": "color_bg",
+      "label": "Fond",
+      "default": "#0D0D0D"
+    },
+    {
+      "type": "color",
+      "id": "color_accent",
+      "label": "Accent",
+      "default": "#F0921E"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Marge haute",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Marge basse",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 96
+    }
+  ],
+  "presets": [
+    {
+      "name": "GDM · Image",
+      "settings": {
+        "pill": "Brasserie artisanale",
+        "title": "Brassée à",
+        "title_accent": "Bruguières",
+        "button_label": "Découvrir"
+      }
+    }
+  ]
+}
+{% endschema %}
