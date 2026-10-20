@@ -89,14 +89,18 @@
         {%- endif -%}
         {%- if s.phone != blank -%}
           <li>
-            <span class="gdm-brewpub__contact-icon">{% render 'gdm-icon', name: 'phone', icon_size: 20 %}</span>
-            <a href="tel:{{ phone_href }}">{{ s.phone | escape }}</a>
+            <a class="gdm-brewpub__contact-link" href="tel:{{ phone_href }}">
+              <span class="gdm-brewpub__contact-icon">{% render 'gdm-icon', name: 'phone', icon_size: 20 %}</span>
+              <span>{{ s.phone | escape }}</span>
+            </a>
           </li>
         {%- endif -%}
         {%- if s.email != blank -%}
           <li>
-            <span class="gdm-brewpub__contact-icon">{% render 'gdm-icon', name: 'mail', icon_size: 20 %}</span>
-            <a href="mailto:{{ s.email | escape }}">{{ s.email | escape }}</a>
+            <a class="gdm-brewpub__contact-link" href="mailto:{{ s.email | escape }}">
+              <span class="gdm-brewpub__contact-icon">{% render 'gdm-icon', name: 'mail', icon_size: 20 %}</span>
+              <span>{{ s.email | escape }}</span>
+            </a>
           </li>
         {%- endif -%}
       </ul>
@@ -369,6 +373,17 @@
   .gdm.gdm-brewpub .gdm-brewpub__contact a {
     color: var(--gdm-text);
     transition: color 0.2s var(--gdm-ease);
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__contact-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 44px;
+  }
+
+  .gdm.gdm-brewpub .gdm-brewpub__contact-link .gdm-brewpub__contact-icon {
+    margin-top: 0;
   }
 
   .gdm.gdm-brewpub .gdm-brewpub__contact a:hover {

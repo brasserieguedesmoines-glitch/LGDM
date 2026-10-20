@@ -123,6 +123,18 @@ gdm-events {
   border-radius: 6px;
 }
 
+/* Kalles impose un anneau blanc sur a:focus:focus-visible : on garde l'ambre. */
+.gdm a:focus:focus-visible {
+  outline: 2px solid var(--gdm-accent);
+  outline-offset: 3px;
+}
+
+/* L'élément qui reçoit le focus ne doit pas se cacher sous l'en-tête collant du thème. */
+.gdm :where(a, button, input, summary, label, [tabindex]) {
+  scroll-margin-top: 96px;
+  scroll-margin-bottom: 24px;
+}
+
 .gdm .gdm-visually-hidden {
   position: absolute !important;
   width: 1px;
@@ -173,7 +185,7 @@ gdm-events {
   font-weight: 400;
   font-style: normal;
   font-size: clamp(40px, 26px + 3.6vw, 76px);
-  line-height: 1.08;
+  line-height: 1.16;
   letter-spacing: 0.005em;
   text-transform: uppercase;
   color: var(--gdm-text);
@@ -182,7 +194,7 @@ gdm-events {
 
 .gdm .gdm-title--xl {
   font-size: clamp(52px, 28px + 6.6vw, 132px);
-  line-height: 1.04;
+  line-height: 1.14;
 }
 
 .gdm .gdm-title em,
@@ -221,6 +233,12 @@ gdm-events {
   color: var(--gdm-accent);
   text-decoration: underline;
   text-underline-offset: 3px;
+  transition: color 0.2s var(--gdm-ease);
+}
+
+.gdm .gdm-rte a:hover {
+  color: var(--gdm-text);
+  text-decoration-thickness: 2px;
 }
 
 .gdm .gdm-rte ul {
@@ -308,6 +326,12 @@ gdm-events {
   display: none;
 }
 
+@media (max-width: 389px) {
+  .gdm .gdm-pill {
+    letter-spacing: 0.1em;
+  }
+}
+
 /* ---------- Boutons ---------- */
 .gdm .gdm-actions {
   display: flex;
@@ -388,6 +412,7 @@ gdm-events {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  min-height: 44px;
   color: var(--gdm-text);
   font-size: 14px;
   font-weight: 600;
@@ -517,10 +542,10 @@ gdm-events {
 
 .gdm .gdm-stat__label {
   color: var(--gdm-muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.3;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -590,6 +615,7 @@ gdm-events {
   grid-auto-columns: var(--gdm-slide);
   gap: var(--gdm-gap);
   overflow-x: auto;
+  overflow-y: hidden;
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
@@ -689,6 +715,11 @@ gdm-carousel[data-static] [data-carousel-ui] {
   .gdm [data-gdm-reveal].is-in {
     animation: gdm-rise 0.9s var(--gdm-ease) backwards;
     animation-delay: calc(var(--gdm-i, 0) * 90ms);
+  }
+
+  /* Dans un carrousel, pas de décalage vertical : la piste rognerait les cartes. */
+  .gdm .gdm-carousel__track > [data-gdm-reveal].is-pending {
+    transform: none;
   }
 }
 
