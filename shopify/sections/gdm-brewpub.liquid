@@ -11,6 +11,10 @@
   assign address_flat = s.address | newline_to_br | replace: '<br />', ' ' | strip_newlines | strip
   assign map_query = s.map_query | default: address_flat
   assign phone_href = s.phone | remove: ' ' | remove: '.' | remove: '-'
+  assign phone_first = phone_href | slice: 0
+  if phone_first == '0'
+    assign phone_href = phone_href | remove_first: '0' | prepend: '+33'
+  endif
 -%}
 {%- render 'gdm-assets' -%}
 
@@ -169,7 +173,7 @@
         "@type": "Brewery",
         "name": {{ shop.name | json }},
         "url": {{ request.origin | append: routes.root_url | json }},
-        {%- if s.phone != blank %}"telephone": {{ s.phone | json }},{% endif %}
+        {%- if s.phone != blank %}"telephone": {{ phone_href | json }},{% endif %}
         {%- if s.image != blank %}"image": {{ s.image | image_url: width: 1200 | prepend: 'https:' | json }},{% endif %}
         "address": {
           "@type": "PostalAddress",
@@ -203,7 +207,7 @@
 {% stylesheet %}
   .gdm.gdm-brewpub .gdm-brewpub__glow {
     left: -30%;
-    top: -40%;
+    top: -5%;
     opacity: 0.6;
   }
 

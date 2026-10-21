@@ -59,7 +59,7 @@
 
     <div class="gdm-service__content">
       {%- if s.pill != blank -%}
-        <p class="gdm-pill gdm-service__pill" data-gdm-reveal>{{ s.pill | escape }}</p>
+        <p class="gdm-pill gdm-service__pill" data-gdm-reveal>{{ s.pill | escape | replace: ' (', '&nbsp;(' }}</p>
       {%- endif -%}
       {%- if s.title != blank or s.title_accent != blank -%}
         <{{ heading_tag }} class="gdm-title gdm-service__title" data-gdm-reveal style="--gdm-i: 1;">
@@ -217,7 +217,7 @@
 
   .gdm.gdm-service .gdm-service__stat {
     display: grid;
-    align-content: center;
+    align-content: start;
     justify-items: center;
     gap: 6px;
     flex: 0 1 168px;

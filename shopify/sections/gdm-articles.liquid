@@ -78,6 +78,14 @@
                 assign b = item.settings
                 assign c_image = b.image
                 assign c_alt = b.image_alt | default: b.image.alt | default: b.title
+                case b.image_position
+                  when 'top'
+                    assign c_style = 'object-position: 50% 20%;'
+                  when 'bottom'
+                    assign c_style = 'object-position: 50% 80%;'
+                  else
+                    assign c_style = nil
+                endcase
                 assign c_tag = b.tag
                 assign c_title = b.title
                 assign c_url = b.link
@@ -86,6 +94,7 @@
               else
                 assign c_image = item.image
                 assign c_alt = item.image.alt | default: item.title
+                assign c_style = nil
                 assign c_tag = item.tags.first
                 assign c_title = item.title
                 assign c_url = item.url
@@ -101,7 +110,11 @@
             <article class="gdm-articles__card gdm-card{% if c_url != blank %} is-linked{% endif %}" data-gdm-reveal style="--gdm-i: {{ forloop.index0 | modulo: 4 }};" {{ c_attrs }}>
               <div class="gdm-articles__media">
                 {%- if c_image != blank -%}
-                  {{ c_image | image_url: width: 900 | image_tag: loading: 'lazy', widths: '360, 540, 720, 900', sizes: img_sizes, alt: c_alt, class: 'gdm-articles__img' }}
+                  {%- if c_style -%}
+                    {{ c_image | image_url: width: 900 | image_tag: loading: 'lazy', widths: '360, 540, 720, 900', sizes: img_sizes, alt: c_alt, class: 'gdm-articles__img', style: c_style }}
+                  {%- else -%}
+                    {{ c_image | image_url: width: 900 | image_tag: loading: 'lazy', widths: '360, 540, 720, 900', sizes: img_sizes, alt: c_alt, class: 'gdm-articles__img' }}
+                  {%- endif -%}
                 {%- else -%}
                   <span class="gdm-articles__noimg" aria-hidden="true">{% render 'gdm-icon', name: 'book', icon_size: 36 %}</span>
                 {%- endif -%}
@@ -343,7 +356,7 @@
     position: absolute;
     inset: 0;
     z-index: 2;
-    border-radius: inherit;
+    border-radius: calc(var(--gdm-radius) - 1px);
   }
 
   .gdm.gdm-articles a.gdm-articles__link:focus-visible {
@@ -567,6 +580,17 @@
           "id": "image_alt",
           "label": "Description de la photo (SEO)",
           "info": "Lue par Google et les lecteurs d'écran. Laisser vide pour utiliser le texte alternatif de l'image."
+        },
+        {
+          "type": "select",
+          "id": "image_position",
+          "label": "Cadrage de la photo",
+          "default": "center",
+          "options": [
+            { "value": "top", "label": "Haut" },
+            { "value": "center", "label": "Centre" },
+            { "value": "bottom", "label": "Bas" }
+          ]
         },
         {
           "type": "text",

@@ -111,6 +111,27 @@
 </gdm-section>
 
 {% stylesheet %}
+  /* Instafeed : les liens des publications couvrent la vignette, avec un contour de focus visible. */
+  .gdm.gdm-apps #insta-feed .instafeed-new-layout-item > a {
+    position: absolute;
+    inset: 0;
+    display: block;
+  }
+
+  .gdm.gdm-apps #insta-feed .instafeed-new-layout-item > a:focus-visible {
+    outline: none;
+  }
+
+  .gdm.gdm-apps #insta-feed .instafeed-new-layout-item > a:focus-visible::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border: 3px solid var(--gdm-accent);
+    border-radius: 6px;
+    pointer-events: none;
+  }
+
   /* Pas de contexte d'empilement isolé : les fenêtres des applications
      (agrandissement d'une publication Instagram…) passent au-dessus de la page. */
   .gdm.gdm-apps {

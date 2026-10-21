@@ -163,8 +163,8 @@
 {% stylesheet %}
   .gdm.gdm-avis .gdm-avis__glow {
     left: 50%;
-    bottom: -70%;
-    transform: translateX(-50%);
+    top: 50%;
+    transform: translate(-50%, -50%);
     opacity: 0.7;
   }
 
@@ -319,6 +319,7 @@
 
   .gdm.gdm-avis .gdm-review__author {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 12px;
     padding-top: 18px;
@@ -348,7 +349,7 @@
 
   .gdm.gdm-avis .gdm-review__who {
     display: grid;
-    flex: 1;
+    flex: 1 1 144px;
     min-width: 0;
     gap: 2px;
   }
@@ -357,7 +358,7 @@
     color: var(--gdm-text);
     font-weight: 600;
     line-height: 1.3;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 
   .gdm.gdm-avis .gdm-review__subject {
@@ -438,6 +439,7 @@
     color: var(--gdm-muted);
     font-size: 15px;
     line-height: 1.6;
+    text-wrap: pretty;
   }
 
   .gdm.gdm-avis .gdm-avis__cta-text strong {
@@ -452,6 +454,10 @@
   }
 
   @media (max-width: 749px) {
+    .gdm.gdm-avis .gdm-avis__stats .gdm-stat {
+      align-content: start;
+    }
+
     .gdm.gdm-avis .gdm-avis__cta-actions,
     .gdm.gdm-avis .gdm-avis__cta-actions .gdm-btn {
       width: 100%;
@@ -462,12 +468,6 @@
       white-space: normal;
       letter-spacing: 0.06em;
       text-align: center;
-    }
-  }
-
-  @media (max-width: 399px) {
-    .gdm.gdm-avis .gdm-review__author {
-      flex-wrap: wrap;
     }
   }
 {% endstylesheet %}

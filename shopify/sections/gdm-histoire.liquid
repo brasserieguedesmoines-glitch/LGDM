@@ -18,14 +18,16 @@
     <div class="gdm-histoire__visual" data-gdm-reveal>
       <div class="gdm-histoire__frame">
         {%- if s.image != blank -%}
-          {{ s.image | image_url: width: 1400 | image_tag: loading: 'lazy', widths: '600, 900, 1200, 1400', sizes: '(min-width: 990px) 50vw, 100vw', class: 'gdm-histoire__img' }}
+          {%- assign image_alt = s.image_alt | default: s.image.alt -%}
+          {{ s.image | image_url: width: 1400 | image_tag: loading: 'lazy', widths: '600, 900, 1200, 1400', sizes: '(min-width: 990px) 50vw, 100vw', class: 'gdm-histoire__img', alt: image_alt }}
         {%- else -%}
           {{ 'lifestyle-2' | placeholder_svg_tag: 'gdm-placeholder gdm-histoire__img' }}
         {%- endif -%}
       </div>
       {%- if s.image_2 != blank -%}
         <div class="gdm-histoire__inset">
-          {{ s.image_2 | image_url: width: 600 | image_tag: loading: 'lazy', widths: '300, 450, 600', sizes: '(min-width: 990px) 20vw, 40vw', class: 'gdm-histoire__img' }}
+          {%- assign image_2_alt = s.image_2_alt | default: s.image_2.alt -%}
+          {{ s.image_2 | image_url: width: 600 | image_tag: loading: 'lazy', widths: '300, 450, 600', sizes: '(min-width: 990px) 20vw, 40vw', class: 'gdm-histoire__img', alt: image_2_alt }}
         </div>
       {%- endif -%}
       {%- if s.stamp_text != blank -%}
@@ -279,9 +281,20 @@
       "info": "Format portrait conseillé : 1200 × 1500 px."
     },
     {
+      "type": "text",
+      "id": "image_alt",
+      "label": "Description de l'image principale",
+      "info": "Lue par les lecteurs d'écran et Google. Vide : texte alternatif du fichier."
+    },
+    {
       "type": "image_picker",
       "id": "image_2",
       "label": "Image en médaillon (facultatif)"
+    },
+    {
+      "type": "text",
+      "id": "image_2_alt",
+      "label": "Description de l'image en médaillon"
     },
     {
       "type": "select",

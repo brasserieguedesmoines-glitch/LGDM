@@ -135,6 +135,13 @@ gdm-events {
   scroll-margin-bottom: 24px;
 }
 
+/* Mobile et tablette : la barre d'outils fixe du thème (en bas) ne doit pas cacher l'élément qui a le focus. */
+@media (max-width: 1024px) {
+  .gdm :where(a, button, input, summary, label, [tabindex]) {
+    scroll-margin-bottom: 88px;
+  }
+}
+
 .gdm .gdm-visually-hidden {
   position: absolute !important;
   width: 1px;

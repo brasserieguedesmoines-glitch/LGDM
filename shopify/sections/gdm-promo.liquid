@@ -73,7 +73,8 @@
 
       <div class="gdm-promo__visual">
         {%- if s.image != blank -%}
-          {{ s.image | image_url: width: 1200 | image_tag: loading: 'lazy', widths: '500, 800, 1000, 1200', sizes: '(min-width: 990px) 45vw, 90vw', class: 'gdm-promo__img' }}
+          {%- assign image_alt = s.image_alt | default: s.image.alt -%}
+          {{ s.image | image_url: width: 1200 | image_tag: loading: 'lazy', widths: '500, 800, 1000, 1200', sizes: '(min-width: 990px) 45vw, 90vw', class: 'gdm-promo__img', alt: image_alt }}
         {%- else -%}
           <div class="gdm-promo__icon" aria-hidden="true">{% render 'gdm-icon', name: 'sparkle', icon_size: 120 %}</div>
         {%- endif -%}
@@ -414,6 +415,12 @@
       "id": "image",
       "label": "Image",
       "info": "Idéalement une bouteille ou un coffret détouré (PNG transparent)."
+    },
+    {
+      "type": "text",
+      "id": "image_alt",
+      "label": "Description de l'image",
+      "info": "Lue par les lecteurs d'écran et Google. Vide : texte alternatif du fichier."
     },
     {
       "type": "select",

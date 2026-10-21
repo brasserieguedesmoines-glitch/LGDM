@@ -122,8 +122,20 @@
       };
       this.onPrev = () => this.go(-1);
       this.onNext = () => this.go(1);
+      // Au clavier : une carte hors champ qui reçoit le focus est ramenée dans le carrousel.
+      this.onFocusIn = (event) => {
+        const slide = [...this.track.children].find((child) => child.contains(event.target));
+        if (!slide) return;
+        const box = this.track.getBoundingClientRect();
+        const rect = slide.getBoundingClientRect();
+        if (rect.left < box.left - 1 || rect.right > box.right + 1) {
+          this.track.scrollTo({ left: this.track.scrollLeft + rect.left - box.left, behavior: 'auto' });
+        }
+      };
+      this.trackFocusable = this.track.hasAttribute('tabindex');
 
       this.track.addEventListener('scroll', this.onScroll, { passive: true });
+      this.track.addEventListener('focusin', this.onFocusIn);
       if (this.prev) this.prev.addEventListener('click', this.onPrev);
       if (this.next) this.next.addEventListener('click', this.onNext);
       if ('ResizeObserver' in window) {
@@ -136,6 +148,7 @@
     disconnectedCallback() {
       if (!this.track) return;
       this.track.removeEventListener('scroll', this.onScroll);
+      this.track.removeEventListener('focusin', this.onFocusIn);
       if (this.prev) this.prev.removeEventListener('click', this.onPrev);
       if (this.next) this.next.removeEventListener('click', this.onNext);
       if (this.resizeObserver) this.resizeObserver.disconnect();
@@ -155,8 +168,19 @@
       const max = scrollWidth - clientWidth;
       const isStatic = max <= 2;
       this.toggleAttribute('data-static', isStatic);
-      if (this.prev) this.prev.disabled = scrollLeft <= 2;
-      if (this.next) this.next.disabled = scrollLeft >= max - 2;
+      // Un carrousel sans rien à faire défiler n'est pas une étape de tabulation.
+      if (this.trackFocusable) {
+        if (isStatic) this.track.removeAttribute('tabindex');
+        else this.track.setAttribute('tabindex', '0');
+      }
+      const atStart = scrollLeft <= 2;
+      const atEnd = scrollLeft >= max - 2;
+      // Le focus ne doit pas rester sur une flèche qui devient désactivée.
+      const active = document.activeElement;
+      if (atEnd && this.next && active === this.next) (this.prev && !atStart ? this.prev : this.track).focus({ preventScroll: true });
+      if (atStart && this.prev && active === this.prev) (this.next && !atEnd ? this.next : this.track).focus({ preventScroll: true });
+      if (this.prev) this.prev.disabled = atStart;
+      if (this.next) this.next.disabled = atEnd;
       if (this.bar && scrollWidth) {
         this.bar.style.setProperty('--gdm-w', (clientWidth / scrollWidth).toFixed(4));
         this.bar.style.setProperty('--gdm-x', (Math.max(0, scrollLeft) / scrollWidth).toFixed(4));
@@ -337,6 +361,7 @@
     load() {
       const query = this.dataset.query;
       if (!query) return;
+      const hadFocus = this.contains(document.activeElement);
       const iframe = document.createElement('iframe');
       iframe.src = `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
       iframe.title = this.dataset.title || 'Carte';
@@ -346,6 +371,7 @@
       iframe.className = 'gdm-map__frame';
       this.appendChild(iframe);
       this.setAttribute('data-loaded', '');
+      if (hadFocus) iframe.focus();
     }
   }
 

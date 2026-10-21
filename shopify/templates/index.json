@@ -60,7 +60,7 @@
         "title": "Bières artisanales",
         "title_accent": "de Bruguières",
         "accent_new_line": true,
-        "heading_tag": "h2",
+        "heading_tag": "h1",
         "text": "Blonde, IPA, NEIPA, Sour, Stout… brassées et embouteillées sur place dans l'ancienne Briqueterie de Bruguières, à deux pas de Toulouse.",
         "button_label": "Découvrir nos bières",
         "button_link": "shopify://collections/bieres-artisanales-du-gue-des-moines",
@@ -211,7 +211,9 @@
         "title_accent": "l'ancienne Briqueterie",
         "text": "<p>Depuis 2016, Le Gué des Moines brasse ses bières artisanales à Bruguières, à 15 minutes au nord de Toulouse.</p><p>Installée dans l'ancienne <strong>Briqueterie</strong> de la commune, l'équipe y imagine, brasse et embouteille chaque bière sur place : des permanentes toute l'année et des éphémères <strong>Labelle</strong>.</p>",
         "button_label": "Découvrir la brasserie",
-        "button_link": "shopify://pages/brasserie-le-gue-des-moines"
+        "button_link": "shopify://pages/brasserie-le-gue-des-moines",
+        "image_alt": "Façade et terrasse de la Brasserie Le Gué des Moines à Bruguières",
+        "image_2_alt": "Le brasseur du Gué des Moines en salle de brassage"
       }
     },
     "gdm_univers": {
@@ -239,8 +241,8 @@
             "label": "Bar à bière artisanale",
             "title": "Brewpub",
             "text": "+10 bières artisanales à la pression, tapas à partager, diffusion des matchs et concerts. L'adresse conviviale du nord toulousain, ouverte du mardi au samedi.",
-            "detail_1": "Mar–Mer : 16h–20h30",
-            "detail_2": "Jeu–Sam : 16h–22h30",
+            "detail_1": "Mar–Mer : 16h30–20h30",
+            "detail_2": "Jeu–Ven : 16h30–22h30 · Sam : 16h30–21h30",
             "button_label": "Vers le brewpub",
             "link": "shopify://pages/brewpub"
           }
@@ -317,7 +319,7 @@
         "title_accent": "& idées cadeaux",
         "text": "Coffrets, éditions spéciales et idées cadeaux brassées à Bruguières : de quoi faire plaisir à tous les amateurs de bière.",
         "button_label": "Voir les idées cadeaux",
-        "button_link": "shopify://collections/bieres-de-noel-idees-cadeaux",
+        "button_link": "shopify://collections/bieres-artisanales-du-gue-des-moines",
         "button2_label": "Notre guide cadeaux",
         "button2_link": "shopify://blogs/infos/idees-cadeaux-biere-noel",
         "countdown_date": "2026-12-25",
@@ -326,7 +328,8 @@
         "ended_text": "Joyeux Noël de toute l'équipe du Gué des Moines !",
         "image": "shopify://shop_images/Bi_re_de_no_l_toulousaine.webp",
         "image_position": "right",
-        "badge": "Noël"
+        "badge": "Noël",
+        "image_alt": "Bouteille de Labelle Noël, la bière de Noël du Gué des Moines"
       }
     },
     "gdm_untappd": {
@@ -366,7 +369,8 @@
             "author": "Poulpycole",
             "subject": "Série Noire",
             "meta": "",
-            "source": "Untappd"
+            "source": "Untappd",
+            "avatar": "shopify://shop_images/untappd-avatar-poulpycole.jpg"
           }
         },
         "avis_2": {
@@ -427,7 +431,8 @@
         "color_bg": "#0D0D0D",
         "color_accent": "#F0921E",
         "padding_top": 96,
-        "padding_bottom": 96
+        "padding_bottom": 96,
+        "logo": "shopify://shop_images/untappd-logo-le-gue-des-moines.jpg"
       }
     },
     "gdm_tireuse": {
@@ -562,7 +567,8 @@
       "block_order": [
         "juniper_tiktok_feed_juniper_autoplay_NacGdq"
       ],
-      "settings": {}
+      "settings": {},
+      "disabled": true
     },
     "gdm_avis": {
       "type": "gdm-avis",
@@ -713,7 +719,7 @@
         "directions_label": "Itinéraire",
         "button2_label": "Nous contacter",
         "button2_link": "shopify://pages/contact",
-        "image": "shopify://shop_images/le_gue_des_moines_toulouse.webp",
+        "image": "shopify://shop_images/WhatsApp_Image_2026-05-04_at_08.38.18.webp",
         "structured_data": true
       }
     },
@@ -791,7 +797,7 @@
         "pill": "Brasserie artisanale · Bruguières",
         "title": "Vos questions,",
         "title_accent": "nos réponses",
-        "text": "Tout savoir sur notre brasserie artisanale à Bruguières, notre brewpub, la location de tireuse à bière à Toulouse et la commande de bières en ligne.",
+        "text": "Tout savoir sur notre <a href=\"/pages/brasserie-le-gue-des-moines\">brasserie artisanale à Bruguières</a>, notre <a href=\"/pages/brewpub\">brewpub</a>, la <a href=\"/pages/location-de-tireuse-toulouse-31\">location de tireuse à bière à Toulouse</a> et la commande de <a href=\"/collections/bieres-artisanales-du-gue-des-moines\">bières en ligne</a>.",
         "contact_title": "Une autre question ?",
         "contact_text": "Écrivez-nous ou appelez le <a href=\"tel:+33967489963\">09 67 48 99 63</a>.",
         "contact_label": "Nous contacter",
@@ -843,7 +849,8 @@
             "tag": "Événements",
             "title": "Bière artisanale pour mariage & anniversaire",
             "link": "shopify://blogs/infos/biere-artisanale-pour-un-mariage-ou-anniversaire-a-toulouse-le-gue-des-moines",
-            "link_label": "Lire"
+            "link_label": "Lire",
+            "image_position": "top"
           }
         },
         "article_5": {
@@ -914,7 +921,8 @@
           "settings": {
             "icon": "lock",
             "title": "PAIEMENTS SÉCURISÉS",
-            "text": "Crypté SSL"
+            "text": "Crypté SSL",
+            "image": "shopify://shop_images/leguedesmoinesbrasserieartisanal.webp"
           }
         },
         "atout_2": {
@@ -922,7 +930,8 @@
           "settings": {
             "icon": "store",
             "title": "CLICK & COLLECT",
-            "text": "à la Brasserie"
+            "text": "à la Brasserie",
+            "image": "shopify://shop_images/leguedesmoinesbrasserieartisanal_2.webp"
           }
         },
         "atout_3": {
@@ -930,7 +939,8 @@
           "settings": {
             "icon": "award",
             "title": "100% ARTISANAL",
-            "text": "Bruguières (31)"
+            "text": "Bruguières (31)",
+            "image": "shopify://shop_images/leguedesmoinesbrasserieartisanal_4.webp"
           }
         },
         "atout_4": {
@@ -938,7 +948,8 @@
           "settings": {
             "icon": "mail",
             "title": "SERVICE CLIENT 6/7j",
-            "text": "<a href=\"mailto:brasserieguedesmoines@gmail.com\">brasserieguedesmoines@gmail.com</a>"
+            "text": "<a href=\"mailto:brasserieguedesmoines@gmail.com\">brasserieguedesmoines@gmail.com</a>",
+            "image": "shopify://shop_images/leguedesmoinesbrasserieartisanal_3.webp"
           }
         }
       },

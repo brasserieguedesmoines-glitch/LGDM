@@ -197,13 +197,19 @@
     height: 24px;
   }
 
+  /* Pictogramme illustré de la marque : affiché en entier, sans cercle. */
   .gdm.gdm-atouts .gdm-atouts__media--image {
-    overflow: hidden;
+    width: 64px;
+    height: 64px;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
   }
 
   .gdm.gdm-atouts .gdm-atouts__img {
-    width: 78%;
-    height: 78%;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
   }
 
@@ -211,6 +217,10 @@
     border-color: var(--gdm-accent);
     box-shadow: inset 0 0 18px var(--gdm-accent-glow), 0 0 0 5px var(--gdm-accent-soft);
     transform: translateY(-2px);
+  }
+
+  .gdm.gdm-atouts .gdm-atouts__item:hover .gdm-atouts__media--image {
+    box-shadow: none;
   }
 
   .gdm.gdm-atouts .gdm-atouts__body {
@@ -249,6 +259,7 @@
     display: inline-block;
     max-width: 100%;
     padding-block: 12px;
+    margin-block: -12px;
     color: var(--gdm-accent);
     text-decoration: underline;
     text-decoration-thickness: 1px;

@@ -159,7 +159,18 @@
   .gdm.gdm-hero .gdm-hero__inner {
     z-index: 1;
     display: grid;
-    gap: clamp(40px, 6vw, 72px);
+    gap: clamp(28px, 4.5vh, 56px);
+  }
+
+  /* Titre plafonné selon la hauteur d'écran : la barre de chiffres reste visible sans défiler. */
+  .gdm.gdm-hero .gdm-hero__title {
+    font-size: clamp(52px, min(28px + 6.6vw, 6px + 12vh), 132px);
+  }
+
+  .gdm.gdm-hero .gdm-pill {
+    background: rgba(13, 13, 13, 0.8);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
   }
 
   .gdm.gdm-hero .gdm-hero__top {
@@ -246,6 +257,24 @@
 
     .gdm.gdm-hero .gdm-hero__top {
       grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (min-width: 750px) and (max-width: 899px) {
+    .gdm.gdm-hero .gdm-hero__bar {
+      width: 100%;
+    }
+
+    .gdm.gdm-hero .gdm-hero__rating {
+      flex: 1 1 100%;
+      margin: 0 0 4px;
+      padding: 6px 6px 14px;
+      border-right: 0;
+      border-bottom: 1px solid var(--gdm-border);
+    }
+
+    .gdm.gdm-hero .gdm-hero__bar .gdm-stat {
+      flex: 1 1 0;
     }
   }
 

@@ -204,8 +204,21 @@
     content: '';
   }
 
+  .gdm.gdm-faq .gdm-lead a {
+    color: var(--gdm-text);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    transition: color 0.2s var(--gdm-ease);
+  }
+
+  .gdm.gdm-faq .gdm-lead a:hover {
+    color: var(--gdm-accent);
+  }
+
   .gdm.gdm-faq .gdm-faq__num {
     flex: none;
+    min-width: 20px;
     color: var(--gdm-accent);
     font-family: var(--gdm-font-display);
     font-size: 20px;
