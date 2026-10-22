@@ -149,7 +149,7 @@
           <span>{% render 'gdm-icon', name: 'beer', icon_size: 28 %}</span>
         </div>
         {%- if map_query != blank -%}
-          <button type="button" class="gdm-btn gdm-btn--primary gdm-brewpub__map-btn" data-load-map>
+          <button type="button" class="gdm-btn gdm-btn--ghost gdm-brewpub__map-btn" data-load-map>
             {%- render 'gdm-icon', name: 'map-pin', icon_size: 18 -%}
             {{- s.map_button_label | escape -}}
           </button>
@@ -462,8 +462,12 @@
   }
 
   .gdm.gdm-brewpub .gdm-brewpub__map-btn {
+    --_bg: rgba(13, 13, 13, 0.8);
+    --_bd: var(--gdm-accent);
     position: relative;
     margin-top: 12px;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
   }
 
   .gdm.gdm-brewpub .gdm-brewpub__map-note {
@@ -637,7 +641,8 @@
       "type": "text",
       "id": "button2_label",
       "label": "Bouton secondaire",
-      "default": "Nous contacter"
+      "default": "Nous contacter",
+      "info": "16 caractères au plus : sur téléphone, deux boutons s'affichent côte à côte."
     },
     {
       "type": "url",

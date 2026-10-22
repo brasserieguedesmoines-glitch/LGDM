@@ -132,6 +132,13 @@
     pointer-events: none;
   }
 
+  /* Flèches Instafeed (30 px) : zone tactile agrandie à 44 px, sans changement visuel. */
+  .gdm.gdm-apps #insta-feed .instafeed-new-arrow::after {
+    content: '';
+    position: absolute;
+    inset: -7px;
+  }
+
   /* Pas de contexte d'empilement isolé : les fenêtres des applications
      (agrandissement d'une publication Instagram…) passent au-dessus de la page. */
   .gdm.gdm-apps {
@@ -143,7 +150,7 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 24px;
-    margin-bottom: clamp(28px, 4vw, 48px);
+    margin-bottom: clamp(16px, 2.5vw, 28px);
   }
 
   .gdm.gdm-apps .gdm-apps__head {
@@ -195,7 +202,7 @@
   }
 
   .gdm.gdm-apps .gdm-apps__link.gdm-btn {
-    padding-block: 14px;
+    padding-block: 10px;
     line-height: 1.2;
     text-align: center;
     white-space: normal;

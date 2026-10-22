@@ -1,6 +1,6 @@
 # Sections Shopify — Le Gué des Moines
 
-Dix sections Liquid sur mesure pour la boutique **leguedesmoines.com**, aux couleurs de la marque : fond sombre, accent ambré, gros titres compressés, badges pilule.
+Des sections Liquid sur mesure pour la boutique **leguedesmoines.com**, aux couleurs de la marque : fond sombre, accent ambré, gros titres compressés, badges pilule.
 
 Elles sont autonomes. Elles n'ont besoin ni d'application ni de jQuery, ne touchent à aucun fichier existant du thème et fonctionnent sur n'importe quel thème Shopify 2.0, dont votre thème actuel « LGDM V2 ». Dans l'éditeur de thème, elles se trouvent sous **Ajouter une section → GDM · …**.
 
@@ -25,6 +25,7 @@ Elles sont autonomes. Elles n'ont besoin ni d'application ni de jQuery, ne touch
 | `gdm-atouts.liquid` | GDM · Atouts | Rangée d'atouts (paiement sécurisé, livraison, retrait…) avec icônes ou images |
 | `gdm-apps.liquid` | GDM · Application | En-tête GDM autour d'un bloc d'application (flux Instagram Instafeed…) |
 | `gdm-image.liquid` | GDM · Image | Grande image encadrée, cliquable |
+| `gdm-stories.liquid` | GDM · Stories | Rangée de ronds façon Instagram ; un appui ouvre des écrans plein format qui défilent seuls (appui à gauche/droite, appui long = pause, glisser = story suivante, glisser vers le bas = fermer). Écrans photo + texte + bouton, ou bière avec prix et ajout au panier. Blocs « Story (rond) » suivis de leurs blocs « Écran ». |
 
 Fichiers partagés (obligatoires) :
 
@@ -48,8 +49,11 @@ Fichiers partagés (obligatoires) :
 ```bash
 cd shopify
 shopify theme push --store 5bdc8a-32.myshopify.com --theme "<id de la copie>" \
-  --only "sections/gdm-*" --only "snippets/gdm-*" --only "assets/gdm-*"
+  --only "sections/gdm-*" --only "snippets/gdm-*" --only "assets/gdm-*" \
+  --only "templates/index.json" --only "sections/footer.liquid"
 ```
+
+Avant de pousser `templates/index.json`, récupérez la version du thème (`shopify theme pull --only templates/index.json`) pour ne pas écraser une modification faite dans l'éditeur. `sections/footer.liquid` est le pied de page du thème, affiché sur toutes les pages : après publication, contrôlez une fiche produit, le panier et un article.
 
 ## À compléter avant de publier
 
@@ -83,9 +87,19 @@ Les métachamps existants `custom.degre` et `custom.ibu` sont déjà utilisés. 
 
 ## Page d'accueil installée sur la copie du thème
 
-`templates/index.json` est la page d'accueil installée sur le thème « LGDM V2 - nouvelles sections GDM » (copie non publiée). Les nouvelles sections y sont remplies avec les vrais contenus du site : avis, horaires, FAQ, téléphone. Les anciennes sections ont été refaites au style GDM, **à la même place et avec les mêmes contenus** : univers, image, Untappd (section « Avis clients »), location de tireuse, articles du blog, newsletter, atouts, flux Instagram. Le bloc d'intro « Nos bières artisanales toulousaines… » est masqué.
+`templates/index.json` est la page d'accueil installée sur le thème « LGDM V2 - nouvelles sections GDM » (copie non publiée), avec les vrais contenus du site.
 
-Les 4 anciennes sections remplacées en premier (diaporama, collection, avis, FAQ) y sont **masquées, pas supprimées** : vous pouvez les réafficher en un clic dans l'éditeur. Les anciennes versions des 8 sections refaites ensuite restent dans votre thème en ligne, qui n'a pas été modifié. Shopify limite une page à 25 sections, alors les sections déjà masquées sur le site en ligne ont été retirées de la copie. Elles restent intactes dans votre thème en ligne. Chiffres clés et Agenda peuvent être ajoutés via « Ajouter une section ».
+**Format story, plus compact.** Ordre : bannière → stories → bières → atouts → brewpub → location de tireuse → avis → FAQ → newsletter → Instagram. La page passe d'environ 15 à 6,5 écrans sur ordinateur et de 20 à 8 écrans sur téléphone.
+
+- **Stories** (sous la bannière) : Noël, E-shop (3 bières avec ajout au panier), Brasserie (histoire, visites guidées), Untappd (note et 3 avis), Le blog (5 articles).
+- **Sections masquées, pas supprimées** (réactivables en un clic dans l'éditeur), car leur contenu est repris dans les stories ou ailleurs sur la page : promo Noël, univers, histoire, Untappd, articles, grande image, bandeau défilant, le H2 SEO caché et une section d'applications vide.
+- **Doublons retirés** : chiffres « 100 % » et « 2016 » de la bannière (déjà dans le badge et le titre), atout « 100 % artisanal », cartes « Fût 20L / 30L » (déjà en chiffres sur la photo), encadré contact de la FAQ (déjà dans le brewpub), FAQ fermée par défaut (les horaires sont juste au-dessus).
+- **Compaction** : marges de section 56 px (35 px sur téléphone), titres et chapôs plus petits, boutons de 46 px (48 px sur téléphone, deux boutons côte à côte), horaires du brewpub sur deux colonnes, carte Google masquée sur téléphone (le bouton « Itinéraire » ouvre Maps).
+- **Pied de page** (`sections/footer.liquid`, fichier du thème modifié sur la copie) : colonnes de liens en accordéon sur téléphone, carte de contact compacte, mentions légales lisibles, icône Instagram vers le compte du flux (@brasserieleguedesmoines).
+
+À faire au calendrier : le 26 décembre, retirer la story « Noël » (blocs `noel` et `noel_1` de `gdm_stories`).
+
+Les anciennes sections du thème restent intactes dans votre thème en ligne, qui n'a pas été modifié. Les anciennes sections déjà masquées ont été retirées de la copie (Shopify limite une page à 25 sections).
 
 ## Aperçu
 
