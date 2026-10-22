@@ -146,7 +146,15 @@
                     <div class="gdm-story__slide gdm-story__slide--{{ fit }}{% if product != blank %} gdm-story__slide--product{% endif %}" data-slide data-block-id="{{ other.id }}" role="group" aria-roledescription="{{ s.label_slide | escape }}" hidden {{ other.shopify_attributes }}>
                       <div class="gdm-story__media">
                         {%- if media != blank -%}
-                          {{ media | image_url: width: 1080 | image_tag: loading: 'lazy', widths: '540, 720, 1080', sizes: '(min-width: 750px) 460px, 100vw', alt: media_alt, class: 'gdm-story__img' }}
+                          {%- liquid
+                            # Photo plus large que l'écran vertical : la largeur affichée dépend de la hauteur (recadrage).
+                            assign slide_sizes = '(min-width: 750px) 460px, 100vw'
+                            assign ratio = media.aspect_ratio | default: 0.5625
+                            if fit == 'cover' and ratio > 0.5625
+                              assign slide_sizes = '(min-width: 750px) calc(' | append: ratio | append: ' * 818px), calc(' | append: ratio | append: ' * 100vh)'
+                            endif
+                          -%}
+                          {{ media | image_url: width: 2560 | image_tag: loading: 'lazy', widths: '540, 720, 1080, 1440, 1920, 2560', sizes: slide_sizes, alt: media_alt, class: 'gdm-story__img' }}
                         {%- else -%}
                           <span class="gdm-story__noimg" aria-hidden="true">{% render 'gdm-icon', name: 'hop', icon_size: 64 %}</span>
                         {%- endif -%}

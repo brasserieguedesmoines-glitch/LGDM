@@ -114,14 +114,14 @@
           "type": "group",
           "settings": {
             "title": "E-shop",
-            "image": "shopify://shop_images/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_2.webp"
+            "image": "shopify://shop_images/le_gue_des_moines_ddf21c5f-2fd1-48eb-a77d-26949b87affe.webp"
           }
         },
         "eshop_1": {
           "type": "slide",
           "settings": {
-            "image": "shopify://shop_images/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_2.webp",
-            "image_alt": "Bières artisanales du Gué des Moines — commander en ligne avec click and collect à Bruguières",
+            "image": "shopify://shop_images/le_gue_des_moines_ddf21c5f-2fd1-48eb-a77d-26949b87affe.webp",
+            "image_alt": "Capsules de bière au logo du Gué des Moines",
             "kicker": "Commande en ligne",
             "title": "10 % en click & collect",
             "text": "<p>Commandez nos bières artisanales en 33 cL et 75 cL depuis chez vous. Retrait à la brasserie avec <strong>10 % de remise</strong>.</p>",
