@@ -1,0 +1,968 @@
+{%- comment -%}
+  Le Gué des Moines — Stories : rangée de ronds façon Instagram. Un appui ouvre
+  des écrans plein format (photo, texte, bouton, bière avec ajout au panier) qui
+  défilent seuls, avec barres de progression. Blocs « Story (rond) » suivis de
+  leurs blocs « Écran ».
+{%- endcomment -%}
+{%- liquid
+  assign s = section.settings
+  assign heading_tag = s.heading_tag | default: 'h2'
+  assign has_head = false
+  if s.pill != blank or s.title != blank or s.title_accent != blank
+    assign has_head = true
+  endif
+-%}
+{%- render 'gdm-assets' -%}
+
+<gdm-section
+  id="gdm-{{ section.id }}"
+  class="gdm gdm-stories"
+  style="--gdm-bg: {{ s.color_bg }}; --gdm-accent: {{ s.color_accent }}; --gdm-pt: {{ s.padding_top }}px; --gdm-pb: {{ s.padding_bottom }}px; --gdm-ring: {{ s.ring_size }}px;"
+>
+  <gdm-stories
+    data-duration="{{ s.duration | times: 1000 }}"
+    data-autoplay="{{ s.autoplay }}"
+    data-section-id="{{ section.id }}"
+  >
+    <div class="gdm-container">
+      {%- if has_head -%}
+        <div class="gdm-stories__head">
+          {%- if s.pill != blank -%}<p class="gdm-pill">{{ s.pill | escape }}</p>{%- endif -%}
+          {%- if s.title != blank or s.title_accent != blank -%}
+            <{{ heading_tag }} class="gdm-title gdm-stories__title">
+              {{- s.title | escape }}{% if s.title_accent != blank %} <em>{{ s.title_accent | escape }}</em>{% endif -%}
+            </{{ heading_tag }}>
+          {%- endif -%}
+        </div>
+      {%- endif -%}
+
+      {%- comment -%} Rangée de ronds : un par bloc « Story ». {%- endcomment -%}
+      <ul class="gdm-stories__rings" role="list">
+        {%- assign group_index = -1 -%}
+        {%- for block in section.blocks -%}
+          {%- if block.type == 'group' -%}
+            {%- liquid
+              assign group_index = group_index | plus: 1
+              assign cover = block.settings.image
+              assign current_index = forloop.index0
+              if cover == blank
+                for other in section.blocks
+                  if forloop.index0 > current_index
+                    if other.type == 'group'
+                      break
+                    endif
+                    if other.settings.image != blank
+                      assign cover = other.settings.image
+                      break
+                    elsif other.settings.product != blank
+                      assign cover = other.settings.product.featured_media.preview_image
+                      break
+                    endif
+                  endif
+                endfor
+              endif
+            -%}
+            <li class="gdm-stories__item" {{ block.shopify_attributes }}>
+              <button
+                type="button"
+                class="gdm-stories__ring"
+                data-open="{{ group_index }}"
+                data-group-id="{{ block.id }}"
+                aria-haspopup="dialog"
+                aria-label="{{ s.label_open | escape }} : {{ block.settings.title | escape }}"
+              >
+                <span class="gdm-stories__avatar">
+                  {%- if cover != blank -%}
+                    {{ cover | image_url: width: 240 | image_tag: loading: 'lazy', widths: '120, 180, 240', sizes: '96px', alt: '', class: 'gdm-stories__avatar-img' }}
+                  {%- else -%}
+                    <span class="gdm-stories__avatar-icon" aria-hidden="true">{% render 'gdm-icon', name: 'beer', icon_size: 28 %}</span>
+                  {%- endif -%}
+                </span>
+                <span class="gdm-stories__name">{{ block.settings.title | escape }}</span>
+              </button>
+            </li>
+          {%- endif -%}
+        {%- endfor -%}
+      </ul>
+
+      {%- if group_index < 0 and request.design_mode -%}
+        <p class="gdm-stories__empty">Ajoutez un bloc « Story (rond) », puis des blocs « Écran » juste en dessous.</p>
+      {%- endif -%}
+    </div>
+
+    {%- comment -%} Lecteur plein écran (fenêtre modale native). {%- endcomment -%}
+    <dialog class="gdm-stories__viewer" aria-label="{{ s.label_viewer | escape }}" data-viewer>
+      <div class="gdm-stories__frame">
+        <div class="gdm-stories__stage" data-stage>
+          {%- assign group_index = -1 -%}
+          {%- for block in section.blocks -%}
+            {%- if block.type == 'group' -%}
+              {%- liquid
+                assign group_index = group_index | plus: 1
+                assign group_title = block.settings.title
+                assign group_cover = block.settings.image
+                assign current_index = forloop.index0
+              -%}
+              <div class="gdm-story" data-group="{{ group_index }}" data-group-id="{{ block.id }}" data-title="{{ group_title | escape }}" hidden>
+                <div class="gdm-story__top">
+                  <div class="gdm-story__bars" data-bars aria-hidden="true"></div>
+                  <div class="gdm-story__bar-row">
+                    <p class="gdm-story__who">
+                      <span class="gdm-story__who-avatar" aria-hidden="true">
+                        {%- if group_cover != blank -%}
+                          {{ group_cover | image_url: width: 80 | image_tag: loading: 'lazy', alt: '', class: 'gdm-story__who-img' }}
+                        {%- else -%}
+                          {% render 'gdm-icon', name: 'beer', icon_size: 16 %}
+                        {%- endif -%}
+                      </span>
+                      <span>{{ group_title | escape }}</span>
+                    </p>
+                    <button type="button" class="gdm-story__ctrl" data-toggle aria-pressed="false" aria-label="{{ s.label_pause | escape }}">
+                      <span class="gdm-story__ico-pause">{% render 'gdm-icon', name: 'pause', icon_size: 20 %}</span>
+                      <span class="gdm-story__ico-play">{% render 'gdm-icon', name: 'play', icon_size: 20 %}</span>
+                    </button>
+                    <button type="button" class="gdm-story__ctrl" data-close aria-label="{{ s.label_close | escape }}">
+                      {% render 'gdm-icon', name: 'close', icon_size: 22 %}
+                    </button>
+                  </div>
+                </div>
+                <div class="gdm-story__slides">
+                  {%- comment -%} Écrans de cette story : les blocs « Écran » jusqu'au rond suivant. {%- endcomment -%}
+                  {%- for other in section.blocks -%}
+                    {%- if forloop.index0 <= current_index -%}{%- continue -%}{%- endif -%}
+                    {%- if other.type == 'group' -%}{%- break -%}{%- endif -%}
+                    {%- liquid
+                      assign b = other.settings
+                      assign product = b.product
+                      assign media = b.image
+                      assign fit = b.image_fit
+                      if media == blank and product != blank
+                        assign media = product.featured_media.preview_image
+                        assign fit = 'contain'
+                      endif
+                      assign media_alt = b.image_alt | default: media.alt | default: b.title | default: product.title
+                      assign slide_title = b.title | default: product.title
+                    -%}
+                    <div class="gdm-story__slide gdm-story__slide--{{ fit }}{% if product != blank %} gdm-story__slide--product{% endif %}" data-slide data-block-id="{{ other.id }}" role="group" aria-roledescription="{{ s.label_slide | escape }}" hidden {{ other.shopify_attributes }}>
+                      <div class="gdm-story__media">
+                        {%- if media != blank -%}
+                          {{ media | image_url: width: 1080 | image_tag: loading: 'lazy', widths: '540, 720, 1080', sizes: '(min-width: 750px) 460px, 100vw', alt: media_alt, class: 'gdm-story__img' }}
+                        {%- else -%}
+                          <span class="gdm-story__noimg" aria-hidden="true">{% render 'gdm-icon', name: 'hop', icon_size: 64 %}</span>
+                        {%- endif -%}
+                      </div>
+                      <div class="gdm-story__content">
+                        {%- if b.kicker != blank -%}<p class="gdm-story__kicker">{{ b.kicker | escape }}</p>{%- endif -%}
+                        {%- if b.rating > 0 -%}
+                          <div class="gdm-story__stars">{% render 'gdm-stars', rating: b.rating, star_size: 18 %}</div>
+                        {%- endif -%}
+                        {%- if slide_title != blank -%}<p class="gdm-story__title">{{ slide_title | escape }}</p>{%- endif -%}
+                        {%- if b.text != blank -%}<div class="gdm-story__text">{{ b.text }}</div>{%- endif -%}
+
+                        {%- if product != blank -%}
+                          {%- liquid
+                            assign current = product.selected_or_first_available_variant
+                            assign degre = product.metafields.custom.degre.value
+                          -%}
+                          <div class="gdm-story__buy">
+                            <p class="gdm-story__price">
+                              {%- if product.price_varies %}<span class="gdm-story__from">{{ s.label_from | escape }}</span> {{ product.price_min | money }}{% else %}{{ current.price | money }}{% endif -%}
+                              {%- if degre != blank %}<span class="gdm-story__spec">{{ degre | replace: '.', ',' }} % alc.</span>{% endif -%}
+                            </p>
+                            {%- form 'product', product, class: 'gdm-story__form', novalidate: 'novalidate' -%}
+                              <input type="hidden" name="id" value="{{ current.id }}">
+                              <input type="hidden" name="quantity" value="1">
+                              <button type="submit" class="gdm-btn gdm-btn--primary gdm-story__btn"{% unless current.available %} disabled{% endunless %}>
+                                {%- if current.available -%}
+                                  {{ s.label_add | escape }}{% unless product.has_only_default_variant %} · {{ current.title | escape }}{% endunless %}
+                                {%- else -%}
+                                  {{ s.label_soldout | escape }}
+                                {%- endif -%}
+                              </button>
+                            {%- endform -%}
+                            <a class="gdm-story__link" href="{{ product.url }}">{{ s.label_product | escape }}</a>
+                          </div>
+                        {%- elsif b.button_label != blank and b.button_link != blank -%}
+                          {%- assign external = false -%}
+                          {%- if b.button_link contains '://' -%}{%- assign external = true -%}{%- endif -%}
+                          <a class="gdm-btn gdm-btn--primary gdm-story__btn" href="{{ b.button_link }}"{% if external %} target="_blank" rel="noopener"{% endif %}>
+                            {{- b.button_label | escape -}}
+                            {%- if external %}<span class="gdm-visually-hidden"> (nouvel onglet)</span>{% render 'gdm-icon', name: 'arrow-up-right', icon_size: 16 %}{% endif -%}
+                          </a>
+                        {%- endif -%}
+                      </div>
+                    </div>
+                  {%- endfor -%}
+                </div>
+              </div>
+            {%- endif -%}
+          {%- endfor -%}
+        </div>
+
+        <button type="button" class="gdm-icon-btn gdm-stories__nav gdm-stories__nav--prev" data-prev aria-label="{{ s.label_prev | escape }}">
+          {% render 'gdm-icon', name: 'chevron-left' %}
+        </button>
+        <button type="button" class="gdm-icon-btn gdm-stories__nav gdm-stories__nav--next" data-next aria-label="{{ s.label_next | escape }}">
+          {% render 'gdm-icon', name: 'chevron-right' %}
+        </button>
+      </div>
+      <p class="gdm-visually-hidden" aria-live="polite" data-status></p>
+    </dialog>
+  </gdm-stories>
+</gdm-section>
+
+{% stylesheet %}
+  html.gdm-stories-open {
+    overflow: hidden;
+  }
+
+  .gdm.gdm-stories {
+    --gdm-ring: 76px;
+  }
+
+  .gdm.gdm-stories .gdm-stories__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px 16px;
+    margin-bottom: 16px;
+  }
+
+  .gdm.gdm-stories .gdm-stories__title {
+    font-size: clamp(26px, 20px + 1.6vw, 40px);
+  }
+
+  /* ---------- Rangée de ronds ---------- */
+  .gdm.gdm-stories .gdm-stories__rings {
+    display: flex;
+    gap: 14px;
+    margin: 0;
+    padding: 4px 2px 6px;
+    list-style: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .gdm.gdm-stories .gdm-stories__rings::-webkit-scrollbar {
+    display: none;
+  }
+
+  .gdm.gdm-stories .gdm-stories__item {
+    flex: none;
+    margin: 0;
+    padding: 0;
+    scroll-snap-align: start;
+  }
+
+  .gdm.gdm-stories .gdm-stories__ring {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    width: calc(var(--gdm-ring) + 12px);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--gdm-text);
+    cursor: pointer;
+  }
+
+  .gdm.gdm-stories .gdm-stories__avatar {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: var(--gdm-ring);
+    height: var(--gdm-ring);
+    padding: 3px;
+    border-radius: 50%;
+    background: conic-gradient(from 210deg, var(--gdm-accent), #ffd08a, #c25e0c, var(--gdm-accent));
+    transition: transform 0.25s var(--gdm-ease);
+  }
+
+  .gdm.gdm-stories .gdm-stories__avatar::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    z-index: 1;
+    border: 3px solid var(--gdm-bg);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .gdm.gdm-stories .gdm-stories__avatar-img,
+  .gdm.gdm-stories .gdm-stories__avatar-icon {
+    position: absolute;
+    inset: 3px;
+    display: grid;
+    place-items: center;
+    width: calc(100% - 6px);
+    height: calc(100% - 6px);
+    border-radius: 50%;
+    background: var(--gdm-surface);
+    color: var(--gdm-accent);
+    object-fit: cover;
+  }
+
+  .gdm.gdm-stories .gdm-stories__ring.is-seen .gdm-stories__avatar {
+    background: var(--gdm-border-strong);
+  }
+
+  .gdm.gdm-stories .gdm-stories__ring:hover .gdm-stories__avatar {
+    transform: scale(1.04);
+  }
+
+  .gdm.gdm-stories .gdm-stories__name {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    color: var(--gdm-text);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .gdm.gdm-stories .gdm-stories__empty {
+    color: var(--gdm-muted);
+    font-size: 14px;
+  }
+
+  @media (min-width: 990px) {
+    .gdm.gdm-stories .gdm-stories__rings {
+      justify-content: center;
+      gap: 22px;
+    }
+  }
+
+  /* ---------- Lecteur ---------- */
+  .gdm.gdm-stories .gdm-stories__viewer {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: #000;
+    color: var(--gdm-text);
+    overflow: hidden;
+  }
+
+  .gdm.gdm-stories .gdm-stories__viewer:not([open]) {
+    display: none;
+  }
+
+  .gdm.gdm-stories .gdm-stories__viewer::backdrop {
+    background: rgba(0, 0, 0, 0.88);
+  }
+
+  .gdm.gdm-stories .gdm-stories__frame {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+  }
+
+  .gdm.gdm-stories .gdm-stories__stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--gdm-bg);
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .gdm.gdm-stories .gdm-story {
+    position: absolute;
+    inset: 0;
+  }
+
+  .gdm.gdm-stories .gdm-story[hidden],
+  .gdm.gdm-stories .gdm-story__slide[hidden] {
+    display: none;
+  }
+
+  /* Barres de progression + en-tête */
+  .gdm.gdm-stories .gdm-story__top {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 3;
+    padding: max(10px, env(safe-area-inset-top)) 12px 24px;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.55), transparent);
+    pointer-events: none;
+  }
+
+  .gdm.gdm-stories .gdm-story__bars {
+    display: flex;
+    gap: 4px;
+  }
+
+  .gdm.gdm-stories .gdm-story__bar {
+    position: relative;
+    flex: 1;
+    height: 3px;
+    overflow: hidden;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.32);
+  }
+
+  .gdm.gdm-stories .gdm-story__bar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    transform: scaleX(var(--p, 0));
+    transform-origin: left center;
+  }
+
+  .gdm.gdm-stories .gdm-story__bar-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  .gdm.gdm-stories .gdm-story__who {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  }
+
+  .gdm.gdm-stories .gdm-story__who-avatar {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 30px;
+    height: 30px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    background: var(--gdm-surface);
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-stories .gdm-story__who-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .gdm.gdm-stories .gdm-story__ctrl {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #fff;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
+    pointer-events: auto;
+    cursor: pointer;
+  }
+
+  .gdm.gdm-stories .gdm-story__ctrl:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .gdm.gdm-stories .gdm-story__ico-play,
+  .gdm.gdm-stories [data-toggle][aria-pressed='true'] .gdm-story__ico-pause {
+    display: none;
+  }
+
+  .gdm.gdm-stories [data-toggle][aria-pressed='true'] .gdm-story__ico-play {
+    display: block;
+  }
+
+  /* Écran */
+  .gdm.gdm-stories .gdm-story__slides,
+  .gdm.gdm-stories .gdm-story__slide {
+    position: absolute;
+    inset: 0;
+  }
+
+  .gdm.gdm-stories .gdm-story__media {
+    position: absolute;
+    inset: 0;
+  }
+
+  .gdm.gdm-stories .gdm-story__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    -webkit-user-drag: none;
+  }
+
+  .gdm.gdm-stories .gdm-story__slide--contain .gdm-story__media {
+    inset: 0 0 34%;
+    padding: 76px 32px 0;
+    background: radial-gradient(60% 50% at 50% 55%, var(--gdm-accent-glow), transparent 70%);
+  }
+
+  .gdm.gdm-stories .gdm-story__slide--contain .gdm-story__img {
+    object-fit: contain;
+  }
+
+  .gdm.gdm-stories .gdm-story__noimg {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    color: var(--gdm-line);
+  }
+
+  .gdm.gdm-stories .gdm-story__slide::after {
+    content: '';
+    position: absolute;
+    inset: 40% 0 0;
+    z-index: 1;
+    background: linear-gradient(180deg, transparent, rgba(13, 13, 13, 0.82) 45%, rgba(13, 13, 13, 0.96));
+    pointer-events: none;
+  }
+
+  .gdm.gdm-stories .gdm-story__content {
+    position: absolute;
+    inset: auto 0 0;
+    z-index: 2;
+    display: grid;
+    justify-items: start;
+    gap: 10px;
+    max-height: 62%;
+    padding: 20px 20px max(24px, env(safe-area-inset-bottom));
+    overflow-y: auto;
+    touch-action: pan-y;
+    pointer-events: none;
+  }
+
+  .gdm.gdm-stories .gdm-story__content :where(a, button, input, form, .gdm-story__text) {
+    pointer-events: auto;
+  }
+
+  .gdm.gdm-stories .gdm-story__kicker {
+    margin: 0;
+    color: var(--gdm-accent);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .gdm.gdm-stories .gdm-story__title {
+    margin: 0;
+    color: #fff;
+    font-family: var(--gdm-font-display);
+    font-size: clamp(30px, 8vw, 40px);
+    font-weight: 400;
+    line-height: 1.12;
+    text-transform: uppercase;
+  }
+
+  .gdm.gdm-stories .gdm-story__text {
+    color: #e4e0d8;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  .gdm.gdm-stories .gdm-story__text p {
+    margin: 0 0 8px;
+  }
+
+  .gdm.gdm-stories .gdm-story__text p:last-child {
+    margin-bottom: 0;
+  }
+
+  .gdm.gdm-stories .gdm-story__text a {
+    color: #fff;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .gdm.gdm-stories .gdm-story__buy {
+    display: grid;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .gdm.gdm-stories .gdm-story__price {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 12px;
+    margin: 0;
+    color: #fff;
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .gdm.gdm-stories .gdm-story__from,
+  .gdm.gdm-stories .gdm-story__spec {
+    color: var(--gdm-muted);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .gdm.gdm-stories .gdm-story__form {
+    margin: 0;
+  }
+
+  .gdm.gdm-stories .gdm-story__btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .gdm.gdm-stories .gdm-story__link {
+    justify-self: center;
+    padding: 12px 8px;
+    color: #fff;
+    font-size: 14px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  /* Flèches : sur ordinateur à côté de la story ; au clavier sur mobile */
+  .gdm.gdm-stories .gdm-stories__nav {
+    position: absolute;
+    top: 50%;
+    z-index: 4;
+    border-color: rgba(255, 255, 255, 0.35);
+    background: rgba(13, 13, 13, 0.6);
+    color: #fff;
+    transform: translateY(-50%);
+  }
+
+  .gdm.gdm-stories .gdm-stories__nav--prev {
+    left: 8px;
+  }
+
+  .gdm.gdm-stories .gdm-stories__nav--next {
+    right: 8px;
+  }
+
+  @media (max-width: 749px) {
+    .gdm.gdm-stories .gdm-stories__nav:not(:focus-visible) {
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
+
+  @media (min-width: 750px) {
+    .gdm.gdm-stories .gdm-stories__viewer {
+      background: rgba(0, 0, 0, 0.9);
+    }
+
+    .gdm.gdm-stories .gdm-stories__stage {
+      width: min(460px, calc((100vh - 48px) * 9 / 16));
+      height: min(818px, calc(100vh - 48px));
+      border-radius: 18px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    }
+
+    .gdm.gdm-stories .gdm-stories__nav--prev {
+      left: calc(50% - min(230px, (100vh - 48px) * 9 / 32) - 72px);
+    }
+
+    .gdm.gdm-stories .gdm-stories__nav--next {
+      right: calc(50% - min(230px, (100vh - 48px) * 9 / 32) - 72px);
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "GDM · Stories",
+  "tag": "section",
+  "class": "gdm-shopify-section",
+  "max_blocks": 50,
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Ajoutez un bloc « Story (rond) », puis juste en dessous les blocs « Écran » qui le composent. Recommencez pour chaque rond."
+    },
+    {
+      "type": "text",
+      "id": "pill",
+      "label": "Petit badge (facultatif)"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titre (facultatif)"
+    },
+    {
+      "type": "text",
+      "id": "title_accent",
+      "label": "Fin du titre en orange (facultatif)"
+    },
+    {
+      "type": "select",
+      "id": "heading_tag",
+      "label": "Niveau du titre",
+      "default": "h2",
+      "options": [
+        { "value": "h2", "label": "H2" },
+        { "value": "h3", "label": "H3" }
+      ]
+    },
+    {
+      "type": "range",
+      "id": "ring_size",
+      "label": "Taille des ronds",
+      "min": 60,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 76
+    },
+    {
+      "type": "header",
+      "content": "Lecture"
+    },
+    {
+      "type": "checkbox",
+      "id": "autoplay",
+      "label": "Passer seul à l'écran suivant",
+      "info": "Désactivé automatiquement si le visiteur a demandé de réduire les animations.",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "duration",
+      "label": "Durée d'un écran",
+      "min": 3,
+      "max": 15,
+      "step": 1,
+      "unit": "s",
+      "default": 6
+    },
+    {
+      "type": "header",
+      "content": "Textes des boutons"
+    },
+    {
+      "type": "text",
+      "id": "label_add",
+      "label": "Ajout au panier",
+      "default": "Ajouter au panier"
+    },
+    {
+      "type": "text",
+      "id": "label_soldout",
+      "label": "Épuisé",
+      "default": "Épuisée"
+    },
+    {
+      "type": "text",
+      "id": "label_from",
+      "label": "Prix « à partir de »",
+      "default": "Dès"
+    },
+    {
+      "type": "text",
+      "id": "label_product",
+      "label": "Lien vers la fiche produit",
+      "default": "Voir la fiche"
+    },
+    {
+      "type": "header",
+      "content": "Accessibilité"
+    },
+    {
+      "type": "text",
+      "id": "label_open",
+      "label": "Ouvrir une story",
+      "default": "Voir la story"
+    },
+    {
+      "type": "text",
+      "id": "label_viewer",
+      "label": "Nom du lecteur",
+      "default": "Stories"
+    },
+    {
+      "type": "text",
+      "id": "label_slide",
+      "label": "Nom d'un écran",
+      "default": "écran"
+    },
+    {
+      "type": "text",
+      "id": "label_pause",
+      "label": "Pause",
+      "default": "Mettre en pause"
+    },
+    {
+      "type": "text",
+      "id": "label_close",
+      "label": "Fermer",
+      "default": "Fermer les stories"
+    },
+    {
+      "type": "text",
+      "id": "label_prev",
+      "label": "Précédent",
+      "default": "Écran précédent"
+    },
+    {
+      "type": "text",
+      "id": "label_next",
+      "label": "Suivant",
+      "default": "Écran suivant"
+    },
+    {
+      "type": "header",
+      "content": "Couleurs et espacement"
+    },
+    {
+      "type": "color",
+      "id": "color_bg",
+      "label": "Fond",
+      "default": "#0D0D0D"
+    },
+    {
+      "type": "color",
+      "id": "color_accent",
+      "label": "Accent",
+      "default": "#F0921E"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Marge haute",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 24
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Marge basse",
+      "min": 0,
+      "max": 200,
+      "step": 4,
+      "unit": "px",
+      "default": 24
+    }
+  ],
+  "blocks": [
+    {
+      "type": "group",
+      "name": "Story (rond)",
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Nom sous le rond",
+          "default": "Story"
+        },
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Image du rond",
+          "info": "Vide : la première image de la story."
+        }
+      ]
+    },
+    {
+      "type": "slide",
+      "name": "Écran",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Photo",
+          "info": "Format vertical conseillé (1080 × 1920 px). Vide avec une bière choisie : photo de la bière."
+        },
+        {
+          "type": "text",
+          "id": "image_alt",
+          "label": "Description de la photo"
+        },
+        {
+          "type": "select",
+          "id": "image_fit",
+          "label": "Affichage de la photo",
+          "default": "cover",
+          "options": [
+            { "value": "cover", "label": "Plein écran" },
+            { "value": "contain", "label": "Entière (bouteille, logo…)" }
+          ]
+        },
+        {
+          "type": "product",
+          "id": "product",
+          "label": "Bière à vendre (facultatif)",
+          "info": "Affiche le prix et un bouton d'ajout au panier."
+        },
+        {
+          "type": "text",
+          "id": "kicker",
+          "label": "Petit texte orange"
+        },
+        {
+          "type": "range",
+          "id": "rating",
+          "label": "Étoiles (avis)",
+          "min": 0,
+          "max": 5,
+          "step": 0.5,
+          "default": 0,
+          "info": "0 : pas d'étoiles. N'affichez que de vrais avis."
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Titre",
+          "info": "Vide avec une bière choisie : nom de la bière."
+        },
+        {
+          "type": "richtext",
+          "id": "text",
+          "label": "Texte"
+        },
+        {
+          "type": "text",
+          "id": "button_label",
+          "label": "Texte du bouton"
+        },
+        {
+          "type": "url",
+          "id": "button_link",
+          "label": "Lien du bouton"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "GDM · Stories",
+      "blocks": [
+        { "type": "group", "settings": { "title": "Nos bières" } },
+        { "type": "slide", "settings": { "kicker": "Nouveauté", "title": "Votre bière du moment", "text": "<p>Présentez une bière en une phrase, ou choisissez-la pour afficher son prix.</p>" } },
+        { "type": "slide", "settings": { "kicker": "À la pression", "title": "Au brewpub", "text": "<p>Un deuxième écran pour la même story.</p>" } },
+        { "type": "group", "settings": { "title": "Brewpub" } },
+        { "type": "slide", "settings": { "kicker": "Horaires", "title": "Venez trinquer", "text": "<p>Indiquez vos horaires et votre adresse.</p>" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

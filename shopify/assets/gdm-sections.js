@@ -421,6 +421,268 @@
     }
   }
 
+  /* ---------- <gdm-stories> : stories plein écran façon Instagram ---------- */
+  const SEEN_KEY = 'gdm-stories:seen';
+  const readSeen = () => {
+    try {
+      return JSON.parse(localStorage.getItem(SEEN_KEY) || '[]');
+    } catch (e) {
+      return [];
+    }
+  };
+  const writeSeen = (list) => {
+    try {
+      localStorage.setItem(SEEN_KEY, JSON.stringify(list.slice(-60)));
+    } catch (e) {
+      /* stockage indisponible : les ronds restent « non vus » */
+    }
+  };
+
+  class GdmStories extends HTMLElement {
+    connectedCallback() {
+      this.viewer = this.querySelector('[data-viewer]');
+      this.stage = this.querySelector('[data-stage]');
+      if (!this.viewer || !this.stage || typeof this.viewer.showModal !== 'function') return;
+
+      this.status = this.querySelector('[data-status]');
+      this.prevBtn = this.querySelector('[data-prev]');
+      this.nextBtn = this.querySelector('[data-next]');
+      this.duration = Number(this.dataset.duration) || 6000;
+      this.autoplay = this.dataset.autoplay !== 'false' && !reduceMotion();
+      this.paused = false;
+      this.held = false;
+
+      this.groups = [];
+      this.stage.querySelectorAll('.gdm-story').forEach((el) => {
+        const slides = [...el.querySelectorAll('[data-slide]')];
+        const bars = el.querySelector('[data-bars]');
+        if (bars) bars.innerHTML = slides.map(() => '<span class="gdm-story__bar"></span>').join('');
+        const toggle = el.querySelector('[data-toggle]');
+        if (toggle && !this.autoplay) toggle.hidden = true;
+        this.groups[Number(el.dataset.group)] = { el, slides, bars: bars ? [...bars.children] : [], id: el.dataset.groupId };
+      });
+
+      const seen = readSeen();
+      this.rings = [...this.querySelectorAll('[data-open]')];
+      this.rings.forEach((ring) => {
+        const group = this.groups[Number(ring.dataset.open)];
+        if (!group || !group.slides.length) {
+          if (!inEditor()) ring.closest('li').hidden = true;
+          return;
+        }
+        ring.classList.toggle('is-seen', seen.includes(ring.dataset.groupId));
+      });
+
+      this.onRing = (event) => {
+        const ring = event.target.closest('[data-open]');
+        if (ring) this.open(Number(ring.dataset.open), 0);
+      };
+      this.onClick = (event) => {
+        if (event.target.closest('[data-close]')) this.viewer.close();
+        else if (event.target.closest('[data-toggle]')) this.setPaused(!this.paused);
+        else if (event.target.closest('[data-prev]')) this.prev();
+        else if (event.target.closest('[data-next]')) this.next();
+      };
+      this.onKey = (event) => {
+        if (event.key === 'ArrowRight') this.next();
+        else if (event.key === 'ArrowLeft') this.prev();
+        else return;
+        event.preventDefault();
+      };
+      this.onClose = () => {
+        cancelAnimationFrame(this.raf);
+        clearTimeout(this.holdTimer);
+        document.documentElement.classList.remove('gdm-stories-open');
+      };
+
+      // Appui court : écran précédent (tiers gauche) ou suivant ; appui long : pause ;
+      // glisser à gauche/droite : story suivante/précédente ; glisser vers le bas : fermer.
+      this.onDown = (event) => {
+        if (event.button > 0 || event.target.closest('a, button, input, select, textarea, label, .gdm-story__text')) {
+          this.down = null;
+          return;
+        }
+        this.down = { x: event.clientX, y: event.clientY };
+        this.holdTimer = setTimeout(() => (this.held = true), 220);
+      };
+      this.onUp = (event) => {
+        clearTimeout(this.holdTimer);
+        const start = this.down;
+        const wasHeld = this.held;
+        this.down = null;
+        this.held = false;
+        if (!start) return;
+        const dx = event.clientX - start.x;
+        const dy = event.clientY - start.y;
+        if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) {
+          if (dx < 0) this.nextGroup();
+          else this.prevGroup();
+        } else if (dy > 90 && dy > Math.abs(dx)) {
+          this.viewer.close();
+        } else if (!wasHeld) {
+          const box = this.stage.getBoundingClientRect();
+          if (event.clientX - box.left < box.width * 0.35) this.prev();
+          else this.next();
+        }
+      };
+      this.onCancel = () => {
+        clearTimeout(this.holdTimer);
+        this.down = null;
+        this.held = false;
+      };
+
+      this.tick = (time) => {
+        if (!this.viewer.open) return;
+        const dt = this.last ? Math.min(time - this.last, 100) : 0;
+        this.last = time;
+        const group = this.groups[this.g];
+        const slide = group && group.slides[this.i];
+        const img = slide && slide.querySelector('img');
+        const ready = !img || img.complete;
+        if (this.autoplay && !this.paused && !this.held && !document.hidden && ready) {
+          this.elapsed += dt;
+          const progress = Math.min(1, this.elapsed / this.duration);
+          if (group.bars[this.i]) group.bars[this.i].style.setProperty('--p', progress.toFixed(4));
+          if (progress >= 1) this.next();
+        }
+        this.raf = requestAnimationFrame(this.tick);
+      };
+
+      // Éditeur de thème : sélectionner un bloc ouvre l'écran correspondant, en pause.
+      this.onBlockSelect = (event) => {
+        if (!event.detail || event.detail.sectionId !== this.dataset.sectionId) return;
+        const slide = this.stage.querySelector(`[data-block-id="${event.detail.blockId}"]`);
+        const ring = this.querySelector(`[data-open][data-group-id="${event.detail.blockId}"]`);
+        if (slide) {
+          const g = Number(slide.closest('.gdm-story').dataset.group);
+          this.open(g, this.groups[g].slides.indexOf(slide));
+        } else if (ring) {
+          this.open(Number(ring.dataset.open), 0);
+        } else return;
+        this.setPaused(true);
+      };
+      this.onBlockDeselect = (event) => {
+        if (event.detail && event.detail.sectionId === this.dataset.sectionId && this.viewer.open) this.viewer.close();
+      };
+
+      this.addEventListener('click', this.onRing);
+      this.viewer.addEventListener('click', this.onClick);
+      this.viewer.addEventListener('keydown', this.onKey);
+      this.viewer.addEventListener('close', this.onClose);
+      this.stage.addEventListener('pointerdown', this.onDown);
+      this.stage.addEventListener('pointerup', this.onUp);
+      this.stage.addEventListener('pointercancel', this.onCancel);
+      this.stage.addEventListener('contextmenu', (event) => event.preventDefault());
+      document.addEventListener('shopify:block:select', this.onBlockSelect);
+      document.addEventListener('shopify:block:deselect', this.onBlockDeselect);
+    }
+
+    disconnectedCallback() {
+      if (!this.viewer || !this.onRing) return;
+      if (this.viewer.open) this.viewer.close();
+      this.onClose();
+      this.removeEventListener('click', this.onRing);
+      document.removeEventListener('shopify:block:select', this.onBlockSelect);
+      document.removeEventListener('shopify:block:deselect', this.onBlockDeselect);
+    }
+
+    findGroup(from, step) {
+      for (let g = from + step; g >= 0 && g < this.groups.length; g += step) {
+        if (this.groups[g] && this.groups[g].slides.length) return g;
+      }
+      return -1;
+    }
+
+    open(g, i) {
+      if (!this.groups[g] || !this.groups[g].slides.length) return;
+      if (!this.viewer.open) {
+        this.viewer.showModal();
+        document.documentElement.classList.add('gdm-stories-open');
+        this.last = 0;
+        this.raf = requestAnimationFrame(this.tick);
+      }
+      this.setPaused(false);
+      this.show(g, Math.max(0, i));
+      const close = this.groups[g].el.querySelector('[data-close]');
+      if (close && !this.groups[g].el.contains(document.activeElement)) close.focus({ preventScroll: true });
+    }
+
+    show(g, i) {
+      const group = this.groups[g];
+      if (this.current && this.current !== group) this.current.el.hidden = true;
+      this.current = group;
+      this.g = g;
+      this.i = i;
+      this.elapsed = 0;
+      group.el.hidden = false;
+      const count = group.slides.length;
+      group.slides.forEach((slide, n) => {
+        slide.hidden = n !== i;
+        slide.setAttribute('aria-label', `${n + 1} / ${count}`);
+      });
+      group.bars.forEach((bar, n) => bar.style.setProperty('--p', n < i || (n === i && !this.autoplay) ? 1 : 0));
+
+      // Charge l'écran affiché et le suivant.
+      const following = group.slides[i + 1] || (this.groups[this.findGroup(g, 1)] || { slides: [] }).slides[0];
+      [group.slides[i], following].forEach((slide) => {
+        if (slide) slide.querySelectorAll('img[loading="lazy"]').forEach((img) => (img.loading = 'eager'));
+      });
+
+      // Le focus ne reste pas sur un élément devenu invisible.
+      const active = document.activeElement;
+      if (active && this.stage.contains(active) && active.closest('[hidden]')) {
+        const target = group.el.querySelector('[data-toggle]:not([hidden])') || group.el.querySelector('[data-close]');
+        if (target) target.focus({ preventScroll: true });
+      }
+
+      if (this.prevBtn) this.prevBtn.disabled = i === 0 && this.findGroup(g, -1) === -1;
+      if (this.status) this.status.textContent = `${group.el.dataset.title} — ${i + 1} / ${count}`;
+      this.markSeen(group);
+    }
+
+    next() {
+      if (this.i < this.current.slides.length - 1) return this.show(this.g, this.i + 1);
+      const g = this.findGroup(this.g, 1);
+      if (g === -1) this.viewer.close();
+      else this.show(g, 0);
+    }
+
+    prev() {
+      if (this.i > 0) return this.show(this.g, this.i - 1);
+      const g = this.findGroup(this.g, -1);
+      if (g === -1) this.show(this.g, 0);
+      else this.show(g, this.groups[g].slides.length - 1);
+    }
+
+    nextGroup() {
+      const g = this.findGroup(this.g, 1);
+      if (g === -1) this.viewer.close();
+      else this.show(g, 0);
+    }
+
+    prevGroup() {
+      const g = this.findGroup(this.g, -1);
+      this.show(g === -1 ? this.g : g, 0);
+    }
+
+    setPaused(value) {
+      this.paused = value;
+      this.stage.querySelectorAll('[data-toggle]').forEach((btn) => btn.setAttribute('aria-pressed', String(value)));
+    }
+
+    markSeen(group) {
+      if (!group.id) return;
+      const seen = readSeen();
+      if (!seen.includes(group.id)) {
+        seen.push(group.id);
+        writeSeen(seen);
+      }
+      this.rings.forEach((ring) => {
+        if (ring.dataset.groupId === group.id) ring.classList.add('is-seen');
+      });
+    }
+  }
+
   define('gdm-section', GdmSection);
   define('gdm-carousel', GdmCarousel);
   define('gdm-counter', GdmCounter);
@@ -429,4 +691,5 @@
   define('gdm-map', GdmMap);
   define('gdm-variant-pills', GdmVariantPills);
   define('gdm-events', GdmEvents);
+  define('gdm-stories', GdmStories);
 })();

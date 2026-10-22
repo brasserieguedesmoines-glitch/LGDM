@@ -454,6 +454,33 @@
   }
 
   @media (max-width: 749px) {
+    .gdm.gdm-avis .gdm-avis__top {
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .gdm.gdm-avis .gdm-avis__score {
+      gap: 4px;
+      padding: 14px 18px;
+    }
+
+    .gdm.gdm-avis .gdm-avis__score .gdm-rating__value {
+      font-size: 52px;
+    }
+
+    .gdm.gdm-avis .gdm-review {
+      gap: 14px;
+      padding: 20px;
+    }
+
+    .gdm.gdm-avis .gdm-review__author {
+      padding-top: 14px;
+    }
+
+    .gdm.gdm-avis .gdm-avis__foot {
+      margin-top: 16px;
+    }
+
     .gdm.gdm-avis .gdm-avis__stats .gdm-stat {
       align-content: start;
     }
@@ -468,6 +495,35 @@
       white-space: normal;
       letter-spacing: 0.06em;
       text-align: center;
+    }
+  }
+
+  /* Ordinateur : note et cartes plus compactes. */
+  @media (min-width: 990px) {
+    .gdm.gdm-avis .gdm-avis__top {
+      margin-bottom: 24px;
+    }
+
+    .gdm.gdm-avis .gdm-avis__score {
+      gap: 8px;
+      padding: 16px 22px;
+    }
+
+    .gdm.gdm-avis .gdm-avis__score .gdm-rating__value {
+      font-size: 56px;
+    }
+
+    .gdm.gdm-avis .gdm-review {
+      gap: 12px;
+      padding: 22px;
+    }
+
+    .gdm.gdm-avis .gdm-review__author {
+      padding-top: 12px;
+    }
+
+    .gdm.gdm-avis .gdm-avis__foot {
+      margin-top: 20px;
     }
   }
 {% endstylesheet %}

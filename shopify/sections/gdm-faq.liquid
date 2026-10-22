@@ -279,17 +279,62 @@
   }
 
   @media (max-width: 749px) {
+    .gdm.gdm-faq .gdm-faq__grid {
+      gap: 24px;
+    }
+
+    .gdm.gdm-faq .gdm-faq__intro {
+      gap: 20px;
+    }
+
+    .gdm.gdm-faq .gdm-faq__list {
+      gap: 8px;
+    }
+
     .gdm.gdm-faq .gdm-faq__question {
-      gap: 12px;
-      padding: 16px;
+      gap: 10px;
+      padding: 12px 14px;
+    }
+
+    .gdm.gdm-faq .gdm-faq__num {
+      display: none;
     }
 
     .gdm.gdm-faq .gdm-faq__q {
-      font-size: 16px;
+      font-size: 15px;
     }
 
     .gdm.gdm-faq .gdm-faq__answer {
-      padding: 0 16px 18px;
+      padding: 0 14px 14px;
+    }
+
+    .gdm.gdm-faq .gdm-faq__contact {
+      display: none;
+    }
+  }
+
+  /* Ordinateur : questions plus serrées. */
+  @media (min-width: 990px) {
+    .gdm.gdm-faq .gdm-faq__grid {
+      gap: 56px;
+    }
+
+    .gdm.gdm-faq .gdm-faq__intro {
+      gap: 24px;
+    }
+
+    .gdm.gdm-faq .gdm-faq__list {
+      gap: 8px;
+    }
+
+    .gdm.gdm-faq .gdm-faq__question {
+      gap: 14px;
+      padding: 14px 18px;
+    }
+
+    .gdm.gdm-faq .gdm-faq__toggle {
+      width: 36px;
+      height: 36px;
     }
   }
 {% endstylesheet %}

@@ -494,16 +494,69 @@
 
   @media (max-width: 749px) {
     .gdm.gdm-brewpub .gdm-brewpub__map {
-      min-height: 340px;
+      display: none;
+    }
+
+    .gdm.gdm-brewpub .gdm-brewpub__grid {
+      gap: 24px;
+    }
+
+    .gdm.gdm-brewpub .gdm-brewpub__info {
+      gap: 20px;
     }
 
     .gdm.gdm-brewpub .gdm-brewpub__hours {
-      padding: 18px 18px 8px;
+      padding: 16px 16px 6px;
     }
 
-    .gdm.gdm-brewpub .gdm-actions,
-    .gdm.gdm-brewpub .gdm-actions .gdm-btn {
-      width: 100%;
+    .gdm.gdm-brewpub .gdm-brewpub__hours-head {
+      padding-bottom: 10px;
+    }
+
+    .gdm.gdm-brewpub .gdm-brewpub__day {
+      padding-block: 7px;
+    }
+  }
+
+  /* Ordinateur : horaires sur deux colonnes, section moins haute. */
+  @media (min-width: 990px) {
+    .gdm.gdm-brewpub .gdm-brewpub__grid {
+      gap: 48px;
+    }
+
+    .gdm.gdm-brewpub .gdm-brewpub__info {
+      gap: 20px;
+    }
+
+    .gdm.gdm-brewpub .gdm-brewpub__hours {
+      padding: 18px 22px 8px;
+    }
+
+    .gdm.gdm-brewpub .gdm-brewpub__hours-head {
+      padding-bottom: 10px;
+    }
+
+    .gdm.gdm-brewpub .gdm-brewpub__days {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: repeat(4, auto);
+      grid-auto-flow: column;
+      column-gap: 32px;
+    }
+
+    .gdm.gdm-brewpub .gdm-brewpub__day {
+      padding: 8px 12px;
+    }
+
+    .gdm.gdm-brewpub .gdm-brewpub__day:nth-child(4) {
+      border-bottom: 0;
+    }
+
+    .gdm.gdm-brewpub .gdm-brewpub__contact {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .gdm.gdm-brewpub .gdm-brewpub__map {
+      min-height: 360px;
     }
   }
 {% endstylesheet %}

@@ -1,0 +1,333 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --acc: #FF9900;
+    --acc-g: rgba(255,153,0,0.10);
+    --acc-b: rgba(255,153,0,0.28);
+    --c: #161616;
+    --ln: rgba(255,255,255,0.08);
+    --tx: #f2f0ec;
+    --mu: rgba(242,240,236,0.60);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .shopify-section:has(.gdm-footer) { padding: 0 !important; margin: 0 !important; }
+
+  .gdm-footer {
+    background: #0d0d0d;
+    color: var(--tx);
+    font-family: 'DM Sans', sans-serif;
+    width: 100%;
+  }
+
+  /* ── Body grid ── */
+  .gdm-footer__body {
+    padding: 40px 48px 32px;
+    display: grid;
+    grid-template-columns: 220px 1fr 1fr 1fr;
+    gap: 28px 48px;
+  }
+
+  /* ── Brand card ── */
+  .gdm-footer__brand-card {
+    background: var(--c);
+    border: 1px solid var(--ln);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  .gdm-footer__logo { display: block; width: 48px; margin-bottom: 14px; }
+  .gdm-footer__brand-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    color: var(--tx);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+  .gdm-footer__tagline { font-size: 12px; color: var(--mu); line-height: 1.55; margin-bottom: 16px; }
+  .gdm-footer__sep { height: 1px; background: var(--ln); margin-bottom: 14px; }
+  .gdm-footer__ci {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    margin-bottom: 9px;
+    font-size: 12px;
+    color: var(--mu);
+    text-decoration: none;
+    line-height: 1.45;
+    transition: color .15s;
+  }
+  .gdm-footer__ci:hover { color: var(--acc); }
+  .gdm-footer__ci svg { flex-shrink: 0; margin-top: 1px; opacity: .45; }
+  .gdm-footer__hours {
+    margin-top: 4px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--ln);
+    border-radius: 10px;
+    font-size: 11px;
+    color: var(--mu);
+    line-height: 1.7;
+  }
+  .gdm-footer__hours strong {
+    display: block;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--acc);
+    margin-bottom: 5px;
+    font-weight: 700;
+  }
+
+  /* ── Nav cols ── */
+  .gdm-footer__col { position: relative; }
+  .gdm-footer__col-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--tx);
+    margin: 0 0 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--ln);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .gdm-footer__summary { display: block; list-style: none; }
+  .gdm-footer__summary::-webkit-details-marker { display: none; }
+  .gdm-footer__summary .gdm-footer__col-title { margin-bottom: 14px; }
+  @media (min-width: 521px) {
+    .gdm-footer__summary { pointer-events: none; }
+  }
+  .gdm-footer__col-title::before {
+    content: '';
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--acc);
+    flex-shrink: 0;
+  }
+  .gdm-footer__nav { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+  .gdm-footer__nav li { display: block; }
+  .gdm-footer__nav a {
+    font-size: 12.5px;
+    color: var(--mu);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: color .15s;
+    line-height: 1.35;
+    padding: 4px 0;
+    position: relative;
+    z-index: 1;
+  }
+  .gdm-footer__nav a:hover { color: var(--tx); }
+
+  .gdm-footer__geo {
+    display: inline-flex;
+    align-items: center;
+    font-size: 9.5px;
+    font-weight: 700;
+    color: var(--acc);
+    background: var(--acc-g);
+    border: 1px solid var(--acc-b);
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin-left: 4px;
+    line-height: 1.5;
+  }
+  .gdm-footer__sub { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--ln); }
+  .gdm-footer__sub .gdm-footer__col-title { font-size: 12px; }
+
+  /* ── Bottom bar ── */
+  .gdm-footer__bottom {
+    border-top: 1px solid var(--ln);
+    padding: 14px 48px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .gdm-footer__legal { margin: 0; font-size: 11px; color: rgba(242,240,236,0.6); }
+  .gdm-footer__legal a { color: rgba(242,240,236,0.75); text-decoration: none; transition: color .15s; }
+  .gdm-footer__legal a:hover { color: var(--acc); }
+  .gdm-footer__socials { display: flex; gap: 6px; }
+  .gdm-footer__soc {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    border: 1px solid var(--ln);
+    color: var(--mu);
+    text-decoration: none;
+    transition: border-color .15s, color .15s, background .15s;
+  }
+  .gdm-footer__soc:hover { border-color: var(--acc-b); color: var(--acc); background: var(--acc-g); }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .gdm-footer__body { grid-template-columns: 1fr 1fr; padding: 32px 24px 24px; }
+    .gdm-footer__brand-card { grid-column: 1 / -1; }
+    .gdm-footer__bottom { padding-left: 24px; padding-right: 24px; }
+  }
+  @media (max-width: 520px) {
+    .gdm-footer__body { grid-template-columns: 1fr; gap: 0; padding: 20px 16px 8px; }
+    .gdm-footer__bottom { flex-direction: column; align-items: flex-start; padding: 12px 16px; }
+
+    /* Carte de marque compacte : logo à côté du nom, horaires sur 2 colonnes. */
+    .gdm-footer__brand-card { display: grid; grid-template-columns: 44px 1fr; column-gap: 12px; margin-bottom: 12px; padding: 14px 16px; }
+    .gdm-footer__brand-card > a:first-child { grid-row: 1 / span 2; align-self: center; }
+    .gdm-footer__logo { width: 44px; margin: 0; }
+    .gdm-footer__brand-name { margin: 0; align-self: end; }
+    .gdm-footer__tagline { margin: 0; }
+    .gdm-footer__sep, .gdm-footer__ci, .gdm-footer__hours { grid-column: 1 / -1; }
+    .gdm-footer__sep { margin: 12px 0 6px; }
+    .gdm-footer__ci { min-height: 36px; align-items: center; margin: 0; }
+    .gdm-footer__hours { columns: 2; column-gap: 12px; line-height: 1.6; }
+    .gdm-footer__hours strong { column-span: all; }
+
+    /* Colonnes de liens en accordéon. */
+    .gdm-footer__summary { display: flex; align-items: center; min-height: 48px; border-bottom: 1px solid var(--ln); cursor: pointer; }
+    .gdm-footer__summary .gdm-footer__col-title { flex: 1; margin: 0; padding: 0; border: 0; }
+    .gdm-footer__summary::after { content: '+'; color: var(--acc); font-size: 20px; line-height: 1; }
+    .gdm-footer__col[open] > .gdm-footer__summary::after { content: '–'; }
+    .gdm-footer__col[open] > .gdm-footer__nav { padding: 6px 0 10px; }
+    .gdm-footer__nav a { min-height: 44px; }
+    .gdm-footer__sub { margin-top: 4px; }
+    .gdm-footer__soc { width: 44px; height: 44px; }
+  }
+</style>
+
+<footer class="gdm-footer" itemscope itemtype="https://schema.org/WPFooter">
+
+  <div class="gdm-footer__body">
+
+    <!-- Brand card -->
+    <div class="gdm-footer__brand-card">
+      <a href="/" aria-label="Accueil Le Gué des Moines">
+        <img class="gdm-footer__logo"
+          src="https://cdn.shopify.com/s/files/1/0864/4604/7574/files/BL.png?v=1771491433"
+          alt="Le Gué des Moines" width="48" height="48" loading="lazy">
+      </a>
+      <p class="gdm-footer__brand-name">Le Gué des Moines</p>
+      <p class="gdm-footer__tagline">Brasserie artisanale fondée en 2016 à Bruguières, au nord de Toulouse.</p>
+      <div class="gdm-footer__sep"></div>
+      <a href="https://maps.google.com/?q=31+rue+de+la+Briqueterie+31150+Bruguières" class="gdm-footer__ci" target="_blank" rel="noopener noreferrer">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        31 rue de la Briqueterie, 31150 Bruguières
+      </a>
+      <a href="tel:+33967489963" class="gdm-footer__ci">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8 19.79 19.79 0 010 2.18 2 2 0 012 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 8a16 16 0 006.91 6.91l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+        09 67 48 99 63
+      </a>
+      <div class="gdm-footer__hours">
+        <strong>Horaires Brewpub</strong>
+        Mar–Mer : 16h30 → 20h30<br>Jeu–Ven : 16h30 → 22h30<br>Samedi : 16h30 → 21h30<br>Dim &amp; Lun : fermé
+      </div>
+    </div>
+
+    <!-- La Brasserie -->
+    <details class="gdm-footer__col" open>
+      <summary class="gdm-footer__summary"><h3 class="gdm-footer__col-title">La Brasserie</h3></summary>
+      <ul class="gdm-footer__nav">
+        <li><a href="/pages/brasserie-le-gue-des-moines">Brasserie artisanale à Toulouse</a></li>
+        <li><a href="/pages/bieres-artisanales-toulouse">Bière artisanale Toulouse</a></li>
+        <li><a href="/collections/bieres-artisanales-du-gue-des-moines">Toute la gamme de bières</a></li>
+        <li><a href="/collections/ipa">Nos IPA &amp; NEIPA</a></li>
+        <li><a href="/pages/brewpub">Brewpub &amp; bar à bière</a></li>
+        <li><a href="/blogs/evenement">Visites guidées &amp; agenda</a></li>
+        <li><a href="/pages/location-de-tireuse-toulouse-31">Location tireuse à bière</a></li>
+        <li><a href="/pages/contact">Nous contacter</a></li>
+      </ul>
+    </details>
+
+    <!-- Guides & Articles -->
+    <details class="gdm-footer__col" open>
+      <summary class="gdm-footer__summary"><h3 class="gdm-footer__col-title">Guides &amp; Articles</h3></summary>
+      <ul class="gdm-footer__nav">
+        <li><a href="/blogs/infos/bar-a-biere-artisanale-au-nord-de-toulouse-le-gue-des-moines">Bar à bière nord Toulouse</a></li>
+        <li><a href="/blogs/infos/brasserie-artisanale-toulouse">Où boire une bière artisanale à Toulouse</a></li>
+        <li><a href="/blogs/infos/visite-brasserie-artisanale-toulouse">Visiter une brasserie à Toulouse</a></li>
+        <li><a href="/blogs/infos/sortir-bruguieres-saint-jory-nord-toulouse">Sortir à Bruguières &amp; Saint-Jory</a></li>
+        <li><a href="/blogs/infos/location-tireuse-biere-fut-20l-ou-30l-comment-choisir-le-gue-des-moines">Tireuse : fût 20L ou 30L</a></li>
+        <li><a href="/blogs/infos/guide-degustation-bieres-artisanales-gue-des-moines">Guide dégustation bières</a></li>
+        <li><a href="/blogs/infos/biere-artisanale-pour-un-mariage-ou-anniversaire-a-toulouse-le-gue-des-moines">Bière artisanale mariage &amp; anniv.</a></li>
+      </ul>
+    </details>
+
+    <!-- Géo + Événements -->
+    <details class="gdm-footer__col" open>
+      <summary class="gdm-footer__summary"><h3 class="gdm-footer__col-title">Proche de chez vous</h3></summary>
+      <ul class="gdm-footer__nav">
+        <li><a href="/pages/brasserie-artisanale-saint-jory">Brasserie Saint-Jory <span class="gdm-footer__geo">31</span></a></li>
+        <li><a href="/pages/brasserie-artisanale-castelginest">Brasserie Castelginest <span class="gdm-footer__geo">31</span></a></li>
+        <li><a href="/pages/brasserie-artisanale-pres-de-blagnac-31-le-gue-des-moines">Brasserie Blagnac <span class="gdm-footer__geo">31</span></a></li>
+        <li><a href="/">Brasserie Bruguières <span class="gdm-footer__geo">31</span></a></li>
+        <li><a href="/pages/ou-voir-les-diffusions-sportives-dans-le-nord-toulousain-le-gue-des-moines">Matchs &amp; diffusions sportives <span class="gdm-footer__geo">31</span></a></li>
+      </ul>
+      <div class="gdm-footer__sub">
+        <h3 class="gdm-footer__col-title">Événements</h3>
+        <ul class="gdm-footer__nav">
+          <li><a href="/blogs/evenement">Prochaines visites guidées</a></li>
+          <li><a href="/blogs/evenement/la-brasserie-gue-des-moines-se-reinvente-avec-10-becs-a-la-pression">Nos 10 becs à la pression</a></li>
+          <li><a href="/blogs/infos/la-guinguette-du-gue-des-moines-bruguieres-st-jory-et-alentours">Guinguette d'été</a></li>
+        </ul>
+      </div>
+    </details>
+
+  </div>
+
+  <div class="gdm-footer__bottom">
+    <p class="gdm-footer__legal">
+      &copy; {{ 'now' | date: '%Y' }} Le Gué des Moines · Bruguières (31150) ·
+      <a href="/policies/legal-notice">Mentions légales</a> ·
+      <a href="/policies/privacy-policy">Confidentialité</a>
+    </p>
+    <div class="gdm-footer__socials" aria-label="Nos réseaux sociaux">
+      <a href="https://www.instagram.com/leguedesmoines/" class="gdm-footer__soc" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4.5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+      </a>
+      <a href="https://www.facebook.com/leguedesmoines/" class="gdm-footer__soc" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+      </a>
+      <a href="https://untappd.com/v/le-gue-des-moines/4578369" class="gdm-footer__soc" target="_blank" rel="noopener noreferrer" aria-label="Untappd">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3l4 8 5-5v11H7V6l1-3z"/></svg>
+      </a>
+      <a href="https://g.page/leguedesmoines" class="gdm-footer__soc" target="_blank" rel="noopener noreferrer" aria-label="Google Business">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+      </a>
+    </div>
+  </div>
+
+</footer>
+
+<script>
+  /* Pied de page : colonnes repliées sur mobile, toujours ouvertes sur ordinateur. */
+  (() => {
+    const cols = document.querySelectorAll('.gdm-footer__col');
+    const mobile = window.matchMedia('(max-width: 520px)');
+    const sync = () => cols.forEach((col) => {
+      col.open = !mobile.matches;
+      col.querySelector('summary').tabIndex = mobile.matches ? 0 : -1;
+    });
+    cols.forEach((col) => col.addEventListener('toggle', () => {
+      if (!mobile.matches && !col.open) col.open = true;
+    }));
+    sync();
+    mobile.addEventListener('change', sync);
+  })();
+</script>

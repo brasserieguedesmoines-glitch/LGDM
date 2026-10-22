@@ -287,29 +287,88 @@
       --gdm-hero-h: 100svh;
     }
 
-    .gdm.gdm-hero .gdm-hero__actions,
-    .gdm.gdm-hero .gdm-hero__actions .gdm-btn {
+    .gdm.gdm-hero .gdm-hero__title {
+      font-size: clamp(38px, 11vw, 48px);
+      line-height: 1.12;
+    }
+
+    .gdm.gdm-hero .gdm-hero__inner {
+      gap: 20px;
+    }
+
+    .gdm.gdm-hero .gdm-hero__content {
+      gap: 16px;
+    }
+
+    .gdm.gdm-hero .gdm-hero__actions {
       width: 100%;
+      margin-top: 4px;
     }
 
     .gdm.gdm-hero .gdm-hero__bar {
       width: 100%;
+      gap: 8px;
+      padding: 8px;
       border-radius: 22px;
     }
 
     .gdm.gdm-hero .gdm-hero__rating {
-      flex: 1 1 100%;
-      justify-content: center;
-      margin: 0 0 4px;
-      padding: 6px 6px 14px;
-      border-right: 0;
-      border-bottom: 1px solid var(--gdm-border);
+      flex: 1 1 170px;
+      gap: 10px;
+      margin: 0;
+      padding: 4px 6px;
+    }
+
+    .gdm.gdm-hero .gdm-hero__rating .gdm-rating__value {
+      font-size: 40px;
+    }
+
+    .gdm.gdm-hero .gdm-hero__rating .gdm-rating__label {
+      font-size: 12px;
     }
 
     .gdm.gdm-hero .gdm-hero__bar .gdm-stat {
-      flex: 1 1 calc(50% - 5px);
+      flex: 1 1 96px;
       min-width: 0;
-      padding: 12px 10px;
+      gap: 4px;
+      padding: 8px 6px;
+    }
+
+    .gdm.gdm-hero .gdm-hero__bar .gdm-stat__value {
+      font-size: 26px;
+    }
+
+    .gdm.gdm-hero .gdm-hero__bar .gdm-stat__label {
+      font-size: 11px;
+      letter-spacing: 0.04em;
+    }
+  }
+
+  /* Ordinateur : bannière plus compacte. */
+  @media (min-width: 990px) {
+    .gdm.gdm-hero .gdm-hero__title {
+      font-size: clamp(48px, min(20px + 4.6vw, 4px + 9vh), 96px);
+      line-height: 1.1;
+    }
+
+    .gdm.gdm-hero .gdm-hero__inner {
+      gap: clamp(20px, 3vh, 28px);
+    }
+
+    .gdm.gdm-hero .gdm-hero__content {
+      gap: 18px;
+    }
+
+    .gdm.gdm-hero .gdm-hero__actions {
+      margin-top: 4px;
+    }
+
+    .gdm.gdm-hero .gdm-hero__bar {
+      padding: 8px;
+    }
+
+    .gdm.gdm-hero .gdm-hero__rating .gdm-rating__value {
+      font-size: 44px;
     }
   }
 {% endstylesheet %}

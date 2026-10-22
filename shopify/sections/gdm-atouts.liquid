@@ -360,8 +360,8 @@
     }
 
     .gdm.gdm-atouts .gdm-atouts__item {
-      gap: 12px;
-      padding: 20px 12px;
+      gap: 6px;
+      padding: 12px 8px;
     }
 
     .gdm.gdm-atouts--cards .gdm-atouts__item {
@@ -369,8 +369,8 @@
     }
 
     .gdm.gdm-atouts .gdm-atouts__media {
-      width: 48px;
-      height: 48px;
+      width: 40px;
+      height: 40px;
     }
 
     .gdm.gdm-atouts .gdm-atouts__media svg {
@@ -398,6 +398,18 @@
 
     .gdm.gdm-atouts .gdm-atouts__item:hover .gdm-atouts__media {
       transform: none;
+    }
+  }
+
+  /* Ordinateur : bandeau d'atouts plus bas. */
+  @media (min-width: 990px) {
+    .gdm.gdm-atouts--divided .gdm-atouts__item {
+      padding: 16px 20px;
+    }
+
+    .gdm.gdm-atouts .gdm-atouts__media--image {
+      width: 48px;
+      height: 48px;
     }
   }
 {% endstylesheet %}

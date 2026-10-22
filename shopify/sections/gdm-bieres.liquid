@@ -263,7 +263,7 @@
     position: relative;
     display: grid;
     place-items: center;
-    aspect-ratio: 4 / 5;
+    aspect-ratio: 1 / 1;
     overflow: hidden;
     background: radial-gradient(120% 90% at 50% 100%, var(--gdm-surface-2) 0%, var(--gdm-surface) 60%);
   }
@@ -552,6 +552,15 @@
   }
 
   @media (max-width: 749px) {
+    .gdm.gdm-bieres .gdm-carousel__track .gdm-beer__media {
+      aspect-ratio: 1 / 1;
+    }
+
+    .gdm.gdm-bieres .gdm-beer__body {
+      gap: 8px;
+      padding: 16px;
+    }
+
     .gdm.gdm-bieres .gdm-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
@@ -576,6 +585,22 @@
 
     .gdm.gdm-bieres .gdm-grid .gdm-beer__bitter-label {
       display: none;
+    }
+  }
+
+  /* Ordinateur : cartes produit plus basses (photo carrée). */
+  @media (min-width: 990px) {
+    .gdm.gdm-bieres .gdm-beer__body {
+      gap: 8px;
+      padding: 16px;
+    }
+
+    .gdm.gdm-bieres .gdm-beer__form {
+      gap: 10px;
+    }
+
+    .gdm.gdm-bieres .gdm-beer__foot {
+      padding-top: 10px;
     }
   }
 {% endstylesheet %}

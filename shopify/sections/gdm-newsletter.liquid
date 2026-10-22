@@ -129,7 +129,7 @@
   .gdm.gdm-newsletter .gdm-newsletter__card {
     position: relative;
     isolation: isolate;
-    padding: clamp(44px, 6.4vw, 96px) clamp(22px, 5vw, 72px);
+    padding: clamp(28px, 3vw, 44px) clamp(22px, 4vw, 56px);
     border: 1px solid var(--gdm-line);
     border-radius: 32px;
     background:
@@ -245,8 +245,8 @@
   }
 
   .gdm.gdm-newsletter .gdm-newsletter__title {
-    font-size: clamp(46px, 24px + 4.6vw, 96px);
-    line-height: 1.08;
+    font-size: clamp(32px, 22px + 2.4vw, 56px);
+    line-height: 1.1;
   }
 
   .gdm.gdm-newsletter .gdm-newsletter__body {
@@ -460,7 +460,12 @@
   /* ---------- Petits écrans ---------- */
   @media (max-width: 749px) {
     .gdm.gdm-newsletter .gdm-newsletter__card {
+      padding: 28px 20px;
       border-radius: 24px;
+    }
+
+    .gdm.gdm-newsletter .gdm-newsletter__inner {
+      gap: 20px;
     }
 
     .gdm.gdm-newsletter .gdm-newsletter__glow {
@@ -506,13 +511,13 @@
     }
 
     .gdm.gdm-newsletter .gdm-newsletter__input {
-      height: 56px;
-      min-height: 56px;
+      height: 48px;
+      min-height: 48px;
     }
 
     .gdm.gdm-newsletter .gdm-newsletter__submit {
       width: 100%;
-      min-height: 56px;
+      min-height: 48px;
     }
   }
 {% endstylesheet %}

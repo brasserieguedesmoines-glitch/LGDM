@@ -7,7 +7,7 @@
   Icônes : arrow-up-right, arrow-right, chevron-left, chevron-right, plus, check,
   star, quote, hop, wheat, beer, barrel, droplet, leaf, award, heart, users,
   map-pin, clock, phone, mail, calendar, music, truck, bag, sparkle, lock, shield,
-  store, send, gift, instagram, book, percent, dot
+  store, send, gift, instagram, book, percent, close, pause, play, dot
 {%- endcomment -%}
 {%- assign gdm_icon_size = icon_size | default: 24 -%}
 <svg class="gdm-icon gdm-icon--{{ name }}" width="{{ gdm_icon_size }}" height="{{ gdm_icon_size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -122,6 +122,12 @@
       <path d="M19 5 5 19"/>
       <circle cx="7" cy="7" r="2.5"/>
       <circle cx="17" cy="17" r="2.5"/>
+    {%- when 'close' -%}
+      <path d="M18 6 6 18M6 6l12 12"/>
+    {%- when 'pause' -%}
+      <path d="M8 5v14M16 5v14"/>
+    {%- when 'play' -%}
+      <path d="M7 4.5v15l12-7.5-12-7.5Z"/>
     {%- when 'dot' -%}
       <circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/>
     {%- else -%}
