@@ -1,0 +1,45 @@
+{
+  "sections": {
+    "main-cart": {
+      "type": "main-cart",
+      "blocks": {
+        "price": { "type": "price", "settings": {} },
+        "tax": { "type": "tax", "settings": {} },
+        "agree": { "type": "agree", "disabled": true, "settings": {} },
+        "btnc": { "type": "btnc", "disabled": true, "settings": {} },
+        "btnck": {
+          "type": "btnck",
+          "settings": { "btn_icon": true, "button_style": "default", "btn_cl": "light", "button_effect": "default" }
+        },
+        "img": {
+          "type": "img",
+          "settings": { "svg": "american_express,apple_pay,google_pay,master,paypal,visa", "height": 20 }
+        },
+        "btn": {
+          "type": "btn",
+          "settings": {
+            "title": "Voir nos bières",
+            "url": "shopify://collections/bieres-artisanales-du-gue-des-moines",
+            "btn_icon": false,
+            "button_style": "default",
+            "btn_cl": "primary",
+            "button_effect": "fade"
+          }
+        }
+      },
+      "block_order": ["price", "tax", "agree", "btnc", "btnck", "img", "btn"],
+      "settings": {
+        "style": "1",
+        "pos": "2",
+        "enable_pr": true,
+        "enable_calc_ship": true,
+        "enable_note": false,
+        "enable_rates": false,
+        "enable_discount": false,
+        "enable_gift_wrap": true,
+        "ship_df_country": "France"
+      }
+    }
+  },
+  "order": ["main-cart"]
+}

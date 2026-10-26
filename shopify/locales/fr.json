@@ -452,7 +452,7 @@
     "mini_cart": {
       "title": "Panier",
       "close_cart": "Fermer le panier",
-      "empty": "Vide",
+      "empty": "Votre panier est vide",
       "subtotal": "Sous-total :",
       "checkout": "Passer au paiement (1/2)",
       "view": "Voir le panier",

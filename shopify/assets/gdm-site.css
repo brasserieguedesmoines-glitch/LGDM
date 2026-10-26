@@ -338,3 +338,162 @@ body .t4s-badge-preorder {
     margin-bottom: 8px;
   }
 }
+
+/* ---------- Page panier ----------
+   Sur /cart, le thème affiche le contenu du panier latéral, prévu pour un tiroir
+   de hauteur fixe : articles et total y restaient invisibles. Mise en page de
+   page : articles à gauche, récapitulatif à droite (l'un sous l'autre sur mobile). */
+.template-cart #MainContent > .shopify-section {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 28px 16px 64px;
+}
+
+.template-cart #MainContent .t4s-drawer__header {
+  display: block;
+  min-height: 0;
+  margin-bottom: 20px;
+  padding: 0;
+  border: 0;
+}
+
+.template-cart #MainContent .t4s-drawer__header > span {
+  color: #fff;
+  font-family: var(--gdm-site-display);
+  font-size: 40px;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.template-cart #MainContent .t4s-drawer__close {
+  display: none;
+}
+
+.template-cart #MainContent .t4s-drawer__wrap {
+  display: grid;
+  align-items: start;
+  gap: 20px;
+}
+
+@media screen and (min-width: 900px) {
+  .template-cart #MainContent .t4s-drawer__wrap {
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 32px;
+  }
+
+  .template-cart #MainContent .t4s-drawer__bottom {
+    position: sticky;
+    top: 100px;
+  }
+}
+
+.template-cart #MainContent :is(.t4s-drawer__main, .t4s-drawer__scroll) {
+  position: static !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  padding: 0 !important;
+}
+
+.template-cart #MainContent .t4s-mini_cart__item {
+  gap: 14px;
+  margin: 0 0 10px !important;
+  padding: 12px !important;
+  border: 1px solid var(--gdm-site-border);
+  border-radius: 16px;
+  background: var(--gdm-site-surface);
+}
+
+.template-cart #MainContent .t4s-mini_cart__img {
+  flex: 0 0 88px;
+  width: 88px;
+  max-width: 88px;
+  border-radius: 12px;
+}
+
+.template-cart #MainContent .t4s-mini_cart__title {
+  color: #fff;
+  font-family: var(--gdm-site-display);
+  font-size: 18px;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.template-cart #MainContent .t4s-cart_meta_variant {
+  color: var(--gdm-site-muted);
+  font-size: 13px;
+}
+
+.template-cart #MainContent .t4s-cart_price {
+  color: var(--gdm-site-accent);
+  font-weight: 600;
+}
+
+.template-cart #MainContent .t4s-drawer__bottom {
+  padding: 20px !important;
+  border: 1px solid var(--gdm-site-border);
+  border-radius: 18px;
+  background: var(--gdm-site-surface);
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+.template-cart #MainContent .t4s-cart-total strong {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.template-cart #MainContent .t4s-cart__totalPrice {
+  color: var(--gdm-site-accent);
+  font-family: var(--gdm-site-display);
+  font-size: 26px;
+}
+
+.template-cart #MainContent .t4s-cart__tax {
+  margin: 6px 0 16px;
+  color: var(--gdm-site-muted);
+  font-size: 13px;
+}
+
+.template-cart #MainContent .t4s-cat__imgtrust {
+  margin-top: 14px;
+  opacity: 0.8;
+}
+
+/* Outils du tiroir (note, frais de port, coupon) : sans effet sur cette page. */
+.template-cart #MainContent :is([data-cart-tools], .t4s-mini_cart-tool__content) {
+  display: none !important;
+}
+
+/* Panier vide : un message et un bouton, sans récapitulatif à zéro. */
+.template-cart #MainContent .t4s-drawer__wrap:has(.t4s-mini_cart__emty) {
+  display: block;
+}
+
+.template-cart #MainContent .t4s-drawer__wrap:has(.t4s-mini_cart__emty) .t4s-drawer__bottom {
+  display: none;
+}
+
+.template-cart #MainContent .t4s-mini_cart__emty {
+  padding: 40px 20px;
+  border: 1px dashed var(--gdm-site-border-strong);
+  border-radius: 18px;
+  text-align: center;
+}
+
+.template-cart #MainContent .t4s-mini_cart__emty > svg {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 12px;
+  fill: var(--gdm-site-accent);
+}
+
+.template-cart #MainContent .t4s-mini_cart__emty > p:first-of-type {
+  margin-bottom: 18px;
+  color: #fff;
+  font-family: var(--gdm-site-display);
+  font-size: 26px;
+  text-transform: uppercase;
+}
