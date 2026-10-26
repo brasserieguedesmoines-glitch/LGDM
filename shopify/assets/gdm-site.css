@@ -75,13 +75,14 @@ body :is(em, q, blockquote, cite) {
   font-family: inherit !important;
 }
 
-/* ---------- Titres du thème : Anton, une seule graisse ---------- */
-body :is(h1, h2, h3, h4, .t4s_as_title):not(.gdm *):not(.gdm-footer *) {
+/* ---------- Titres du thème : Anton, une seule graisse ----------
+   Les titres des contenus de page et d'article sont réglés par gdm-page-skin. */
+body :is(h1, h2, h3, h4, .t4s_as_title):not(.gdm *, .gdm-footer *, .t4s-main-page *, .t4s-article-content *) {
   font-weight: 400;
   letter-spacing: 0.01em;
 }
 
-#MainContent :is(h1, h2):not(.gdm *) {
+#MainContent :is(h1, h2):not(.gdm *, .t4s-main-page *, .t4s-article-content *) {
   line-height: 1.12;
   text-transform: uppercase;
 }
@@ -273,8 +274,10 @@ body .t4s-badge-preorder {
   color: #0d0d0d !important;
 }
 
-/* ---------- Divers ---------- */
-body .t4s-rte a:not(.t4s-btn) {
+/* ---------- Divers ----------
+   Liens de texte simples seulement (sans classe), et sans priorité : les liens
+   mis en forme par les contenus (boutons, cartes) gardent leurs couleurs. */
+:where(.t4s-rte) a:not([class]) {
   color: var(--gdm-site-accent);
   text-underline-offset: 3px;
 }
@@ -326,5 +329,12 @@ body .t4s-rte a:not(.t4s-btn) {
 
   .t4s-main-page .bp__horaires .bp__horaire-time {
     font-size: 20px;
+  }
+
+  /* Le badge « Ouvert / Fermé » passe au-dessus des jours au lieu de les recouvrir. */
+  .t4s-main-page .bp__horaires .bp__horaire-badge {
+    position: static;
+    display: inline-block;
+    margin-bottom: 8px;
   }
 }
