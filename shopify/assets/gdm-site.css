@@ -278,3 +278,53 @@ body .t4s-rte a:not(.t4s-btn) {
   color: var(--gdm-site-accent);
   text-underline-offset: 3px;
 }
+
+/* ---------- Contenus des pages et articles : mise en page mobile compacte ----------
+   Sur téléphone, les grilles de cartes du contenu s'empilent sur une colonne
+   (jusqu'à 1 500 px de haut) : elles deviennent une rangée qui défile au doigt,
+   la carte suivante dépassant à droite. Seules les grilles d'au moins trois cartes
+   sont concernées. */
+@media screen and (max-width: 749px) {
+  :is(.t4s-main-page, .t4s-article-content, .gdm-bieres__desc) :is(.bp__ambiance-grid, .br__savoir-grid, .gdm-tr__occasions-grid, .gdm-grid-2, .gdm-grid-3, .gdm-grid-4, .art-grid, .art__events, .art__summer-grid, .art__steps, .art__beers, .geo-grid, .ipa-desc__grid, .gdm-sb__events, .gdm-sb__bieres, .gdm-gd__verre, .gdm-visite-steps, .gdm-steps, .gdm-beers-grid, .gdm-bieres-grid, .gdm-art__bieres, .gdm-bat__gamme-grid, .gdm-bat__modes-grid):has(> :nth-child(3)) {
+    display: grid !important;
+    grid-template-columns: none !important;
+    grid-auto-columns: 84% !important;
+    grid-auto-flow: column !important;
+    gap: 12px !important;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding-bottom: 4px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  :is(.t4s-main-page, .t4s-article-content, .gdm-bieres__desc) :is(.bp__ambiance-grid, .br__savoir-grid, .gdm-tr__occasions-grid, .gdm-grid-2, .gdm-grid-3, .gdm-grid-4, .art-grid, .art__events, .art__summer-grid, .art__steps, .art__beers, .geo-grid, .ipa-desc__grid, .gdm-sb__events, .gdm-sb__bieres, .gdm-gd__verre, .gdm-visite-steps, .gdm-steps, .gdm-beers-grid, .gdm-bieres-grid, .gdm-art__bieres, .gdm-bat__gamme-grid, .gdm-bat__modes-grid):has(> :nth-child(3))::-webkit-scrollbar {
+    display: none;
+  }
+
+  :is(.t4s-main-page, .t4s-article-content, .gdm-bieres__desc) :is(.bp__ambiance-grid, .br__savoir-grid, .gdm-tr__occasions-grid, .gdm-grid-2, .gdm-grid-3, .gdm-grid-4, .art-grid, .art__events, .art__summer-grid, .art__steps, .art__beers, .geo-grid, .ipa-desc__grid, .gdm-sb__events, .gdm-sb__bieres, .gdm-gd__verre, .gdm-visite-steps, .gdm-steps, .gdm-beers-grid, .gdm-bieres-grid, .gdm-art__bieres, .gdm-bat__gamme-grid, .gdm-bat__modes-grid):has(> :nth-child(3)) > * {
+    min-width: 0;
+    margin: 0 !important;
+    scroll-snap-align: start;
+  }
+
+  /* Chiffres clés : deux par ligne plutôt qu'un. */
+  :is(.t4s-main-page, .t4s-article-content) .gdm-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Horaires du brewpub : la page impose quatre colonnes, illisibles sur téléphone. */
+@media screen and (max-width: 900px) {
+  .t4s-main-page .bp__horaires {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .t4s-main-page .bp__horaires .bp__horaire {
+    padding: 16px;
+  }
+
+  .t4s-main-page .bp__horaires .bp__horaire-time {
+    font-size: 20px;
+  }
+}

@@ -5,614 +5,821 @@
   Usage : {% render 'gdm-page-skin', key: 'page/brewpub' %}
 {%- endcomment -%}
 {%- case key -%}
-  {%- when 'article/bar-a-biere-artisanale-au-nord-de-toulouse-le-gue-des-moines' -%}
+  {%- when 'article/evenement/la-brasserie-gue-des-moines-se-reinvente-avec-10-becs-a-la-pression' -%}
 <style>
-#MainContent { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
-#MainContent .art { font-family: var(--gdm-site-body) !important }
-#MainContent .kck { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .art-hero { padding: 34px 24px 40px }
-#MainContent .art-hero h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(30px,5vw,52px) }
-#MainContent .art-sec { padding: 0 24px 42px }
-#MainContent .art-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3.5vw,32px) }
-#MainContent .art-card h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .art-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .art-cta { padding: 34px 28px; margin: 0 24px 40px }
-#MainContent .art-cta h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px,4.5vw,40px) }
-#MainContent .btn-p { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
-#MainContent .btn-s { font-family: var(--gdm-site-body) !important }
-#MainContent .sep { margin: 0 0 36px }
+.t4s-article-content .gdm-art { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --c-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 74px }
+.t4s-article-content .gdm-hero { margin: 20px 0 28px }
+.t4s-article-content .gdm-hero__left { padding: 30px 28px }
+.t4s-article-content .gdm-h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(28px,4vw,48px); line-height: 1.12; letter-spacing: 0.005em }
+.t4s-article-content .gdm-btn { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .gdm-horaires-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-section { margin: 28px 0 }
+.t4s-article-content .gdm-divider { margin: 28px 0 }
+.t4s-article-content .gdm-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px,3.2vw,34px) }
+.t4s-article-content .gdm-stats { margin: 0 0 28px }
+.t4s-article-content .gdm-stat-num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 40px; line-height: 1.12 }
+.t4s-article-content .gdm-card { padding: 24px 24px }
+.t4s-article-content .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-beers-wrap { margin: 28px 0; padding: 26px 28px }
+.t4s-article-content .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-highlight { margin: 26px 0; padding: 24px 26px }
+.t4s-article-content .gdm-cta-block { margin-top: 28px; padding: 32px 30px }
+@media(max-width:640px) { .t4s-article-content .gdm-art { padding-bottom: 58px } .t4s-article-content .gdm-hero__left, .t4s-article-content .gdm-beers-wrap, .t4s-article-content .gdm-cta-block { padding: 24px 20px } }
 </style>
-  {%- when 'article/biere-artisanale-pour-un-mariage-ou-anniversaire-a-toulouse-le-gue-des-moines' -%}
+  {%- when 'article/evenement/nouvelle-sortie-french-dipa-single-fresh-hope' -%}
 <style>
-#MainContent { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
-#MainContent .art { font-family: var(--gdm-site-body) !important }
-#MainContent .kck { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .art-hero { padding: 34px 24px 40px }
-#MainContent .art-hero h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(30px,5vw,52px) }
-#MainContent .art-sec { padding: 0 24px 42px }
-#MainContent .art-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3.5vw,32px) }
-#MainContent .art-card h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .art-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .art-cta { padding: 34px 28px; margin: 0 24px 40px }
-#MainContent .art-cta h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px,4.5vw,40px) }
-#MainContent .btn-p { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
-#MainContent .btn-s { font-family: var(--gdm-site-body) !important }
-#MainContent .sep { margin: 0 0 36px }
+.t4s-article-content .gdm-art { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --c-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
+.t4s-article-content .gdm-art-header { margin: 24px 0 28px }
+.t4s-article-content .gdm-h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(28px,5vw,52px); line-height: 1.12; letter-spacing: 0.005em }
+.t4s-article-content .gdm-hero-img { margin-bottom: 28px }
+.t4s-article-content .gdm-new-badge { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; color: #0d0d0d }
+.t4s-article-content .gdm-fiche { padding: 26px 28px; margin-bottom: 28px }
+.t4s-article-content .gdm-fiche-val { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 28px; line-height: 1.12 }
+.t4s-article-content .gdm-prose { margin-bottom: 28px }
+.t4s-article-content .gdm-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,28px) }
+.t4s-article-content .gdm-ingredients { margin-bottom: 28px }
+.t4s-article-content .gdm-ingr-icon { font-size: 26px }
+.t4s-article-content .gdm-ingr-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-exclu { padding: 26px 28px; margin-bottom: 28px }
+.t4s-article-content .gdm-exclu-icon { font-size: 40px }
+.t4s-article-content .gdm-exclu-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-cta { padding: 28px }
+.t4s-article-content .gdm-cta-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px,3vw,32px) }
+.t4s-article-content .gdm-btn { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .gdm-btn-p { color: #0d0d0d }
+@media(max-width:640px) { .t4s-article-content .gdm-art { padding: 0 16px 40px } .t4s-article-content .gdm-exclu { padding: 22px 18px } .t4s-article-content .gdm-cta { padding: 24px 18px } }
 </style>
-  {%- when 'article/brasserie-artisanale-toulouse' -%}
+  {%- when 'article/infos/bar-a-biere-artisanale-au-nord-de-toulouse-le-gue-des-moines' -%}
 <style>
-#MainContent { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
-#MainContent .art { font-family: var(--gdm-site-body) !important }
-#MainContent .kck { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .art-hero { padding: 34px 24px 40px }
-#MainContent .art-hero h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(30px,5vw,52px) }
-#MainContent .art-sec { padding: 0 24px 42px }
-#MainContent .art-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3.5vw,32px) }
-#MainContent .art-card h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .art-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .art-cta { padding: 34px 28px; margin: 0 24px 40px }
-#MainContent .art-cta h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px,4.5vw,40px) }
-#MainContent .btn-p { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
-#MainContent .btn-s { font-family: var(--gdm-site-body) !important }
-#MainContent .sep { margin: 0 0 36px }
+.t4s-article-content { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
+.t4s-article-content .art { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .kck { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .art-hero { gap: 28px; padding: 36px 24px 42px }
+.t4s-article-content .art-hero h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(30px,5vw,52px); line-height: 1.12 }
+.t4s-article-content .art-sec { padding: 0 24px 44px }
+.t4s-article-content .art-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3.5vw,32px) }
+.t4s-article-content .art-grid { margin-bottom: 28px }
+.t4s-article-content .art-card h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .art-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .art-cta { padding: 36px 26px; margin: 0 24px 42px; margin-left: auto; margin-right: auto }
+.t4s-article-content .art-cta h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px,4.5vw,40px) }
+.t4s-article-content .btn-p { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
+.t4s-article-content .btn-s { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .sep { margin: 0 0 40px }
 </style>
-  {%- when 'article/calories-sucre-biere' -%}
+  {%- when 'article/infos/biere-artisanale-pour-un-mariage-ou-anniversaire-a-toulouse-le-gue-des-moines' -%}
 <style>
-#MainContent .gdm-lp { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --c-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
-#MainContent .gdm-h2-hero { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(28px,4vw,46px) }
-#MainContent .gdm-btn { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-h3-cap { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,30px) }
-#MainContent .gdm-table th { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-cta { padding: 26px 36px }
+.t4s-article-content { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
+.t4s-article-content .art { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .kck { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .art-hero { gap: 28px; padding: 36px 24px 42px }
+.t4s-article-content .art-hero h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(30px,5vw,52px); line-height: 1.12 }
+.t4s-article-content .art-sec { padding: 0 24px 44px }
+.t4s-article-content .art-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3.5vw,32px) }
+.t4s-article-content .art-grid { margin-bottom: 28px }
+.t4s-article-content .art-card h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .art-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .art-cta { padding: 36px 26px; margin: 0 24px 42px; margin-left: auto; margin-right: auto }
+.t4s-article-content .art-cta h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px,4.5vw,40px) }
+.t4s-article-content .btn-p { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
+.t4s-article-content .btn-s { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .sep { margin: 0 0 40px }
 </style>
-  {%- when 'article/guide-degustation-bieres-artisanales-gue-des-moines' -%}
+  {%- when 'article/infos/brasserie-artisanale-toulouse' -%}
 <style>
-#MainContent .gdm-lp { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --c-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
-#MainContent .gdm-h2-hero { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(28px,4vw,46px) }
-#MainContent .gdm-btn { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-h3-cap { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,30px) }
-#MainContent .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-cta { padding: 26px 36px }
+.t4s-article-content { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
+.t4s-article-content .art { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .kck { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .art-hero { gap: 28px; padding: 36px 24px 42px }
+.t4s-article-content .art-hero h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(30px,5vw,52px); line-height: 1.12 }
+.t4s-article-content .art-sec { padding: 0 24px 44px }
+.t4s-article-content .art-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3.5vw,32px) }
+.t4s-article-content .art-grid { margin-bottom: 28px }
+.t4s-article-content .art-card h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .art-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .art-cta { padding: 36px 26px; margin: 0 24px 42px; margin-left: auto; margin-right: auto }
+.t4s-article-content .art-cta h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px,4.5vw,40px) }
+.t4s-article-content .btn-p { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
+.t4s-article-content .btn-s { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .sep { margin: 0 0 40px }
 </style>
-  {%- when 'article/idees-cadeaux-biere-noel' -%}
+  {%- when 'article/infos/calories-sucre-biere' -%}
 <style>
-#MainContent .gdm-lp { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --c-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
-#MainContent .gdm-h2-hero { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(28px,4vw,46px) }
-#MainContent .gdm-h3-cap { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,30px) }
-#MainContent .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-cta { padding: 26px 36px }
+.t4s-article-content .gdm-lp { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --c-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
+.t4s-article-content .gdm-hero { margin: 20px 0 26px }
+.t4s-article-content .gdm-hero__content { padding: 28px }
+.t4s-article-content .gdm-h2-hero { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(28px,4vw,46px); line-height: 1.12; letter-spacing: 0.005em }
+.t4s-article-content .gdm-btn { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .gdm-h3-cap { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-section { margin: 26px 0 }
+.t4s-article-content .gdm-divider { margin: 26px 0 }
+.t4s-article-content .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,30px) }
+.t4s-article-content .gdm-prose { padding: 26px 28px }
+.t4s-article-content .gdm-table th { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-bieres-section { margin: 26px 0; padding: 26px 28px }
+.t4s-article-content .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-cta { margin-top: 26px; padding: 30px 28px }
+@media(max-width:640px) { .t4s-article-content .gdm-hero__content, .t4s-article-content .gdm-hero__visual, .t4s-article-content .gdm-cta, .t4s-article-content .gdm-bieres-section, .t4s-article-content .gdm-prose { padding: 22px 18px } }
 </style>
-  {%- when 'article/ipa-signification-definition' -%}
+  {%- when 'article/infos/guide-degustation-bieres-artisanales-gue-des-moines' -%}
 <style>
-#MainContent .gdm-lp { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --c-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
-#MainContent .gdm-h2-hero { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(28px,4vw,46px) }
-#MainContent .gdm-btn { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-h3-cap { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,30px) }
-#MainContent .gdm-table th { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-cta { padding: 26px 36px }
+.t4s-article-content .gdm-lp { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --c-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
+.t4s-article-content .gdm-hero { margin: 20px 0 26px }
+.t4s-article-content .gdm-hero__content { padding: 28px }
+.t4s-article-content .gdm-h2-hero { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(28px,4vw,46px); line-height: 1.12; letter-spacing: 0.005em }
+.t4s-article-content .gdm-btn { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .gdm-h3-cap { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-section { margin: 26px 0 }
+.t4s-article-content .gdm-divider { margin: 26px 0 }
+.t4s-article-content .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,30px) }
+.t4s-article-content .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-bieres-section { margin: 26px 0; padding: 26px 28px }
+.t4s-article-content .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-cta { margin-top: 26px; padding: 30px 28px }
+@media(max-width:640px) { .t4s-article-content .gdm-hero__content, .t4s-article-content .gdm-hero__visual, .t4s-article-content .gdm-cta, .t4s-article-content .gdm-bieres-section { padding: 22px 18px } }
 </style>
-  {%- when 'article/la-brasserie-gue-des-moines-se-reinvente-avec-10-becs-a-la-pression' -%}
+  {%- when 'article/infos/idees-cadeaux-biere-noel' -%}
 <style>
-#MainContent .gdm-art { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --c-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 80px }
-#MainContent .gdm-h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(28px,4vw,48px) }
-#MainContent .gdm-btn { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-horaires-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px,3.2vw,34px) }
-#MainContent .gdm-stat-num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: 40px }
-#MainContent .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-cta-block { padding: 30px 26px }
-@media(max-width:640px) { #MainContent .gdm-art { padding-bottom: 60px } }
+.t4s-article-content .gdm-lp { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --c-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
+.t4s-article-content .gdm-hero { margin: 20px 0 26px }
+.t4s-article-content .gdm-hero__content { padding: 28px }
+.t4s-article-content .gdm-h2-hero { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(28px,4vw,46px); line-height: 1.12 }
+.t4s-article-content .gdm-h3-cap { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-section { margin: 26px 0 }
+.t4s-article-content .gdm-divider { margin: 26px 0 }
+.t4s-article-content .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,30px) }
+.t4s-article-content .gdm-prose { padding: 26px 28px }
+.t4s-article-content .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-bieres-section { margin: 26px 0; padding: 26px 28px }
+.t4s-article-content .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-cta { margin-top: 26px; padding: 30px 28px }
+@media(max-width:640px) { .t4s-article-content .gdm-hero__content, .t4s-article-content .gdm-hero__visual, .t4s-article-content .gdm-cta, .t4s-article-content .gdm-bieres-section, .t4s-article-content .gdm-prose { padding: 22px 18px } }
 </style>
-  {%- when 'article/la-guinguette-du-gue-des-moines-bruguieres-st-jory-et-alentours' -%}
+  {%- when 'article/infos/ipa-signification-definition' -%}
 <style>
-#MainContent { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --mu: #a8a39a; --tx: #ffffff }
-#MainContent .art { font-family: var(--gdm-site-body) !important; padding: 0 24px 52px }
-#MainContent .art__kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .art__h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(32px, 6vw, 52px) }
-#MainContent .art__meta { margin-bottom: 26px }
-#MainContent .art__hero-grid { margin-bottom: 32px }
-#MainContent .art__hour-card strong { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .art__h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px, 3.5vw, 28px); margin: 32px 0 16px; padding-top: 26px }
-#MainContent .art__summer-card h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .art__checklist li { padding: 14px 16px 14px 30px }
-#MainContent .art__beers-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .art__beers { margin: 16px 0 32px }
-#MainContent .art__beer-name { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .art__faq { margin: 32px 0 }
-#MainContent .art__faq-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 26px }
-#MainContent .art__cta { padding: 26px; margin-top: 32px }
-#MainContent .art__cta-kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .art__cta h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 4vw, 32px) }
-#MainContent .art__btn-primary { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
-#MainContent .art__btn-secondary { font-family: var(--gdm-site-body) !important }
-#MainContent .art__links { margin-top: 32px }
+.t4s-article-content .gdm-lp { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --c-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
+.t4s-article-content .gdm-hero { margin: 20px 0 26px }
+.t4s-article-content .gdm-hero__content { padding: 28px }
+.t4s-article-content .gdm-h2-hero { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(28px,4vw,46px); line-height: 1.12; letter-spacing: 0.005em }
+.t4s-article-content .gdm-btn { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .gdm-h3-cap { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-section { margin: 26px 0 }
+.t4s-article-content .gdm-divider { margin: 26px 0 }
+.t4s-article-content .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,30px) }
+.t4s-article-content .gdm-prose { padding: 26px 28px }
+.t4s-article-content .gdm-table th { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-bieres-section { margin: 26px 0; padding: 26px 28px }
+.t4s-article-content .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-cta { margin-top: 26px; padding: 30px 28px }
+@media(max-width:640px) { .t4s-article-content .gdm-hero__content, .t4s-article-content .gdm-hero__visual, .t4s-article-content .gdm-cta, .t4s-article-content .gdm-bieres-section, .t4s-article-content .gdm-prose { padding: 22px 18px } }
 </style>
-  {%- when 'article/le-gue-des-moines-s-installe-dans-l-ancienne-briqueterie-de-bruguieres' -%}
+  {%- when 'article/infos/la-guinguette-du-gue-des-moines-bruguieres-st-jory-et-alentours' -%}
 <style>
-#MainContent { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --mu: #a8a39a; --tx: #ffffff }
-#MainContent .art { font-family: var(--gdm-site-body) !important; padding: 0 24px 52px }
-#MainContent .art__kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .art__h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(32px, 6vw, 52px) }
-#MainContent .art__meta { margin-bottom: 26px }
-#MainContent .art__img-hero { margin-bottom: 32px }
-#MainContent .art__h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px, 3.5vw, 28px); margin: 32px 0 16px; padding-top: 26px }
-#MainContent .art__origin-num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: 44px }
-#MainContent .art__origin-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .art__stat-num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: 32px }
-#MainContent .art__beers-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .art__beers { margin: 16px 0 32px }
-#MainContent .art__beer-name { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .art__faq { margin: 32px 0 }
-#MainContent .art__faq-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 26px }
-#MainContent .art__cta { padding: 26px; margin-top: 32px }
-#MainContent .art__cta-kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .art__cta h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 4vw, 32px) }
-#MainContent .art__btn-primary { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
-#MainContent .art__btn-secondary { font-family: var(--gdm-site-body) !important }
-#MainContent .art__links { margin-top: 32px }
+.t4s-article-content { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --mu: #a8a39a; --tx: #ffffff }
+.t4s-article-content .art { font-family: var(--gdm-site-body) !important; padding: 0 24px 52px }
+.t4s-article-content .art__bc { padding: 26px 0 28px }
+.t4s-article-content .art__kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .art__h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(32px, 6vw, 52px); line-height: 1.12; letter-spacing: 0.005em }
+.t4s-article-content .art__intro-line { margin-bottom: 28px }
+.t4s-article-content .art__meta { margin-bottom: 30px }
+.t4s-article-content .art__hero-grid { margin-bottom: 34px }
+.t4s-article-content .art__hour-card strong { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .art__h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px, 3.5vw, 28px); margin: 34px 0 16px; padding-top: 30px }
+.t4s-article-content .art__summer-grid { margin: 26px 0 }
+.t4s-article-content .art__summer-card-icon { font-size: 26px }
+.t4s-article-content .art__summer-card h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .art__checklist li { padding: 14px 16px 14px 34px }
+.t4s-article-content .art__callout { margin: 28px 0 }
+.t4s-article-content .art__beers-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .art__beers { margin: 16px 0 34px }
+.t4s-article-content .art__beer-name { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .art__faq { margin: 34px 0 }
+.t4s-article-content .art__faq-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 26px }
+.t4s-article-content .art__cta { padding: 30px; margin-top: 34px }
+.t4s-article-content .art__cta-kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .art__cta h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 4vw, 32px) }
+.t4s-article-content .art__btn-primary { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
+.t4s-article-content .art__btn-secondary { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .art__links { margin-top: 34px; padding-top: 28px }
+@media (max-width: 640px) { .t4s-article-content .art__cta { padding: 26px 20px } }
 </style>
-  {%- when 'article/lhistoire-du-gue-des-moines' -%}
+  {%- when 'article/infos/le-gue-des-moines-s-installe-dans-l-ancienne-briqueterie-de-bruguieres' -%}
 <style>
-#MainContent { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --mu: #a8a39a; --tx: #ffffff }
-#MainContent .art { font-family: var(--gdm-site-body) !important; padding: 0 24px 52px }
-#MainContent .art__kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .art__h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(32px, 6vw, 52px) }
-#MainContent .art__meta { margin-bottom: 26px }
-#MainContent .art__img-hero { margin-bottom: 32px }
-#MainContent .art__h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px, 3.5vw, 28px); margin: 32px 0 16px; padding-top: 26px }
-#MainContent .art__tl-year { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .art__stat-num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: 32px }
-#MainContent .art__beers-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .art__beers { margin: 16px 0 32px }
-#MainContent .art__beer-name { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .art__faq { margin: 32px 0 }
-#MainContent .art__faq-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 26px }
-#MainContent .art__cta { padding: 26px; margin-top: 32px }
-#MainContent .art__cta-kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .art__cta h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 4vw, 32px) }
-#MainContent .art__btn-primary { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
-#MainContent .art__btn-secondary { font-family: var(--gdm-site-body) !important }
-#MainContent .art__links { margin-top: 32px }
+.t4s-article-content { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --mu: #a8a39a; --tx: #ffffff }
+.t4s-article-content .art { font-family: var(--gdm-site-body) !important; padding: 0 24px 52px }
+.t4s-article-content .art__bc { padding: 26px 0 28px }
+.t4s-article-content .art__kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .art__h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(32px, 6vw, 52px); line-height: 1.12; letter-spacing: 0.005em }
+.t4s-article-content .art__intro-line { margin-bottom: 28px }
+.t4s-article-content .art__meta { margin-bottom: 30px }
+.t4s-article-content .art__img-hero { margin-bottom: 34px }
+.t4s-article-content .art__h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px, 3.5vw, 28px); margin: 34px 0 16px; padding-top: 30px }
+.t4s-article-content .art__origins { margin: 28px 0 }
+.t4s-article-content .art__origin-card { padding: 26px }
+.t4s-article-content .art__origin-num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 44px; line-height: 1.12 }
+.t4s-article-content .art__origin-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .art__callout { margin: 28px 0 }
+.t4s-article-content .art__stats { margin: 28px 0 }
+.t4s-article-content .art__stat-num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 32px; line-height: 1.12 }
+.t4s-article-content .art__beers-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .art__beers { margin: 16px 0 34px }
+.t4s-article-content .art__beer-name { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .art__faq { margin: 34px 0 }
+.t4s-article-content .art__faq-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 26px }
+.t4s-article-content .art__cta { padding: 30px; margin-top: 34px }
+.t4s-article-content .art__cta-kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .art__cta h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 4vw, 32px) }
+.t4s-article-content .art__btn-primary { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
+.t4s-article-content .art__btn-secondary { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .art__links { margin-top: 34px; padding-top: 28px }
+@media (max-width: 640px) { .t4s-article-content .art__stat-num { font-size: 26px } .t4s-article-content .art__cta { padding: 26px 20px } }
 </style>
-  {%- when 'article/location-de-tireuse-a-biere-toulouse' -%}
+  {%- when 'article/infos/lhistoire-du-gue-des-moines' -%}
 <style>
-#MainContent { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --mu: #a8a39a; --tx: #ffffff }
-#MainContent .art { font-family: var(--gdm-site-body) !important; padding: 0 24px 52px }
-#MainContent .art__kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .art__h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(32px, 6vw, 52px) }
-#MainContent .art__meta { margin-bottom: 26px }
-#MainContent .art__futs { margin-bottom: 32px }
-#MainContent .art__fut-num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: 36px }
-#MainContent .art__h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px, 3.5vw, 28px); margin: 32px 0 16px; padding-top: 26px }
-#MainContent .art__event h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .art__step-num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: 28px }
-#MainContent .art__step-body h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .art__checklist li { padding: 14px 16px 14px 30px }
-#MainContent .art__beers-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .art__beers { margin: 16px 0 32px }
-#MainContent .art__beer-name { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .art__faq { margin: 32px 0 }
-#MainContent .art__faq-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 26px }
-#MainContent .art__cta { padding: 26px; margin-top: 32px }
-#MainContent .art__cta-kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .art__cta h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 4vw, 32px) }
-#MainContent .art__btn-primary { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
-#MainContent .art__btn-secondary { font-family: var(--gdm-site-body) !important }
-#MainContent .art__links { margin-top: 32px }
+.t4s-article-content { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --mu: #a8a39a; --tx: #ffffff }
+.t4s-article-content .art { font-family: var(--gdm-site-body) !important; padding: 0 24px 52px }
+.t4s-article-content .art__bc { padding: 26px 0 28px }
+.t4s-article-content .art__kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .art__h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(32px, 6vw, 52px); line-height: 1.12; letter-spacing: 0.005em }
+.t4s-article-content .art__intro-line { margin-bottom: 28px }
+.t4s-article-content .art__meta { margin-bottom: 30px }
+.t4s-article-content .art__img-hero { margin-bottom: 34px }
+.t4s-article-content .art__h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px, 3.5vw, 28px); margin: 34px 0 16px; padding-top: 30px }
+.t4s-article-content .art__timeline { margin: 28px 0 }
+.t4s-article-content .art__tl-year { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .art__callout { margin: 28px 0 }
+.t4s-article-content .art__stats { margin: 28px 0 }
+.t4s-article-content .art__stat-num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 32px; line-height: 1.12 }
+.t4s-article-content .art__beers-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .art__beers { margin: 16px 0 34px }
+.t4s-article-content .art__beer-name { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .art__faq { margin: 34px 0 }
+.t4s-article-content .art__faq-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 26px }
+.t4s-article-content .art__cta { padding: 30px; margin-top: 34px }
+.t4s-article-content .art__cta-kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .art__cta h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 4vw, 32px) }
+.t4s-article-content .art__btn-primary { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
+.t4s-article-content .art__btn-secondary { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .art__links { margin-top: 34px; padding-top: 28px }
+@media (max-width: 640px) { .t4s-article-content .art__stat-num { font-size: 26px } .t4s-article-content .art__cta { padding: 26px 20px } }
 </style>
-  {%- when 'article/location-tireuse-biere-fut-20l-ou-30l-comment-choisir-le-gue-des-moines' -%}
+  {%- when 'article/infos/location-de-tireuse-a-biere-toulouse' -%}
 <style>
-#MainContent .gdm-art { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --acc-bh: rgba(240, 146, 30, 0.45); --c: #1a1714; --c-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 80px }
-#MainContent .gdm-h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(28px,4.2vw,50px) }
-#MainContent .gdm-btn { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-quick-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px,3.2vw,34px) }
-#MainContent .gdm-table th { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-step-num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-step h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-cta-block { padding: 30px 26px }
-@media(max-width:640px) { #MainContent .gdm-art { padding-bottom: 60px } }
+.t4s-article-content { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --mu: #a8a39a; --tx: #ffffff }
+.t4s-article-content .art { font-family: var(--gdm-site-body) !important; padding: 0 24px 52px }
+.t4s-article-content .art__bc { padding: 26px 0 28px }
+.t4s-article-content .art__kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .art__h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(32px, 6vw, 52px); line-height: 1.12; letter-spacing: 0.005em }
+.t4s-article-content .art__intro-line { margin-bottom: 28px }
+.t4s-article-content .art__meta { margin-bottom: 30px }
+.t4s-article-content .art__img-hero { margin-bottom: 26px }
+.t4s-article-content .art__futs { margin-bottom: 34px }
+.t4s-article-content .art__fut-num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 36px; line-height: 1.12 }
+.t4s-article-content .art__h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px, 3.5vw, 28px); margin: 34px 0 16px; padding-top: 30px }
+.t4s-article-content .art__event h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .art__step-num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 28px; line-height: 1.12 }
+.t4s-article-content .art__step-body h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .art__checklist li { padding: 14px 16px 14px 34px }
+.t4s-article-content .art__callout { margin: 28px 0 }
+.t4s-article-content .art__img-secondary { margin: 26px 0 }
+.t4s-article-content .art__beers-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .art__beers { margin: 16px 0 34px }
+.t4s-article-content .art__beer-name { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .art__faq { margin: 34px 0 }
+.t4s-article-content .art__faq-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 26px }
+.t4s-article-content .art__cta { padding: 30px; margin-top: 34px }
+.t4s-article-content .art__cta-kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .art__cta h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 4vw, 32px) }
+.t4s-article-content .art__btn-primary { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
+.t4s-article-content .art__btn-secondary { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .art__links { margin-top: 34px; padding-top: 28px }
+@media (max-width: 640px) { .t4s-article-content .art__fut-num { font-size: 26px } .t4s-article-content .art__cta { padding: 26px 20px } }
 </style>
-  {%- when 'article/neipa-new-england-ipa-definition' -%}
+  {%- when 'article/infos/location-tireuse-biere-fut-20l-ou-30l-comment-choisir-le-gue-des-moines' -%}
 <style>
-#MainContent .gdm-lp { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --c-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
-#MainContent .gdm-h2-hero { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(28px,4vw,46px) }
-#MainContent .gdm-btn { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-h3-cap { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,30px) }
-#MainContent .gdm-table th { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-cta { padding: 26px 36px }
+.t4s-article-content .gdm-art { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --acc-bh: rgba(240, 146, 30, 0.45); --c: #1a1714; --c-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 74px }
+.t4s-article-content .gdm-hero { margin: 20px 0 28px }
+.t4s-article-content .gdm-hero__left { padding: 30px 28px }
+.t4s-article-content .gdm-h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(28px,4.2vw,50px); line-height: 1.12; letter-spacing: 0.005em }
+.t4s-article-content .gdm-btn { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .gdm-quick-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-section { margin: 28px 0 }
+.t4s-article-content .gdm-divider { margin: 28px 0 }
+.t4s-article-content .gdm-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px,3.2vw,34px) }
+.t4s-article-content .gdm-table th { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .gdm-card { padding: 24px 24px }
+.t4s-article-content .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-step { padding: 24px }
+.t4s-article-content .gdm-step-num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-step h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-beers { margin: 28px 0; padding: 26px 28px }
+.t4s-article-content .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-cta-block { margin-top: 28px; padding: 32px 30px }
+.t4s-article-content .gdm-cta-block .gdm-h2 { font-size: clamp(26px,3vw,36px) }
+.t4s-article-content .gdm-urgence { margin: 26px 0 }
+@media(max-width:640px) { .t4s-article-content .gdm-art { padding-bottom: 58px } .t4s-article-content .gdm-hero__left, .t4s-article-content .gdm-beers, .t4s-article-content .gdm-cta-block { padding: 24px 20px } }
 </style>
-  {%- when 'article/nouvelle-sortie-french-dipa-single-fresh-hope' -%}
+  {%- when 'article/infos/neipa-new-england-ipa-definition' -%}
 <style>
-#MainContent .gdm-art { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --c-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
-#MainContent .gdm-h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(28px,5vw,52px) }
-#MainContent .gdm-new-badge { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; color: #0d0d0d }
-#MainContent .gdm-fiche-val { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: 28px }
-#MainContent .gdm-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,28px) }
-#MainContent .gdm-ingr-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-exclu-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-cta-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px,3vw,32px) }
-#MainContent .gdm-btn { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-btn-p { color: #0d0d0d }
-@media(max-width:640px) { #MainContent .gdm-art { padding: 0 16px 36px } }
+.t4s-article-content .gdm-lp { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --c-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
+.t4s-article-content .gdm-hero { margin: 20px 0 26px }
+.t4s-article-content .gdm-hero__content { padding: 28px }
+.t4s-article-content .gdm-h2-hero { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(28px,4vw,46px); line-height: 1.12; letter-spacing: 0.005em }
+.t4s-article-content .gdm-btn { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .gdm-h3-cap { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-section { margin: 26px 0 }
+.t4s-article-content .gdm-divider { margin: 26px 0 }
+.t4s-article-content .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,30px) }
+.t4s-article-content .gdm-prose { padding: 26px 28px }
+.t4s-article-content .gdm-table th { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-bieres-section { margin: 26px 0; padding: 26px 28px }
+.t4s-article-content .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-cta { margin-top: 26px; padding: 30px 28px }
+@media(max-width:640px) { .t4s-article-content .gdm-hero__content, .t4s-article-content .gdm-hero__visual, .t4s-article-content .gdm-cta, .t4s-article-content .gdm-bieres-section, .t4s-article-content .gdm-prose { padding: 22px 18px } }
 </style>
-  {%- when 'article/oktoberfest-a-la-maison' -%}
+  {%- when 'article/infos/oktoberfest-a-la-maison' -%}
 <style>
-#MainContent .gdm-lp { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --c-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
-#MainContent .gdm-h2-hero { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(28px,4vw,46px) }
-#MainContent .gdm-h3-cap { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,30px) }
-#MainContent .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-table th { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-cta { padding: 26px 36px }
+.t4s-article-content .gdm-lp { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --c-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
+.t4s-article-content .gdm-hero { margin: 20px 0 26px }
+.t4s-article-content .gdm-hero__content { padding: 28px }
+.t4s-article-content .gdm-h2-hero { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(28px,4vw,46px); line-height: 1.12 }
+.t4s-article-content .gdm-h3-cap { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-section { margin: 26px 0 }
+.t4s-article-content .gdm-divider { margin: 26px 0 }
+.t4s-article-content .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,30px) }
+.t4s-article-content .gdm-prose { padding: 26px 28px }
+.t4s-article-content .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-table th { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .gdm-bieres-section { margin: 26px 0; padding: 26px 28px }
+.t4s-article-content .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-cta { margin-top: 26px; padding: 30px 28px }
+@media(max-width:640px) { .t4s-article-content .gdm-hero__content, .t4s-article-content .gdm-hero__visual, .t4s-article-content .gdm-cta, .t4s-article-content .gdm-bieres-section, .t4s-article-content .gdm-prose { padding: 22px 18px } }
 </style>
-  {%- when 'article/pinte-de-biere-combien-de-cl' -%}
+  {%- when 'article/infos/pinte-de-biere-combien-de-cl' -%}
 <style>
-#MainContent .gdm-lp { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --c-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
-#MainContent .gdm-h2-hero { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(28px,4vw,46px) }
-#MainContent .gdm-btn { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-h3-cap { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,30px) }
-#MainContent .gdm-table th { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-cta { padding: 26px 36px }
+.t4s-article-content .gdm-lp { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --c-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
+.t4s-article-content .gdm-hero { margin: 20px 0 26px }
+.t4s-article-content .gdm-hero__content { padding: 28px }
+.t4s-article-content .gdm-h2-hero { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(28px,4vw,46px); line-height: 1.12; letter-spacing: 0.005em }
+.t4s-article-content .gdm-btn { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .gdm-h3-cap { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-section { margin: 26px 0 }
+.t4s-article-content .gdm-divider { margin: 26px 0 }
+.t4s-article-content .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,30px) }
+.t4s-article-content .gdm-prose { padding: 26px 28px }
+.t4s-article-content .gdm-table th { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-bieres-section { margin: 26px 0; padding: 26px 28px }
+.t4s-article-content .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-cta { margin-top: 26px; padding: 30px 28px }
+@media(max-width:640px) { .t4s-article-content .gdm-hero__content, .t4s-article-content .gdm-hero__visual, .t4s-article-content .gdm-cta, .t4s-article-content .gdm-bieres-section, .t4s-article-content .gdm-prose { padding: 22px 18px } }
 </style>
-  {%- when 'article/pourquoi-le-gue-des-moines' -%}
+  {%- when 'article/infos/pourquoi-le-gue-des-moines' -%}
 <style>
-#MainContent { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --mu: #a8a39a; --tx: #ffffff }
-#MainContent .art { font-family: var(--gdm-site-body) !important; padding: 0 24px 52px }
-#MainContent .art__kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .art__h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(32px, 6vw, 52px) }
-#MainContent .art__meta { margin-bottom: 26px }
-#MainContent .art__img-hero { margin-bottom: 32px }
-#MainContent .art__h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px, 3.5vw, 28px); margin: 32px 0 16px; padding-top: 26px }
-#MainContent .art__origin-num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: 44px }
-#MainContent .art__origin-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .art__word-oc { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(38px, 7vw, 64px) }
-#MainContent .art__beers-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .art__beers { margin: 16px 0 32px }
-#MainContent .art__beer-name { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .art__faq { margin: 32px 0 }
-#MainContent .art__faq-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 26px }
-#MainContent .art__cta { padding: 26px; margin-top: 32px }
-#MainContent .art__cta-kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .art__cta h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 4vw, 32px) }
-#MainContent .art__btn-primary { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
-#MainContent .art__btn-secondary { font-family: var(--gdm-site-body) !important }
-#MainContent .art__links { margin-top: 32px }
+.t4s-article-content { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --mu: #a8a39a; --tx: #ffffff }
+.t4s-article-content .art { font-family: var(--gdm-site-body) !important; padding: 0 24px 52px }
+.t4s-article-content .art__bc { padding: 26px 0 28px }
+.t4s-article-content .art__kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .art__h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(32px, 6vw, 52px); line-height: 1.12; letter-spacing: 0.005em }
+.t4s-article-content .art__intro-line { margin-bottom: 28px }
+.t4s-article-content .art__meta { margin-bottom: 30px }
+.t4s-article-content .art__img-hero { margin-bottom: 34px }
+.t4s-article-content .art__h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px, 3.5vw, 28px); margin: 34px 0 16px; padding-top: 30px }
+.t4s-article-content .art__origins { margin: 28px 0 }
+.t4s-article-content .art__origin-card { padding: 26px }
+.t4s-article-content .art__origin-num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 44px; line-height: 1.12 }
+.t4s-article-content .art__origin-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .art__word-card { padding: 28px; margin: 28px 0 }
+.t4s-article-content .art__word-oc { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(38px, 7vw, 64px); line-height: 1.12 }
+.t4s-article-content .art__callout { margin: 28px 0 }
+.t4s-article-content .art__beers-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .art__beers { margin: 16px 0 34px }
+.t4s-article-content .art__beer-name { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .art__faq { margin: 34px 0 }
+.t4s-article-content .art__faq-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 26px }
+.t4s-article-content .art__cta { padding: 30px; margin-top: 34px }
+.t4s-article-content .art__cta-kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .art__cta h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 4vw, 32px) }
+.t4s-article-content .art__btn-primary { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
+.t4s-article-content .art__btn-secondary { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .art__links { margin-top: 34px; padding-top: 28px }
+@media (max-width: 640px) { .t4s-article-content .art__cta { padding: 26px 20px } }
 </style>
-  {%- when 'article/sortir-bruguieres-saint-jory-nord-toulouse' -%}
+  {%- when 'article/infos/sortir-bruguieres-saint-jory-nord-toulouse' -%}
 <style>
-#MainContent { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
-#MainContent .gdm-sb { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-sb__hero { padding: 26px 0 36px }
-#MainContent .gdm-sb__h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(36px, 6vw, 62px) }
-#MainContent .gdm-sb__hero-badge { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-btn-p { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; color: #0d0d0d }
-#MainContent .gdm-btn-s { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-sep { margin: 34px 0 }
-#MainContent .gdm-sb__h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(24px, 3.5vw, 34px) }
-#MainContent .gdm-event-card__title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-horaire__day { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-horaire__time { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12 }
-#MainContent .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-faq-item summary { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-faq-icon { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-faq-item[open] .gdm-faq-icon { color: #0d0d0d }
-#MainContent .gdm-sb__cta { padding: 30px 36px; margin-top: 36px }
-#MainContent .gdm-sb__cta-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(26px, 4vw, 38px) }
-@media (max-width: 720px) { #MainContent .gdm-sb__hero { padding: 28px 0 26px } }
+.t4s-article-content { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
+.t4s-article-content .gdm-sb { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .gdm-kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .gdm-sb__hero { gap: 28px; padding: 30px 0 40px }
+.t4s-article-content .gdm-sb__h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(36px, 6vw, 62px); line-height: 1.12 }
+.t4s-article-content .gdm-sb__intro { margin-bottom: 26px }
+.t4s-article-content .gdm-sb__hero-badge { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .gdm-btn-p { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; color: #0d0d0d; padding: 12px 24px }
+.t4s-article-content .gdm-btn-s { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; padding: 11px 24px }
+.t4s-article-content .gdm-sep { margin: 36px 0 }
+.t4s-article-content .gdm-sb__h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px, 3.5vw, 34px); line-height: 1.12 }
+.t4s-article-content .gdm-sb__lead { margin-bottom: 26px }
+.t4s-article-content .gdm-sb__img { margin: 26px 0 }
+.t4s-article-content .gdm-sb__img--half { margin: 26px 0 }
+.t4s-article-content .gdm-sb__events { margin: 26px 0 }
+.t4s-article-content .gdm-event-card__title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-sb__horaires { margin: 26px 0 }
+.t4s-article-content .gdm-horaire__day { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .gdm-horaire__time { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12 }
+.t4s-article-content .gdm-sb__bieres { margin: 26px 0 }
+.t4s-article-content .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-faq-item summary { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-faq-icon { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .gdm-faq-item[open] .gdm-faq-icon { color: #0d0d0d }
+.t4s-article-content .gdm-sb__cta { padding: 32px 28px; margin-top: 40px }
+.t4s-article-content .gdm-sb__cta-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 4vw, 38px); line-height: 1.12 }
+.t4s-article-content .gdm-sb__cta-desc { margin-bottom: 24px }
+@media (max-width: 720px) { .t4s-article-content .gdm-sb__hero { padding: 26px 0 30px } }
+@media (max-width: 480px) { .t4s-article-content .gdm-sb__cta { padding: 28px 20px } }
 </style>
-  {%- when 'article/visite-brasserie-artisanale-toulouse' -%}
+  {%- when 'article/infos/visite-brasserie-artisanale-toulouse' -%}
 <style>
-#MainContent { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
-#MainContent .gdm-art { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-art__hero { padding: 26px 0 0; margin-bottom: 26px }
-#MainContent .gdm-art__h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(34px, 6vw, 58px) }
-#MainContent .gdm-art__hero-img { margin-bottom: 36px }
-#MainContent .gdm-art__hero-badge { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-sep { margin: 32px 0 }
-#MainContent .gdm-art__section { margin-bottom: 32px }
-#MainContent .gdm-art__h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(24px, 3.5vw, 32px) }
-#MainContent .gdm-step-num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: 26px }
-#MainContent .gdm-step-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-biere-mini-name { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-faq-item summary { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-faq-icon { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-faq-item[open] .gdm-faq-icon { color: #0d0d0d }
-#MainContent .gdm-art__cta { padding: 26px 32px; margin-top: 36px }
-#MainContent .gdm-art__cta-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(26px, 4vw, 34px) }
-#MainContent .gdm-btn-p { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; color: #0d0d0d }
-#MainContent .gdm-btn-s { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
+.t4s-article-content .gdm-art { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .gdm-kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .gdm-art__hero { padding: 30px 0 0; margin-bottom: 30px }
+.t4s-article-content .gdm-art__h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(34px, 6vw, 58px); line-height: 1.12; letter-spacing: 0.005em }
+.t4s-article-content .gdm-art__intro { margin-bottom: 28px }
+.t4s-article-content .gdm-art__hero-img { margin-bottom: 40px }
+.t4s-article-content .gdm-art__hero-badge { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .gdm-sep { margin: 34px 0 }
+.t4s-article-content .gdm-art__section { margin-bottom: 34px }
+.t4s-article-content .gdm-art__h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px, 3.5vw, 32px); line-height: 1.12 }
+.t4s-article-content .gdm-art__img { margin: 26px 0 }
+.t4s-article-content .gdm-art__img--half { margin: 26px 0 }
+.t4s-article-content .gdm-step-num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 26px; line-height: 1.12 }
+.t4s-article-content .gdm-step-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-article-content .gdm-highlight { margin: 26px 0 }
+.t4s-article-content .gdm-art__bieres { margin: 26px 0 }
+.t4s-article-content .gdm-biere-mini-name { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .gdm-faq-item summary { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-article-content .gdm-faq-icon { font-family: var(--gdm-site-body) !important }
+.t4s-article-content .gdm-faq-item[open] .gdm-faq-icon { color: #0d0d0d }
+.t4s-article-content .gdm-art__cta { padding: 30px 28px; margin-top: 40px }
+.t4s-article-content .gdm-art__cta-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 4vw, 34px); line-height: 1.12 }
+.t4s-article-content .gdm-btn-p { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; color: #0d0d0d; padding: 12px 24px }
+.t4s-article-content .gdm-btn-s { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; padding: 11px 24px }
+@media (max-width: 640px) { .t4s-article-content .gdm-art__cta { padding: 26px 20px } }
 </style>
   {%- when 'collection/ipa' -%}
 <style>
-#MainContent { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --mu: #a8a39a; --tx: #ffffff }
-#MainContent .ipa-desc { font-family: var(--gdm-site-body) !important; padding: 36px 0 32px }
-#MainContent .ipa-desc__kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .ipa-desc h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(28px, 5vw, 46px) }
-#MainContent .ipa-desc__intro { margin: 0 0 26px }
-#MainContent .ipa-desc__sep { margin: 0 0 26px }
-#MainContent .ipa-desc__grid { margin-bottom: 26px }
-#MainContent .ipa-desc__card h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .ipa-desc__hops { margin-bottom: 26px }
-#MainContent .ipa-desc__hops h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .ipa-desc__hops-list li { font-family: var(--gdm-site-body) !important }
-#MainContent .ipa-desc__btn { font-family: var(--gdm-site-body) !important }
-#MainContent .ipa-desc__btn--primary { color: #0d0d0d }
+.gdm-bieres__desc { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --mu: #a8a39a; --tx: #ffffff }
+.gdm-bieres__desc .ipa-desc { font-family: var(--gdm-site-body) !important; padding: 40px 0 34px }
+.gdm-bieres__desc .ipa-desc__kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.gdm-bieres__desc .ipa-desc h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(28px, 5vw, 46px); line-height: 1.12; letter-spacing: 0.005em }
+.gdm-bieres__desc .ipa-desc__intro { margin: 0 0 30px }
+.gdm-bieres__desc .ipa-desc__sep { margin: 0 0 30px }
+.gdm-bieres__desc .ipa-desc__grid { margin-bottom: 30px }
+.gdm-bieres__desc .ipa-desc__card h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.gdm-bieres__desc .ipa-desc__hops { padding: 26px 24px; margin-bottom: 30px }
+.gdm-bieres__desc .ipa-desc__hops h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.gdm-bieres__desc .ipa-desc__hops-list li { font-family: var(--gdm-site-body) !important }
+.gdm-bieres__desc .ipa-desc__btn { font-family: var(--gdm-site-body) !important }
+.gdm-bieres__desc .ipa-desc__btn--primary { color: #0d0d0d }
 </style>
   {%- when 'page/bieres-artisanales-toulouse' -%}
 <style>
-#MainContent { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
-#MainContent .gdm-bat { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-bat__hero { gap: 32px; padding: 32px 0 42px }
-#MainContent .gdm-bat__hero-h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(42px, 7vw, 76px) }
-#MainContent .gdm-btn-p { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; color: #0d0d0d }
-#MainContent .gdm-btn-s { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-hv-badge { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-hv-stat-val { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: 36px }
-#MainContent .gdm-sep { margin: 0 0 36px }
-#MainContent .gdm-section-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(26px, 4vw, 40px) }
-#MainContent .gdm-bat__gamme { margin-bottom: 48px }
-#MainContent .gdm-style-card__name { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12 }
-#MainContent .gdm-style-card__cta { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-bat__modes { margin-bottom: 48px }
-#MainContent .gdm-mode-card__num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: 50px }
-#MainContent .gdm-mode-card__title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12 }
-#MainContent .gdm-mode-card__link { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-bat__local { margin-bottom: 48px }
-#MainContent .gdm-bat__local-inner { gap: 26px; padding: 26px 26px }
-#MainContent .gdm-commune-badge { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-bat__faq { margin-bottom: 48px }
-#MainContent .gdm-faq-item summary { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-faq-icon { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-faq-item[open] .gdm-faq-icon { color: #0d0d0d }
-#MainContent .gdm-bat__cta { padding: 36px 26px }
-#MainContent .gdm-bat__cta-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(28px, 5vw, 46px) }
-@media (max-width: 960px) { #MainContent .gdm-bat__hero { padding: 36px 0 32px } }
-@media (max-width: 640px) { #MainContent .gdm-bat__cta { padding: 26px 24px } }
+.t4s-main-page { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
+.t4s-main-page .gdm-bat { font-family: var(--gdm-site-body) !important }
+.t4s-main-page .gdm-kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .gdm-bat__hero { gap: 34px; padding: 34px 0 44px }
+.t4s-main-page .gdm-bat__hero-h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(42px, 7vw, 76px); line-height: 1.12; letter-spacing: 0.005em }
+.t4s-main-page .gdm-bat__hero-desc { margin-bottom: 28px }
+.t4s-main-page .gdm-btn-p { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; color: #0d0d0d; padding: 13px 26px }
+.t4s-main-page .gdm-btn-s { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; padding: 12px 26px }
+.t4s-main-page .gdm-hv-badge { font-family: var(--gdm-site-body) !important }
+.t4s-main-page .gdm-hv-stat-val { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 36px; line-height: 1.12 }
+.t4s-main-page .gdm-sep { margin: 0 0 40px }
+.t4s-main-page .gdm-section-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 4vw, 40px); line-height: 1.12 }
+.t4s-main-page .gdm-section-desc { margin-bottom: 28px }
+.t4s-main-page .gdm-bat__gamme { margin-bottom: 48px }
+.t4s-main-page .gdm-bat__gamme-grid { margin-top: 28px }
+.t4s-main-page .gdm-style-card__name { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12 }
+.t4s-main-page .gdm-style-card__cta { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .gdm-bat__modes { margin-bottom: 48px }
+.t4s-main-page .gdm-bat__modes-grid { margin-top: 28px }
+.t4s-main-page .gdm-mode-card { padding: 26px 24px }
+.t4s-main-page .gdm-mode-card__num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 50px; line-height: 1.12 }
+.t4s-main-page .gdm-mode-card__title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12 }
+.t4s-main-page .gdm-mode-card__link { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .gdm-bat__local { margin-bottom: 48px }
+.t4s-main-page .gdm-bat__local-inner { gap: 30px; padding: 30px 30px }
+.t4s-main-page .gdm-commune-badge { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .gdm-bat__faq { margin-bottom: 48px }
+.t4s-main-page .gdm-faq-list { margin-top: 28px }
+.t4s-main-page .gdm-faq-item summary { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-faq-icon { font-family: var(--gdm-site-body) !important }
+.t4s-main-page .gdm-faq-item[open] .gdm-faq-icon { color: #0d0d0d }
+.t4s-main-page .gdm-bat__cta { padding: 40px 30px }
+.t4s-main-page .gdm-bat__cta-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(28px, 5vw, 46px); line-height: 1.12 }
+.t4s-main-page .gdm-bat__cta-desc { margin-bottom: 28px }
+@media (max-width: 960px) { .t4s-main-page .gdm-bat__hero { padding: 28px 0 34px } .t4s-main-page .gdm-bat__local-inner { padding: 26px } }
+@media (max-width: 640px) { .t4s-main-page .gdm-bat__cta { padding: 30px 24px } }
 </style>
   {%- when 'page/brasserie-artisanale-castelginest' -%}
 <style>
-#MainContent { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
-#MainContent .gdm-geo { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-geo .kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-geo .geo-hero { padding: 42px 24px 34px }
-#MainContent .gdm-geo .geo-hero h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(30px,6vw,54px) }
-#MainContent .gdm-geo .geo-section { padding: 0 24px 40px }
-#MainContent .gdm-geo .geo-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3.5vw,30px) }
-#MainContent .gdm-geo .geo-grid { margin-bottom: 26px }
-#MainContent .gdm-geo .geo-card h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-geo .geo-cta { padding: 32px 28px; margin: 0 24px 40px }
-#MainContent .gdm-geo .geo-cta h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px,4vw,36px) }
-#MainContent .gdm-geo .btn-p { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
-#MainContent .gdm-geo .btn-s { font-family: var(--gdm-site-body) !important }
+.t4s-main-page { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
+.t4s-main-page .gdm-geo { font-family: var(--gdm-site-body) !important }
+.t4s-main-page .gdm-geo .kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .gdm-geo .geo-hero { padding: 44px 24px 36px }
+.t4s-main-page .gdm-geo .geo-hero h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(30px,6vw,54px); line-height: 1.12 }
+.t4s-main-page .gdm-geo .geo-hero p { margin: 0 auto 26px }
+.t4s-main-page .gdm-geo .geo-section { padding: 0 24px 42px }
+.t4s-main-page .gdm-geo .geo-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3.5vw,30px) }
+.t4s-main-page .gdm-geo .geo-grid { margin-bottom: 30px }
+.t4s-main-page .gdm-geo .geo-card h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-geo .geo-links { margin-top: 26px }
+.t4s-main-page .gdm-geo .geo-cta { padding: 34px 26px; margin: 0 24px 42px }
+.t4s-main-page .gdm-geo .geo-cta h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px,4vw,36px) }
+.t4s-main-page .gdm-geo .btn-p { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
+.t4s-main-page .gdm-geo .btn-s { font-family: var(--gdm-site-body) !important }
 </style>
   {%- when 'page/brasserie-artisanale-pres-de-blagnac-31-le-gue-des-moines' -%}
 <style>
-#MainContent { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
-#MainContent .gdm-geo { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-geo .kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-geo .geo-hero { padding: 42px 24px 34px }
-#MainContent .gdm-geo .geo-hero h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(30px,6vw,54px) }
-#MainContent .gdm-geo .geo-section { padding: 0 24px 40px }
-#MainContent .gdm-geo .geo-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3.5vw,30px) }
-#MainContent .gdm-geo .geo-grid { margin-bottom: 26px }
-#MainContent .gdm-geo .geo-card h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-geo .geo-cta { padding: 32px 28px; margin: 0 24px 40px }
-#MainContent .gdm-geo .geo-cta h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px,4vw,36px) }
-#MainContent .gdm-geo .btn-p { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
-#MainContent .gdm-geo .btn-s { font-family: var(--gdm-site-body) !important }
+.t4s-main-page { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
+.t4s-main-page .gdm-geo { font-family: var(--gdm-site-body) !important }
+.t4s-main-page .gdm-geo .kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .gdm-geo .geo-hero { padding: 44px 24px 36px }
+.t4s-main-page .gdm-geo .geo-hero h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(30px,6vw,54px); line-height: 1.12 }
+.t4s-main-page .gdm-geo .geo-hero p { margin: 0 auto 26px }
+.t4s-main-page .gdm-geo .geo-section { padding: 0 24px 42px }
+.t4s-main-page .gdm-geo .geo-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3.5vw,30px) }
+.t4s-main-page .gdm-geo .geo-grid { margin-bottom: 30px }
+.t4s-main-page .gdm-geo .geo-card h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-geo .geo-links { margin-top: 26px }
+.t4s-main-page .gdm-geo .geo-cta { padding: 34px 26px; margin: 0 24px 42px }
+.t4s-main-page .gdm-geo .geo-cta h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px,4vw,36px) }
+.t4s-main-page .gdm-geo .btn-p { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
+.t4s-main-page .gdm-geo .btn-s { font-family: var(--gdm-site-body) !important }
 </style>
   {%- when 'page/brasserie-artisanale-saint-jory' -%}
 <style>
-#MainContent { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
-#MainContent .gdm-geo { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-geo .kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-geo .geo-hero { padding: 42px 24px 34px }
-#MainContent .gdm-geo .geo-hero h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(30px,6vw,54px) }
-#MainContent .gdm-geo .geo-section { padding: 0 24px 40px }
-#MainContent .gdm-geo .geo-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3.5vw,30px) }
-#MainContent .gdm-geo .geo-grid { margin-bottom: 26px }
-#MainContent .gdm-geo .geo-card h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-geo .geo-cta { padding: 32px 28px; margin: 0 24px 40px }
-#MainContent .gdm-geo .geo-cta h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px,4vw,36px) }
-#MainContent .gdm-geo .btn-p { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
-#MainContent .gdm-geo .btn-s { font-family: var(--gdm-site-body) !important }
+.t4s-main-page { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
+.t4s-main-page .gdm-geo { font-family: var(--gdm-site-body) !important }
+.t4s-main-page .gdm-geo .kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .gdm-geo .geo-hero { padding: 44px 24px 36px }
+.t4s-main-page .gdm-geo .geo-hero h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(30px,6vw,54px); line-height: 1.12 }
+.t4s-main-page .gdm-geo .geo-hero p { margin: 0 auto 26px }
+.t4s-main-page .gdm-geo .geo-section { padding: 0 24px 42px }
+.t4s-main-page .gdm-geo .geo-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3.5vw,30px) }
+.t4s-main-page .gdm-geo .geo-grid { margin-bottom: 30px }
+.t4s-main-page .gdm-geo .geo-card h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-geo .geo-links { margin-top: 26px }
+.t4s-main-page .gdm-geo .geo-cta { padding: 34px 26px; margin: 0 24px 42px }
+.t4s-main-page .gdm-geo .geo-cta h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px,4vw,36px) }
+.t4s-main-page .gdm-geo .btn-p { font-family: var(--gdm-site-body) !important; color: #0d0d0d }
+.t4s-main-page .gdm-geo .btn-s { font-family: var(--gdm-site-body) !important }
 </style>
   {%- when 'page/brasserie-le-gue-des-moines' -%}
 <style>
-#MainContent { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
-#MainContent .br { font-family: var(--gdm-site-body) !important }
-#MainContent .kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .sec-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(26px, 4vw, 40px) }
-#MainContent .sep { margin: 0 0 36px }
-#MainContent .btn-p { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; color: #0d0d0d }
-#MainContent .btn-s { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .br__hero { gap: 26px; padding: 32px 0 36px }
-#MainContent .br__hero-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(38px, 6vw, 64px) }
-#MainContent .br__stats { margin-bottom: 42px }
-#MainContent .br__stat-val { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: 32px }
-#MainContent .br__histoire { gap: 32px; margin-bottom: 42px }
-#MainContent .gdm-yr { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .img-tag { font-family: var(--gdm-site-body) !important }
-#MainContent .br__tl-year { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .br__tl-head { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .br__savoir { margin-bottom: 42px }
-#MainContent .card-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .br__origines { margin-bottom: 42px }
-#MainContent .origin-card__tag { font-family: var(--gdm-site-body) !important }
-#MainContent .origin-card__title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(22px, 2.5vw, 28px) }
-#MainContent .origin-card__cta { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .br__equipe { margin-bottom: 42px }
-#MainContent .team-name { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .br__closing { gap: 26px }
-#MainContent .br__cta { padding: 32px 26px }
-#MainContent .br__cta-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 4vw, 38px) }
-@media (max-width: 600px) { #MainContent .br__hero { padding: 32px 0 26px } }
+.t4s-main-page { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
+.t4s-main-page .br { font-family: var(--gdm-site-body) !important }
+.t4s-main-page .kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .sec-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 4vw, 40px); line-height: 1.12 }
+.t4s-main-page .sep { margin: 0 0 40px }
+.t4s-main-page .btn-p { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; color: #0d0d0d; padding: 13px 26px }
+.t4s-main-page .btn-s { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; padding: 12px 26px }
+.t4s-main-page .br__hero { gap: 30px; padding: 34px 0 40px }
+.t4s-main-page .br__hero-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(38px, 6vw, 64px); line-height: 1.12; letter-spacing: 0.005em }
+.t4s-main-page .br__hero-desc { margin-bottom: 26px }
+.t4s-main-page .br__stats { margin-bottom: 44px }
+.t4s-main-page .br__stat-val { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 32px; line-height: 1.12 }
+.t4s-main-page .br__histoire { gap: 34px; margin-bottom: 44px }
+.t4s-main-page .gdm-yr { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .img-tag { font-family: var(--gdm-site-body) !important }
+.t4s-main-page .br__timeline { margin: 26px 0 }
+.t4s-main-page .br__tl-year { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .br__tl-head { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .br__savoir { margin-bottom: 44px }
+.t4s-main-page .br__savoir-grid { margin-top: 28px }
+.t4s-main-page .card-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .br__origines { margin-bottom: 44px }
+.t4s-main-page .br__origines-grid { margin-top: 28px }
+.t4s-main-page .origin-card__content { padding: 26px 24px }
+.t4s-main-page .origin-card__tag { font-family: var(--gdm-site-body) !important }
+.t4s-main-page .origin-card__title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px, 2.5vw, 28px); line-height: 1.12 }
+.t4s-main-page .origin-card__cta { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .br__equipe { margin-bottom: 44px }
+.t4s-main-page .br__equipe-grid { margin-top: 28px }
+.t4s-main-page .team-name { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .br__closing { gap: 30px }
+.t4s-main-page .br__cta { padding: 34px 30px }
+.t4s-main-page .br__cta-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 4vw, 38px) }
+.t4s-main-page .br__cta-desc { margin-bottom: 26px }
+@media (max-width: 600px) { .t4s-main-page .br__hero { padding: 28px 0 30px } .t4s-main-page .br__cta { padding: 28px 24px } }
 </style>
   {%- when 'page/brewpub' -%}
 <style>
-#MainContent { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
-#MainContent .bp { font-family: var(--gdm-site-body) !important }
-#MainContent .kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .sec-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(26px, 4vw, 40px) }
-#MainContent .sep { margin: 0 0 36px }
-#MainContent .btn-p { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; color: #0d0d0d }
-#MainContent .btn-s { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .bp__hero { gap: 26px; padding: 32px 0 36px }
-#MainContent .bp__hero-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(38px, 6vw, 64px) }
-#MainContent .bp__horaires { margin-bottom: 42px }
-#MainContent .bp__horaire-days { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .bp__horaire-time { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: 26px }
-#MainContent .bp__horaire-badge { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .bp__ambiance { margin-bottom: 42px }
-#MainContent .card-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .bp__bieres { margin-bottom: 42px }
-#MainContent .bp__bieres-layout { gap: 32px }
-#MainContent .biere-name { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .biere-abv { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .bp__faq { margin-bottom: 42px }
-#MainContent .faq-item summary { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .bp__maillage { margin-bottom: 42px }
-#MainContent .mail-title { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .bp__cta { padding: 36px 26px }
-#MainContent .bp__cta-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 4vw, 44px) }
+.t4s-main-page { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
+.t4s-main-page .bp { font-family: var(--gdm-site-body) !important }
+.t4s-main-page .kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .sec-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 4vw, 40px); line-height: 1.12 }
+.t4s-main-page .sep { margin: 0 0 40px }
+.t4s-main-page .btn-p { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; color: #0d0d0d; padding: 13px 26px }
+.t4s-main-page .btn-s { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; padding: 12px 26px }
+.t4s-main-page .bp__hero { gap: 30px; padding: 34px 0 40px }
+.t4s-main-page .bp__hero-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(38px, 6vw, 64px); line-height: 1.12 }
+.t4s-main-page .bp__hero-desc { margin-bottom: 26px }
+.t4s-main-page .bp__horaires { margin-bottom: 44px }
+.t4s-main-page .bp__horaire-days { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .bp__horaire-time { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 26px; line-height: 1.12 }
+.t4s-main-page .bp__horaire-badge { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .bp__ambiance { margin-bottom: 44px }
+.t4s-main-page .bp__ambiance-grid { margin-top: 28px }
+.t4s-main-page .card-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .bp__bieres { margin-bottom: 44px }
+.t4s-main-page .bp__bieres-layout { gap: 34px; margin-top: 28px }
+.t4s-main-page .biere-name { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .biere-abv { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .bp__faq { margin-bottom: 44px }
+.t4s-main-page .bp__faq-list { margin-top: 28px }
+.t4s-main-page .faq-item summary { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .bp__maillage { margin-bottom: 44px }
+.t4s-main-page .bp__maillage-grid { margin-top: 26px }
+.t4s-main-page .mail-title { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .bp__cta { padding: 40px 30px }
+.t4s-main-page .bp__cta-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 4vw, 44px) }
+.t4s-main-page .bp__cta-desc { margin-bottom: 28px }
+@media (max-width: 600px) { .t4s-main-page .bp__cta { padding: 28px 20px } }
 </style>
   {%- when 'page/guide-degustation-bieres-artisanales-gue-des-moines' -%}
 <style>
-#MainContent { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
-#MainContent .gdm-gd { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-btn-p { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; color: #0d0d0d }
-#MainContent .gdm-btn-s { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-sep { margin: 40px 0 }
-#MainContent .gdm-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(26px, 4vw, 38px) }
-#MainContent .gdm-gd__hero { gap: 26px; padding: 30px 0 40px }
-#MainContent .gdm-gd__h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(40px, 6.5vw, 72px) }
-#MainContent .gdm-gd__hero-badge { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-sens-card__title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-style-block__num { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-style-block__name { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(26px, 3.5vw, 36px) }
-#MainContent .gdm-info-chip__val { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-style-block__accord-label { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-style-block__cta { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-gd__temp { margin: 26px 0 }
-#MainContent .gdm-temp-header__title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-temp-style { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-temp-val { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-verre-card__title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-faq-item summary { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-faq-icon { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-faq-item[open] .gdm-faq-icon { color: #0d0d0d }
-#MainContent .gdm-cta { padding: 34px 26px; margin-top: 42px }
-#MainContent .gdm-cta-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(28px, 4.5vw, 44px) }
-#MainContent .gdm-gd__layout { gap: 32px }
-#MainContent .gdm-sidebar-card__head { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-sidebar-img-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-sidebar-img-link { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-@media (max-width: 860px) { #MainContent .gdm-gd__hero { padding: 32px 0 30px } }
+.t4s-main-page { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
+.t4s-main-page .gdm-gd { font-family: var(--gdm-site-body) !important }
+.t4s-main-page .gdm-kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .gdm-btn-p { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; color: #0d0d0d; padding: 13px 26px }
+.t4s-main-page .gdm-btn-s { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; padding: 12px 26px }
+.t4s-main-page .gdm-sep { margin: 42px 0 }
+.t4s-main-page .gdm-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 4vw, 38px); line-height: 1.12 }
+.t4s-main-page .gdm-gd__hero { gap: 30px; padding: 32px 0 42px }
+.t4s-main-page .gdm-gd__h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(40px, 6.5vw, 72px); line-height: 1.12 }
+.t4s-main-page .gdm-gd__intro { margin-bottom: 26px }
+.t4s-main-page .gdm-gd__hero-badge { font-family: var(--gdm-site-body) !important }
+.t4s-main-page .gdm-gd__sens { margin: 28px 0 }
+.t4s-main-page .gdm-sens-card__icon { font-size: 26px }
+.t4s-main-page .gdm-sens-card__title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-gd__styles { margin: 28px 0; gap: 26px }
+.t4s-main-page .gdm-style-block__body { padding: 28px 28px }
+.t4s-main-page .gdm-style-block__num { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .gdm-style-block__name { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 3.5vw, 36px); line-height: 1.12 }
+.t4s-main-page .gdm-info-chip__val { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-style-block__accord-label { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .gdm-style-block__cta { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .gdm-gd__temp { margin: 30px 0 }
+.t4s-main-page .gdm-temp-header { padding: 22px 26px 16px }
+.t4s-main-page .gdm-temp-header__title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-temp-row { padding: 16px 26px }
+.t4s-main-page .gdm-temp-style { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .gdm-temp-val { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .gdm-gd__verre { margin: 26px 0 }
+.t4s-main-page .gdm-verre-card__icon { font-size: 26px }
+.t4s-main-page .gdm-verre-card__title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-highlight { margin: 26px 0 }
+.t4s-main-page .gdm-img-fw { margin: 28px 0 }
+.t4s-main-page .gdm-faq { margin-top: 26px }
+.t4s-main-page .gdm-faq-item summary { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-faq-icon { font-family: var(--gdm-site-body) !important }
+.t4s-main-page .gdm-faq-item[open] .gdm-faq-icon { color: #0d0d0d }
+.t4s-main-page .gdm-cta { padding: 36px 30px; margin-top: 44px }
+.t4s-main-page .gdm-cta-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(28px, 4.5vw, 44px); line-height: 1.12 }
+.t4s-main-page .gdm-cta-desc { margin-bottom: 26px }
+.t4s-main-page .gdm-gd__layout { gap: 34px }
+.t4s-main-page .gdm-sidebar-card__head { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .gdm-sidebar-img-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-sidebar-img-link { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+@media (max-width: 860px) { .t4s-main-page .gdm-gd__hero { padding: 28px 0 32px } }
+@media (max-width: 560px) { .t4s-main-page .gdm-style-block__body { padding: 22px 20px } .t4s-main-page .gdm-cta { padding: 28px 20px } }
 </style>
   {%- when 'page/la-briqueterie' -%}
 <style>
-#MainContent .gdm-lp { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --card: #1a1714; --card-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
-#MainContent .gdm-h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(34px,6vw,64px) }
-#MainContent .gdm-btn--primary { color: #0d0d0d }
-#MainContent .gdm-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px,3.5vw,36px) }
-#MainContent .gdm-tl-dot span { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-tl-year { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-tl-h { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(20px,2.5vw,26px) }
-#MainContent .gdm-transition { padding: 26px }
-#MainContent .gdm-transition__year { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(54px,8vw,90px) }
-#MainContent .gdm-transition__title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,32px) }
-#MainContent .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,30px) }
-#MainContent .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-vs__num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-vs h5 { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-cta { padding: 26px 36px }
+.t4s-main-page .gdm-lp { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --card: #1a1714; --card-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
+.t4s-main-page .gdm-intro { padding: 28px 20px 26px }
+.t4s-main-page .gdm-h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(34px,6vw,64px); line-height: 1.12; letter-spacing: 0.005em }
+.t4s-main-page .gdm-btn--primary { color: #0d0d0d }
+.t4s-main-page .gdm-divider { margin: 26px 0 }
+.t4s-main-page .gdm-histoire { margin: 26px 0 }
+.t4s-main-page .gdm-histoire__head { margin-bottom: 28px }
+.t4s-main-page .gdm-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px,3.5vw,36px) }
+.t4s-main-page .gdm-tl-dot span { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .gdm-tl-content { padding: 24px 26px }
+.t4s-main-page .gdm-tl-year { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .gdm-tl-h { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(20px,2.5vw,26px) }
+.t4s-main-page .gdm-transition { margin: 26px 0; padding: 30px }
+.t4s-main-page .gdm-transition__year { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(54px,8vw,90px); line-height: 1.12; letter-spacing: 0.005em }
+.t4s-main-page .gdm-transition__title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,32px) }
+.t4s-main-page .gdm-section { margin: 26px 0 }
+.t4s-main-page .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,30px) }
+.t4s-main-page .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-visite { padding: 28px; margin: 26px 0 }
+.t4s-main-page .gdm-vs__num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-vs h5 { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .gdm-bieres { margin: 26px 0; padding: 26px 28px }
+.t4s-main-page .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-cta { margin-top: 26px; padding: 30px 28px }
+@media(max-width:768px) { .t4s-main-page .gdm-tl-content { padding: 20px 0 } }
+@media(max-width:640px) { .t4s-main-page .gdm-hero__content, .t4s-main-page .gdm-cta, .t4s-main-page .gdm-bieres, .t4s-main-page .gdm-visite, .t4s-main-page .gdm-transition { padding: 22px 18px } }
 </style>
   {%- when 'page/lhistoire-du-gue-des-moines' -%}
 <style>
-#MainContent .gdm-lp { --accent: #f0921e; --accent-glow: rgba(240, 146, 30, 0.12); --card: #1a1714; --card-hover: #201c18; --line-hover: rgba(240, 146, 30, 0.35); --muted: #a8a39a; --text: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
-#MainContent .gdm-h2-hero { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(28px,4vw,46px) }
-#MainContent .gdm-btn--primary { color: #0d0d0d }
-#MainContent .gdm-h3-caption { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,30px) }
-#MainContent .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-tl-year { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12 }
-#MainContent .gdm-tl-right h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-cta { padding: 26px 36px }
+.t4s-main-page .gdm-lp { --accent: #f0921e; --accent-glow: rgba(240, 146, 30, 0.12); --card: #1a1714; --card-hover: #201c18; --line-hover: rgba(240, 146, 30, 0.35); --muted: #a8a39a; --text: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
+.t4s-main-page .gdm-hero__content { padding: 28px }
+.t4s-main-page .gdm-h2-hero { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(28px,4vw,46px); line-height: 1.12; letter-spacing: 0.005em }
+.t4s-main-page .gdm-btn--primary { color: #0d0d0d }
+.t4s-main-page .gdm-h3-caption { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-section { margin: 26px 0 }
+.t4s-main-page .gdm-divider { margin: 26px 0 }
+.t4s-main-page .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,30px) }
+.t4s-main-page .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-tl-item { padding-bottom: 26px }
+.t4s-main-page .gdm-tl-year { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12 }
+.t4s-main-page .gdm-tl-right { margin-bottom: 26px }
+.t4s-main-page .gdm-tl-right h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-bieres-section { margin: 26px 0; padding: 26px 28px }
+.t4s-main-page .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-cta { margin-top: 26px; padding: 30px 28px }
+@media(max-width:640px) { .t4s-main-page .gdm-hero__content, .t4s-main-page .gdm-hero__visual, .t4s-main-page .gdm-cta, .t4s-main-page .gdm-bieres-section { padding: 22px 18px } }
 </style>
   {%- when 'page/location-de-tireuse-toulouse-31' -%}
 <style>
-#MainContent { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
-#MainContent .gdm-tr { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-btn-p { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; color: #0d0d0d }
-#MainContent .gdm-btn-s { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-section-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(26px, 4vw, 40px) }
-#MainContent .gdm-sep { margin: 0 0 36px }
-#MainContent .gdm-tr__hero { gap: 26px; padding: 32px 0 36px }
-#MainContent .gdm-tr__hero-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: clamp(36px, 5.5vw, 62px) }
-#MainContent .gdm-tr__steps { margin-bottom: 42px }
-#MainContent .gdm-step-num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; color: #0d0d0d }
-#MainContent .gdm-step-title { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-tr__futs { margin-bottom: 42px }
-#MainContent .gdm-fut-badge { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-fut-vol { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; line-height: 1.12; font-size: 46px }
-#MainContent .gdm-fut-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-tr__occasions { margin-bottom: 42px }
-#MainContent .gdm-occ-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-tr__form-wrap { gap: 32px; margin-bottom: 42px }
-#MainContent .gdm-form-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-form-group input, #MainContent .gdm-form-group select, #MainContent .gdm-form-group textarea { font-family: var(--gdm-site-body) !important }
-#MainContent .gdm-tr__faq { margin-bottom: 42px }
-#MainContent .gdm-faq-item summary { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-tr__maillage { margin-bottom: 42px }
-#MainContent .gdm-mail-card-title { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
-#MainContent .gdm-tr__cta { padding: 36px 26px }
-#MainContent .gdm-tr__cta-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px,4vw,44px) }
+.t4s-main-page { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --c: #1a1714; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff }
+.t4s-main-page .gdm-tr { font-family: var(--gdm-site-body) !important }
+.t4s-main-page .gdm-kicker { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .gdm-btn-p { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; color: #0d0d0d; padding: 13px 26px }
+.t4s-main-page .gdm-btn-s { font-family: var(--gdm-site-body) !important; font-weight: 600 !important; padding: 12px 26px }
+.t4s-main-page .gdm-section-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px, 4vw, 40px); line-height: 1.12 }
+.t4s-main-page .gdm-sep { margin: 0 0 40px }
+.t4s-main-page .gdm-tr__hero { gap: 30px; padding: 34px 0 40px }
+.t4s-main-page .gdm-tr__hero-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(36px, 5.5vw, 62px); line-height: 1.12 }
+.t4s-main-page .gdm-tr__steps { margin-bottom: 44px }
+.t4s-main-page .gdm-tr__steps-grid { margin-top: 28px }
+.t4s-main-page .gdm-step-num { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; color: #0d0d0d }
+.t4s-main-page .gdm-step-title { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .gdm-tr__futs { margin-bottom: 44px }
+.t4s-main-page .gdm-tr__futs-grid { margin-top: 28px }
+.t4s-main-page .gdm-fut-card { padding: 28px }
+.t4s-main-page .gdm-fut-badge { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .gdm-fut-vol { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: 46px; line-height: 1.12 }
+.t4s-main-page .gdm-fut-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-tr__occasions { margin-bottom: 44px }
+.t4s-main-page .gdm-tr__occasions-grid { margin-top: 28px }
+.t4s-main-page .gdm-occ-icon { font-size: 26px }
+.t4s-main-page .gdm-occ-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-tr__form-wrap { gap: 34px; margin-bottom: 44px }
+.t4s-main-page .gdm-form-card { padding: 28px }
+.t4s-main-page .gdm-form-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-form-subtitle { margin-bottom: 26px }
+.t4s-main-page .gdm-form-group input, .t4s-main-page .gdm-form-group select, .t4s-main-page .gdm-form-group textarea { font-family: var(--gdm-site-body) !important }
+.t4s-main-page .gdm-form-submit { padding: 15px 26px }
+.t4s-main-page .gdm-tr__faq { margin-bottom: 44px }
+.t4s-main-page .gdm-tr__faq-list { margin-top: 28px }
+.t4s-main-page .gdm-faq-item summary { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-tr__maillage { margin-bottom: 44px }
+.t4s-main-page .gdm-tr__maillage-grid { margin-top: 26px }
+.t4s-main-page .gdm-mail-card-title { font-family: var(--gdm-site-body) !important; font-weight: 600 !important }
+.t4s-main-page .gdm-tr__cta { padding: 40px 30px }
+.t4s-main-page .gdm-tr__cta-title { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(26px,4vw,44px) }
+.t4s-main-page .gdm-tr__cta-desc { margin-bottom: 28px }
+@media (max-width: 560px) { .t4s-main-page .gdm-tr__cta { padding: 28px 20px } .t4s-main-page .gdm-form-card { padding: 24px 20px } }
 </style>
   {%- when 'page/ou-voir-les-diffusions-sportives-dans-le-nord-toulousain-le-gue-des-moines' -%}
 <style>
-#MainContent .gdm-lp { --accent: #f0921e; --accent-dark: #c97412; --accent-glow: rgba(240, 146, 30, 0.12); --bg: #0d0d0d; --card: #1a1714; --card-hover: #201c18; --line-hover: rgba(240, 146, 30, 0.35); --muted: #a8a39a; --text: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
-#MainContent .gdm-h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(30px, 4.5vw, 52px) }
-#MainContent .gdm-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px, 3vw, 32px) }
-#MainContent .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-cta { padding: 26px 36px }
+.t4s-main-page .gdm-lp { --accent: #f0921e; --accent-dark: #c97412; --accent-glow: rgba(240, 146, 30, 0.12); --bg: #0d0d0d; --card: #1a1714; --card-hover: #201c18; --line-hover: rgba(240, 146, 30, 0.35); --muted: #a8a39a; --text: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
+.t4s-main-page .gdm-hero__content { padding: 28px }
+.t4s-main-page .gdm-h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(30px, 4.5vw, 52px); line-height: 1.12; letter-spacing: 0.005em }
+.t4s-main-page .gdm-badges { margin: 20px 0 24px }
+.t4s-main-page .gdm-section { margin: 26px 0 }
+.t4s-main-page .gdm-h2 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(24px, 3vw, 32px) }
+.t4s-main-page .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-bieres-section { margin: 26px 0; padding: 26px 28px }
+.t4s-main-page .gdm-biere-nom { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-cta { margin-top: 26px; padding: 30px 28px }
+.t4s-main-page .gdm-divider { margin: 26px 0 }
+@media (max-width: 640px) { .t4s-main-page .gdm-hero__content, .t4s-main-page .gdm-hero__visual, .t4s-main-page .gdm-card, .t4s-main-page .gdm-cta, .t4s-main-page .gdm-bieres-section { padding: 22px 18px } }
 </style>
   {%- when 'page/pourquoi-le-gue-des-moines' -%}
 <style>
-#MainContent .gdm-lp { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --card: #1a1714; --card-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
-#MainContent .gdm-h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; letter-spacing: 0.005em; line-height: 1.12; font-size: clamp(34px,6vw,64px) }
-#MainContent .gdm-quote blockquote { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(20px,2.5vw,28px) }
-#MainContent .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,30px) }
-#MainContent .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
-#MainContent .gdm-photo-overlay { padding: 26px 24px }
-#MainContent .gdm-btn--primary { color: #0d0d0d }
+.t4s-main-page .gdm-lp { --acc: #f0921e; --acc-g: rgba(240, 146, 30, 0.12); --acc-b: rgba(240, 146, 30, 0.28); --card: #1a1714; --card-h: #201c18; --ln-h: rgba(240, 146, 30, 0.35); --mu: #a8a39a; --tx: #ffffff; font-family: var(--gdm-site-body) !important; padding: 0 20px 48px }
+.t4s-main-page .gdm-intro { padding: 28px 20px 26px }
+.t4s-main-page .gdm-h1 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(34px,6vw,64px); line-height: 1.12; letter-spacing: 0.005em }
+.t4s-main-page .gdm-quote { padding: 24px 28px; margin: 26px 0 }
+.t4s-main-page .gdm-quote blockquote { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(20px,2.5vw,28px) }
+.t4s-main-page .gdm-divider { margin: 26px 0 }
+.t4s-main-page .gdm-card { padding: 24px 26px }
+.t4s-main-page .gdm-card__icon { font-size: 28px }
+.t4s-main-page .gdm-h3 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important; font-size: clamp(22px,3vw,30px) }
+.t4s-main-page .gdm-h4 { font-family: var(--gdm-site-display) !important; font-weight: 400 !important }
+.t4s-main-page .gdm-section { margin: 26px 0 }
+.t4s-main-page .gdm-photo-finale { margin-top: 26px }
+.t4s-main-page .gdm-photo-overlay { padding: 30px 24px }
+.t4s-main-page .gdm-btn--primary { color: #0d0d0d }
+@media(max-width:640px) { .t4s-main-page .gdm-intro { padding: 26px 0 20px } }
 </style>
 {%- endcase -%}
