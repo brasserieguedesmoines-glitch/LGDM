@@ -1,0 +1,268 @@
+/* ==========================================================================
+   Le Gué des Moines — habillage GDM de tout le site (thème Kalles)
+   Polices Anton (titres) et Inter (texte), orange #F0921E, fond #0D0D0D,
+   boutons pilule, champs sombres. Chargé sur toutes les pages par
+   snippets/gdm-site.liquid. Les sections « GDM » et le pied de page ont
+   leurs propres styles : rien ici ne les concerne.
+   ========================================================================== */
+
+/* ---------- Jetons du thème (html:root l'emporte sur le :root du thème) ---------- */
+html:root {
+  --gdm-site-display: 'GDM Anton', 'Anton', 'Bebas Neue', 'Oswald', Impact, 'Arial Narrow', sans-serif;
+  --gdm-site-body: 'GDM Inter', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --gdm-site-accent: #f0921e;
+  --gdm-site-accent-hover: #f5a425;
+  --gdm-site-surface: #1a1714;
+  --gdm-site-surface-2: #201c18;
+  --gdm-site-line: #4a2f12;
+  --gdm-site-border: rgba(255, 255, 255, 0.12);
+  --gdm-site-border-strong: rgba(255, 255, 255, 0.2);
+  --gdm-site-muted: #a8a39a;
+
+  --font-family-1: var(--gdm-site-body);
+  --font-family-2: var(--gdm-site-display);
+  --font-family-3: var(--gdm-site-body);
+  --font-body-family: var(--gdm-site-body);
+  --font-heading-family: var(--gdm-site-display);
+  --font-button-family: var(--gdm-site-body);
+
+  --t4s-body-background: #0d0d0d;
+  --accent-color: #f0921e;
+  --accent-color-rgb: 240, 146, 30;
+  --accent-color-darken: #c97412;
+  --accent-color-hover: #f5a425;
+  --secondary-color: #f5a425;
+  --secondary-color-rgb: 245, 164, 37;
+  --link-color: #f0921e;
+  --link-color-hover: #f5a425;
+  --primary-price-color: #f0921e;
+  --secondary-price-color: #f0921e;
+  --border-color: rgba(255, 255, 255, 0.16);
+  --border-color-rgb: 255, 255, 255;
+  --border-primary-color: #f0921e;
+  --button-background: #f0921e;
+  --button-color: #0d0d0d;
+  --button-background-hover: #f5a425;
+  --button-color-hover: #0d0d0d;
+  --btn-radius: 999px;
+  --t4s-highlight-color: #f0921e;
+}
+
+body {
+  background-color: #0d0d0d;
+  font-family: var(--gdm-site-body);
+}
+
+::selection {
+  background: rgba(240, 146, 30, 0.35);
+  color: #fff;
+}
+
+/* Le thème force une police à empattements sur em, q et blockquote : ils reprennent la police du texte. */
+body :is(em, q, blockquote, cite) {
+  font-family: inherit !important;
+}
+
+/* ---------- Titres du thème : Anton, une seule graisse ---------- */
+body :is(h1, h2, h3, h4, .t4s_as_title):not(.gdm *):not(.gdm-footer *) {
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+#MainContent :is(h1, h2):not(.gdm *) {
+  line-height: 1.12;
+  text-transform: uppercase;
+}
+
+/* ---------- Boutons du thème : pilules ---------- */
+body .t4s-btn:not(.gdm *) {
+  border-radius: 999px;
+  font-family: var(--gdm-site-body);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+body :is(.t4s-btn-base.t4s-btn-style-default, .t4s-btn__checkout, .t4s-btn-cart__emty, .t4s-contact-form input[type='submit']):not(.gdm *) {
+  min-height: 46px;
+  border-color: var(--gdm-site-accent) !important;
+  background-color: var(--gdm-site-accent) !important;
+  color: #0d0d0d !important;
+}
+
+body :is(.t4s-btn-base.t4s-btn-style-default, .t4s-btn__checkout, .t4s-btn-cart__emty, .t4s-contact-form input[type='submit']):not(.gdm *):hover {
+  border-color: var(--gdm-site-accent-hover) !important;
+  background-color: var(--gdm-site-accent-hover) !important;
+}
+
+/* Boutons secondaires (panier) : contour. */
+body :is(.t4s-btn__cart, .t4s-mini_cart-tool__back):not(.gdm *) {
+  border: 1px solid var(--gdm-site-border-strong) !important;
+  background: transparent !important;
+  color: #fff !important;
+}
+
+body .t4s-mini_cart-tool__primary:not(.gdm *) {
+  border-radius: 999px;
+  background: var(--gdm-site-accent) !important;
+  color: #0d0d0d !important;
+}
+
+/* ---------- Champs de formulaire sombres ---------- */
+body :where(input:not([type='checkbox'], [type='radio'], [type='submit'], [type='button'], [type='hidden'], [type='range'], [type='image']), textarea, select):not(.gdm *) {
+  border: 1px solid var(--gdm-site-border-strong) !important;
+  border-radius: 14px;
+  background-color: var(--gdm-site-surface) !important;
+  color: #fff !important;
+  font-family: var(--gdm-site-body);
+}
+
+body :where(input, textarea, select):not(.gdm *)::placeholder {
+  color: #8d877e;
+  opacity: 1;
+}
+
+body :where(input, textarea, select):not(.gdm *):focus {
+  border-color: var(--gdm-site-accent) !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(240, 146, 30, 0.25);
+}
+
+body select:not(.gdm *) option {
+  background: var(--gdm-site-surface);
+  color: #fff;
+}
+
+/* Les champs de quantité sont dans un cadre : pas de double bordure. */
+body .t4s-quantity-wrapper input.t4s-quantity-input {
+  border: 0 !important;
+  border-radius: 0;
+  background: transparent !important;
+}
+
+/* ---------- Fiche produit (section principale du thème) ---------- */
+body .t4s-product__title {
+  font-family: var(--gdm-site-display) !important;
+  font-weight: 400 !important;
+  line-height: 1.1 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+body .t4s-product-price {
+  color: var(--gdm-site-accent) !important;
+  font-family: var(--gdm-site-body);
+}
+
+body .t4s-product__description.t4s-rte {
+  color: #d6d1c8;
+  line-height: 1.65;
+}
+
+body .t4s-product__description.t4s-rte strong {
+  color: #fff;
+}
+
+body .t4s-product__description table {
+  border-collapse: separate;
+  border-spacing: 6px;
+  margin-inline: -6px;
+}
+
+body .t4s-product__description :is(td, th) {
+  padding: 10px 8px;
+  border: 1px solid var(--gdm-site-border) !important;
+  border-radius: 12px;
+  background: var(--gdm-site-surface);
+  color: #fff;
+  text-align: center;
+}
+
+body .t4s-swatch__title {
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+body .t4s-swatch__item {
+  min-height: 44px;
+  border: 1px solid var(--gdm-site-border-strong) !important;
+  background: transparent !important;
+  color: #fff !important;
+}
+
+body .t4s-swatch__item.is--selected {
+  border-color: var(--gdm-site-accent) !important;
+  background: var(--gdm-site-accent) !important;
+  color: #0d0d0d !important;
+  font-weight: 600;
+}
+
+body .t4s-quantity-wrapper {
+  border: 1px solid var(--gdm-site-border-strong) !important;
+  border-radius: 999px !important;
+  overflow: hidden;
+}
+
+body .t4s-quantity-wrapper :is(button, input) {
+  color: #fff !important;
+}
+
+body .t4s-product-form__submit {
+  border-radius: 999px !important;
+}
+
+/* Barre d'ajout au panier collante : sombre au lieu de blanche. */
+body .t4s-sticky-atc {
+  border-top: 1px solid var(--gdm-site-border);
+  background: rgba(13, 13, 13, 0.94) !important;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  color: #fff;
+}
+
+body .t4s-sticky-atc :is(.t4s-sticky-atc__title, .t4s-sticky-atc__price, a) {
+  color: #fff;
+}
+
+/* ---------- Cartes produit du thème (recherche, suggestions) ---------- */
+body .t4s-product-title a {
+  color: #fff;
+  font-family: var(--gdm-site-display);
+  font-size: 19px;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+body .t4s-product-title a:hover {
+  color: var(--gdm-site-accent);
+}
+
+body .t4s-product-vendor a {
+  color: var(--gdm-site-muted);
+  font-size: 12px;
+}
+
+body .t4s-product .t4s-product-price {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* ---------- Badges ---------- */
+body .t4s-badge-item {
+  border-radius: 999px;
+  font-family: var(--gdm-site-body);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+body .t4s-badge-preorder {
+  background-color: var(--gdm-site-accent) !important;
+  color: #0d0d0d !important;
+}
+
+/* ---------- Divers ---------- */
+body .t4s-rte a:not(.t4s-btn) {
+  color: var(--gdm-site-accent);
+  text-underline-offset: 3px;
+}

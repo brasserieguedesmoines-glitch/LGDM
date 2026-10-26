@@ -1,0 +1,8 @@
+{%- comment -%}
+  Le Gué des Moines — habillage GDM de tout le site. Inclus une fois dans
+  layout/theme.liquid, juste après les styles du thème : polices hébergées,
+  styles et script des sections « GDM », puis les retouches du thème Kalles
+  (assets/gdm-site.css).
+{%- endcomment -%}
+{%- render 'gdm-assets' -%}
+{{ 'gdm-site.css' | asset_url | stylesheet_tag }}
