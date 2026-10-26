@@ -465,6 +465,17 @@ body .t4s-badge-preorder {
   padding: 0 20px !important;
 }
 
+/* Icônes sans hauteur dans le modèle (150 px par défaut) : bouton de paiement démesuré,
+   boutons + et − vides. */
+body .t4s-btn__checkout .t4s-btn-icon {
+  height: 14px;
+}
+
+.template-cart #MainContent .t4s-quantity-selector svg {
+  width: 10px;
+  height: 10px;
+}
+
 .template-cart #MainContent :is(.t4s-mini_cart__edit, .t4s-mini_cart__remove) svg {
   width: 18px;
   height: 18px;
