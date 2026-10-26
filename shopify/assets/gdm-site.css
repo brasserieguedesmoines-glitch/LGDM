@@ -58,6 +58,18 @@ body {
   color: #fff;
 }
 
+/* Contenus des pages et articles (leur propre feuille de style) : couleurs de la marque.
+   Les polices et espacements propres à chaque contenu sont dans snippets/gdm-page-skin.liquid. */
+#MainContent {
+  --acc: #f0921e;
+  --accent: #f0921e;
+  --acc-g: rgba(240, 146, 30, 0.12);
+  --acc-b: rgba(240, 146, 30, 0.28);
+  --c: #1a1714;
+  --mu: #a8a39a;
+  --tx: #ffffff;
+}
+
 /* Le thème force une police à empattements sur em, q et blockquote : ils reprennent la police du texte. */
 body :is(em, q, blockquote, cite) {
   font-family: inherit !important;
