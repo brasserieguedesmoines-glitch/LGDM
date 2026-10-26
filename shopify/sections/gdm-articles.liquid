@@ -137,6 +137,20 @@
                 assign c_image = item.image
                 assign c_alt = item.image.alt | default: item.title
                 assign c_style = nil
+                # Article sans image à la une : première photo de son contenu.
+                assign c_src = nil
+                if c_image == blank and item.content contains '<img'
+                  assign c_parts = item.content | split: '<img'
+                  assign c_parts = c_parts[1] | split: 'src="'
+                  assign c_src = c_parts[1] | split: '"' | first | replace: '&amp;', '&'
+                  unless c_src contains 'width='
+                    if c_src contains '?'
+                      assign c_src = c_src | append: '&width=720'
+                    else
+                      assign c_src = c_src | append: '?width=720'
+                    endif
+                  endunless
+                endif
                 assign c_tag = item.tags.first
                 assign c_title = item.title
                 assign c_url = item.url
@@ -157,6 +171,8 @@
                   {%- else -%}
                     {{ c_image | image_url: width: 900 | image_tag: loading: 'lazy', widths: '360, 540, 720, 900', sizes: img_sizes, alt: c_alt, class: 'gdm-articles__img' }}
                   {%- endif -%}
+                {%- elsif c_src != blank -%}
+                  <img src="{{ c_src | escape }}" alt="{{ c_alt | escape }}" width="720" height="540" loading="lazy" class="gdm-articles__img">
                 {%- else -%}
                   <span class="gdm-articles__noimg" aria-hidden="true">{% render 'gdm-icon', name: 'book', icon_size: 36 %}</span>
                 {%- endif -%}
