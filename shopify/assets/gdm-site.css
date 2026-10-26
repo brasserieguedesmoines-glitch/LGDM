@@ -218,6 +218,7 @@ body .t4s-quantity-wrapper {
 }
 
 body .t4s-quantity-wrapper :is(button, input) {
+  background: transparent !important;
   color: #fff !important;
 }
 
@@ -355,6 +356,7 @@ body .t4s-badge-preorder {
   margin-bottom: 20px;
   padding: 0;
   border: 0;
+  background: transparent !important;
 }
 
 .template-cart #MainContent .t4s-drawer__header > span {
@@ -457,6 +459,17 @@ body .t4s-badge-preorder {
   font-size: 13px;
 }
 
+.template-cart #MainContent .t4s-btn__checkout {
+  height: auto !important;
+  min-height: 50px;
+  padding: 0 20px !important;
+}
+
+.template-cart #MainContent :is(.t4s-mini_cart__edit, .t4s-mini_cart__remove) svg {
+  width: 18px;
+  height: 18px;
+}
+
 .template-cart #MainContent .t4s-cat__imgtrust {
   margin-top: 14px;
   opacity: 0.8;
@@ -490,10 +503,37 @@ body .t4s-badge-preorder {
   fill: var(--gdm-site-accent);
 }
 
+.template-cart #MainContent .t4s-btn-cart__emty {
+  padding: 0 28px !important;
+}
+
 .template-cart #MainContent .t4s-mini_cart__emty > p:first-of-type {
   margin-bottom: 18px;
   color: #fff;
   font-family: var(--gdm-site-display);
   font-size: 26px;
   text-transform: uppercase;
+}
+
+/* Suggestions du panier (page et panier latéral) : carte sombre au lieu du bandeau gris clair. */
+body .t4s-minicart-recommendations {
+  margin: 16px 0 0;
+  border: 1px solid var(--gdm-site-border);
+  border-radius: 16px;
+  background: var(--gdm-site-surface);
+  box-shadow: none;
+}
+
+body .t4s-minicart-recommendations__title {
+  padding: 14px 16px 0;
+  background: transparent;
+  color: #fff;
+  font-family: var(--gdm-site-display);
+  font-size: 18px;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+body .t4s-minicart-recommendations__item--title {
+  color: #fff;
 }

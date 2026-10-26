@@ -20,3 +20,26 @@
 {%- if gdm_skin_key -%}
   {%- render 'gdm-page-skin', key: gdm_skin_key -%}
 {%- endif -%}
+{%- if template.name == 'cart' -%}
+  {%- comment -%}
+    Page panier : le thème met à jour le panier latéral, absent de cette page. Après un
+    changement de quantité ou une suppression, la page est rechargée pour afficher le total à jour.
+  {%- endcomment -%}
+  <script>
+    (function () {
+      var nativeFetch = window.fetch;
+      var timer;
+      window.fetch = function (input) {
+        var url = typeof input === 'string' ? input : (input && input.url) || '';
+        var request = nativeFetch.apply(this, arguments);
+        if (/\/cart\/(change|update|clear)/.test(url)) {
+          request.then(function () {
+            clearTimeout(timer);
+            timer = setTimeout(function () { window.location.reload(); }, 300);
+          }, function () {});
+        }
+        return request;
+      };
+    })();
+  </script>
+{%- endif -%}
