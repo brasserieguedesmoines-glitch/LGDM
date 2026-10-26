@@ -406,7 +406,7 @@
       "cookies_required": "Activer les cookies pour utiliser le panier",
       "taxes_and_shipping_at_checkout": "Taxes et frais d'expédition calculés à la caisse",
       "taxes_and_shipping_policy_at_checkout_html": "Taxes et <a href=\"{{ link }}\" target=\"_blank\">frais d&#39;expédition</a> calculés à la caisse",
-      "taxes_included_but_shipping_at_checkout": "-10% avec le code : ARTPIXE",
+      "taxes_included_but_shipping_at_checkout": "Taxes incluses. Frais de port calculés à la caisse.",
       "taxes_included_and_shipping_policy_html": "Taxe inclu. <a href=\"{{ link }}\" target=\"_blank\">Frais de port</a> calculés à la caisse.",
       "taxes_discounts_and_shipping_at_checkout": "Codes de taxes, d'expédition et de réduction calculés à la caisse",
       "taxes_discounts_and_shipping_policy_at_checkout_html": "Codes de taxes, <a href=\"{{ link }}\" target=\"_blank\">d&#39;expédition</a> et de réduction calculés à la caisse",
@@ -718,13 +718,6 @@
     "checkout": {
       "payment": {
         "payment_method_not_available_for_shipping_address_error": "Mode de paiement non disponible pour l'adresse de livraison sélectionnée. Choisissez un autre mode de paiement."
-      },
-      "delivery_options": {
-        "pickup_point_method_definition": "Livraison GRATUITE en Point Relais / Digital",
-        "ship_to_address": "Livraison à domicile (4,90 €)"
-      },
-      "contact": {
-        "contact_method_title": "Pour valider avec toi‚ ton portrait :"
       }
     }
   }
