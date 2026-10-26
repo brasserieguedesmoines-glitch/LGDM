@@ -1,0 +1,149 @@
+{
+  "sections": {
+    "heading_template": {
+      "type": "heading-template",
+      "blocks": {
+        "3b0cc506-49ea-4851-b5a6-ff7c2153b0e6": {
+          "type": "1",
+          "settings": {
+            "heading": "",
+            "fontf": "inherit",
+            "text_cl": "#ffffff",
+            "text_fs": 20,
+            "text_lh": 20,
+            "text_fw": 500,
+            "text_ls": 0,
+            "font_italic": false,
+            "font_uppercase": false,
+            "text_shadow": false,
+            "text_mgb": 5,
+            "hidden_mobile": false,
+            "text_fs_mb": 20,
+            "text_lh_mb": 20,
+            "text_ls_mb": 0,
+            "text_mgb_mobile": 5
+          }
+        }
+      },
+      "block_order": [
+        "3b0cc506-49ea-4851-b5a6-ff7c2153b0e6"
+      ],
+      "settings": {
+        "image": "shopify://shop_images/shop-banner.jpg",
+        "parallax": false,
+        "color": "#222222",
+        "overlay": 54,
+        "padding": 50,
+        "paddingmb": 50,
+        "mg_b": 40,
+        "mg_bmb": 10,
+        "content_align": "t4s-text-center",
+        "bg_pos": "center center",
+        "bg_repeat": "no-repeat",
+        "bg_size": "cover",
+        "use_cus_css": false,
+        "code_cus_css": ".SectionID {\nbackground-color:red\n}"
+      }
+    },
+    "main": {
+      "type": "main-search",
+      "blocks": {
+        "64e8b3f9-24d9-45f9-b8a1-139ea74f4664": {
+          "type": "filter",
+          "settings": {}
+        },
+        "68c58c07-8f22-4443-9d36-d081841d0cb0": {
+          "type": "layout",
+          "settings": {}
+        },
+        "9375b7e8-1193-4527-a6bd-dd4bcd8660ac": {
+          "type": "sortby",
+          "settings": {}
+        }
+      },
+      "block_order": [
+        "64e8b3f9-24d9-45f9-b8a1-139ea74f4664",
+        "68c58c07-8f22-4443-9d36-d081841d0cb0",
+        "9375b7e8-1193-4527-a6bd-dd4bcd8660ac"
+      ],
+      "settings": {
+        "product_des": "1",
+        "show_vendor": true,
+        "image_ratio": "rationt",
+        "image_size": "cover",
+        "image_position": "8",
+        "content_align": "default",
+        "limit": 12,
+        "enable_listing": true,
+        "enable_listing_default": false,
+        "col_dk": "4",
+        "col_tb": "2",
+        "col_mb": "2",
+        "space_h_item": "30",
+        "space_v_item": "30",
+        "space_h_item_mb": "10",
+        "space_v_item_mb": "10",
+        "layout_des": "1",
+        "use_pagination": "default",
+        "enable_bar_lm": false,
+        "btn_icon": false,
+        "button_style": "default",
+        "btns_size": "large",
+        "btns_cl": "dark",
+        "button_effect": "default",
+        "btn_pos": "t4s-text-center",
+        "layout": "t4s-container-wrap",
+        "cl_bg": "",
+        "cl_bg_gradient": "",
+        "mg": ",,80px,",
+        "pd": "",
+        "mg_mb": ",,50px,",
+        "pd_mb": ""
+      }
+    },
+    "sidebar": {
+      "type": "sidebar-collection",
+      "blocks": {
+        "c7bdf308-8019-4991-b58c-6d3e205a52eb": {
+          "type": "category",
+          "settings": {
+            "heading": "Product Categories",
+            "cat_source": "1",
+            "cat_link_list": "",
+            "count": true
+          }
+        },
+        "9d37e80a-1eda-4a65-bb08-199e6a933a16": {
+          "type": "collection",
+          "settings": {
+            "heading": "Sale Products",
+            "collection": "frontpage",
+            "limit_pr": 3,
+            "image_ratio": "t4s_ratioadapt",
+            "image_size": "t4s_cover",
+            "image_position": "t4s_position_8"
+          }
+        }
+      },
+      "block_order": [
+        "c7bdf308-8019-4991-b58c-6d3e205a52eb",
+        "9d37e80a-1eda-4a65-bb08-199e6a933a16"
+      ],
+      "disabled": true,
+      "settings": {
+        "enable_drawer": false,
+        "space": 50,
+        "size": "medium",
+        "br_style": "none",
+        "brcolor": "#222222",
+        "sidebar_bdr": 0,
+        "sidebar_pd": 5
+      }
+    }
+  },
+  "order": [
+    "heading_template",
+    "main",
+    "sidebar"
+  ]
+}

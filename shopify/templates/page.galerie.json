@@ -1,0 +1,260 @@
+{
+  "sections": {
+    "heading": {
+      "type": "heading-template",
+      "blocks": {
+        "1_ex7KM7": {
+          "type": "1",
+          "settings": {
+            "heading": "",
+            "fontf": "inherit",
+            "text_cl": "#ffffff",
+            "text_fs": 20,
+            "text_lh": 0,
+            "text_fw": 800,
+            "text_ls": 0,
+            "font_italic": false,
+            "font_uppercase": true,
+            "text_shadow": true,
+            "text_mgb": 0,
+            "hidden_mobile": false,
+            "text_fs_mb": 20,
+            "text_lh_mb": 0,
+            "text_ls_mb": 0,
+            "text_mgb_mobile": 0
+          }
+        }
+      },
+      "block_order": [
+        "1_ex7KM7"
+      ],
+      "settings": {
+        "heading_fullwidth": false,
+        "image": "shopify://shop_images/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_2_92d5afd7-0312-4448-8a22-ad325267e65a.webp",
+        "use_specify_image": true,
+        "parallax": true,
+        "color": "#000000",
+        "overlay": 54,
+        "padding": 50,
+        "paddingmb": 50,
+        "mg_b": 50,
+        "mg_bmb": 50,
+        "content_align": "t4s-text-center",
+        "bg_pos": "center center",
+        "bg_repeat": "no-repeat",
+        "bg_size": "cover",
+        "use_cus_css": false,
+        "code_cus_css": ".SectionID {\nbackground-color:red\n}"
+      }
+    },
+    "main": {
+      "type": "main-page",
+      "settings": {
+        "layout": "t4s-container-wrap",
+        "cl_bg": "",
+        "cl_bg_gradient": "",
+        "mg": "60px,,60px,",
+        "pd": "",
+        "mg_tb": "",
+        "pd_tb": "",
+        "mg_mb": ",,30px,",
+        "pd_mb": ""
+      }
+    },
+    "sidebar-page": {
+      "type": "sidebar-page",
+      "blocks": {
+        "f69681ed-b75e-42de-be58-fdf73b3b7e08": {
+          "type": "blog_cate",
+          "settings": {
+            "title": "Blog categories",
+            "cat_link_list": "",
+            "count": true
+          }
+        }
+      },
+      "block_order": [
+        "f69681ed-b75e-42de-be58-fdf73b3b7e08"
+      ],
+      "disabled": true,
+      "settings": {
+        "enable_drawer": false,
+        "space": 50,
+        "size": "medium",
+        "br_style": "none",
+        "brcolor": "#222222",
+        "sidebar_bdr": 5,
+        "sidebar_pd": 10
+      }
+    },
+    "image_gallery_packery_wLgqyK": {
+      "type": "image-gallery-packery",
+      "blocks": {
+        "image_item_rYx3Jb": {
+          "type": "image_item",
+          "settings": {
+            "image": "shopify://shop_images/blonde_d_occ.webp",
+            "link": "",
+            "col_dk": "4",
+            "col_tb": "6",
+            "col_mb": "6"
+          }
+        },
+        "image_item_J39dNR": {
+          "type": "image_item",
+          "settings": {
+            "image": "shopify://shop_images/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_2.webp",
+            "link": "",
+            "col_dk": "4",
+            "col_tb": "6",
+            "col_mb": "6"
+          }
+        },
+        "image_item_eLpcKi": {
+          "type": "image_item",
+          "settings": {
+            "image": "shopify://shop_images/labelle_ipa.jpg",
+            "link": "",
+            "col_dk": "4",
+            "col_tb": "6",
+            "col_mb": "6"
+          }
+        },
+        "image_item_FkQwKE": {
+          "type": "image_item",
+          "settings": {
+            "image": "shopify://shop_images/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_2_92d5afd7-0312-4448-8a22-ad325267e65a.webp",
+            "link": "",
+            "col_dk": "4",
+            "col_tb": "6",
+            "col_mb": "6"
+          }
+        }
+      },
+      "block_order": [
+        "image_item_rYx3Jb",
+        "image_item_J39dNR",
+        "image_item_eLpcKi",
+        "image_item_FkQwKE"
+      ],
+      "settings": {
+        "design_heading": "1",
+        "heading_align": "t4s-text-center",
+        "top_heading": "",
+        "icon_heading": "las la-gem",
+        "top_subheading": "",
+        "tophead_mb": 30,
+        "click_image": "data-t4s-gallery",
+        "nav_thumbs": true,
+        "open_link": "_blank",
+        "item_rd": 0,
+        "img_effect": "none",
+        "b_effect": "none",
+        "image_ratio": "ratioadapt",
+        "image_size": "cover",
+        "image_position": "8",
+        "space_item": "30",
+        "space_item_mb": "10",
+        "layout": "t4s-container-wrap",
+        "cl_bg": "",
+        "cl_bg_gradient": "",
+        "mg": ",,50px,",
+        "pd": "",
+        "mg_tb": ",,50px,",
+        "pd_tb": "",
+        "mg_mb": ",,30px,",
+        "pd_mb": "",
+        "use_cus_css": false,
+        "code_cus_css": ""
+      }
+    },
+    "image_gallery_packery_8gn9VR": {
+      "type": "image-gallery-packery",
+      "blocks": {
+        "image_item_U7FQdq": {
+          "type": "image_item",
+          "settings": {
+            "image": "shopify://shop_images/le_guedes_moines_1.png",
+            "link": "",
+            "col_dk": "4",
+            "col_tb": "6",
+            "col_mb": "6"
+          }
+        },
+        "image_item_nx6RMq": {
+          "type": "image_item",
+          "settings": {
+            "image": "shopify://shop_images/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_3_afb49456-691a-4fb8-97b0-a0b1bbde33ab.webp",
+            "link": "",
+            "col_dk": "4",
+            "col_tb": "6",
+            "col_mb": "6"
+          }
+        },
+        "image_item_rJWMMb": {
+          "type": "image_item",
+          "settings": {
+            "image": "shopify://shop_images/BRASSERIE_ARTISANAL_LE_GUE_DES_MOINES_9e8b0033-e237-4d43-a3a0-75f2ece76781.webp",
+            "link": "",
+            "col_dk": "4",
+            "col_tb": "6",
+            "col_mb": "6"
+          }
+        },
+        "image_item_LGmxQN": {
+          "type": "image_item",
+          "settings": {
+            "image": "shopify://shop_images/super_power.webp",
+            "link": "",
+            "col_dk": "4",
+            "col_tb": "6",
+            "col_mb": "6"
+          }
+        }
+      },
+      "block_order": [
+        "image_item_U7FQdq",
+        "image_item_nx6RMq",
+        "image_item_rJWMMb",
+        "image_item_LGmxQN"
+      ],
+      "settings": {
+        "design_heading": "1",
+        "heading_align": "t4s-text-center",
+        "top_heading": "",
+        "icon_heading": "las la-gem",
+        "top_subheading": "",
+        "tophead_mb": 30,
+        "click_image": "data-t4s-gallery",
+        "nav_thumbs": true,
+        "open_link": "_blank",
+        "item_rd": 0,
+        "img_effect": "none",
+        "b_effect": "none",
+        "image_ratio": "ratioadapt",
+        "image_size": "cover",
+        "image_position": "8",
+        "space_item": "30",
+        "space_item_mb": "10",
+        "layout": "t4s-container-wrap",
+        "cl_bg": "",
+        "cl_bg_gradient": "",
+        "mg": ",,50px,",
+        "pd": "",
+        "mg_tb": ",,50px,",
+        "pd_tb": "",
+        "mg_mb": ",,30px,",
+        "pd_mb": "",
+        "use_cus_css": false,
+        "code_cus_css": ""
+      }
+    }
+  },
+  "order": [
+    "heading",
+    "main",
+    "sidebar-page",
+    "image_gallery_packery_wLgqyK",
+    "image_gallery_packery_8gn9VR"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "sections": {
+    "main": {
+      "type": "main-404",
+      "settings": {
+        "link": ""
+      }
+    },
+    "gdm_bieres": {
+      "type": "gdm-bieres",
+      "settings": {
+        "pill": "La gamme",
+        "title": "Nos",
+        "title_accent": "bières",
+        "heading_tag": "h2",
+        "text": "",
+        "link_label": "Toute la gamme",
+        "link_url": "shopify://collections/bieres-artisanales-du-gue-des-moines",
+        "collection": "bieres-artisanales-du-gue-des-moines",
+        "limit": 12,
+        "layout": "carousel",
+        "columns": 4,
+        "style_source": "custom_style",
+        "padding_top": 24,
+        "padding_bottom": 56
+      }
+    }
+  },
+  "order": [
+    "main",
+    "gdm_bieres"
+  ]
+}

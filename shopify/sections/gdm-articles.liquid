@@ -2,7 +2,9 @@
   Le Gué des Moines — Articles : carrousel de cartes d'articles (photo, étiquette,
   titre, lien « Lire ») avec lien « Tous », flèches et barre de progression.
   Cartes saisies à la main (blocs « Article ») ou, s'il n'y a aucun bloc,
-  derniers articles du blog choisi, avec leur image.
+  derniers articles du blog choisi, avec leur image. Sur la page d'un blog ou
+  d'un article, sans blog choisi, la section affiche ce blog-là (en grille :
+  page Blog ; sous un article : « À lire aussi », sans l'article lu).
 {%- endcomment -%}
 {%- liquid
   assign s = section.settings
@@ -10,6 +12,23 @@
   assign card_tag = 'h3'
   if heading_tag == 'h1'
     assign card_tag = 'h2'
+  endif
+
+  assign current_article_id = article.id
+  assign source_blog = s.blog
+  if source_blog == blank and blog != blank
+    assign source_blog = blog
+  endif
+  assign is_grid = false
+  assign layout_tag = 'gdm-carousel'
+  if s.layout == 'grid'
+    assign is_grid = true
+    assign layout_tag = 'div'
+  endif
+  assign title_main = s.title
+  assign title_end = s.title_accent
+  if s.title == blank and s.title_accent == blank and template.name == 'blog'
+    assign title_main = source_blog.title
   endif
 
   assign article_blocks = section.blocks | where: 'type', 'article'
@@ -20,13 +39,24 @@
     assign has_items = true
     assign items = article_blocks
     assign item_limit = 50
-  elsif s.blog != blank and s.blog.articles_count > 0
+  elsif source_blog != blank and source_blog.articles_count > 0
     assign has_items = true
-    assign items = s.blog.articles
+    assign items = source_blog.articles
     assign item_limit = s.articles_count
   endif
 
-  assign all_link = s.all_link | default: s.blog.url
+  assign all_link = s.all_link | default: source_blog.url
+  assign show_tags = false
+  if s.show_tags and use_blocks == false and source_blog.all_tags.size > 0
+    assign show_tags = true
+  endif
+  assign show_aside = show_tags
+  if s.all_label != blank and all_link != blank
+    assign show_aside = true
+  endif
+  if has_items and is_grid == false
+    assign show_aside = true
+  endif
   assign desktop_vw = 96 | divided_by: s.columns
   assign img_sizes = '(min-width: 990px) ' | append: desktop_vw | append: 'vw, (min-width: 750px) 46vw, 82vw'
 -%}
@@ -34,18 +64,18 @@
 
 <gdm-section
   id="gdm-{{ section.id }}"
-  class="gdm gdm-articles gdm-grain"
+  class="gdm gdm-articles gdm-grain{% if is_grid %} gdm-articles--grid{% endif %}"
   style="--gdm-bg: {{ s.color_bg }}; --gdm-accent: {{ s.color_accent }}; --gdm-cols: {{ s.columns }}; --gdm-pt: {{ s.padding_top }}px; --gdm-pb: {{ s.padding_bottom }}px;"
 >
   <div class="gdm-container">
-    <gdm-carousel class="gdm-articles__layout">
+    <{{ layout_tag }} class="gdm-articles__layout">
       <div class="gdm-head gdm-articles__head">
         {%- if s.pill != blank -%}
           <p class="gdm-pill" data-gdm-reveal>{{ s.pill | escape }}</p>
         {%- endif -%}
-        {%- if s.title != blank or s.title_accent != blank -%}
+        {%- if title_main != blank or title_end != blank -%}
           <{{ heading_tag }} class="gdm-title" data-gdm-reveal style="--gdm-i: 1;">
-            {{- s.title | escape }}{% if s.title_accent != blank %} <em>{{ s.title_accent | escape }}</em>{% endif -%}
+            {{- title_main | escape }}{% if title_end != blank %} <em>{{ title_end | escape }}</em>{% endif -%}
           </{{ heading_tag }}>
         {%- endif -%}
         {%- if s.text != blank -%}
@@ -53,15 +83,23 @@
         {%- endif -%}
       </div>
 
-      {%- if has_items or s.all_label != blank and all_link != blank -%}
+      {%- if show_aside -%}
         <div class="gdm-articles__aside" data-gdm-reveal style="--gdm-i: 2;">
+          {%- if show_tags -%}
+            <nav class="gdm-articles__tags" aria-label="{{ s.tags_label | escape }}">
+              <a class="gdm-articles__filter" href="{{ source_blog.url }}"{% if current_tags == blank %} aria-current="page"{% endif %}>{{ s.tags_all | escape }}</a>
+              {%- for tag in source_blog.all_tags -%}
+                <a class="gdm-articles__filter" href="{{ source_blog.url }}/tagged/{{ tag | handleize }}"{% if current_tags contains tag %} aria-current="page"{% endif %}>{{ tag | escape }}</a>
+              {%- endfor -%}
+            </nav>
+          {%- endif -%}
           {%- if s.all_label != blank and all_link != blank -%}
             <a class="gdm-link gdm-articles__all" href="{{ all_link }}">
               {{- s.all_label | escape -}}
               {%- render 'gdm-icon', name: 'arrow-right' -%}
             </a>
           {%- endif -%}
-          {%- if has_items -%}
+          {%- if has_items and is_grid == false -%}
             <div class="gdm-carousel__nav gdm-articles__nav" data-carousel-ui>
               <button type="button" class="gdm-icon-btn" data-prev aria-label="{{ s.label_prev | escape }}">{% render 'gdm-icon', name: 'chevron-left' %}</button>
               <button type="button" class="gdm-icon-btn" data-next aria-label="{{ s.label_next | escape }}">{% render 'gdm-icon', name: 'chevron-right' %}</button>
@@ -71,8 +109,12 @@
       {%- endif -%}
 
       {%- if has_items -%}
-        <div class="gdm-carousel__track gdm-articles__track" data-track tabindex="0" role="region" aria-label="{{ s.label_region | escape }}">
+        <div
+          class="{% if is_grid %}gdm-grid{% else %}gdm-carousel__track{% endif %} gdm-articles__track"
+          {%- unless is_grid %} data-track tabindex="0" role="region" aria-label="{{ s.label_region | escape }}"{% endunless -%}
+        >
           {%- for item in items limit: item_limit -%}
+            {%- if use_blocks == false and item.id == current_article_id -%}{%- continue -%}{%- endif -%}
             {%- liquid
               if use_blocks
                 assign b = item.settings
@@ -151,11 +193,13 @@
           {%- endfor -%}
         </div>
 
-        <div class="gdm-carousel__progress gdm-articles__progress" data-progress data-carousel-ui aria-hidden="true"><span></span></div>
+        {%- unless is_grid -%}
+          <div class="gdm-carousel__progress gdm-articles__progress" data-progress data-carousel-ui aria-hidden="true"><span></span></div>
+        {%- endunless -%}
       {%- elsif request.design_mode -%}
         <p class="gdm-articles__empty">Ajoutez des blocs « Article », ou choisissez un blog dans « Mode automatique » pour afficher ses derniers articles.</p>
       {%- endif -%}
-    </gdm-carousel>
+    </{{ layout_tag }}>
   </div>
 </gdm-section>
 
@@ -399,6 +443,67 @@
     transform: translateX(4px);
   }
 
+  /* ---------- Filtres par étiquette (page Blog) ---------- */
+  .gdm.gdm-articles .gdm-articles__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .gdm.gdm-articles .gdm-articles__filter {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 0 16px;
+    border: 1px solid var(--gdm-border);
+    border-radius: 999px;
+    color: var(--gdm-text);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: border-color 0.2s var(--gdm-ease), color 0.2s var(--gdm-ease);
+  }
+
+  .gdm.gdm-articles .gdm-articles__filter:hover {
+    border-color: var(--gdm-accent);
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-articles .gdm-articles__filter[aria-current] {
+    border-color: var(--gdm-accent);
+    background: var(--gdm-accent);
+    color: var(--gdm-bg);
+  }
+
+  /* ---------- Grille (page Blog) : deux cartes par ligne sur mobile ---------- */
+  .gdm.gdm-articles--grid .gdm-articles__track {
+    --gdm-cols-mobile: 2;
+  }
+
+  @media (max-width: 749px) {
+    .gdm.gdm-articles--grid .gdm-articles__track {
+      gap: 12px;
+    }
+
+    .gdm.gdm-articles--grid .gdm-articles__body {
+      gap: 12px;
+      padding: 12px 12px 14px;
+    }
+
+    .gdm.gdm-articles--grid .gdm-articles__title {
+      font-size: 16px;
+    }
+
+    .gdm.gdm-articles--grid .gdm-articles__more {
+      padding-top: 10px;
+      font-size: 11px;
+    }
+
+    .gdm.gdm-articles--grid .gdm-articles__tag {
+      display: none;
+    }
+  }
+
   @media (max-width: 749px) {
     .gdm.gdm-articles .gdm-articles__body {
       padding: 18px 18px 20px;
@@ -472,6 +577,16 @@
       "content": "Carrousel"
     },
     {
+      "type": "select",
+      "id": "layout",
+      "label": "Présentation",
+      "default": "carousel",
+      "options": [
+        { "value": "carousel", "label": "Carrousel" },
+        { "value": "grid", "label": "Grille (tous les articles)" }
+      ]
+    },
+    {
       "type": "range",
       "id": "columns",
       "label": "Articles visibles sur ordinateur",
@@ -479,7 +594,7 @@
       "max": 5,
       "step": 1,
       "default": 4,
-      "info": "Au-delà, les articles défilent avec les flèches. Sur mobile, ils défilent au doigt."
+      "info": "Carrousel : au-delà, les articles défilent avec les flèches ; sur mobile, ils défilent au doigt. Grille : articles par ligne (deux sur mobile)."
     },
     {
       "type": "text",
@@ -510,16 +625,35 @@
     {
       "type": "blog",
       "id": "blog",
-      "label": "Blog"
+      "label": "Blog",
+      "info": "Sur la page d'un blog, laissez vide pour afficher le blog consulté."
     },
     {
       "type": "range",
       "id": "articles_count",
       "label": "Nombre d'articles",
       "min": 2,
-      "max": 12,
+      "max": 24,
       "step": 1,
       "default": 6
+    },
+    {
+      "type": "checkbox",
+      "id": "show_tags",
+      "label": "Afficher les filtres par étiquette",
+      "default": false
+    },
+    {
+      "type": "text",
+      "id": "tags_all",
+      "label": "Filtres — premier choix",
+      "default": "Tous les articles"
+    },
+    {
+      "type": "text",
+      "id": "tags_label",
+      "label": "Filtres — nom (accessibilité)",
+      "default": "Filtrer les articles par thème"
     },
     {
       "type": "text",

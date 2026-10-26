@@ -1,0 +1,214 @@
+{
+  "sections": {
+    "main": {
+      "type": "main-article",
+      "blocks": {
+        "c9d358e2-df0b-4360-bd29-d09caded2ea0": {
+          "type": "image",
+          "settings": {
+            "cate_des": "none"
+          }
+        },
+        "5908f252-0a66-4bc2-8069-a8f60d79fb18": {
+          "type": "content",
+          "settings": {}
+        },
+        "e8da95d6-7323-4d99-a68c-16088d24fa34": {
+          "type": "tags",
+          "settings": {}
+        },
+        "d905ad63-1b38-496e-8a7e-38751e0ad0b8": {
+          "type": "socials",
+          "disabled": true,
+          "settings": {
+            "social_mode": "2",
+            "social_style": "2",
+            "social_size": "small",
+            "bd_radius": 30,
+            "use_color_set": true,
+            "icon_cl": "#000000",
+            "bg_cl": "#ffffff",
+            "space_h_item": "20",
+            "space_v_item": "5",
+            "space_h_item_mb": "10",
+            "space_v_item_mb": "2"
+          }
+        },
+        "dec42554-02e5-40e5-89ff-f922277dcb34": {
+          "type": "navigation",
+          "disabled": true,
+          "settings": {}
+        },
+        "0ae37c6c-16ef-447b-bbbf-31a449c30d2f": {
+          "type": "related",
+          "disabled": true,
+          "settings": {
+            "hd_related": "ARTICLES DE BLOG ASSOCIÉS",
+            "hd_align": "center",
+            "content_align": "center",
+            "cate_des": "none",
+            "show_date": true,
+            "show_auth": false,
+            "limit_related": 8,
+            "date_post_related": "date",
+            "space_h_item": "30",
+            "space_v_item": "30",
+            "space_h_item_mb": "10",
+            "space_v_item_mb": "10",
+            "col_dk": "3",
+            "col_tb": "2",
+            "col_mb": "1",
+            "image_ratio": "ratio4_3",
+            "image_position": "8",
+            "image_size": "cover",
+            "img_effect": "none",
+            "b_effect": "none",
+            "loop": true,
+            "au_time": 0,
+            "au_hover": true,
+            "nav_btn": true,
+            "btn_vi": "hover",
+            "btn_owl": "outline",
+            "btn_shape": "round",
+            "btn_cl": "dark",
+            "btn_size": "small",
+            "btn_hidden_mobile": true,
+            "nav_dot": false,
+            "dot_owl": "default",
+            "dots_cl": "dark",
+            "dots_round": true,
+            "dots_space": 10,
+            "dots_hidden_mobile": false
+          }
+        },
+        "beea360a-ccb1-42b7-a996-ac5af0663be3": {
+          "type": "comments",
+          "disabled": true,
+          "settings": {
+            "enable_full_btn": false,
+            "button_style": "outline",
+            "btn_size": "medium",
+            "btn_cl": "dark"
+          }
+        }
+      },
+      "block_order": [
+        "c9d358e2-df0b-4360-bd29-d09caded2ea0",
+        "5908f252-0a66-4bc2-8069-a8f60d79fb18",
+        "e8da95d6-7323-4d99-a68c-16088d24fa34",
+        "d905ad63-1b38-496e-8a7e-38751e0ad0b8",
+        "dec42554-02e5-40e5-89ff-f922277dcb34",
+        "0ae37c6c-16ef-447b-bbbf-31a449c30d2f",
+        "beea360a-ccb1-42b7-a996-ac5af0663be3"
+      ],
+      "settings": {
+        "layout": "t4s-container-wrap",
+        "cl_bg": "",
+        "cl_bg_gradient": "",
+        "mg": ",,50px,",
+        "pd": "",
+        "mg_tb": "",
+        "pd_tb": "",
+        "mg_mb": ",,30px,",
+        "pd_mb": ""
+      }
+    },
+    "gdm_a_lire": {
+      "type": "gdm-articles",
+      "settings": {
+        "pill": "Le blog",
+        "title": "À lire",
+        "title_accent": "aussi",
+        "heading_tag": "h2",
+        "text": "",
+        "all_label": "Tous les articles",
+        "all_link": "",
+        "layout": "carousel",
+        "columns": 4,
+        "label_region": "Articles du blog",
+        "label_prev": "Précédent",
+        "label_next": "Suivant",
+        "articles_count": 8,
+        "show_tags": false,
+        "tags_all": "Tous les articles",
+        "tags_label": "Filtrer les articles par thème",
+        "auto_link_label": "Lire",
+        "color_bg": "#0D0D0D",
+        "color_accent": "#F0921E",
+        "padding_top": 40,
+        "padding_bottom": 40
+      }
+    },
+    "gdm_bieres": {
+      "type": "gdm-bieres",
+      "settings": {
+        "pill": "La gamme",
+        "title": "Nos",
+        "title_accent": "bières",
+        "heading_tag": "h2",
+        "text": "",
+        "link_label": "Toute la gamme",
+        "link_url": "shopify://collections/bieres-artisanales-du-gue-des-moines",
+        "collection": "bieres-artisanales-du-gue-des-moines",
+        "limit": 12,
+        "layout": "carousel",
+        "columns": 4,
+        "style_source": "custom_style",
+        "padding_top": 40,
+        "padding_bottom": 40
+      }
+    },
+    "gdm_instagram": {
+      "type": "gdm-apps",
+      "blocks": {
+        "instafeed_1": {
+          "type": "shopify://apps/instafeed/blocks/app-block/c447db20-095d-4a10-9725-b5977662c9d5",
+          "settings": {
+            "title": "",
+            "title_color": "",
+            "title_size_v2": 0,
+            "alignment": "center",
+            "instafeed_margin_top": 0,
+            "instafeed_margin_bottom": 0,
+            "instafeed_margin_sides": 0,
+            "show_instagram_link": false,
+            "link_alignment": "left",
+            "link_color": "#000000",
+            "background_color": "",
+            "feed_id": "",
+            "html_area": ""
+          }
+        }
+      },
+      "block_order": [
+        "instafeed_1"
+      ],
+      "settings": {
+        "pill": "",
+        "title": "Suivez-nous sur",
+        "title_accent": "Instagram",
+        "heading_tag": "h2",
+        "text": "",
+        "head_align": "left",
+        "link_label": "@brasserieleguedesmoines",
+        "link": "https://www.instagram.com/brasserieleguedesmoines/",
+        "link_icon": "instagram",
+        "link_style": "ghost",
+        "content_width": "full",
+        "frame": "card",
+        "frame_padding": 8,
+        "color_bg": "#0D0D0D",
+        "color_accent": "#F0921E",
+        "color_frame": "#1A1714",
+        "padding_top": 40,
+        "padding_bottom": 56
+      }
+    }
+  },
+  "order": [
+    "main",
+    "gdm_a_lire",
+    "gdm_bieres",
+    "gdm_instagram"
+  ]
+}

@@ -1,0 +1,183 @@
+{
+  "sections": {
+    "gdm_contact": {
+      "type": "gdm-brewpub",
+      "blocks": {
+        "jour_1": {
+          "type": "day",
+          "settings": {
+            "day": "1",
+            "closed": true
+          }
+        },
+        "jour_2": {
+          "type": "day",
+          "settings": {
+            "day": "2",
+            "open": "16h30",
+            "close": "20h30"
+          }
+        },
+        "jour_3": {
+          "type": "day",
+          "settings": {
+            "day": "3",
+            "open": "16h30",
+            "close": "20h30"
+          }
+        },
+        "jour_4": {
+          "type": "day",
+          "settings": {
+            "day": "4",
+            "open": "16h30",
+            "close": "22h30"
+          }
+        },
+        "jour_5": {
+          "type": "day",
+          "settings": {
+            "day": "5",
+            "open": "16h30",
+            "close": "22h30"
+          }
+        },
+        "jour_6": {
+          "type": "day",
+          "settings": {
+            "day": "6",
+            "open": "16h30",
+            "close": "21h30"
+          }
+        },
+        "jour_7": {
+          "type": "day",
+          "settings": {
+            "day": "7",
+            "closed": true
+          }
+        }
+      },
+      "block_order": [
+        "jour_1",
+        "jour_2",
+        "jour_3",
+        "jour_4",
+        "jour_5",
+        "jour_6",
+        "jour_7"
+      ],
+      "settings": {
+        "pill": "Contact",
+        "title": "Venez trinquer",
+        "title_accent": "à la source",
+        "text": "+10 bières artisanales à la pression, tapas à partager, matchs et concerts selon la programmation, à 15 minutes au nord de Toulouse.",
+        "address": "31 rue de la Briqueterie\n31150 Bruguières",
+        "phone": "09 67 48 99 63",
+        "directions_label": "Itinéraire",
+        "button2_label": "",
+        "button2_link": "",
+        "image": "shopify://shop_images/WhatsApp_Image_2026-05-04_at_08.38.18.webp",
+        "structured_data": false,
+        "padding_top": 40,
+        "padding_bottom": 24,
+        "heading_tag": "h1",
+        "email": "brasserieguedesmoines@gmail.com"
+      }
+    },
+    "1648884254eae8e0bd": {
+      "type": "contact-form",
+      "blocks": {
+        "1648884254cd155bea-0": {
+          "type": "bl_form",
+          "settings": {
+            "heading": "Laissez-nous un message !",
+            "enable_phone": true,
+            "enable_full_btn": true,
+            "button_style": "default",
+            "btn_size": "small",
+            "btn_cl": "light"
+          }
+        },
+        "1648884254cd155bea-1": {
+          "type": "bl_info",
+          "settings": {
+            "heading": "INFORMATION",
+            "text": "<p>Nous aimons recevoir vos retours sur notre service client, nos produits, notre site web ou tout sujet que vous souhaitez partager avec nous. Vos commentaires et suggestions seront appréciés. Veuillez remplir le formulaire ci-dessous.</p>\n<p><i class=\"las la-home fs__16\"></i> 31 rue de la briqueterie 31150 Bruguières </p>\n<p><i class=\"las la-envelope fs__16\"></i> brasserieguedesmoines@gmail.com</p>\n<p><i class=\"las la-clock fs__16\"></i> de 16h à 21h deu Mercredi au Samedi</p>"
+          },
+          "disabled": true
+        }
+      },
+      "block_order": [
+        "1648884254cd155bea-0",
+        "1648884254cd155bea-1"
+      ],
+      "settings": {
+        "enable_map": true,
+        "map": "<iframe src=\"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2883.8326791367495!2d1.3915783157710618!3d43.71323257911826!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12aea5a5d9b5a6f7%3A0x123456789abcdef!2s31%20Rue%20de%20la%20Briqueterie%2C%2031150%20Brugui%C3%A8res%2C%20France!5e0!3m2!1sfr!2sfr!4v1700000000000!5m2!1sfr!2sfr\" width=\"400\" height=\"300\" style=\"border:0;\" allowfullscreen=\"\" loading=\"lazy\">\n</iframe>",
+        "layout": "t4s-container-wrap",
+        "cl_bg": "",
+        "cl_bg_gradient": "linear-gradient(180deg, rgba(20, 20, 20, 1), rgba(255, 153, 0, 0.2) 47%, rgba(20, 20, 20, 1) 83%)",
+        "mg": "50px,,50px,",
+        "pd": "",
+        "mg_tb": "",
+        "pd_tb": "",
+        "mg_mb": ",,30px,",
+        "pd_mb": "",
+        "use_cus_css": true,
+        "code_cus_css": "/* Appliquer la couleur jaune-orange aux titres de toute la page */\nh1, h2, h3 {\n    color: #FFA500; /* Jaune-orange */\n}\n\n/* Optionnel : Ajouter un effet de glow pour plus de contraste */\nh1 {\n    text-shadow: 2px 2px 5px rgba(255, 165, 0, 0.5);\n}"
+      }
+    },
+    "gdm_instagram": {
+      "type": "gdm-apps",
+      "blocks": {
+        "instafeed_1": {
+          "type": "shopify://apps/instafeed/blocks/app-block/c447db20-095d-4a10-9725-b5977662c9d5",
+          "settings": {
+            "title": "",
+            "title_color": "",
+            "title_size_v2": 0,
+            "alignment": "center",
+            "instafeed_margin_top": 0,
+            "instafeed_margin_bottom": 0,
+            "instafeed_margin_sides": 0,
+            "show_instagram_link": false,
+            "link_alignment": "left",
+            "link_color": "#000000",
+            "background_color": "",
+            "feed_id": "",
+            "html_area": ""
+          }
+        }
+      },
+      "block_order": [
+        "instafeed_1"
+      ],
+      "settings": {
+        "pill": "",
+        "title": "Suivez-nous sur",
+        "title_accent": "Instagram",
+        "heading_tag": "h2",
+        "text": "",
+        "head_align": "left",
+        "link_label": "@brasserieleguedesmoines",
+        "link": "https://www.instagram.com/brasserieleguedesmoines/",
+        "link_icon": "instagram",
+        "link_style": "ghost",
+        "content_width": "full",
+        "frame": "card",
+        "frame_padding": 8,
+        "color_bg": "#0D0D0D",
+        "color_accent": "#F0921E",
+        "color_frame": "#1A1714",
+        "padding_top": 40,
+        "padding_bottom": 56
+      }
+    }
+  },
+  "order": [
+    "gdm_contact",
+    "1648884254eae8e0bd",
+    "gdm_instagram"
+  ]
+}
