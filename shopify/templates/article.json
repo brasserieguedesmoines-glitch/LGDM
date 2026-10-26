@@ -155,52 +155,6 @@
         "columns": 4,
         "style_source": "custom_style",
         "padding_top": 40,
-        "padding_bottom": 40
-      }
-    },
-    "gdm_instagram": {
-      "type": "gdm-apps",
-      "blocks": {
-        "instafeed_1": {
-          "type": "shopify://apps/instafeed/blocks/app-block/c447db20-095d-4a10-9725-b5977662c9d5",
-          "settings": {
-            "title": "",
-            "title_color": "",
-            "title_size_v2": 0,
-            "alignment": "center",
-            "instafeed_margin_top": 0,
-            "instafeed_margin_bottom": 0,
-            "instafeed_margin_sides": 0,
-            "show_instagram_link": false,
-            "link_alignment": "left",
-            "link_color": "#000000",
-            "background_color": "",
-            "feed_id": "",
-            "html_area": ""
-          }
-        }
-      },
-      "block_order": [
-        "instafeed_1"
-      ],
-      "settings": {
-        "pill": "",
-        "title": "Suivez-nous sur",
-        "title_accent": "Instagram",
-        "heading_tag": "h2",
-        "text": "",
-        "head_align": "left",
-        "link_label": "@brasserieleguedesmoines",
-        "link": "https://www.instagram.com/brasserieleguedesmoines/",
-        "link_icon": "instagram",
-        "link_style": "ghost",
-        "content_width": "full",
-        "frame": "card",
-        "frame_padding": 8,
-        "color_bg": "#0D0D0D",
-        "color_accent": "#F0921E",
-        "color_frame": "#1A1714",
-        "padding_top": 40,
         "padding_bottom": 56
       }
     }
@@ -208,7 +162,6 @@
   "order": [
     "main",
     "gdm_a_lire",
-    "gdm_bieres",
-    "gdm_instagram"
+    "gdm_bieres"
   ]
 }

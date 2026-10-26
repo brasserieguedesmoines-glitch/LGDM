@@ -11,7 +11,7 @@
         "all_label": "",
         "all_link": "",
         "layout": "grid",
-        "columns": 3,
+        "columns": 4,
         "label_region": "Articles du blog",
         "label_prev": "Précédent",
         "label_next": "Suivant",

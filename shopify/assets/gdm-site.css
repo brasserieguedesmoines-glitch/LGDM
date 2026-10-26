@@ -318,6 +318,31 @@ body .t4s-badge-preorder {
   }
 }
 
+/* Guide de dégustation sur téléphone : photos moins hautes, les deux photos du haut côte à côte. */
+@media screen and (max-width: 749px) {
+  .t4s-main-page .gdm-gd__hero-duo {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .t4s-main-page .gdm-gd__hero-duo .gdm-gd__hero-duo-img {
+    aspect-ratio: 1 / 1;
+  }
+
+  .t4s-main-page .gdm-style-block .gdm-style-block__img {
+    aspect-ratio: 16 / 9;
+  }
+
+  .t4s-main-page .gdm-style-block .gdm-style-block__img img {
+    min-height: 0;
+  }
+
+  .t4s-main-page .gdm-sidebar-card .gdm-sidebar-img {
+    aspect-ratio: 16 / 9;
+  }
+}
+
 /* Horaires du brewpub : la page impose quatre colonnes, illisibles sur téléphone. */
 @media screen and (max-width: 900px) {
   .t4s-main-page .bp__horaires {
