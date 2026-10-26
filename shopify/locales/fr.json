@@ -486,8 +486,8 @@
       }
     },
     "404": {
-      "title": "",
-      "subtext": "Désolé! La page que vous recherchez est introuvable.",
+      "title": "Page introuvable",
+      "subtext": "Désolé, cette page n'existe pas ou a été déplacée.",
       "link_html": "Retournez à la <a href=\"{{ link }}\" rel=\"home\">page d&#39;accueil</a>"
     }
   },

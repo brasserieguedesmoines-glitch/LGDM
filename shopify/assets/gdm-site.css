@@ -548,3 +548,32 @@ body .t4s-minicart-recommendations__title {
 body .t4s-minicart-recommendations__item--title {
   color: #fff;
 }
+
+/* ---------- Page 404 : message resserré (le thème laissait 850 px presque vides) ---------- */
+.template-404 #MainContent .error-404-wrap {
+  min-height: 0;
+  margin: 0;
+  padding: 56px 0 8px;
+}
+
+.template-404 #MainContent .error-404-title {
+  margin-bottom: 12px;
+  color: #fff;
+  font-family: var(--gdm-site-display);
+  font-size: clamp(40px, 7vw, 72px);
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.template-404 #MainContent .error-404-subtext {
+  color: var(--gdm-site-muted);
+  font-family: var(--gdm-site-body);
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.template-404 #MainContent .error-404-link {
+  letter-spacing: 0;
+}
