@@ -172,7 +172,9 @@
                     {{ c_image | image_url: width: 900 | image_tag: loading: 'lazy', widths: '360, 540, 720, 900', sizes: img_sizes, alt: c_alt, class: 'gdm-articles__img' }}
                   {%- endif -%}
                 {%- elsif c_src != blank -%}
-                  <img src="{{ c_src | escape }}" alt="{{ c_alt | escape }}" width="720" height="540" loading="lazy" class="gdm-articles__img">
+                  {%- comment -%} Photo prise dans le texte : si elle ne se charge pas, l'icône dessous reste visible. {%- endcomment -%}
+                  <span class="gdm-articles__noimg" aria-hidden="true">{% render 'gdm-icon', name: 'book', icon_size: 36 %}</span>
+                  <img src="{{ c_src | escape }}" alt="{{ c_alt | escape }}" width="720" height="540" loading="lazy" class="gdm-articles__img" onerror="this.remove()">
                 {%- else -%}
                   <span class="gdm-articles__noimg" aria-hidden="true">{% render 'gdm-icon', name: 'book', icon_size: 36 %}</span>
                 {%- endif -%}
@@ -335,6 +337,11 @@
     object-fit: cover;
     filter: brightness(0.92) saturate(0.95);
     transition: transform 1.2s var(--gdm-ease), filter 0.6s var(--gdm-ease);
+  }
+
+  .gdm.gdm-articles .gdm-articles__noimg + .gdm-articles__img {
+    position: absolute;
+    inset: 0;
   }
 
   .gdm.gdm-articles .gdm-articles__card:hover .gdm-articles__img {
