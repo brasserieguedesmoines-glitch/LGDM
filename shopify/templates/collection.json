@@ -1,0 +1,283 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "gdm_collection": {
+      "type": "gdm-bieres",
+      "settings": {
+        "pill": "Boutique en ligne",
+        "title": "",
+        "title_accent": "",
+        "heading_tag": "h1",
+        "text": "Click & collect à la brasserie de Bruguières avec 10 % de remise.",
+        "link_label": "",
+        "collection": "",
+        "limit": 24,
+        "layout": "grid",
+        "columns": 4,
+        "style_source": "custom_style",
+        "show_description": true,
+        "padding_top": 40,
+        "padding_bottom": 56
+      }
+    },
+    "gdm_instagram": {
+      "type": "gdm-apps",
+      "blocks": {
+        "instafeed_1": {
+          "type": "shopify://apps/instafeed/blocks/app-block/c447db20-095d-4a10-9725-b5977662c9d5",
+          "settings": {
+            "title": "",
+            "title_color": "",
+            "title_size_v2": 0,
+            "alignment": "center",
+            "instafeed_margin_top": 0,
+            "instafeed_margin_bottom": 0,
+            "instafeed_margin_sides": 0,
+            "show_instagram_link": false,
+            "link_alignment": "left",
+            "link_color": "#000000",
+            "background_color": "",
+            "feed_id": "",
+            "html_area": ""
+          }
+        }
+      },
+      "block_order": [
+        "instafeed_1"
+      ],
+      "settings": {
+        "pill": "",
+        "title": "Suivez-nous sur",
+        "title_accent": "Instagram",
+        "heading_tag": "h2",
+        "text": "",
+        "head_align": "left",
+        "link_label": "@brasserieleguedesmoines",
+        "link": "https://www.instagram.com/brasserieleguedesmoines/",
+        "link_icon": "instagram",
+        "link_style": "ghost",
+        "content_width": "full",
+        "frame": "card",
+        "frame_padding": 8,
+        "color_bg": "#0D0D0D",
+        "color_accent": "#F0921E",
+        "color_frame": "#1A1714",
+        "padding_top": 40,
+        "padding_bottom": 56
+      }
+    },
+    "custom_liquid_tRXkPJ": {
+      "type": "custom-liquid",
+      "settings": {
+        "custom_liquid": "<h1 style=\"display:none;\">Bière artisanale à Toulouse : notre collection – Le Gué des Moines</h1>\n\n<h2 style=\"display:none;\">Découvrez la collection de <strong>bières artisanales</strong> de la Brasserie <strong>Le Gué des Moines</strong>, brassées à\n  <strong>Bruguières</strong> près de <strong>Toulouse (31)</strong> : blondes, IPA, stouts et brassins de saison.\n  Commandez en ligne ou dégustez nos bières au brewpub.</h2>",
+        "layout": "t4s-container-wrap",
+        "cl_bg": "",
+        "cl_bg_gradient": "",
+        "mg": ",,50px,",
+        "pd": "",
+        "mg_tb": "",
+        "pd_tb": "",
+        "mg_mb": ",,30px,",
+        "pd_mb": ""
+      },
+      "disabled": true
+    },
+    "top": {
+      "type": "top-collections",
+      "blocks": {
+        "69bbe0dd-0a50-42e8-986b-0d5e6c5cfa67": {
+          "type": "cat",
+          "settings": {
+            "collection": "default-3",
+            "icon": ""
+          }
+        },
+        "863873b6-012e-4a34-90e3-eead750fa3ce": {
+          "type": "cat",
+          "settings": {
+            "collection": "bag",
+            "icon": ""
+          }
+        },
+        "fc07bff9-6d08-423c-8802-9a03c34f3a31": {
+          "type": "cat",
+          "settings": {
+            "collection": "decor",
+            "icon": ""
+          }
+        },
+        "a286cc0b-0c90-4b1a-862c-a1136f283aac": {
+          "type": "cat",
+          "settings": {
+            "collection": "default-2",
+            "icon": ""
+          }
+        },
+        "23c84729-8fcb-488c-9541-00e283af6afe": {
+          "type": "cat",
+          "settings": {
+            "collection": "dress",
+            "icon": ""
+          }
+        },
+        "5f1d751a-fdac-43d4-ad9d-55da0c297244": {
+          "type": "cat",
+          "settings": {
+            "collection": "hats",
+            "icon": ""
+          }
+        },
+        "0f0e1f7c-788c-46c0-9fb4-1ec7ce88da01": {
+          "type": "cat",
+          "settings": {
+            "collection": "frontpage",
+            "icon": ""
+          }
+        },
+        "70189b51-5562-4924-b642-a1deba7741ee": {
+          "type": "cat",
+          "settings": {
+            "collection": "sale",
+            "icon": ""
+          }
+        },
+        "560f5822-3eeb-4070-a2cd-b5738881a4c1": {
+          "type": "cat",
+          "settings": {
+            "collection": "shoes",
+            "icon": ""
+          }
+        },
+        "be9b8b8f-6cac-47ab-b809-a2fe640a75a7": {
+          "type": "cat",
+          "settings": {
+            "collection": "women",
+            "icon": ""
+          }
+        }
+      },
+      "block_order": [
+        "69bbe0dd-0a50-42e8-986b-0d5e6c5cfa67",
+        "863873b6-012e-4a34-90e3-eead750fa3ce",
+        "fc07bff9-6d08-423c-8802-9a03c34f3a31",
+        "a286cc0b-0c90-4b1a-862c-a1136f283aac",
+        "23c84729-8fcb-488c-9541-00e283af6afe",
+        "5f1d751a-fdac-43d4-ad9d-55da0c297244",
+        "0f0e1f7c-788c-46c0-9fb4-1ec7ce88da01",
+        "70189b51-5562-4924-b642-a1deba7741ee",
+        "560f5822-3eeb-4070-a2cd-b5738881a4c1",
+        "be9b8b8f-6cac-47ab-b809-a2fe640a75a7"
+      ],
+      "disabled": true,
+      "settings": {
+        "show_top_collections": true,
+        "source": "1",
+        "menu": "main-menu",
+        "sort_collections": "alphabetical_reversed",
+        "box_border": "top",
+        "content_align": "center",
+        "hidden_mobile": false,
+        "space_item": 30,
+        "fontf": "inherit",
+        "text_cl": "#222222",
+        "text_cl_hover": "#ff9900",
+        "text_fs": 14,
+        "text_lh": 45,
+        "text_fw": 600,
+        "text_ls": 0,
+        "font_italic": false,
+        "nav_btn": true,
+        "layout": "t4s-container-fluid",
+        "cl_bg": "",
+        "cl_bg_gradient": "",
+        "mg": "",
+        "pd": "",
+        "mg_tb": "",
+        "pd_tb": "",
+        "mg_mb": "",
+        "pd_mb": ""
+      }
+    },
+    "sidebar": {
+      "type": "sidebar-collection",
+      "blocks": {
+        "c7bdf308-8019-4991-b58c-6d3e205a52eb": {
+          "type": "category",
+          "settings": {
+            "heading": "Product Categories",
+            "cat_source": "1",
+            "cat_link_list": "",
+            "count": true
+          }
+        },
+        "9d37e80a-1eda-4a65-bb08-199e6a933a16": {
+          "type": "collection",
+          "settings": {
+            "heading": "Sale Products",
+            "collection": "frontpage",
+            "limit_pr": 3,
+            "image_ratio": "t4s_ratioadapt",
+            "image_size": "t4s_cover",
+            "image_position": "t4s_position_8"
+          }
+        },
+        "c090f36e-d6ef-4a2a-ab04-cc78211dadb7": {
+          "type": "image",
+          "settings": {
+            "heading": "",
+            "img_effect": "zoom",
+            "b_link": "",
+            "open_link": "_self",
+            "content_align": "center",
+            "date": "2023/12/26",
+            "cdt_des": "1",
+            "countdown_pos": "2",
+            "cdt_size": "small",
+            "box_bdr": 0,
+            "bd_width": 0,
+            "space_item": 10,
+            "number_cl": "#ffffff",
+            "text_cl": "#222222",
+            "border_cl": "#000000",
+            "bg_cl": "#000000"
+          }
+        },
+        "221aa22f-5c6c-40c9-9403-6d3cd2c23e93": {
+          "type": "filter",
+          "settings": {}
+        }
+      },
+      "block_order": [
+        "c7bdf308-8019-4991-b58c-6d3e205a52eb",
+        "9d37e80a-1eda-4a65-bb08-199e6a933a16",
+        "c090f36e-d6ef-4a2a-ab04-cc78211dadb7",
+        "221aa22f-5c6c-40c9-9403-6d3cd2c23e93"
+      ],
+      "disabled": true,
+      "settings": {
+        "enable_drawer": false,
+        "space": 50,
+        "size": "medium",
+        "br_style": "none",
+        "brcolor": "#222222",
+        "sidebar_bdr": 0,
+        "sidebar_pd": 15
+      }
+    }
+  },
+  "order": [
+    "gdm_collection",
+    "gdm_instagram",
+    "custom_liquid_tRXkPJ",
+    "top",
+    "sidebar"
+  ]
+}

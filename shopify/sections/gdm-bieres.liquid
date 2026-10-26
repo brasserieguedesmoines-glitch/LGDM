@@ -3,10 +3,19 @@
   Cartes produit sombres avec halo ambré : style, degré, IBU (métachamps
   custom.degre / custom.ibu), jauge d'amertume, choix 33 cL / 75 cL
   et ajout au panier direct. En carrousel ou en grille.
+  Sur une page collection, sans collection choisie : la collection affichée
+  (titre de la collection en guise de titre). Sur une fiche produit : la bière
+  affichée n'est pas répétée dans la liste.
 {%- endcomment -%}
 {%- liquid
   assign s = section.settings
-  assign collection = s.collection
+  assign page_product_id = product.id
+  assign collection = s.collection | default: collection
+  assign title_main = s.title
+  assign title_end = s.title_accent
+  if s.title == blank and s.title_accent == blank and template.name == 'collection'
+    assign title_main = collection.title
+  endif
   assign is_carousel = false
   if s.layout == 'carousel'
     assign is_carousel = true
@@ -18,6 +27,7 @@
 {%- capture cards -%}
   {%- if collection != blank and collection.products_count > 0 -%}
     {%- for product in collection.products limit: s.limit -%}
+      {%- if product.id == page_product_id -%}{%- continue -%}{%- endif -%}
       {%- liquid
         assign current = product.selected_or_first_available_variant
         assign degre = product.metafields.custom.degre.value
@@ -203,9 +213,9 @@
       {%- if s.pill != blank -%}
         <p class="gdm-pill" data-gdm-reveal>{{ s.pill | escape }}</p>
       {%- endif -%}
-      {%- if s.title != blank or s.title_accent != blank -%}
+      {%- if title_main != blank or title_end != blank -%}
         <{{ heading_tag }} class="gdm-title" data-gdm-reveal style="--gdm-i: 1;">
-          {{- s.title | escape }}{% if s.title_accent != blank %} <em>{{ s.title_accent | escape }}</em>{% endif -%}
+          {{- title_main | escape }}{% if title_end != blank %} <em>{{ title_end | escape }}</em>{% endif -%}
         </{{ heading_tag }}>
       {%- endif -%}
       {%- if s.text != blank -%}
@@ -228,7 +238,7 @@
     </div>
 
     {%- if is_carousel -%}
-      <div class="gdm-carousel__track gdm-bieres__list" data-track tabindex="0" role="region" aria-label="{{ s.title | append: ' ' | append: s.title_accent | strip | escape }}">
+      <div class="gdm-carousel__track gdm-bieres__list" data-track tabindex="0" role="region" aria-label="{{ title_main | append: ' ' | append: title_end | strip | escape }}">
         {{ cards }}
       </div>
       <div class="gdm-carousel__progress" data-progress data-carousel-ui aria-hidden="true"><span></span></div>
@@ -238,6 +248,10 @@
         {{ cards }}
       </div>
     {%- endif -%}
+
+    {%- if s.show_description and collection.description != blank -%}
+      <div class="gdm-bieres__desc">{{ collection.description }}</div>
+    {%- endif -%}
   </div>
 </gdm-section>
 
@@ -246,6 +260,32 @@
     right: -25%;
     top: -5%;
     opacity: 0.6;
+  }
+
+  /* Description de la collection sous les bières : texte courant, même si elle est balisée en titres. */
+  .gdm.gdm-bieres .gdm-bieres__desc {
+    max-width: 78ch;
+    margin-top: clamp(32px, 4vw, 48px);
+    padding-top: clamp(24px, 3vw, 32px);
+    border-top: 1px solid var(--gdm-border);
+    color: var(--gdm-muted);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .gdm.gdm-bieres .gdm-bieres__desc > :is(p, h2, h3) {
+    margin: 0 0 12px;
+    color: var(--gdm-muted);
+    font-family: var(--gdm-font-body);
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.6;
+    letter-spacing: normal;
+    text-transform: none;
+  }
+
+  .gdm.gdm-bieres .gdm-bieres__desc > :is(p, h2, h3) strong {
+    color: var(--gdm-text);
   }
 
   .gdm.gdm-bieres .gdm-beer {
@@ -668,14 +708,15 @@
     {
       "type": "collection",
       "id": "collection",
-      "label": "Collection"
+      "label": "Collection",
+      "info": "Vide sur une page collection : la collection affichée, avec son nom en titre."
     },
     {
       "type": "range",
       "id": "limit",
       "label": "Nombre de bières",
       "min": 2,
-      "max": 16,
+      "max": 24,
       "step": 1,
       "default": 8
     },
@@ -711,6 +752,12 @@
         { "value": "vendor", "label": "Fournisseur" }
       ],
       "info": "Conseillé : créez un métachamp produit « custom.style » (texte sur une ligne) et indiquez NEIPA, West Coast IPA, Sour framboise… Les bières sans valeur n'affichent rien."
+    },
+    {
+      "type": "checkbox",
+      "id": "show_description",
+      "label": "Afficher la description de la collection sous les bières",
+      "default": false
     },
     {
       "type": "checkbox",
