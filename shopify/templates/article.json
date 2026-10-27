@@ -116,7 +116,7 @@
     "gdm_a_lire": {
       "type": "gdm-articles",
       "settings": {
-        "pill": "Le blog",
+        "pill": "",
         "title": "À lire",
         "title_accent": "aussi",
         "heading_tag": "h2",
@@ -142,7 +142,7 @@
     "gdm_bieres": {
       "type": "gdm-vitrine",
       "settings": {
-        "pill": "La gamme",
+        "pill": "",
         "title": "Nos",
         "title_accent": "bières",
         "heading_tag": "h2",

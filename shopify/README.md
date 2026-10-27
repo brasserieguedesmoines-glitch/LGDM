@@ -1,6 +1,8 @@
 # Sections Shopify — Le Gué des Moines
 
-Des sections Liquid sur mesure pour la boutique **leguedesmoines.com**, aux couleurs de la marque : fond sombre, accent ambré, gros titres compressés, badges pilule.
+Des sections Liquid sur mesure pour la boutique **leguedesmoines.com**, aux couleurs de la marque : fond sombre, accent ambré, gros titres compressés.
+
+Les petits badges en pilule au-dessus des titres (réglage « Badge ») sont vides partout : ils faisaient « généré ». Le réglage reste disponible dans chaque section. Ceux écrits dans le texte des pages et articles sont masqués par `assets/gdm-site.css`.
 
 Elles sont autonomes. Elles n'ont besoin ni d'application ni de jQuery et fonctionnent sur n'importe quel thème Shopify 2.0, dont votre thème actuel « LGDM V2 ». Dans l'éditeur de thème, elles se trouvent sous **Ajouter une section → GDM · …**. L'habillage du reste du site (voir « Tout le site au style GDM ») modifie en plus quelques fichiers du thème Kalles.
 

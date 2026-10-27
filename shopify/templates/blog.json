@@ -3,7 +3,7 @@
     "gdm_blog": {
       "type": "gdm-articles",
       "settings": {
-        "pill": "Le blog",
+        "pill": "",
         "title": "L'actu du",
         "title_accent": "Gué des Moines",
         "heading_tag": "h1",

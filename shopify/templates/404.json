@@ -9,7 +9,7 @@
     "gdm_bieres": {
       "type": "gdm-vitrine",
       "settings": {
-        "pill": "La gamme",
+        "pill": "",
         "title": "Nos",
         "title_accent": "bières",
         "heading_tag": "h2",

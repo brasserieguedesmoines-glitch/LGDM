@@ -283,6 +283,14 @@ body .t4s-badge-preorder {
   text-underline-offset: 3px;
 }
 
+/* ---------- Contenus des pages et articles : sans badges « sur-titre » ----------
+   Les pilules au-dessus des titres (point orange, majuscules : « Restaurant & bar à bière ·
+   Nord Toulouse ») et les pastilles à émoji posées sur les photos sont masquées. Les
+   étiquettes utiles (Ouvert / Fermé, Nouveau brassin, styles de bière) restent. */
+:is(.t4s-main-page, .t4s-article-content, .gdm-bieres__desc) :is(.gdm-kicker, .kicker, .kck, .art__kicker, .art__cta-kicker, .ipa-desc__kicker, .gdm-tr__hero-pill, .gdm-sb__hero-badge, .gdm-gd__hero-badge, .gdm-art__hero-badge, .gdm-hv-badge, .img-tag) {
+  display: none !important;
+}
+
 /* ---------- Contenus des pages et articles : mise en page mobile compacte ----------
    Sur téléphone, les grilles de cartes du contenu s'empilent sur une colonne
    (jusqu'à 1 500 px de haut) : elles deviennent une rangée qui défile au doigt,

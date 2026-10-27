@@ -38,7 +38,7 @@
         "overlay_opacity": 70,
         "height": "medium",
         "align": "left",
-        "pill": "Brasserie artisanale · Depuis 2016",
+        "pill": "",
         "title": "Bières artisanales",
         "title_accent": "de Bruguières",
         "accent_new_line": true,
@@ -296,7 +296,7 @@
     "gdm_bieres": {
       "type": "gdm-vitrine",
       "settings": {
-        "pill": "La gamme du moment",
+        "pill": "",
         "title": "Nos",
         "title_accent": "bières",
         "heading_tag": "h2",
@@ -430,7 +430,7 @@
         "jour_7"
       ],
       "settings": {
-        "pill": "Le brewpub",
+        "pill": "",
         "title": "Venez trinquer",
         "title_accent": "à la source",
         "text": "+10 bières artisanales à la pression, tapas à partager, matchs et concerts selon la programmation, à 15 minutes au nord de Toulouse.",
@@ -593,7 +593,7 @@
         "avis_5"
       ],
       "settings": {
-        "pill": "Avis clients",
+        "pill": "",
         "title": "Ils parlent du",
         "title_accent": "Gué des Moines",
         "rating_value": "5,0",
@@ -676,7 +676,7 @@
         "faq_8"
       ],
       "settings": {
-        "pill": "Brasserie artisanale · Bruguières",
+        "pill": "",
         "title": "Vos questions,",
         "title_accent": "nos réponses",
         "text": "Tout savoir sur notre <a href=\"/pages/brasserie-le-gue-des-moines\">brasserie artisanale à Bruguières</a>, notre <a href=\"/pages/brewpub\">brewpub</a>, la <a href=\"/pages/location-de-tireuse-toulouse-31\">location de tireuse à bière à Toulouse</a> et la commande de <a href=\"/collections/bieres-artisanales-du-gue-des-moines\">bières en ligne</a>.",
@@ -693,7 +693,7 @@
     "gdm_newsletter": {
       "type": "gdm-newsletter",
       "settings": {
-        "pill": "Newsletter",
+        "pill": "",
         "title": "Rejoignez-",
         "title_accent": "nous !",
         "heading_tag": "h2",
@@ -804,7 +804,7 @@
         "image_position": "left",
         "stamp_text": "Brasserie artisanale • Bruguières • Occitanie •",
         "stamp_center": "2016",
-        "pill": "Notre histoire",
+        "pill": "",
         "title": "Brassées dans",
         "title_accent": "l'ancienne Briqueterie",
         "text": "<p>Depuis 2016, Le Gué des Moines brasse ses bières artisanales à Bruguières, à 15 minutes au nord de Toulouse.</p><p>Installée dans l'ancienne <strong>Briqueterie</strong> de la commune, l'équipe y imagine, brasse et embouteille chaque bière sur place : des permanentes toute l'année et des éphémères <strong>Labelle</strong>.</p>",
@@ -867,7 +867,7 @@
         "carte_3"
       ],
       "settings": {
-        "pill": "Brasserie · Brewpub · E-Shop",
+        "pill": "",
         "title": "Explorez notre",
         "title_accent": "univers",
         "heading_tag": "h2",
@@ -888,7 +888,7 @@
     "gdm_promo": {
       "type": "gdm-promo",
       "settings": {
-        "pill": "Noël 2026",
+        "pill": "",
         "title": "Bières de Noël",
         "title_accent": "& idées cadeaux",
         "text": "Coffrets, éditions spéciales et idées cadeaux brassées à Bruguières : de quoi faire plaisir à tous les amateurs de bière.",
@@ -984,7 +984,7 @@
         "avis_3"
       ],
       "settings": {
-        "pill": "Untappd · Communauté bière",
+        "pill": "",
         "title": "Ce que la communauté dit de nos",
         "title_accent": "bières",
         "heading_tag": "h2",
@@ -1079,7 +1079,7 @@
         "article_5"
       ],
       "settings": {
-        "pill": "Le blog",
+        "pill": "",
         "title": "À lire &",
         "title_accent": "explorer",
         "heading_tag": "h2",

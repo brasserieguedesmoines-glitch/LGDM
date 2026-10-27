@@ -275,7 +275,7 @@
     "gdm_autres_bieres": {
       "type": "gdm-vitrine",
       "settings": {
-        "pill": "La gamme",
+        "pill": "",
         "title": "Nos autres",
         "title_accent": "bières",
         "heading_tag": "h2",
@@ -293,7 +293,7 @@
     "gdm_faq_produit": {
       "type": "gdm-faq",
       "settings": {
-        "pill": "FAQ",
+        "pill": "",
         "title": "Questions",
         "title_accent": "fréquentes",
         "heading_tag": "h2",

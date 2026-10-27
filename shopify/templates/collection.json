@@ -12,7 +12,7 @@
     "gdm_collection": {
       "type": "gdm-bieres",
       "settings": {
-        "pill": "Boutique en ligne",
+        "pill": "",
         "title": "",
         "title_accent": "",
         "heading_tag": "h1",
