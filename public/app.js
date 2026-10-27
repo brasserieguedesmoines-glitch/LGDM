@@ -180,23 +180,29 @@ async function chargerAdresses(idClient) {
 }
 
 // Gamme attendue selon le canal du client :
-// GMS → La Bruguiéroise, tout le reste → gamme classique
+// GMS → La Bruguiéroise, tout le reste → gamme classique (bière de Noël : partout)
 function gammeAttendue() {
   return currentCanal === 'GMS' ? 'gms' : 'classique';
+}
+
+// Un produit de la gamme « toutes » (bière de Noël) est proposé à tous les canaux
+function dansGamme(p, attendue = gammeAttendue()) {
+  const g = p.gamme ?? 'classique';
+  return g === attendue || g === 'toutes';
 }
 
 // Catalogue effectivement proposé dans les listes déroulantes
 function catalogueFiltre() {
   if (toutesGammes) return catalogue;
   const attendue = gammeAttendue();
-  const filtre = catalogue.filter(p => (p.gamme ?? 'classique') === attendue);
+  const filtre = catalogue.filter(p => dansGamme(p, attendue));
   return filtre.length ? filtre : catalogue; // jamais de liste vide
 }
 
 // Bandeau indiquant la gamme active, avec bascule vers le catalogue complet
 function majBandeauGamme() {
   const attendue = gammeAttendue();
-  const nbGamme = catalogue.filter(p => (p.gamme ?? 'classique') === attendue).length;
+  const nbGamme = catalogue.filter(p => dansGamme(p, attendue)).length;
   if (!catalogue.length || !nbGamme || nbGamme === catalogue.length) {
     infoGamme.style.display = 'none';
     return;
@@ -380,7 +386,7 @@ fichierPhoto?.addEventListener('change', async () => {
       const p = l.index !== null ? catalogue[l.index] : null;
       if (!p) { inconnues.push(l.libelleLu || '?'); continue; }
       if (!l.certain) aVerifier++;
-      if ((p.gamme ?? 'classique') !== gammeAttendue() && !toutesGammes) { toutesGammes = true; majBandeauGamme(); }
+      if (!dansGamme(p) && !toutesGammes) { toutesGammes = true; majBandeauGamme(); }
       const valeur = JSON.stringify({ idProduit: p.idProduit, idContenant: p.idContenant, idLot: p.idLot ?? 1, idStockBouteille: p.idStockBouteille, gtin: p.gtin });
       ajouterLigne(valeur, `${p.libelle} ${p.contenant}`);
       const div = lignesContainer.lastElementChild;
@@ -423,7 +429,7 @@ async function preRemplirDerniereCommande(idClient) {
     const attendue = gammeAttendue();
     const horsGamme = elements.some(e => {
       const p = catalogue.find(p => p.idProduit === e.stockProduit?.idProduit && p.idContenant === e.stockProduit?.idContenant);
-      return p && (p.gamme ?? 'classique') !== attendue;
+      return p && !dansGamme(p, attendue);
     });
     if (horsGamme && !toutesGammes) { toutesGammes = true; majBandeauGamme(); }
 

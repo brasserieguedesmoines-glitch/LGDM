@@ -204,9 +204,12 @@ function canalParLibelleEtNom(libelleType, nom) {
 }
 
 // Gamme d'un produit : la Bruguiéroise est la gamme destinée à la GMS,
+// la bière de Noël est proposée à tous les canaux (GMS comprise),
 // tout le reste constitue la gamme classique (CHR, cavistes, distributeurs…).
 function gammeProduit(libelle) {
-  return /brugui[éeè]roise/i.test(libelle ?? '') ? 'gms' : 'classique';
+  if (/brugui[éeè]roise/i.test(libelle ?? '')) return 'gms';
+  if (/\bno[eëé]l\b|christmas|xmas/i.test(libelle ?? '')) return 'toutes';
+  return 'classique';
 }
 
 // Map clientId → idClientType (peuplé au chargement des clients)
