@@ -220,9 +220,10 @@
 </gdm-section>
 
 {% stylesheet %}
-  /* Page figée pendant la lecture (le thème fait défiler <body> : on bloque les deux). */
-  html.gdm-stories-open,
-  html.gdm-stories-open body {
+  /* Page figée pendant la lecture (le thème fait défiler <body> : on bloque les deux).
+     html:root passe devant « html.js { overflow: visible !important } » du thème. */
+  html:root.gdm-stories-open,
+  html:root.gdm-stories-open body {
     overflow: hidden !important;
   }
 
