@@ -287,7 +287,8 @@
         "limit": 12,
         "padding_bottom": 48,
         "show_price": false,
-        "show_decor": false
+        "show_decor": false,
+        "show_add_to_cart": false
       }
     },
     "gdm_faq_produit": {
