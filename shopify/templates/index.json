@@ -359,8 +359,8 @@
         "list_label": "Nos engagements",
         "color_bg": "#0D0D0D",
         "color_accent": "#F0921E",
-        "padding_top": 32,
-        "padding_bottom": 32
+        "padding_top": 0,
+        "padding_bottom": 48
       }
     },
     "gdm_brewpub": {
@@ -1194,13 +1194,13 @@
     "gdm_hero",
     "gdm_stories",
     "gdm_bieres",
-    "gdm_atouts",
     "gdm_brewpub",
     "gdm_tireuse",
     "gdm_avis",
     "gdm_faq",
     "gdm_newsletter",
     "gdm_instagram",
+    "gdm_atouts",
     "gdm_histoire",
     "gdm_univers",
     "gdm_promo",
