@@ -2,7 +2,7 @@
 
 Des sections Liquid sur mesure pour la boutique **leguedesmoines.com**, aux couleurs de la marque : fond sombre, accent ambré, gros titres compressés, badges pilule.
 
-Elles sont autonomes. Elles n'ont besoin ni d'application ni de jQuery, ne touchent à aucun fichier existant du thème et fonctionnent sur n'importe quel thème Shopify 2.0, dont votre thème actuel « LGDM V2 ». Dans l'éditeur de thème, elles se trouvent sous **Ajouter une section → GDM · …**.
+Elles sont autonomes. Elles n'ont besoin ni d'application ni de jQuery et fonctionnent sur n'importe quel thème Shopify 2.0, dont votre thème actuel « LGDM V2 ». Dans l'éditeur de thème, elles se trouvent sous **Ajouter une section → GDM · …**. L'habillage du reste du site (voir « Tout le site au style GDM ») modifie en plus quelques fichiers du thème Kalles.
 
 ## Les sections
 
@@ -20,7 +20,7 @@ Elles sont autonomes. Elles n'ont besoin ni d'application ni de jQuery, ne touch
 | `gdm-faq.liquid` | GDM · FAQ | Accordéon + encart contact, données structurées FAQ pour Google |
 | `gdm-univers.liquid` | GDM · Univers | Cartes numérotées en carrousel (brasserie, brewpub, e-shop…) avec photo, points clés et bouton |
 | `gdm-service.liquid` | GDM · Service | Présentation d'un service (location de tireuse) : photo encadrée, chiffres, étiquettes, offres, 2 boutons |
-| `gdm-articles.liquid` | GDM · Articles | Articles de blog choisis à la main, ou les derniers articles d'un blog |
+| `gdm-articles.liquid` | GDM · Articles | Articles de blog choisis à la main, ou les derniers articles d'un blog ; en carrousel ou en grille avec filtres par étiquette (page Blog) ; sur un blog ou un article, reprend le blog consulté |
 | `gdm-newsletter.liquid` | GDM · Newsletter | Inscription à la newsletter (formulaire client Shopify), messages de succès et d'erreur |
 | `gdm-atouts.liquid` | GDM · Atouts | Rangée d'atouts (paiement sécurisé, livraison, retrait…) avec icônes ou images |
 | `gdm-apps.liquid` | GDM · Application | En-tête GDM autour d'un bloc d'application (flux Instagram Instafeed…) |
@@ -31,6 +31,8 @@ Fichiers partagés (obligatoires) :
 
 - `snippets/gdm-assets.liquid`, `gdm-icon.liquid`, `gdm-stars.liquid`, `gdm-stamp.liquid`
 - `assets/gdm-sections.css`, `gdm-sections.js`, `gdm-anton-latin.woff2`, `gdm-inter-latin.woff2`
+
+Habillage de tout le site : `snippets/gdm-site.liquid`, `snippets/gdm-page-skin.liquid`, `assets/gdm-site.css` (chargés par `layout/theme.liquid`).
 
 ## Installation (≈ 10 minutes)
 
@@ -50,10 +52,11 @@ Fichiers partagés (obligatoires) :
 cd shopify
 shopify theme push --store 5bdc8a-32.myshopify.com --theme "<id de la copie>" \
   --only "sections/gdm-*" --only "snippets/gdm-*" --only "assets/gdm-*" \
-  --only "templates/index.json" --only "sections/footer.liquid"
+  --only "templates/*.json" --only "sections/footer.liquid" \
+  --only "layout/theme.liquid" --only "locales/fr.json"
 ```
 
-Avant de pousser `templates/index.json`, récupérez la version du thème (`shopify theme pull --only templates/index.json`) pour ne pas écraser une modification faite dans l'éditeur. `sections/footer.liquid` est le pied de page du thème, affiché sur toutes les pages : après publication, contrôlez une fiche produit, le panier et un article.
+Avant de pousser les modèles (`templates/*.json`) ou `locales/fr.json`, récupérez la version du thème (`shopify theme pull --only …`) pour ne pas écraser une modification faite dans l'éditeur. `layout/theme.liquid`, `sections/footer.liquid` et `locales/fr.json` concernent toutes les pages : après publication, contrôlez une fiche produit, le panier, un article et le paiement.
 
 ## À compléter avant de publier
 
@@ -100,6 +103,47 @@ Les métachamps existants `custom.degre` et `custom.ibu` sont déjà utilisés. 
 À faire au calendrier : le 26 décembre, retirer la story « Noël » (blocs `noel` et `noel_1` de `gdm_stories`).
 
 Les anciennes sections du thème restent intactes dans votre thème en ligne, qui n'a pas été modifié. Les anciennes sections déjà masquées ont été retirées de la copie (Shopify limite une page à 25 sections).
+
+## Tout le site au style GDM (copie du thème)
+
+Toutes les pages de la copie « LGDM V2 - nouvelles sections GDM » reprennent le style de l'accueil : polices Anton et Inter, orange #F0921E, fond #0D0D0D, boutons pilule, champs sombres, mise en page plus compacte. Rien n'est publié : le thème en ligne n'a pas été modifié.
+
+| Où | Fichiers | Ce qui change |
+|---|---|---|
+| Tout le site | `layout/theme.liquid` (une ligne : `render 'gdm-site'`), `snippets/gdm-site.liquid`, `assets/gdm-site.css` | Couleurs, polices, boutons et champs du thème Kalles ; titres Anton ; panier latéral et suggestions sombres |
+| Fiches produit | `templates/product.json` | Fiche du thème restylée, puis « Nos autres bières » (la bière affichée exclue), FAQ, Instagram |
+| Collections | `templates/collection.json` | Grille GDM des bières (titre et description de la collection), Instagram |
+| Pages et articles avec leur propre mise en page | `snippets/gdm-page-skin.liquid`, généré par `outils/gdm_page_skin.py` | Polices et couleurs GDM, espacements resserrés ; sur téléphone, les grilles de cartes deviennent des rangées qui défilent au doigt |
+| Blog | `templates/blog.json` | Grille de tous les articles avec photo et filtres par étiquette |
+| Articles | `templates/article.json` | « À lire aussi » et la gamme en carrousels sous l'article |
+| Contact | `templates/page.contact.json` | Bloc brewpub (horaires du jour, adresse, téléphone, e-mail) puis formulaire |
+| Galerie, recherche, 404 | `templates/page.galerie.json`, `search.json`, `404.json` | Deux photos par ligne sur mobile ; collections de démonstration retirées de la recherche ; 404 avec titre et la gamme |
+| Panier | `templates/cart.json` | La page affichait le panier latéral sans son tiroir (articles et total invisibles) : vraie page panier, total mis à jour après chaque changement |
+| Traductions | `locales/fr.json` | Textes d'une ancienne boutique retirés (voir ci-dessous) |
+
+**Le contenu des pages, articles et collections n'est pas modifié** : il est enregistré dans la boutique et partagé avec le site en ligne. Leur habillage se fait depuis le thème. Si vous modifiez la mise en page d'une page dans l'administration, régénérez l'habillage :
+
+```bash
+python3 outils/gdm_page_skin.py <dossier des sources> snippets/gdm-page-skin.liquid
+```
+
+Le dossier contient un fichier HTML par contenu (`page__brewpub.html`, `article__infos~mon-article.html`, `collection__ipa.html`), copie du champ « contenu » de l'administration.
+
+Hauteur sur téléphone, en écrans à faire défiler (site en ligne → copie) : accueil 11,2 → 7,7 ; bières artisanales 11,4 → 6,7 ; tireuse 12 → 9,3 ; brewpub 9,2 → 6,7 ; brasserie 9,4 → 6,9 ; guide de dégustation 18 → 14,3 ; blog 6,2 → 4,5 ; galerie 5,2 → 2 ; panier 3,3 → 1,4.
+
+### Corrigé dans les traductions du thème (copie)
+
+Ces textes s'affichent aujourd'hui sur le site en ligne et au paiement :
+
+- Panier : « -10% avec le code : ARTPIXE » (ce code n'existe pas dans la boutique) → « Taxes incluses. Frais de port calculés à la caisse. »
+- Paiement : « Pour valider avec toi‚ ton portrait : », « Livraison à domicile (4,90 €) » (la livraison standard est à 9,90 €) et « Livraison GRATUITE en Point Relais / Digital » (aucun point relais) retirés : Shopify reprend ses libellés standard.
+- « Vide » → « Votre panier est vide » ; page 404 : titre « Page introuvable ».
+
+### À corriger dans l'administration (contenus)
+
+- Trois articles commencent par une photo hébergée sur une ancienne boutique, introuvable (erreur 404) : « L'histoire du Gué des Moines », « Pourquoi le Gué des Moines », « Le Gué des Moines s'installe dans l'ancienne briqueterie ». Remplacez la photo dans l'article.
+- Aucun article n'a d'image à la une : la carte du blog reprend la première photo du texte. Une image à la une donne un meilleur cadrage.
+- Restes de l'ancienne boutique : le widget d'abonnement des fiches produit renvoie vers une page de portraits, et des réglages du méga-menu du thème pointent encore vers la collection « portrait-personnalise-catoon ».
 
 ## Aperçu
 
