@@ -140,7 +140,7 @@
       }
     },
     "gdm_bieres": {
-      "type": "gdm-bieres",
+      "type": "gdm-vitrine",
       "settings": {
         "pill": "La gamme",
         "title": "Nos",
@@ -150,12 +150,9 @@
         "link_label": "Toute la gamme",
         "link_url": "shopify://collections/bieres-artisanales-du-gue-des-moines",
         "collection": "bieres-artisanales-du-gue-des-moines",
-        "limit": 12,
-        "layout": "carousel",
-        "columns": 4,
-        "style_source": "custom_style",
         "padding_top": 40,
-        "padding_bottom": 56
+        "limit": 12,
+        "padding_bottom": 48
       }
     }
   },

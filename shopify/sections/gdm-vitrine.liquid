@@ -1,0 +1,682 @@
+{%- comment -%}
+  Le Gué des Moines — Vitrine des bières : les bouteilles alignées debout sur un sol
+  texturé, devant un mur sombre moucheté d'orange, avec deux grandes flèches rondes.
+  Sous chaque bouteille : nom, degré, format, prix et ajout au panier direct.
+  Les photos produit (fond transparent) sont recadrées pour que toutes les bouteilles
+  aient la même taille et reposent sur la même ligne (réglages « Cadrage des photos »).
+  Sur une fiche produit, la bière affichée n'est pas répétée.
+{%- endcomment -%}
+{%- liquid
+  assign s = section.settings
+  assign page_product_id = product.id
+  assign collection = s.collection | default: collection
+  assign heading_tag = s.heading_tag | default: 'h2'
+  assign photo_top = s.photo_top | divided_by: 100.0
+  assign photo_bottom = s.photo_bottom | divided_by: 100.0
+  assign pattern = s.pattern_opacity | divided_by: 100.0
+  assign region_label = s.title | append: ' ' | append: s.title_accent | strip | default: s.label_region
+-%}
+{%- render 'gdm-assets' -%}
+
+<gdm-section
+  id="gdm-{{ section.id }}"
+  class="gdm gdm-vitrine"
+  style="--gdm-bg: {{ s.color_bg }}; --gdm-accent: {{ s.color_accent }}; --gdm-pt: {{ s.padding_top }}px; --gdm-pb: {{ s.padding_bottom }}px; --vt-floor: {{ s.color_floor }}; --vt-h-dk: {{ s.bottle_height }}px; --vt-h-mb: {{ s.bottle_height_mobile }}px; --vt-top: {{ photo_top }}; --vt-bot: {{ photo_bottom }}; --vt-pattern: {{ pattern }};"
+>
+  <div class="gdm-vitrine__wall" aria-hidden="true"></div>
+
+  {%- if s.pill != blank or s.title != blank or s.title_accent != blank or s.text != blank or s.link_label != blank -%}
+    <div class="gdm-container">
+      <div class="gdm-head gdm-head--split gdm-vitrine__head">
+        {%- if s.pill != blank -%}
+          <p class="gdm-pill" data-gdm-reveal>{{ s.pill | escape }}</p>
+        {%- endif -%}
+        {%- if s.title != blank or s.title_accent != blank -%}
+          <{{ heading_tag }} class="gdm-title" data-gdm-reveal style="--gdm-i: 1;">
+            {{- s.title | escape }}{% if s.title_accent != blank %} <em>{{ s.title_accent | escape }}</em>{% endif -%}
+          </{{ heading_tag }}>
+        {%- endif -%}
+        {%- if s.text != blank -%}
+          <p class="gdm-lead" data-gdm-reveal style="--gdm-i: 2;">{{ s.text }}</p>
+        {%- endif -%}
+        {%- if s.link_label != blank -%}
+          <div class="gdm-head__aside" data-gdm-reveal style="--gdm-i: 2;">
+            <a class="gdm-link" href="{{ s.link_url | default: collection.url | default: routes.all_products_collection_url }}">
+              {{- s.link_label | escape -}}
+              {%- render 'gdm-icon', name: 'arrow-up-right' -%}
+            </a>
+          </div>
+        {%- endif -%}
+      </div>
+    </div>
+  {%- endif -%}
+
+  <gdm-carousel class="gdm-vitrine__stage">
+    <button type="button" class="gdm-vitrine__arrow gdm-vitrine__arrow--prev" data-prev data-carousel-ui aria-label="{{ s.label_prev | escape }}">
+      <svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M38 12H3M12 3l-9 9 9 9"/></svg>
+    </button>
+
+    <ul class="gdm-vitrine__track" data-track tabindex="0" role="region" aria-label="{{ region_label | escape }}">
+      {%- if collection != blank and collection.products_count > 0 -%}
+        {%- for product in collection.products limit: s.limit -%}
+          {%- if product.id == page_product_id -%}{%- continue -%}{%- endif -%}
+          {%- liquid
+            assign current = product.selected_or_first_available_variant
+            assign degre = product.metafields.custom.degre.value
+            assign image = product.featured_media.preview_image
+          -%}
+          <li class="gdm-vitrine__item" data-gdm-reveal style="--gdm-i: {{ forloop.index0 | modulo: 6 }};">
+            <a class="gdm-vitrine__bottle" href="{{ product.url }}" tabindex="-1" aria-hidden="true">
+              {%- if image != blank -%}
+                {{ image | image_url: width: 1080 | image_tag: loading: 'lazy', widths: '360, 540, 720, 900, 1080', sizes: '(min-width: 750px) 540px, 320px', alt: '', class: 'gdm-vitrine__img' }}
+              {%- else -%}
+                {{ 'product-1' | placeholder_svg_tag: 'gdm-vitrine__img gdm-vitrine__img--placeholder' }}
+              {%- endif -%}
+            </a>
+
+            <div class="gdm-vitrine__info">
+              <h3 class="gdm-vitrine__name"><a href="{{ product.url }}">{{ product.title | escape }}</a></h3>
+              {%- if s.show_specs -%}
+                {%- liquid
+                  assign specs = ''
+                  if degre != blank
+                    assign specs = degre | replace: '.', ',' | append: ' %'
+                  endif
+                  if product.has_only_default_variant == false
+                    if specs != blank
+                      assign specs = specs | append: ' · '
+                    endif
+                    assign specs = specs | append: current.title
+                  endif
+                -%}
+                {%- if specs != blank -%}
+                  <p class="gdm-vitrine__meta">{{ specs | escape }}</p>
+                {%- endif -%}
+              {%- endif -%}
+
+              {%- if s.show_price or s.show_add_to_cart -%}
+                <div class="gdm-vitrine__buy">
+                  {%- if s.show_price -%}
+                    <p class="gdm-vitrine__price">
+                      {{- current.price | money -}}
+                      {%- if current.compare_at_price > current.price %} <s>{{ current.compare_at_price | money }}</s>{% endif -%}
+                    </p>
+                  {%- endif -%}
+                  {%- if s.show_add_to_cart -%}
+                    {%- form 'product', product, class: 'gdm-vitrine__form', novalidate: 'novalidate' -%}
+                      <input type="hidden" name="id" value="{{ current.id }}">
+                      <input type="hidden" name="quantity" value="1">
+                      {%- liquid
+                        if current.available
+                          assign add_label = s.label_add
+                        else
+                          assign add_label = s.label_soldout
+                        endif
+                        assign add_full = add_label | append: ' — ' | append: product.title
+                        unless product.has_only_default_variant
+                          assign add_full = add_full | append: ' ' | append: current.title
+                        endunless
+                      -%}
+                      <button
+                        type="submit"
+                        name="add"
+                        class="gdm-vitrine__add"
+                        title="{{ add_full | escape }}"
+                        aria-label="{{ add_full | escape }}"
+                        {% unless current.available %}disabled{% endunless %}
+                      >
+                        {%- render 'gdm-icon', name: 'plus', icon_size: 20 -%}
+                      </button>
+                    {%- endform -%}
+                  {%- endif -%}
+                </div>
+              {%- endif -%}
+            </div>
+          </li>
+        {%- endfor -%}
+      {%- else -%}
+        {%- for i in (1..6) -%}
+          <li class="gdm-vitrine__item">
+            <div class="gdm-vitrine__bottle">
+              {%- capture ph -%}product-{{ i }}{%- endcapture -%}
+              {{ ph | placeholder_svg_tag: 'gdm-vitrine__img gdm-vitrine__img--placeholder' }}
+            </div>
+            <div class="gdm-vitrine__info">
+              <h3 class="gdm-vitrine__name">Nom de la bière</h3>
+              <p class="gdm-vitrine__meta">6,2 % · 33cL</p>
+            </div>
+          </li>
+        {%- endfor -%}
+      {%- endif -%}
+    </ul>
+
+    <button type="button" class="gdm-vitrine__arrow gdm-vitrine__arrow--next" data-next data-carousel-ui aria-label="{{ s.label_next | escape }}">
+      <svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 12h35M28 3l9 9-9 9"/></svg>
+    </button>
+  </gdm-carousel>
+</gdm-section>
+
+{% stylesheet %}
+  /* Taille d'une bouteille (--vt-h) et de sa photo carrée (--vt-s) : la bouteille occupe
+     la photo de --vt-top à --vt-bot (fractions de la hauteur), le reste est transparent. */
+  .gdm.gdm-vitrine {
+    --vt-h: var(--vt-h-mb);
+    --vt-s: calc(var(--vt-h) / (var(--vt-bot) - var(--vt-top)));
+    --vt-item: clamp(136px, 40vw, 176px);
+    --vt-lift: 24px;
+    --vt-arrow: 52px;
+    --vt-gutter: clamp(16px, 4vw, 48px);
+    padding-bottom: 0;
+  }
+
+  @media (min-width: 750px) {
+    .gdm.gdm-vitrine {
+      --vt-h: var(--vt-h-dk);
+      --vt-item: clamp(168px, 13.5vw, 212px);
+      --vt-lift: 32px;
+      --vt-arrow: 88px;
+    }
+  }
+
+  /* ---------- Mur : taches de peinture à la couleur d'accent ---------- */
+  .gdm.gdm-vitrine .gdm-vitrine__wall {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    background-color: var(--gdm-accent);
+    opacity: var(--vt-pattern);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='520' viewBox='0 0 520 520'%3E%3Cpath d='M295 447C295 448 294 448 294 449C294 450 295 452 294 454C294 455 294 460 293 460C292 461 289 457 287 457C285 457 283 459 281 459C280 459 278 457 277 456C276 455 275 453 274 451C273 450 272 449 272 447C272 446 273 444 274 442C275 441 276 440 277 439C278 437 279 437 281 436C282 435 284 433 286 433C287 433 290 434 291 434C292 435 294 435 294 436C295 438 294 440 294 442C295 444 295 446 295 447Z'/%3E%3Cellipse cx='307' cy='445' rx='3' ry='1' transform='rotate(358 307 445)'/%3E%3Cellipse cx='293' cy='430' rx='3' ry='1' transform='rotate(292 293 430)'/%3E%3Ccircle cx='307' cy='447' r='1'/%3E%3Cpath d='M274 298C274 300 271 301 271 303C271 304 273 306 272 308C272 310 269 313 267 313C266 312 265 307 264 307C262 307 258 313 257 312C256 312 257 307 256 305C255 304 251 304 251 303C250 302 251 298 252 297C253 296 254 296 255 295C255 294 255 293 256 292C257 291 258 290 259 290C260 289 261 289 263 289C264 289 266 289 267 290C268 290 268 291 269 291C270 292 274 291 274 292C275 293 275 296 274 298Z'/%3E%3Ccircle cx='286' cy='306' r='1'/%3E%3Ccircle cx='279' cy='305' r='2'/%3E%3Ccircle cx='280' cy='318' r='1'/%3E%3Cellipse cx='284' cy='305' rx='4' ry='2' transform='rotate(19 284 305)'/%3E%3Cellipse cx='277' cy='308' rx='3' ry='2' transform='rotate(37 277 308)'/%3E%3Cpath d='M96 172C97 174 97 178 96 180C95 181 93 180 91 181C89 182 88 183 86 184C85 185 82 186 80 187C79 187 78 188 76 187C74 187 71 186 70 185C69 183 68 179 68 177C68 175 69 175 69 174C69 172 66 168 66 166C67 163 70 161 71 161C73 160 74 162 76 162C77 162 79 160 81 159C84 158 88 157 89 158C90 159 87 163 88 164C89 166 93 164 94 166C96 167 96 170 96 172Z'/%3E%3Ccircle cx='65' cy='195' r='1'/%3E%3Ccircle cx='83' cy='206' r='3'/%3E%3Cpath d='M402 344C403 345 404 347 404 348C403 349 401 349 400 350C400 351 400 353 399 354C398 354 397 352 395 353C394 353 392 357 391 356C390 356 391 351 391 349C390 348 390 347 389 347C388 346 384 346 384 346C384 345 388 342 389 341C390 340 390 341 391 340C391 339 391 337 392 337C393 336 395 338 396 338C398 339 397 339 398 339C399 339 402 338 403 339C404 340 402 342 402 343C401 343 402 343 402 344Z'/%3E%3Cellipse cx='413' cy='350' rx='2' ry='1' transform='rotate(19 413 350)'/%3E%3Cellipse cx='404' cy='353' rx='3' ry='1' transform='rotate(45 404 353)'/%3E%3Cellipse cx='414' cy='343' rx='1' ry='0' transform='rotate(-4 414 343)'/%3E%3Ccircle cx='413' cy='349' r='1'/%3E%3Cpath d='M479 465C479 466 478 465 478 466C478 467 478 468 478 469C477 470 476 472 475 472C474 472 473 471 472 471C471 471 470 470 469 470C468 469 466 469 466 469C465 468 465 468 465 467C465 467 466 465 466 464C466 463 465 462 465 461C465 460 466 459 467 459C467 458 467 458 468 457C469 457 472 455 473 455C474 455 473 458 474 458C475 459 478 458 478 458C479 459 477 460 477 461C478 462 479 464 479 465Z'/%3E%3Cellipse cx='491' cy='462' rx='1' ry='0' transform='rotate(354 491 462)'/%3E%3Cellipse cx='475' cy='451' rx='2' ry='1' transform='rotate(283 475 451)'/%3E%3Ccircle cx='485' cy='457' r='1'/%3E%3Cpath d='M325 109C324 111 320 112 319 114C319 115 320 118 319 119C318 120 316 121 314 121C313 122 313 122 311 122C310 122 307 124 306 123C304 123 304 119 303 117C302 115 300 113 300 112C299 111 300 111 300 110C300 109 300 108 300 106C300 104 298 99 299 98C300 97 305 98 307 98C309 98 310 99 311 98C313 98 314 95 316 95C317 95 319 98 321 100C322 101 324 103 325 105C325 106 325 108 325 109Z'/%3E%3Ccircle cx='295' cy='131' r='2'/%3E%3Ccircle cx='294' cy='124' r='1'/%3E%3Cpath d='M158 54C158 55 154 56 154 57C153 58 153 57 152 59C152 60 152 63 151 64C150 64 147 61 145 60C144 60 144 60 142 60C141 61 139 63 138 62C137 61 137 57 137 56C137 54 138 54 138 53C138 51 136 50 136 49C136 48 137 47 138 46C139 45 141 44 143 43C144 43 146 43 147 43C148 43 150 43 150 44C151 45 151 47 151 48C152 49 151 49 152 50C153 51 157 53 158 54Z'/%3E%3Cellipse cx='126' cy='44' rx='3' ry='1' transform='rotate(202 126 44)'/%3E%3Cellipse cx='139' cy='36' rx='2' ry='1' transform='rotate(246 139 36)'/%3E%3Cpath d='M81 378C82 380 85 382 84 383C83 384 78 383 76 383C75 383 75 384 74 384C74 384 73 385 71 385C70 385 68 386 67 386C65 386 63 386 62 385C61 384 63 381 63 379C63 378 63 377 63 376C62 375 59 374 59 373C60 372 64 372 65 371C66 370 66 368 67 368C67 367 69 368 70 368C71 368 73 368 74 369C75 369 75 370 76 371C76 372 77 372 78 373C78 374 80 376 81 378Z'/%3E%3Ccircle cx='56' cy='380' r='2'/%3E%3Cellipse cx='68' cy='401' rx='2' ry='1' transform='rotate(96 68 401)'/%3E%3Ccircle cx='54' cy='374' r='1'/%3E%3Ccircle cx='52' cy='382' r='2'/%3E%3Cpath d='M421 210C421 211 423 213 423 214C423 215 421 216 420 216C419 217 417 217 416 218C414 219 414 221 412 222C411 222 407 222 406 221C405 220 407 217 406 216C405 215 402 214 401 213C401 212 401 212 401 210C401 209 401 206 402 205C402 204 404 205 405 203C406 202 407 197 408 196C409 195 410 199 411 199C413 200 414 197 416 198C417 198 419 201 420 202C421 204 421 204 422 205C422 207 421 208 421 210Z'/%3E%3Ccircle cx='396' cy='216' r='1'/%3E%3Cellipse cx='394' cy='227' rx='2' ry='1' transform='rotate(136 394 227)'/%3E%3Ccircle cx='408' cy='235' r='1'/%3E%3Cpath d='M427 41C427 44 430 47 429 48C428 49 424 48 422 49C420 49 420 50 418 51C417 52 414 57 412 57C410 57 408 53 407 51C405 50 405 49 403 48C401 47 397 47 396 45C396 44 397 43 398 41C398 39 400 38 400 35C400 33 398 28 400 26C401 25 406 25 408 25C410 25 410 26 412 25C414 25 419 23 421 24C423 24 422 27 422 29C423 31 425 32 426 34C427 36 426 39 427 41Z'/%3E%3Cellipse cx='379' cy='23' rx='5' ry='2' transform='rotate(207 379 23)'/%3E%3Cellipse cx='387' cy='10' rx='3' ry='2' transform='rotate(230 387 10)'/%3E%3Ccircle cx='383' cy='26' r='2'/%3E%3Ccircle cx='383' cy='17' r='1'/%3E%3Ccircle cx='397' cy='20' r='1'/%3E%3Cpath d='M192 464C192 465 194 466 194 466C194 467 192 467 191 468C190 469 190 471 189 472C188 473 187 473 186 473C185 473 184 472 183 471C182 471 180 471 179 470C178 469 178 467 178 466C178 465 177 464 177 463C177 462 178 461 179 460C179 459 179 458 180 457C181 457 182 458 183 458C184 457 186 455 187 455C188 455 188 457 188 457C189 457 191 456 192 457C193 457 194 460 194 461C194 462 192 463 192 464Z'/%3E%3Ccircle cx='173' cy='461' r='1'/%3E%3Cellipse cx='174' cy='454' rx='2' ry='1' transform='rotate(221 174 454)'/%3E%3C/svg%3E") 0 0 / 520px 520px repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='520' viewBox='0 0 520 520'%3E%3Cpath d='M295 447C295 448 294 448 294 449C294 450 295 452 294 454C294 455 294 460 293 460C292 461 289 457 287 457C285 457 283 459 281 459C280 459 278 457 277 456C276 455 275 453 274 451C273 450 272 449 272 447C272 446 273 444 274 442C275 441 276 440 277 439C278 437 279 437 281 436C282 435 284 433 286 433C287 433 290 434 291 434C292 435 294 435 294 436C295 438 294 440 294 442C295 444 295 446 295 447Z'/%3E%3Cellipse cx='307' cy='445' rx='3' ry='1' transform='rotate(358 307 445)'/%3E%3Cellipse cx='293' cy='430' rx='3' ry='1' transform='rotate(292 293 430)'/%3E%3Ccircle cx='307' cy='447' r='1'/%3E%3Cpath d='M274 298C274 300 271 301 271 303C271 304 273 306 272 308C272 310 269 313 267 313C266 312 265 307 264 307C262 307 258 313 257 312C256 312 257 307 256 305C255 304 251 304 251 303C250 302 251 298 252 297C253 296 254 296 255 295C255 294 255 293 256 292C257 291 258 290 259 290C260 289 261 289 263 289C264 289 266 289 267 290C268 290 268 291 269 291C270 292 274 291 274 292C275 293 275 296 274 298Z'/%3E%3Ccircle cx='286' cy='306' r='1'/%3E%3Ccircle cx='279' cy='305' r='2'/%3E%3Ccircle cx='280' cy='318' r='1'/%3E%3Cellipse cx='284' cy='305' rx='4' ry='2' transform='rotate(19 284 305)'/%3E%3Cellipse cx='277' cy='308' rx='3' ry='2' transform='rotate(37 277 308)'/%3E%3Cpath d='M96 172C97 174 97 178 96 180C95 181 93 180 91 181C89 182 88 183 86 184C85 185 82 186 80 187C79 187 78 188 76 187C74 187 71 186 70 185C69 183 68 179 68 177C68 175 69 175 69 174C69 172 66 168 66 166C67 163 70 161 71 161C73 160 74 162 76 162C77 162 79 160 81 159C84 158 88 157 89 158C90 159 87 163 88 164C89 166 93 164 94 166C96 167 96 170 96 172Z'/%3E%3Ccircle cx='65' cy='195' r='1'/%3E%3Ccircle cx='83' cy='206' r='3'/%3E%3Cpath d='M402 344C403 345 404 347 404 348C403 349 401 349 400 350C400 351 400 353 399 354C398 354 397 352 395 353C394 353 392 357 391 356C390 356 391 351 391 349C390 348 390 347 389 347C388 346 384 346 384 346C384 345 388 342 389 341C390 340 390 341 391 340C391 339 391 337 392 337C393 336 395 338 396 338C398 339 397 339 398 339C399 339 402 338 403 339C404 340 402 342 402 343C401 343 402 343 402 344Z'/%3E%3Cellipse cx='413' cy='350' rx='2' ry='1' transform='rotate(19 413 350)'/%3E%3Cellipse cx='404' cy='353' rx='3' ry='1' transform='rotate(45 404 353)'/%3E%3Cellipse cx='414' cy='343' rx='1' ry='0' transform='rotate(-4 414 343)'/%3E%3Ccircle cx='413' cy='349' r='1'/%3E%3Cpath d='M479 465C479 466 478 465 478 466C478 467 478 468 478 469C477 470 476 472 475 472C474 472 473 471 472 471C471 471 470 470 469 470C468 469 466 469 466 469C465 468 465 468 465 467C465 467 466 465 466 464C466 463 465 462 465 461C465 460 466 459 467 459C467 458 467 458 468 457C469 457 472 455 473 455C474 455 473 458 474 458C475 459 478 458 478 458C479 459 477 460 477 461C478 462 479 464 479 465Z'/%3E%3Cellipse cx='491' cy='462' rx='1' ry='0' transform='rotate(354 491 462)'/%3E%3Cellipse cx='475' cy='451' rx='2' ry='1' transform='rotate(283 475 451)'/%3E%3Ccircle cx='485' cy='457' r='1'/%3E%3Cpath d='M325 109C324 111 320 112 319 114C319 115 320 118 319 119C318 120 316 121 314 121C313 122 313 122 311 122C310 122 307 124 306 123C304 123 304 119 303 117C302 115 300 113 300 112C299 111 300 111 300 110C300 109 300 108 300 106C300 104 298 99 299 98C300 97 305 98 307 98C309 98 310 99 311 98C313 98 314 95 316 95C317 95 319 98 321 100C322 101 324 103 325 105C325 106 325 108 325 109Z'/%3E%3Ccircle cx='295' cy='131' r='2'/%3E%3Ccircle cx='294' cy='124' r='1'/%3E%3Cpath d='M158 54C158 55 154 56 154 57C153 58 153 57 152 59C152 60 152 63 151 64C150 64 147 61 145 60C144 60 144 60 142 60C141 61 139 63 138 62C137 61 137 57 137 56C137 54 138 54 138 53C138 51 136 50 136 49C136 48 137 47 138 46C139 45 141 44 143 43C144 43 146 43 147 43C148 43 150 43 150 44C151 45 151 47 151 48C152 49 151 49 152 50C153 51 157 53 158 54Z'/%3E%3Cellipse cx='126' cy='44' rx='3' ry='1' transform='rotate(202 126 44)'/%3E%3Cellipse cx='139' cy='36' rx='2' ry='1' transform='rotate(246 139 36)'/%3E%3Cpath d='M81 378C82 380 85 382 84 383C83 384 78 383 76 383C75 383 75 384 74 384C74 384 73 385 71 385C70 385 68 386 67 386C65 386 63 386 62 385C61 384 63 381 63 379C63 378 63 377 63 376C62 375 59 374 59 373C60 372 64 372 65 371C66 370 66 368 67 368C67 367 69 368 70 368C71 368 73 368 74 369C75 369 75 370 76 371C76 372 77 372 78 373C78 374 80 376 81 378Z'/%3E%3Ccircle cx='56' cy='380' r='2'/%3E%3Cellipse cx='68' cy='401' rx='2' ry='1' transform='rotate(96 68 401)'/%3E%3Ccircle cx='54' cy='374' r='1'/%3E%3Ccircle cx='52' cy='382' r='2'/%3E%3Cpath d='M421 210C421 211 423 213 423 214C423 215 421 216 420 216C419 217 417 217 416 218C414 219 414 221 412 222C411 222 407 222 406 221C405 220 407 217 406 216C405 215 402 214 401 213C401 212 401 212 401 210C401 209 401 206 402 205C402 204 404 205 405 203C406 202 407 197 408 196C409 195 410 199 411 199C413 200 414 197 416 198C417 198 419 201 420 202C421 204 421 204 422 205C422 207 421 208 421 210Z'/%3E%3Ccircle cx='396' cy='216' r='1'/%3E%3Cellipse cx='394' cy='227' rx='2' ry='1' transform='rotate(136 394 227)'/%3E%3Ccircle cx='408' cy='235' r='1'/%3E%3Cpath d='M427 41C427 44 430 47 429 48C428 49 424 48 422 49C420 49 420 50 418 51C417 52 414 57 412 57C410 57 408 53 407 51C405 50 405 49 403 48C401 47 397 47 396 45C396 44 397 43 398 41C398 39 400 38 400 35C400 33 398 28 400 26C401 25 406 25 408 25C410 25 410 26 412 25C414 25 419 23 421 24C423 24 422 27 422 29C423 31 425 32 426 34C427 36 426 39 427 41Z'/%3E%3Cellipse cx='379' cy='23' rx='5' ry='2' transform='rotate(207 379 23)'/%3E%3Cellipse cx='387' cy='10' rx='3' ry='2' transform='rotate(230 387 10)'/%3E%3Ccircle cx='383' cy='26' r='2'/%3E%3Ccircle cx='383' cy='17' r='1'/%3E%3Ccircle cx='397' cy='20' r='1'/%3E%3Cpath d='M192 464C192 465 194 466 194 466C194 467 192 467 191 468C190 469 190 471 189 472C188 473 187 473 186 473C185 473 184 472 183 471C182 471 180 471 179 470C178 469 178 467 178 466C178 465 177 464 177 463C177 462 178 461 179 460C179 459 179 458 180 457C181 457 182 458 183 458C184 457 186 455 187 455C188 455 188 457 188 457C189 457 191 456 192 457C193 457 194 460 194 461C194 462 192 463 192 464Z'/%3E%3Ccircle cx='173' cy='461' r='1'/%3E%3Cellipse cx='174' cy='454' rx='2' ry='1' transform='rotate(221 174 454)'/%3E%3C/svg%3E") 0 0 / 520px 520px repeat;
+    pointer-events: none;
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__head {
+    margin-bottom: clamp(4px, 1.5vw, 16px);
+  }
+
+  /* ---------- Scène : le sol commence à mi-hauteur des bouteilles ---------- */
+  .gdm.gdm-vitrine .gdm-vitrine__stage {
+    position: relative;
+    display: block;
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__stage::before {
+    content: '';
+    position: absolute;
+    top: calc(var(--vt-lift) + var(--vt-h) * 0.52);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: -1;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    background:
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0) 48px),
+      radial-gradient(60% 120% at 50% 0%, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 70%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+      var(--vt-floor);
+    background-size: auto, auto, 220px 220px, auto;
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__track {
+    display: flex;
+    gap: 0;
+    margin: 0;
+    padding: var(--vt-lift) max(var(--vt-gutter), calc((100% - var(--gdm-max, 1280px)) / 2 + var(--vt-gutter))) calc(var(--gdm-pb) * 0.62);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-padding-inline: max(var(--vt-gutter), calc((100% - var(--gdm-max, 1280px)) / 2 + var(--vt-gutter)));
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    list-style: none;
+  }
+
+  @media (min-width: 750px) {
+    .gdm.gdm-vitrine .gdm-vitrine__track {
+      padding-bottom: var(--gdm-pb);
+    }
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__track:focus-visible {
+    outline: 2px solid var(--gdm-accent);
+    outline-offset: -4px;
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__item {
+    position: relative;
+    display: flex;
+    flex: 0 0 var(--vt-item);
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    scroll-snap-align: start;
+  }
+
+  /* ---------- Bouteille : photo recadrée, posée sur la ligne du sol ---------- */
+  .gdm.gdm-vitrine .gdm-vitrine__bottle {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: var(--vt-h);
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__img {
+    position: absolute;
+    bottom: calc(var(--vt-s) * (var(--vt-bot) - 1));
+    left: 50%;
+    width: var(--vt-s);
+    max-width: none;
+    height: var(--vt-s);
+    object-fit: contain;
+    transform: translateX(-50%);
+    transition: transform 0.5s var(--gdm-ease);
+    pointer-events: none;
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__img--placeholder {
+    bottom: 0;
+    width: 70%;
+    height: 100%;
+    fill: var(--gdm-muted);
+    opacity: 0.3;
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__item:hover .gdm-vitrine__img,
+  .gdm.gdm-vitrine .gdm-vitrine__item:focus-within .gdm-vitrine__img {
+    transform: translate(-50%, calc(var(--vt-lift) * -0.6));
+  }
+
+  /* ---------- Nom, degré, prix et ajout au panier, posés sur le sol ---------- */
+  .gdm.gdm-vitrine .gdm-vitrine__info {
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+    width: 100%;
+    padding: 18px 8px 0;
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__name {
+    font-family: var(--gdm-font-display);
+    font-size: clamp(16px, 15px + 0.3vw, 20px);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__name a {
+    color: var(--gdm-text);
+    transition: color 0.2s var(--gdm-ease);
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__name a:hover {
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__name a:focus-visible {
+    outline: 2px solid var(--gdm-accent);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__meta {
+    color: var(--gdm-muted);
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__buy {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__price {
+    color: var(--gdm-text);
+    font-size: 15px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__price s {
+    margin-left: 4px;
+    color: var(--gdm-muted);
+    font-size: 12px;
+    font-weight: 400;
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__form {
+    margin: 0;
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__add {
+    display: inline-grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--gdm-accent);
+    color: var(--gdm-on-accent);
+    transition: background-color 0.2s var(--gdm-ease), transform 0.2s var(--gdm-ease);
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__add:hover {
+    background: var(--gdm-accent-hover);
+    transform: scale(1.08);
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__add:focus-visible {
+    outline: 2px solid var(--gdm-text);
+    outline-offset: 3px;
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__add:disabled {
+    background: var(--gdm-surface-2);
+    color: var(--gdm-muted);
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* ---------- Grandes flèches rondes, à mi-hauteur des bouteilles ---------- */
+  .gdm.gdm-vitrine .gdm-vitrine__arrow {
+    position: absolute;
+    top: calc(var(--vt-lift) + var(--vt-h) * 0.5);
+    z-index: 3;
+    display: grid;
+    place-items: center;
+    width: var(--vt-arrow);
+    height: var(--vt-arrow);
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #fff;
+    color: #0d0d0d;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    transform: translateY(-50%);
+    transition: opacity 0.3s var(--gdm-ease), transform 0.3s var(--gdm-ease), background-color 0.2s var(--gdm-ease);
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__arrow svg {
+    width: 44%;
+    height: auto;
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__arrow--prev {
+    left: max(8px, calc((100% - var(--gdm-max, 1280px)) / 2 - var(--vt-arrow) / 3));
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__arrow--next {
+    right: max(8px, calc((100% - var(--gdm-max, 1280px)) / 2 - var(--vt-arrow) / 3));
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__arrow:hover {
+    background: var(--gdm-accent);
+    transform: translateY(-50%) scale(1.05);
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__arrow:focus-visible {
+    outline: 3px solid var(--gdm-accent);
+    outline-offset: 3px;
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__arrow:disabled {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .gdm.gdm-vitrine gdm-carousel[data-static] .gdm-vitrine__arrow {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gdm.gdm-vitrine .gdm-vitrine__img,
+    .gdm.gdm-vitrine .gdm-vitrine__arrow,
+    .gdm.gdm-vitrine .gdm-vitrine__add {
+      transition: none;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "GDM · Vitrine des bières",
+  "tag": "section",
+  "class": "gdm-shopify-section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "En-tête"
+    },
+    {
+      "type": "text",
+      "id": "pill",
+      "label": "Badge",
+      "default": "La gamme"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titre",
+      "default": "Nos"
+    },
+    {
+      "type": "text",
+      "id": "title_accent",
+      "label": "Titre — partie orange",
+      "default": "bières"
+    },
+    {
+      "type": "select",
+      "id": "heading_tag",
+      "label": "Niveau du titre (SEO)",
+      "default": "h2",
+      "options": [
+        { "value": "h1", "label": "H1" },
+        { "value": "h2", "label": "H2" }
+      ]
+    },
+    {
+      "type": "inline_richtext",
+      "id": "text",
+      "label": "Texte d'introduction (facultatif)"
+    },
+    {
+      "type": "text",
+      "id": "link_label",
+      "label": "Lien — texte",
+      "default": "Toute la gamme"
+    },
+    {
+      "type": "url",
+      "id": "link_url",
+      "label": "Lien — destination",
+      "info": "Vide : la collection choisie."
+    },
+    {
+      "type": "header",
+      "content": "Bières"
+    },
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Collection",
+      "info": "Sur une page collection, laissez vide pour afficher la collection consultée. Sur une fiche produit, la bière affichée n'est pas répétée."
+    },
+    {
+      "type": "range",
+      "id": "limit",
+      "label": "Nombre de bières",
+      "min": 2,
+      "max": 24,
+      "step": 1,
+      "default": 12
+    },
+    {
+      "type": "checkbox",
+      "id": "show_specs",
+      "label": "Afficher le degré et le format",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_price",
+      "label": "Afficher le prix",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_add_to_cart",
+      "label": "Bouton d'ajout au panier",
+      "info": "Ajoute le premier format disponible (celui affiché sous le nom).",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "label_add",
+      "label": "Bouton — texte pour l'accessibilité",
+      "default": "Ajouter au panier"
+    },
+    {
+      "type": "text",
+      "id": "label_soldout",
+      "label": "Bouton — épuisé",
+      "default": "Épuisé"
+    },
+    {
+      "type": "header",
+      "content": "Cadrage des photos"
+    },
+    {
+      "type": "paragraph",
+      "content": "Position du haut et du bas de la bouteille dans la photo produit (fond transparent). Vos photos actuelles : 16 % et 91 %. Toutes les bouteilles sont mises à la même hauteur et posées sur la même ligne."
+    },
+    {
+      "type": "range",
+      "id": "photo_top",
+      "label": "Haut de la bouteille",
+      "min": 0,
+      "max": 45,
+      "step": 1,
+      "unit": "%",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "photo_bottom",
+      "label": "Bas de la bouteille",
+      "min": 55,
+      "max": 100,
+      "step": 1,
+      "unit": "%",
+      "default": 91
+    },
+    {
+      "type": "range",
+      "id": "bottle_height",
+      "label": "Hauteur des bouteilles — ordinateur",
+      "min": 240,
+      "max": 480,
+      "step": 10,
+      "unit": "px",
+      "default": 380
+    },
+    {
+      "type": "range",
+      "id": "bottle_height_mobile",
+      "label": "Hauteur des bouteilles — mobile",
+      "min": 160,
+      "max": 320,
+      "step": 10,
+      "unit": "px",
+      "default": 230
+    },
+    {
+      "type": "header",
+      "content": "Accessibilité"
+    },
+    {
+      "type": "text",
+      "id": "label_region",
+      "label": "Nom de la vitrine",
+      "default": "Nos bières"
+    },
+    {
+      "type": "text",
+      "id": "label_prev",
+      "label": "Flèche précédente",
+      "default": "Bières précédentes"
+    },
+    {
+      "type": "text",
+      "id": "label_next",
+      "label": "Flèche suivante",
+      "default": "Bières suivantes"
+    },
+    {
+      "type": "header",
+      "content": "Couleurs et espacement"
+    },
+    {
+      "type": "color",
+      "id": "color_bg",
+      "label": "Mur",
+      "default": "#0D0D0D"
+    },
+    {
+      "type": "color",
+      "id": "color_floor",
+      "label": "Sol",
+      "default": "#26221E"
+    },
+    {
+      "type": "color",
+      "id": "color_accent",
+      "label": "Accent (taches, boutons)",
+      "default": "#F0921E"
+    },
+    {
+      "type": "range",
+      "id": "pattern_opacity",
+      "label": "Taches sur le mur",
+      "min": 0,
+      "max": 60,
+      "step": 2,
+      "unit": "%",
+      "default": 26
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Marge haute",
+      "min": 0,
+      "max": 160,
+      "step": 4,
+      "unit": "px",
+      "default": 56
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Marge basse (sous le sol)",
+      "min": 0,
+      "max": 160,
+      "step": 4,
+      "unit": "px",
+      "default": 48
+    }
+  ],
+  "presets": [
+    {
+      "name": "GDM · Vitrine des bières"
+    }
+  ]
+}
+{% endschema %}

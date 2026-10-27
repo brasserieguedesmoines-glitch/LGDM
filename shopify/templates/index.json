@@ -294,17 +294,19 @@
       ]
     },
     "gdm_bieres": {
-      "type": "gdm-bieres",
+      "type": "gdm-vitrine",
       "settings": {
+        "pill": "La gamme du moment",
+        "title": "Nos",
+        "title_accent": "bières",
+        "heading_tag": "h2",
+        "text": "Des permanentes aux éphémères Labelle : toutes nos bières sont brassées, fermentées et embouteillées à Bruguières.",
         "link_label": "Toute la gamme",
         "link_url": "shopify://collections/bieres-artisanales-du-gue-des-moines",
         "collection": "bieres-artisanales-du-gue-des-moines",
-        "limit": 10,
-        "layout": "carousel",
-        "columns": 4,
-        "style_source": "custom_style",
         "padding_top": 56,
-        "padding_bottom": 56
+        "limit": 12,
+        "padding_bottom": 48
       }
     },
     "gdm_atouts": {
