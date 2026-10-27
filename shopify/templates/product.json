@@ -285,7 +285,9 @@
         "collection": "bieres-artisanales-du-gue-des-moines",
         "padding_top": 56,
         "limit": 12,
-        "padding_bottom": 48
+        "padding_bottom": 48,
+        "show_price": false,
+        "show_decor": false
       }
     },
     "gdm_faq_produit": {

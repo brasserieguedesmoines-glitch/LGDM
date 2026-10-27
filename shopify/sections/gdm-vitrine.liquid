@@ -1,7 +1,8 @@
 {%- comment -%}
-  Le Gué des Moines — Vitrine des bières : les bouteilles alignées debout sur un sol
-  texturé, devant un mur sombre moucheté d'orange, avec deux grandes flèches rondes.
-  Sous chaque bouteille : nom, degré, format, prix et ajout au panier direct.
+  Le Gué des Moines — Vitrine des bières : les bouteilles alignées debout, avec deux
+  grandes flèches rondes. En option, un décor : sol texturé devant un mur sombre
+  moucheté d'orange. Sous chaque bouteille : nom, degré, format, prix (en option)
+  et ajout au panier direct.
   Les photos produit (fond transparent) sont recadrées pour que toutes les bouteilles
   aient la même taille et reposent sur la même ligne (réglages « Cadrage des photos »).
   Sur une fiche produit, la bière affichée n'est pas répétée.
@@ -20,10 +21,12 @@
 
 <gdm-section
   id="gdm-{{ section.id }}"
-  class="gdm gdm-vitrine"
+  class="gdm gdm-vitrine{% if s.show_decor %} gdm-vitrine--decor{% endif %}"
   style="--gdm-bg: {{ s.color_bg }}; --gdm-accent: {{ s.color_accent }}; --gdm-pt: {{ s.padding_top }}px; --gdm-pb: {{ s.padding_bottom }}px; --vt-floor: {{ s.color_floor }}; --vt-h-dk: {{ s.bottle_height }}px; --vt-h-mb: {{ s.bottle_height_mobile }}px; --vt-top: {{ photo_top }}; --vt-bot: {{ photo_bottom }}; --vt-pattern: {{ pattern }};"
 >
-  <div class="gdm-vitrine__wall" aria-hidden="true"></div>
+  {%- if s.show_decor -%}
+    <div class="gdm-vitrine__wall" aria-hidden="true"></div>
+  {%- endif -%}
 
   {%- if s.pill != blank or s.title != blank or s.title_accent != blank or s.text != blank or s.link_label != blank -%}
     <div class="gdm-container">
@@ -200,7 +203,7 @@
     display: block;
   }
 
-  .gdm.gdm-vitrine .gdm-vitrine__stage::before {
+  .gdm.gdm-vitrine--decor .gdm-vitrine__stage::before {
     content: '';
     position: absolute;
     top: calc(var(--vt-lift) + var(--vt-h) * 0.52);
@@ -536,7 +539,7 @@
       "type": "checkbox",
       "id": "show_price",
       "label": "Afficher le prix",
-      "default": true
+      "default": false
     },
     {
       "type": "checkbox",
@@ -632,15 +635,22 @@
       "content": "Couleurs et espacement"
     },
     {
+      "type": "checkbox",
+      "id": "show_decor",
+      "label": "Décor : mur moucheté et sol texturé",
+      "info": "Désactivé : fond uni de la couleur ci-dessous.",
+      "default": false
+    },
+    {
       "type": "color",
       "id": "color_bg",
-      "label": "Mur",
+      "label": "Fond (mur)",
       "default": "#0D0D0D"
     },
     {
       "type": "color",
       "id": "color_floor",
-      "label": "Sol",
+      "label": "Sol (décor)",
       "default": "#26221E"
     },
     {
@@ -652,7 +662,7 @@
     {
       "type": "range",
       "id": "pattern_opacity",
-      "label": "Taches sur le mur",
+      "label": "Taches sur le mur (décor)",
       "min": 0,
       "max": 60,
       "step": 2,
