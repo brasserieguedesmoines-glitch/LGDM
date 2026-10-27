@@ -284,8 +284,15 @@
     opacity: 0.3;
   }
 
-  .gdm.gdm-vitrine .gdm-vitrine__item:hover .gdm-vitrine__img,
-  .gdm.gdm-vitrine .gdm-vitrine__item:focus-within .gdm-vitrine__img {
+  /* La bouteille se soulève au survol (souris seulement : sur écran tactile, l'état
+     « survol » resterait collé après un appui) ou quand son lien reçoit le focus clavier. */
+  @media (hover: hover) {
+    .gdm.gdm-vitrine .gdm-vitrine__item:hover .gdm-vitrine__img {
+      transform: translate(-50%, calc(var(--vt-lift) * -0.6));
+    }
+  }
+
+  .gdm.gdm-vitrine .gdm-vitrine__item:has(:focus-visible) .gdm-vitrine__img {
     transform: translate(-50%, calc(var(--vt-lift) * -0.6));
   }
 

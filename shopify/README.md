@@ -11,6 +11,7 @@ Elles sont autonomes. Elles n'ont besoin ni d'application ni de jQuery et foncti
 | `gdm-hero.liquid` | GDM · Bannière d'accueil | Grand titre, image, image mobile ou vidéo de fond, 2 boutons, bandeau note + chiffres, tampon rotatif |
 | `gdm-bandeau-defilant.liquid` | GDM · Bandeau défilant | Texte géant en défilement continu, séparateurs houblon, épi ou étoile, option « bandeaux croisés » |
 | `gdm-bieres.liquid` | GDM · Nos bières | Cartes bières en carrousel ou en grille : degré, IBU, jauge d'amertume, choix 33 cL / 75 cL, ajout au panier direct |
+| `gdm-vitrine.liquid` | GDM · Vitrine des bières | Bouteilles alignées debout sur un sol texturé, devant un mur sombre moucheté d'orange, grandes flèches rondes ; sous chaque bouteille : nom, degré, format, prix, bouton « + ». Les photos produit (fond transparent) sont recadrées pour que toutes les bouteilles aient la même taille (réglages « Cadrage des photos ») |
 | `gdm-histoire.liquid` | GDM · Notre histoire | Photo + médaillon + tampon « 2016 », texte, points forts avec icônes |
 | `gdm-chiffres.liquid` | GDM · Chiffres clés | Grands chiffres orange animés au défilement |
 | `gdm-avis.liquid` | GDM · Avis clients | Note globale, pilules de chiffres, carrousel d'avis (demi-étoiles, note exacte « 4,75 / 5 », logo, encart d'appel à l'action) |
@@ -111,7 +112,8 @@ Toutes les pages de la copie « LGDM V2 - nouvelles sections GDM » reprennent l
 | Où | Fichiers | Ce qui change |
 |---|---|---|
 | Tout le site | `layout/theme.liquid` (une ligne : `render 'gdm-site'`), `snippets/gdm-site.liquid`, `assets/gdm-site.css` | Couleurs, polices, boutons et champs du thème Kalles ; titres Anton ; panier latéral et suggestions sombres |
-| Fiches produit | `templates/product.json` | Fiche du thème restylée, puis « Nos autres bières » (la bière affichée exclue), FAQ, Instagram |
+| Accueil, fiches produit, articles, 404 | `templates/index.json`, `product.json`, `article.json`, `404.json` | « Nos bières » en vitrine (`gdm-vitrine`) ; sur une fiche produit, la bière affichée n'y est pas répétée |
+| Fiches produit | `templates/product.json` | Fiche du thème restylée, puis la vitrine « Nos autres bières », FAQ, Instagram |
 | Collections | `templates/collection.json` | Grille GDM des bières (titre et description de la collection), Instagram |
 | Pages et articles avec leur propre mise en page | `snippets/gdm-page-skin.liquid`, généré par `outils/gdm_page_skin.py` | Polices et couleurs GDM, espacements resserrés ; sur téléphone, les grilles de cartes deviennent des rangées qui défilent au doigt |
 | Blog | `templates/blog.json` | Grille de tous les articles avec photo et filtres par étiquette |
