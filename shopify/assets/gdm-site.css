@@ -619,3 +619,29 @@ body .t4s-minicart-recommendations__item--title {
     display: none !important;
   }
 }
+
+/* ---------- Téléphone : fiche produit et boutons flottants ---------- */
+@media screen and (max-width: 749px) {
+  /* Bouton « haut de page » : un bouton flottant de plus, sans utilité sur téléphone. */
+  #t4s-backToTop {
+    display: none !important;
+  }
+
+  /* Tableau degré / format / IBU de la description : deux cases par ligne au lieu de quatre. */
+  body .t4s-product__description table,
+  body .t4s-product__description tbody {
+    display: block;
+    margin-inline: 0;
+  }
+
+  body .t4s-product__description tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  body .t4s-product__description :is(td, th) {
+    display: block;
+    padding: 12px 10px;
+  }
+}

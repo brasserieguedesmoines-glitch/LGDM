@@ -623,20 +623,43 @@
       justify-content: center;
     }
 
-    .gdm.gdm-bieres .gdm-grid .gdm-beer__bitter-label {
+    /* Cartes de la grille sur téléphone : nom, degré et IBU en texte, prix, un seul bouton.
+       Sans jauge ni choix du format : le premier format (33cL) est ajouté, le 75cL se
+       choisit sur la fiche produit. */
+    .gdm.gdm-bieres .gdm-grid :is(.gdm-beer__bitter, .gdm-beer__variants) {
       display: none;
     }
 
-    /* Deux formats (33cL, 75cL) sur une seule ligne dans les cartes étroites. */
-    .gdm.gdm-bieres .gdm-grid .gdm-beer__variants fieldset {
+    .gdm.gdm-bieres .gdm-grid .gdm-beer__body {
       gap: 6px;
+      padding: 16px 14px 18px;
     }
 
-    .gdm.gdm-bieres .gdm-grid .gdm-beer__variants label {
-      min-height: 36px;
-      padding: 0 10px;
-      font-size: 12px;
-      letter-spacing: 0.02em;
+    .gdm.gdm-bieres .gdm-grid .gdm-beer__specs {
+      gap: 0;
+    }
+
+    .gdm.gdm-bieres .gdm-grid .gdm-beer__specs li {
+      padding: 0;
+      border: 0;
+      font-size: 13px;
+    }
+
+    .gdm.gdm-bieres .gdm-grid .gdm-beer__specs li + li::before {
+      content: '·';
+      margin: 0 6px;
+      color: var(--gdm-muted);
+    }
+
+    .gdm.gdm-bieres .gdm-grid .gdm-beer__foot {
+      gap: 12px;
+      margin-top: 6px;
+      padding-top: 0;
+      border-top: 0;
+    }
+
+    .gdm.gdm-bieres .gdm-grid .gdm-beer__add {
+      min-height: 46px;
     }
   }
 
