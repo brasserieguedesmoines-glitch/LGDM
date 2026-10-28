@@ -410,7 +410,7 @@
           "settings": {
             "day": "6",
             "open": "16h30",
-            "close": "21h30"
+            "close": "20h30"
           }
         },
         "jour_7": {
@@ -613,7 +613,7 @@
           "type": "question",
           "settings": {
             "question": "Quels sont les horaires d'ouverture de la brasserie ?",
-            "answer": "<p>Le <a href=\"/pages/brewpub\">brewpub du Gué des Moines</a> à <strong>Bruguières</strong> est ouvert <strong>mardi et mercredi de 16h30 à 20h30</strong>, <strong>jeudi et vendredi de 16h30 à 22h30</strong>, et <strong>samedi de 16h30 à 21h30</strong>. Fermé dimanche et lundi. Vous ne pouvez pas vous déplacer ? Commandez nos <a href=\"/collections/bieres-artisanales-du-gue-des-moines\">bières artisanales en ligne</a>.</p>"
+            "answer": "<p>Le <a href=\"/pages/brewpub\">brewpub du Gué des Moines</a> à <strong>Bruguières</strong> est ouvert <strong>mardi et mercredi de 16h30 à 20h30</strong>, <strong>jeudi et vendredi de 16h30 à 22h30</strong>, et <strong>samedi de 16h30 à 20h30</strong>. Fermé dimanche et lundi. Vous ne pouvez pas vous déplacer ? Commandez nos <a href=\"/collections/bieres-artisanales-du-gue-des-moines\">bières artisanales en ligne</a>.</p>"
           }
         },
         "faq_2": {
@@ -842,7 +842,7 @@
             "title": "Brewpub",
             "text": "+10 bières artisanales à la pression, tapas à partager, diffusion des matchs et concerts. L'adresse conviviale du nord toulousain, ouverte du mardi au samedi.",
             "detail_1": "Mar–Mer : 16h30–20h30",
-            "detail_2": "Jeu–Ven : 16h30–22h30 · Sam : 16h30–21h30",
+            "detail_2": "Jeu–Ven : 16h30–22h30 · Sam : 16h30–20h30",
             "button_label": "Vers le brewpub",
             "link": "shopify://pages/brewpub"
           }

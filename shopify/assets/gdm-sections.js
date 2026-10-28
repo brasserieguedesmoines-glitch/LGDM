@@ -278,6 +278,10 @@
   /* ---------- <gdm-hours> : jour en cours surligné + statut « ouvert / fermé » ---------- */
   class GdmHours extends HTMLElement {
     connectedCallback() {
+      // Sur téléphone, la semaine est repliée sous le statut du jour (un appui la déplie).
+      const week = this.querySelector('[data-week]');
+      if (week && !inEditor() && window.matchMedia('(max-width: 749px)').matches) week.open = false;
+
       const json = this.querySelector('script[type="application/json"]');
       if (!json) return;
       try {

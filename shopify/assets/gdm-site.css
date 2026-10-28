@@ -610,3 +610,12 @@ body .t4s-minicart-recommendations__item--title {
 .template-404 #MainContent .error-404-link {
   letter-spacing: 0;
 }
+
+/* ---------- Téléphone : sans la barre d'outils fixe du thème ----------
+   La barre du bas (E-shop, Panier, Compte, Recherche) doublait l'en-tête : recherche et
+   panier y sont déjà, la boutique et le compte sont dans le menu. */
+@media screen and (max-width: 1024px) {
+  .t4s-toolbar-mobile {
+    display: none !important;
+  }
+}

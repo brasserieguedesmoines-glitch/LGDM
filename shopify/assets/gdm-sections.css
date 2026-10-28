@@ -767,41 +767,153 @@ gdm-carousel[data-static] [data-carousel-ui] {
   fill: rgba(255, 255, 255, 0.18);
 }
 
-/* ---------- Mobile : badges plus petits, boutons de 48 px, deux boutons côte à côte ---------- */
+/* ==========================================================================
+   Version téléphone (≤ 749 px) : aérée, un seul bouton par section.
+   - Marges de section de 56 à 72 px (au lieu de 35), bords de 22 px.
+   - Texte courant à 16 px, interligne 1,65 ; rien sous 13 px.
+   - Un seul bouton : le principal, en pleine largeur ; le bouton à contour
+     qui l'accompagne est masqué (son lien reste ailleurs sur la page).
+   - Carrousels sans flèches : on fait défiler au doigt.
+   - Pas de décor superflu (bandeau de chiffres, pastilles, numéros).
+   Le préfixe « body » passe devant les styles propres à chaque section.
+   ========================================================================== */
 @media (max-width: 749px) {
-  .gdm .gdm-pill {
-    font-size: 11px;
-    letter-spacing: 0.12em;
+  body .gdm {
+    padding-block:
+      min(72px, max(min(var(--gdm-pt), 56px), calc(var(--gdm-pt) * 0.9)))
+      min(72px, max(min(var(--gdm-pb), 56px), calc(var(--gdm-pb) * 0.9)));
   }
 
-  .gdm .gdm-btn {
-    min-height: 48px;
-    padding: 0 18px;
-    letter-spacing: 0.06em;
+  body .gdm .gdm-container {
+    padding-inline: 22px;
   }
 
-  .gdm .gdm-actions {
-    gap: 8px;
+  body .gdm .gdm-head {
+    gap: 14px;
+    margin-bottom: 28px;
   }
 
-  .gdm .gdm-actions:has(> .gdm-btn:first-child + .gdm-btn:last-child) {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  body .gdm .gdm-title {
+    font-size: clamp(32px, 9vw, 40px);
+    line-height: 1.08;
+  }
+
+  body .gdm :is(.gdm-lead, .gdm-rte) {
+    font-size: 16px;
+    line-height: 1.65;
+  }
+
+  body .gdm .gdm-pill {
+    font-size: 12px;
+  }
+
+  /* ---------- Un seul bouton, en pleine largeur ---------- */
+  body .gdm .gdm-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
     width: 100%;
   }
 
-  .gdm .gdm-actions:has(> .gdm-btn:first-child + .gdm-btn:last-child) > .gdm-btn {
-    width: auto;
-    min-width: 0;
-    padding: 6px 10px;
-    font-size: 12.5px;
-    line-height: 1.2;
-    letter-spacing: 0.04em;
-    text-align: center;
-    white-space: normal;
+  body .gdm .gdm-actions:has(> .gdm-btn--primary) > .gdm-btn--ghost {
+    display: none;
   }
 
-  .gdm .gdm-actions:has(> .gdm-btn:first-child + .gdm-btn:last-child) > .gdm-btn svg {
+  body .gdm .gdm-btn {
+    min-height: 52px;
+    padding: 0 24px;
+    font-size: 14px;
+    letter-spacing: 0.06em;
+  }
+
+  body .gdm .gdm-actions > .gdm-btn {
+    width: 100%;
+  }
+
+  /* ---------- Carrousels : au doigt, sans flèches ---------- */
+  body .gdm .gdm-carousel__nav,
+  body .gdm.gdm-vitrine .gdm-vitrine__arrow {
     display: none;
+  }
+
+  /* ---------- Bannière d'accueil : titre, texte, un bouton ---------- */
+  body .gdm.gdm-hero :is(.gdm-hero__bar, .gdm-hero__stamp) {
+    display: none;
+  }
+
+  /* ---------- Stories : noms lisibles ---------- */
+  body .gdm.gdm-stories .gdm-stories__name {
+    font-size: 13px;
+  }
+
+  /* ---------- Location de tireuse : sans la rangée d'occasions ---------- */
+  body .gdm.gdm-service .gdm-service__tags {
+    display: none;
+  }
+
+  /* ---------- Avis : sans l'étiquette de source sur chaque carte ---------- */
+  body .gdm.gdm-avis .gdm-review__source {
+    display: none;
+  }
+
+  /* ---------- FAQ : une liste à filets, sans cartes ni ronds ---------- */
+  body .gdm.gdm-faq .gdm-faq__list {
+    gap: 0;
+    border-top: 1px solid var(--gdm-border);
+  }
+
+  body .gdm.gdm-faq .gdm-faq__item,
+  body .gdm.gdm-faq .gdm-faq__item[open] {
+    border: 0;
+    border-bottom: 1px solid var(--gdm-border);
+    border-radius: 0;
+    background: none;
+  }
+
+  body .gdm.gdm-faq .gdm-faq__question {
+    gap: 16px;
+    padding: 20px 0;
+    border-radius: 0;
+  }
+
+  body .gdm.gdm-faq .gdm-faq__q {
+    font-size: 16px;
+    line-height: 1.45;
+  }
+
+  body .gdm.gdm-faq .gdm-faq__toggle {
+    width: 24px;
+    height: 24px;
+    border: 0;
+    background: none;
+    color: var(--gdm-accent);
+  }
+
+  body .gdm.gdm-faq .gdm-faq__answer {
+    padding: 0 0 22px;
+    line-height: 1.65;
+  }
+
+  /* ---------- Atouts : une liste à une colonne, icône à gauche ---------- */
+  body .gdm.gdm-atouts .gdm-atouts__list {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  body .gdm.gdm-atouts .gdm-atouts__item {
+    flex-direction: row;
+    align-items: center;
+    gap: 18px;
+    padding: 20px 22px;
+    text-align: left;
+  }
+
+  body .gdm.gdm-atouts .gdm-atouts__body {
+    gap: 4px;
+  }
+
+  body .gdm.gdm-atouts .gdm-atouts__text {
+    font-size: 14px;
   }
 }

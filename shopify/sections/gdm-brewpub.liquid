@@ -57,23 +57,29 @@
             <span class="gdm-brewpub__hours-title">{% render 'gdm-icon', name: 'clock', icon_size: 20 %}{{ s.hours_title | escape }}</span>
             <span class="gdm-brewpub__status" data-status hidden><span class="gdm-brewpub__dot"></span><span data-status-label></span></span>
           </div>
-          <dl class="gdm-brewpub__days">
-            {%- for block in section.blocks -%}
-              {%- assign b = block.settings -%}
-              {%- assign day_index = b.day | plus: 0 | minus: 1 -%}
-              <div class="gdm-brewpub__day" data-day="{{ b.day }}" {{ block.shopify_attributes }}>
-                <dt>{{ day_names[day_index] }}</dt>
-                <dd>
-                  {%- if b.closed -%}
-                    <span class="gdm-brewpub__closed">{{ s.label_closed_day | escape }}</span>
-                  {%- else -%}
-                    {{ b.open | escape }} – {{ b.close | escape }}
-                  {%- endif -%}
-                  {%- if b.note != blank -%}<span class="gdm-brewpub__note">{{ b.note | escape }}</span>{%- endif -%}
-                </dd>
-              </div>
-            {%- endfor -%}
-          </dl>
+          <details class="gdm-brewpub__week" data-week open>
+            <summary class="gdm-brewpub__week-toggle">
+              {{- s.label_week | escape -}}
+              {%- render 'gdm-icon', name: 'plus', icon_size: 18 -%}
+            </summary>
+            <dl class="gdm-brewpub__days">
+              {%- for block in section.blocks -%}
+                {%- assign b = block.settings -%}
+                {%- assign day_index = b.day | plus: 0 | minus: 1 -%}
+                <div class="gdm-brewpub__day" data-day="{{ b.day }}" {{ block.shopify_attributes }}>
+                  <dt>{{ day_names[day_index] }}</dt>
+                  <dd>
+                    {%- if b.closed -%}
+                      <span class="gdm-brewpub__closed">{{ s.label_closed_day | escape }}</span>
+                    {%- else -%}
+                      {{ b.open | escape }} – {{ b.close | escape }}
+                    {%- endif -%}
+                    {%- if b.note != blank -%}<span class="gdm-brewpub__note">{{ b.note | escape }}</span>{%- endif -%}
+                  </dd>
+                </div>
+              {%- endfor -%}
+            </dl>
+          </details>
           <script type="application/json">
             [
               {%- for block in section.blocks -%}
@@ -262,18 +268,15 @@
     color: var(--gdm-accent);
   }
 
+  /* Statut du jour : texte simple avec un point de couleur, sans pilule. */
   .gdm.gdm-brewpub .gdm-brewpub__status {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 7px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 999px;
     color: var(--gdm-muted);
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    line-height: 1.3;
   }
 
   .gdm.gdm-brewpub .gdm-brewpub__status[hidden] {
@@ -288,7 +291,6 @@
   }
 
   .gdm.gdm-brewpub .gdm-brewpub__status[data-state='open'] {
-    border-color: rgba(74, 222, 128, 0.35);
     color: #86efac;
   }
 
@@ -299,6 +301,11 @@
 
   .gdm.gdm-brewpub .gdm-brewpub__days {
     display: grid;
+  }
+
+  /* La semaine est dépliée sur ordinateur ; sur téléphone, un bouton la déplie. */
+  .gdm.gdm-brewpub .gdm-brewpub__week > summary {
+    display: none;
   }
 
   .gdm.gdm-brewpub .gdm-brewpub__day {
@@ -510,15 +517,49 @@
     }
 
     .gdm.gdm-brewpub .gdm-brewpub__hours {
-      padding: 16px 16px 6px;
+      padding: 20px 20px 8px;
     }
 
     .gdm.gdm-brewpub .gdm-brewpub__hours-head {
-      padding-bottom: 10px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      padding-bottom: 16px;
+      border-bottom: 0;
+    }
+
+    .gdm.gdm-brewpub .gdm-brewpub__week > summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 52px;
+      border-top: 1px solid var(--gdm-border);
+      color: var(--gdm-text);
+      font-size: 15px;
+      font-weight: 600;
+      list-style: none;
+      cursor: pointer;
+    }
+
+    .gdm.gdm-brewpub .gdm-brewpub__week > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .gdm.gdm-brewpub .gdm-brewpub__week > summary svg {
+      color: var(--gdm-accent);
+      transition: transform 0.3s var(--gdm-ease);
+    }
+
+    .gdm.gdm-brewpub .gdm-brewpub__week[open] > summary svg {
+      transform: rotate(45deg);
+    }
+
+    .gdm.gdm-brewpub .gdm-brewpub__week[open] > .gdm-brewpub__days {
+      padding-bottom: 8px;
     }
 
     .gdm.gdm-brewpub .gdm-brewpub__day {
-      padding-block: 7px;
+      padding-block: 10px;
     }
   }
 
@@ -696,6 +737,12 @@
       "id": "hours_title",
       "label": "Titre des horaires",
       "default": "Horaires"
+    },
+    {
+      "type": "text",
+      "id": "label_week",
+      "label": "Mobile — bouton pour déplier la semaine",
+      "default": "Horaires de la semaine"
     },
     {
       "type": "text",
