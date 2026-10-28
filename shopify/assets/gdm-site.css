@@ -627,6 +627,11 @@ body .t4s-minicart-recommendations__item--title {
     display: none !important;
   }
 
+  /* Barre d'achat fixe : elle doublait le bouton d'achat, désormais juste sous le prix. */
+  body .t4s-sticky-atc {
+    display: none !important;
+  }
+
   /* Tableau degré / format / IBU de la description : deux cases par ligne au lieu de quatre. */
   body .t4s-product__description table,
   body .t4s-product__description tbody {
