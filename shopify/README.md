@@ -65,7 +65,7 @@ Avant de pousser les modèles (`templates/*.json`) ou `locales/fr.json`, récup�
 
 Les textes par défaut sont des **exemples** : remplacez-les par vos vraies informations.
 
-- **Horaires** (Venir au brewpub) : les horaires pré-remplis sont fictifs. Un bloc « Jour » par jour, au format `17:00`. Une fermeture après minuit est bien gérée.
+- **Horaires** (Venir au brewpub) : pré-remplis avec les horaires du brewpub (mar–mer 16h30–20h30, jeu–ven 16h30–22h30, sam 16h30–20h30). Un bloc « Jour » par jour, au format `17:00`. Une fermeture après minuit est bien gérée.
 - **Avis clients** : collez de vrais avis (Google, Facebook, Untappd…) avec le prénom de leur auteur. N'inventez jamais d'avis : c'est une pratique commerciale trompeuse, sanctionnée par la DGCCRF.
 - **Chiffres** (bannière, avis, chiffres clés) : vérifiez la note, le nombre de bières, etc.
 - **Agenda** : les trois événements sont des exemples datés de novembre et décembre 2026.
@@ -142,6 +142,12 @@ Ces textes s'affichent aujourd'hui sur le site en ligne et au paiement :
 - Panier : « -10% avec le code : ARTPIXE » (ce code n'existe pas dans la boutique) → « Taxes incluses. Frais de port calculés à la caisse. »
 - Paiement : « Pour valider avec toi‚ ton portrait : », « Livraison à domicile (4,90 €) » (la livraison standard est à 9,90 €) et « Livraison GRATUITE en Point Relais / Digital » (aucun point relais) retirés : Shopify reprend ses libellés standard.
 - « Vide » → « Votre panier est vide » ; page 404 : titre « Page introuvable ».
+
+### Samedi : fermeture à 20h30
+
+- Copie du thème : pied de page, bloc « Venir au brewpub » (accueil et contact), FAQ et story de l'accueil.
+- Contenus de la boutique, corrigés en ligne : pages Brewpub, Blagnac et Saint-Jory, article « French DIPA Single Fresh Hope ». Les horaires Google (données structurées) de la page Blagnac étaient faux sur tous les jours : remis aux vrais horaires.
+- Reste sur le thème **en ligne** actuel : le pied de page affiche encore « Samedi : 16h30 → 21h30 » (fichier `sections/footer.liquid`). Il disparaît à la publication de la copie, ou se corrige dans « Modifier le code » du thème en ligne.
 
 ### À corriger dans l'administration (contenus)
 
