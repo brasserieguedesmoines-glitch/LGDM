@@ -142,6 +142,7 @@ Ces textes s'affichent aujourd'hui sur le site en ligne et au paiement :
 - Panier : « -10% avec le code : ARTPIXE » (ce code n'existe pas dans la boutique) → « Taxes incluses. Frais de port calculés à la caisse. »
 - Paiement : « Pour valider avec toi‚ ton portrait : », « Livraison à domicile (4,90 €) » (la livraison standard est à 9,90 €) et « Livraison GRATUITE en Point Relais / Digital » (aucun point relais) retirés : Shopify reprend ses libellés standard.
 - « Vide » → « Votre panier est vide » ; page 404 : titre « Page introuvable ».
+- Menu téléphone : « S'identifier S'enregistrer » → « Mon compte ». Le bloc « Compte » du menu téléphone est réactivé (Personnaliser › Mobile Menu), car la barre d'outils du bas, seul accès au compte jusqu'ici, est masquée sur téléphone.
 
 ### Samedi : fermeture à 20h30
 
