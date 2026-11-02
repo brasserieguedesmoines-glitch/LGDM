@@ -41,12 +41,19 @@
   function trouverClient(texte) {
     const n = cleNom(texte);
     if (n.length < 3) return null;
+    // Homonymes (deux fiches EasyBeer au même nom, cela existe) : on retient
+    // la fiche la plus récente et on le signale.
+    const plusRecente = l => ({ ...l.reduce((a, b) => (b.id > a.id ? b : a)), homonymes: l.length });
     const exact = clients.filter(c => c.cle === n);
-    if (exact.length === 1) return exact[0];
+    if (exact.length) return exact.length === 1 ? exact[0] : plusRecente(exact);
     // Nom du client contenu dans la ligne (ou l'inverse) : le plus long gagne.
     const inclus = clients.filter(c => c.cle.length >= 4 && (` ${n} `.includes(` ${c.cle} `) || (n.length >= 6 && c.cle.includes(n))))
       .sort((a, b) => b.cle.length - a.cle.length);
-    if (inclus.length && (inclus.length === 1 || inclus[0].cle.length > inclus[1].cle.length)) return inclus[0];
+    if (inclus.length) {
+      const memes = inclus.filter(c => c.cle === inclus[0].cle);
+      if (inclus.length === memes.length || inclus[0].cle.length > inclus[memes.length].cle.length)
+        return memes.length === 1 ? memes[0] : plusRecente(memes);
+    }
     // Mots en commun.
     const mots = new Set(n.split(' ').filter(m => m.length >= 3));
     if (!mots.size) return null;
@@ -96,44 +103,65 @@
     nom: /^(nom|client|raison sociale|enseigne|[eé]tablissement|soci[eé]t[eé]|magasin|compte)\b/i,
     tel: /^(t[eé]l|phone|portable|mobile|num[eé]ro)/i,
     contact: /^(contact|interlocuteur|responsable|g[eé]rant)/i,
-    note: /^(comment|note|remarque|objet|info|observation|motif|produit|[aà] proposer)/i,
+    date: /^(date|derni[eè]re)/i,
+    note: /^(comment|communication|note|remarque|objet|info|observation|motif|produit|[aà] proposer)/i,
   };
+  const estEntete = (c, re) => !!c && c.length <= 40 && re.test(c);
+  function lireEntetes(r) {
+    const t = {};
+    r.forEach((c, j) => {
+      for (const [k, re] of Object.entries(ENTETES)) if (t[k] === undefined && estEntete(c, re)) { t[k] = j; break; }
+    });
+    return t;
+  }
+
+  // Une feuille peut contenir plusieurs tableaux côte à côte (ex. la liste de
+  // Martial : déjà contactés à gauche, à appeler à droite). Chaque colonne
+  // « Magasin / Client » de la ligne d'en-tête ouvre un tableau ; chacun est
+  // lu à part et l'aperçu permet de choisir lequel importer.
   function analyser(lignes) {
     lignes = lignes.map(r => r.map(c => String(c ?? '').trim())).filter(r => r.some(Boolean));
-    let cols = {}, debut = 0;
-    for (let i = 0; i < Math.min(5, lignes.length); i++) {
-      const trouve = {};
-      lignes[i].forEach((c, j) => {
-        if (c.length > 30) return;
-        for (const [k, re] of Object.entries(ENTETES)) if (trouve[k] === undefined && re.test(c)) { trouve[k] = j; break; }
-      });
-      if (trouve.nom !== undefined) { cols = trouve; debut = i + 1; break; }
-    }
-    if (cols.nom === undefined && lignes.some(r => r.length > 1)) {
+    let h = -1;
+    for (let i = 0; i < Math.min(5, lignes.length); i++) if (lignes[i].some(c => estEntete(c, ENTETES.nom))) { h = i; break; }
+    if (h < 0) return analyserBloc(lignes, -1).map(x => ({ ...x, tableau: 0 }));
+    const entete = lignes[h];
+    const noms = entete.map((c, j) => estEntete(c, ENTETES.nom) ? j : -1).filter(j => j >= 0);
+    const decalage = noms[0] - entete.findIndex(Boolean);
+    const debuts = noms.map(j => Math.max(0, j - decalage));
+    return debuts.flatMap((d, k) =>
+      analyserBloc(lignes.map(r => r.slice(d, debuts[k + 1] ?? undefined)), h).map(x => ({ ...x, tableau: k })));
+  }
+
+  function analyserBloc(lignes, h) {
+    const cols = h >= 0 ? lireEntetes(lignes[h]) : {};
+    const donnees = lignes.slice(h + 1).filter(r => r.some(Boolean));
+    if (cols.nom === undefined && donnees.some(r => r.length > 1)) {
       // Pas d'en-tête : la colonne « nom » est celle qui reconnaît le plus de clients.
-      const largeur = Math.max(...lignes.map(r => r.length));
+      const largeur = Math.max(...donnees.map(r => r.length));
       let best = -1, bestScore = -1;
       for (let j = 0; j < largeur; j++) {
-        const s = lignes.slice(0, 40).filter(r => r[j] && !RE_TEL.test(r[j]) && trouverClient(r[j])).length;
+        const s = donnees.slice(0, 40).filter(r => r[j] && !RE_TEL.test(r[j]) && trouverClient(r[j])).length;
         if (s > bestScore) { best = j; bestScore = s; }
       }
       cols.nom = best;
     }
     const sortie = [], vus = new Set();
-    lignes.slice(debut).forEach((r, i) => {
+    donnees.forEach((r, i) => {
       const brut = r.join(' ');
-      const tel = (cols.tel !== undefined ? r[cols.tel] : '') || (brut.match(RE_TEL) ?? [''])[0];
-      let nom = cols.nom !== undefined ? r[cols.nom] : brut.replace(RE_TEL, ' ').replace(/\s+/g, ' ').trim();
+      const tel = (cols.tel !== undefined ? r[cols.tel] ?? '' : '') || (brut.match(RE_TEL) ?? [''])[0];
+      const nom = cols.nom !== undefined ? r[cols.nom] ?? '' : brut.replace(RE_TEL, ' ').replace(/\s+/g, ' ').trim();
       if (!nom || RE_TEL.test(nom) && nom.replace(RE_TEL, '').trim().length < 2) return;
       const client = trouverClient(nom) ?? (r.length === 1 ? null : trouverClient(brut));
-      const autres = r.filter((c, j) => c && j !== cols.nom && j !== cols.tel && j !== cols.contact && !RE_TEL.test(c));
+      const pris = new Set([cols.nom, cols.tel, cols.contact, cols.date]);
+      const autres = r.filter((c, j) => c && !pris.has(j) && !RE_TEL.test(c));
       const cle = client ? `c${client.id}` : `n${norm(nom)}`;
       if (vus.has(cle)) return;
       vus.add(cle);
       sortie.push({
         nom: nom.slice(0, 120), telephone: tel.trim(),
-        contact: cols.contact !== undefined ? r[cols.contact].slice(0, 80) : '',
-        note: (cols.note !== undefined ? r[cols.note] : (cols.nom !== undefined ? autres.join(' · ') : '')).slice(0, 200),
+        contact: cols.contact !== undefined ? (r[cols.contact] ?? '').slice(0, 80) : '',
+        derniere: cols.date !== undefined ? (r[cols.date] ?? '').slice(0, 30) : '',
+        note: (cols.note !== undefined ? r[cols.note] ?? '' : (cols.nom !== undefined ? autres.join(' · ') : '')).slice(0, 200),
         // Ni client reconnu ni téléphone : souvent un titre ou une ligne de
         // décor (PDF) ; proposé décoché, on peut le cocher.
         client, garder: !!client || !!tel.trim(), ordre: i,
@@ -191,6 +219,7 @@
         ${a.nomClient && norm(a.nomClient) !== norm(a.nom) ? `<span class="appels-meta">liste : ${echap(a.nom)}</span>` : ''}
         ${!a.idClient ? '<span class="appels-meta">non reconnu dans EasyBeer</span>' : ''}
         ${a.contact ? `<span class="appels-meta">${echap(a.contact)}</span>` : ''}
+        ${a.derniereCommande ? `<span class="appels-meta">dernière commande : ${echap(a.derniereCommande)}</span>` : ''}
         ${a.note ? `<span class="appels-meta">${echap(a.note)}</span>` : ''}
         ${a.tentatives ? `<span class="appels-meta">pas de réponse × ${a.tentatives}</span>` : ''}</div>
       <div class="appels-btns">
@@ -228,6 +257,13 @@
       await chargerClients();
       const lignes = analyser(await lire());
       if (!lignes.length) throw new Error('aucune ligne exploitable dans ce fichier');
+      const tailles = new Map();
+      for (const l of lignes) tailles.set(l.tableau, (tailles.get(l.tableau) ?? 0) + 1);
+      if (tailles.size > 1) {
+        // Plusieurs tableaux : seul le plus long est coché d'office.
+        const principal = [...tailles].sort((x, y) => y[1] - x[1])[0][0];
+        lignes.forEach(l => { if (l.tableau !== principal) l.garder = false; });
+      }
       apercu = { source, lignes };
     } catch (e) {
       apercu = { erreur: e.message, source, lignes: [] };
@@ -260,22 +296,37 @@
       return;
     }
     const reconnus = a.lignes.filter(l => l.client).length, gardes = a.lignes.filter(l => l.garder).length;
+    const ks = [...new Set(a.lignes.map(l => l.tableau))].sort((x, y) => x - y);
+    const tableaux = ks.map((k, n) => {
+      const lignes = a.lignes.map((l, i) => ({ l, i })).filter(x => x.l.tableau === k);
+      const position = ks.length === 2 ? (n === 0 ? 'de gauche' : 'de droite') : `n° ${n + 1}`;
+      return { k, lignes, coches: lignes.filter(x => x.l.garder).length, nomTableau: `Tableau ${position}` };
+    });
     const existe = appels().length > 0;
     zone.innerHTML = `<h2 id="titre-appels">Importer la liste d'appels</h2>
       <p class="carte-soustitre">${echap(a.source)} · ${a.lignes.length} ligne(s) lue(s), ${reconnus} client(s) reconnu(s) dans EasyBeer.
         Décochez ce qui ne doit pas être importé.</p>
-      <ul class="appels-liste apercu">${a.lignes.map((l, i) => `<li>
+      <div class="appels-liste apercu">${tableaux.map(t => `
+        ${tableaux.length > 1 ? `<label class="appels-coche appels-tableau"><input type="checkbox" data-t="${t.k}" ${t.coches ? 'checked' : ''}>
+          <span><b>${t.nomTableau}</b><span class="appels-meta">${t.lignes.length} ligne(s), ${t.lignes.filter(x => x.l.client).length} client(s) reconnu(s)${t.coches && t.coches < t.lignes.length ? ` · ${t.coches} cochée(s)` : ''}</span></span></label>` : ''}
+        ${t.coches || tableaux.length === 1 ? `<ul class="appels-liste">${t.lignes.map(({ l, i }) => `<li>
         <label class="appels-coche"><input type="checkbox" data-i="${i}" ${l.garder ? 'checked' : ''}>
           <span><b>${echap(l.client?.nom ?? l.nom)}</b>
           ${l.client ? (norm(l.client.nom) !== norm(l.nom) ? `<span class="appels-meta">liste : ${echap(l.nom)}</span>` : '') : '<span class="appels-meta">non reconnu dans EasyBeer</span>'}
+          ${l.client?.homonymes ? `<span class="appels-meta">${l.client.homonymes} fiches EasyBeer à ce nom : la plus récente est retenue</span>` : ''}
           ${l.telephone ? `<span class="appels-meta">${echap(l.telephone)}</span>` : ''}
-          ${l.note ? `<span class="appels-meta">${echap(l.note)}</span>` : ''}</span></label></li>`).join('')}</ul>
+          ${l.derniere ? `<span class="appels-meta">dernière commande : ${echap(l.derniere)}</span>` : ''}
+          ${l.note ? `<span class="appels-meta">${echap(l.note)}</span>` : ''}</span></label></li>`).join('')}</ul>` : ''}`).join('')}</div>
       <div class="appels-pied">
         <button class="bouton-petit principal" id="ap-remplacer" ${gardes ? '' : 'disabled'}>${existe ? 'Remplacer la liste actuelle' : 'Importer'} (${gardes})</button>
         ${existe ? `<button class="bouton-petit" id="ap-ajouter" ${gardes ? '' : 'disabled'}>Ajouter à la liste</button>` : ''}
         <button class="bouton-petit" id="ap-fermer">Ne pas importer</button>
       </div>`;
     zone.querySelectorAll('[data-i]').forEach(c => c.addEventListener('change', () => { a.lignes[+c.dataset.i].garder = c.checked; rendre(); }));
+    zone.querySelectorAll('[data-t]').forEach(c => c.addEventListener('change', () => {
+      a.lignes.forEach(l => { if (l.tableau === +c.dataset.t) l.garder = c.checked && (!!l.client || !!l.telephone); });
+      rendre();
+    }));
     zone.querySelector('#ap-remplacer').addEventListener('click', () => importer(true));
     zone.querySelector('#ap-ajouter')?.addEventListener('click', () => importer(false));
     zone.querySelector('#ap-fermer').addEventListener('click', () => { apercu = null; rendre(); });
@@ -289,7 +340,7 @@
     const base = Date.now();
     const nouveaux = a.lignes.filter(l => l.garder).map((l, i) => ({
       id: `${base.toString(36)}-${i}`, ordre: base + i, statut: 'a_appeler', tentatives: 0,
-      nom: l.nom, telephone: l.telephone, contact: l.contact, note: l.note,
+      nom: l.nom, telephone: l.telephone, contact: l.contact, note: l.note, derniereCommande: l.derniere,
       idClient: l.client?.id ?? null, nomClient: l.client?.nom ?? '', canal: l.client?.canal ?? '',
     })).filter(x => !deja.has(x.idClient ? `c${x.idClient}` : `n${norm(x.nom)}`));
     await magasin.enregistrer({ id: META, importeLe: Date.now(), source: a.source });

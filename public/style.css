@@ -823,5 +823,7 @@ main.avec-appels .col-commande { display: flex; flex-direction: column; gap: inh
 .appels-coche { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
 .appels-coche input { width: 18px; height: 18px; margin-top: 2px; flex: none; accent-color: var(--accent); }
 .appels-coche > span { display: flex; flex-direction: column; gap: 1px; font-size: var(--t-sm); }
+.appels-tableau { background: var(--surface-2); border-radius: var(--r-md); padding: 8px 10px; margin-top: 6px; }
+.appels-liste.apercu > .appels-liste li { padding-left: 4px; }
 .appels-pied { display: flex; gap: var(--e2); flex-wrap: wrap; }
 .appels textarea { width: 100%; font-family: inherit; }
