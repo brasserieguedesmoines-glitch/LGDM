@@ -80,7 +80,9 @@
     const nom = f.name.toLowerCase();
     if (/\.(xlsx|xlsm|xls|ods)$/.test(nom)) {
       if (!window.XLSX) await chargerScript(CDN_XLSX);
-      const classeur = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+      // dateNF : le format de date « court » d'Excel (code 14) sort sinon à
+      // l'américaine (10/23/26).
+      const classeur = XLSX.read(await f.arrayBuffer(), { type: 'array', dateNF: 'dd/mm/yyyy' });
       const feuille = classeur.Sheets[classeur.SheetNames[0]];
       return XLSX.utils.sheet_to_json(feuille, { header: 1, raw: false, defval: '' });
     }
@@ -212,21 +214,29 @@
     });
   }
 
+  // Une ligne compacte : le nom, les infos utiles sur une seule ligne, puis
+  // les quatre actions côte à côte.
   function ligne(a) {
     const nom = a.nomClient || a.nom;
+    // Une cellule peut contenir deux numéros : on appelle le premier.
+    const tel = (String(a.telephone ?? '').match(RE_TEL) ?? [a.telephone])[0]?.trim();
+    const infos = [
+      a.canal,
+      a.derniereCommande && `dern. cde ${a.derniereCommande}`,
+      a.tentatives && `sans réponse ×${a.tentatives}`,
+      !a.idClient && 'non reconnu dans EasyBeer',
+      a.contact,
+    ].filter(Boolean).map(echap).join(' · ');
+    const extra = [a.nomClient && norm(a.nomClient) !== norm(a.nom) ? `liste : ${a.nom}` : '', a.note].filter(Boolean).map(echap).join(' · ');
     return `<li data-id="${echap(a.id)}">
-      <div class="appels-qui"><b>${echap(nom)}</b>${a.canal ? `<span class="appels-canal">${echap(a.canal)}</span>` : ''}
-        ${a.nomClient && norm(a.nomClient) !== norm(a.nom) ? `<span class="appels-meta">liste : ${echap(a.nom)}</span>` : ''}
-        ${!a.idClient ? '<span class="appels-meta">non reconnu dans EasyBeer</span>' : ''}
-        ${a.contact ? `<span class="appels-meta">${echap(a.contact)}</span>` : ''}
-        ${a.derniereCommande ? `<span class="appels-meta">dernière commande : ${echap(a.derniereCommande)}</span>` : ''}
-        ${a.note ? `<span class="appels-meta">${echap(a.note)}</span>` : ''}
-        ${a.tentatives ? `<span class="appels-meta">pas de réponse × ${a.tentatives}</span>` : ''}</div>
+      <div class="appels-qui"><b>${echap(nom)}</b>
+        ${infos ? `<span class="appels-meta">${infos}</span>` : ''}
+        ${extra ? `<span class="appels-meta">${extra}</span>` : ''}</div>
       <div class="appels-btns">
-        ${a.telephone ? `<a class="bouton-petit" href="tel:${echap(a.telephone.replace(/[^\d+]/g, ''))}">${echap(a.telephone)}</a>` : ''}
+        ${tel ? `<a class="bouton-petit tel" href="tel:${echap(tel.replace(/[^\d+]/g, ''))}" title="Appeler ${echap(a.telephone)}">${ico('telephone')}${echap(tel)}</a>` : ''}
         ${a.idClient ? '<button class="bouton-petit principal" data-ap="commander">Commander</button>' : ''}
-        <button class="bouton-petit" data-ap="absent" title="Le garder pour plus tard, en fin de liste">Pas de réponse</button>
-        <button class="bouton-petit ok" data-ap="fait">Appelé ✓</button>
+        <button class="bouton-petit" data-ap="absent" title="Pas de réponse : le garder pour plus tard, en fin de liste">Plus tard</button>
+        <button class="bouton-petit ok" data-ap="fait" title="Appel passé : retirer de la liste" aria-label="Appelé">${ico('check')}</button>
       </div></li>`;
   }
   function lignePasse(a) {

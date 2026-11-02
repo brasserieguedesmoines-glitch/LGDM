@@ -809,14 +809,18 @@ main.avec-appels .col-commande { display: flex; flex-direction: column; gap: inh
 .appels-barre { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
 .appels-barre i { display: block; height: 100%; background: var(--ok); border-radius: 999px; }
 .appels-liste { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; }
-.appels-liste li { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; border-bottom: 1px solid var(--bordure); }
+.appels-liste li { display: flex; flex-direction: column; gap: 5px; padding: 8px 0; border-bottom: 1px solid var(--bordure); }
 .appels-liste.passes li { opacity: .7; flex-direction: row; align-items: center; justify-content: space-between; }
 .appels-liste.apercu { max-height: 420px; overflow-y: auto; }
 .appels-qui { display: flex; flex-direction: column; gap: 1px; font-size: var(--t-sm); min-width: 0; }
 .appels-qui b { font-size: var(--t-md); }
 .appels-canal { font-size: var(--t-xs); color: var(--texte-3); }
 .appels-meta { font-size: var(--t-xs); color: var(--texte-2); overflow-wrap: anywhere; }
-.appels-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.appels-btns { display: flex; gap: 5px; flex-wrap: nowrap; align-items: center; }
+.appels-btns .bouton-petit { min-height: 30px; padding: 0 9px; font-size: var(--t-xs); gap: 4px; }
+.appels-btns .bouton-petit .ico { width: 14px; height: 14px; }
+.appels-btns .tel { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.appels-btns .ok { margin-left: auto; padding: 0 10px; }
 .appels-fini { color: var(--ok); font-weight: 600; font-size: var(--t-sm); }
 .appels-annuler { font-size: var(--t-sm); background: var(--surface-2); border-radius: var(--r-md); padding: 6px 10px; margin: 0; }
 .appels-erreur { color: var(--danger); font-size: var(--t-sm); }
