@@ -778,3 +778,50 @@ button.primary .loader { border-color: rgba(26,18,6,0.3); border-top-color: var(
 }
 
 @media (min-width: 1100px) { .kpi .val { font-size: var(--t-kpi); } }
+
+/* ==========================  LISTE D'APPELS  ============================ */
+/* Prise de commande : la commande à gauche, la liste d'appels à droite sur
+   grand écran ; au-dessus, repliable, sur tablette et téléphone. */
+main.avec-appels { max-width: 760px; }
+main.avec-appels .col-commande { display: flex; flex-direction: column; gap: inherit; min-width: 0; }
+@media (min-width: 1200px) {
+  main.avec-appels.appels-actifs { max-width: 1320px; flex-direction: row-reverse; align-items: flex-start; }
+  main.avec-appels.appels-actifs .col-commande { flex: 0 1 760px; }
+  main.avec-appels.appels-actifs #appels { flex: 1 1 380px; min-width: 340px; position: sticky; top: var(--e4);
+    max-height: calc(100dvh - 96px); overflow-y: auto; }
+}
+.appels { gap: var(--e3); }
+.appels-tete { display: flex; align-items: center; gap: var(--e2); flex-wrap: wrap; }
+.appels-titre { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; background: none; border: 0;
+  padding: 0; color: var(--texte); cursor: pointer; text-align: left; margin-right: auto; }
+.appels-compte { font-size: var(--t-sm); color: var(--texte-2); }
+.appels-actions { display: flex; gap: var(--e2); }
+.bouton-petit { min-height: 34px; padding: 0 12px; border-radius: var(--r-md); border: 1px solid var(--bordure-forte);
+  background: var(--surface); color: var(--texte); font-weight: 600; font-size: var(--t-sm); cursor: pointer;
+  display: inline-flex; align-items: center; text-decoration: none; white-space: nowrap; width: auto; }
+.bouton-petit.principal { background: var(--accent); border-color: var(--accent); color: var(--sur-accent); }
+.bouton-petit.ok { border-color: var(--ok); color: var(--ok); }
+.bouton-petit:disabled { opacity: .5; cursor: not-allowed; }
+.bouton-lien { background: none; border: 0; padding: 4px 0; color: var(--accent-texte); font-weight: 600;
+  font-size: var(--t-sm); cursor: pointer; width: auto; text-align: left; }
+.bouton-lien.danger { color: var(--danger); }
+.appels > .bouton-lien { align-self: flex-start; }
+.appels-barre { height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.appels-barre i { display: block; height: 100%; background: var(--ok); border-radius: 999px; }
+.appels-liste { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; }
+.appels-liste li { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; border-bottom: 1px solid var(--bordure); }
+.appels-liste.passes li { opacity: .7; flex-direction: row; align-items: center; justify-content: space-between; }
+.appels-liste.apercu { max-height: 420px; overflow-y: auto; }
+.appels-qui { display: flex; flex-direction: column; gap: 1px; font-size: var(--t-sm); min-width: 0; }
+.appels-qui b { font-size: var(--t-md); }
+.appels-canal { font-size: var(--t-xs); color: var(--texte-3); }
+.appels-meta { font-size: var(--t-xs); color: var(--texte-2); overflow-wrap: anywhere; }
+.appels-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.appels-fini { color: var(--ok); font-weight: 600; font-size: var(--t-sm); }
+.appels-annuler { font-size: var(--t-sm); background: var(--surface-2); border-radius: var(--r-md); padding: 6px 10px; margin: 0; }
+.appels-erreur { color: var(--danger); font-size: var(--t-sm); }
+.appels-coche { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.appels-coche input { width: 18px; height: 18px; margin-top: 2px; flex: none; accent-color: var(--accent); }
+.appels-coche > span { display: flex; flex-direction: column; gap: 1px; font-size: var(--t-sm); }
+.appels-pied { display: flex; gap: var(--e2); flex-wrap: wrap; }
+.appels textarea { width: 100%; font-family: inherit; }

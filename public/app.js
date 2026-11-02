@@ -104,6 +104,22 @@ const modalOverlay = document.getElementById('modal-overlay');
 const modalDetail = document.getElementById('modal-detail');
 const btnNouvelleCommande = document.getElementById('btn-nouvelle-commande');
 
+// ---- Sélection d'un client depuis un autre module (liste d'appels) ----
+let clientsCharges = [];
+window.selectionnerClient = async (id) => {
+  const c = clientsCharges.find(x => String(x.id) === String(id));
+  if (!c || !clientSearchSelect) return false;
+  clientSearchSelect.setValue(String(c.id), c.nom);
+  currentIdClient = String(c.id);
+  currentIdClientType = c.idClientType ?? null;
+  currentCanal = c.canal ?? null;
+  toutesGammes = false;
+  document.getElementById('section-client').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  await chargerTarifs(currentIdClient);
+  btnDerniereCommande.style.display = 'flex';
+  return true;
+};
+
 // ---- Chargement initial des clients ----
 async function chargerClients() {
   try {
@@ -115,6 +131,7 @@ async function chargerClients() {
       clientCanalIndex[String(c.id)] = c.canal;
     });
     const options = clients.map(c => ({ value: String(c.id), label: c.nom }));
+    clientsCharges = clients;
     // Clients désactivés dans EasyBeer : retirés de la recherche dès qu'ils sont
     // connus (la liste est lue en direct par le champ de recherche).
     apiFetch('/api/clients-inactifs').then(r => {
@@ -509,6 +526,7 @@ btnEnvoyer.addEventListener('click', async () => {
     const ref = result.map?.numero ?? result.map?.id ?? result.reference ?? result.idCommande ?? result.id ?? '';
     modalDetail.textContent = ref ? `Référence : ${ref}` : 'Commande enregistrée avec succès.';
     modalOverlay.style.display = 'flex';
+    window.appels?.commandePassee(commande.idClient);   // retire le client de la liste d'appels
   } catch (err) {
     setStatut('Erreur lors de l\'envoi : ' + err.message, true);
   } finally {
@@ -530,6 +548,7 @@ document.getElementById('btn-attente')?.addEventListener('click', async () => {
   if (!commande) return;
   try {
     await magasinRuptures.enregistrer({ id: Date.now(), creeLe: Date.now(), type: 'rupture', statut: 'attente', campagne: '', commande });
+    window.appels?.commandePassee(commande.idClient);
   } catch {
     setStatut('Impossible d’enregistrer la mise en attente.', true);
     return;
