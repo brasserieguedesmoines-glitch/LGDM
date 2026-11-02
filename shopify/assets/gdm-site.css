@@ -587,7 +587,12 @@ body .t4s-btn__checkout .t4s-btn-icon {
   width: 48px;
   height: 48px;
   margin: 0 auto 12px;
-  fill: var(--gdm-site-accent);
+  color: var(--gdm-site-accent);
+  fill: var(--gdm-site-accent) !important;
+}
+
+:is(#t4s-mini_cart, .template-cart #MainContent) .t4s-mini_cart__emty > svg path {
+  fill: var(--gdm-site-accent) !important;
 }
 
 :is(#t4s-mini_cart, .template-cart #MainContent) .t4s-mini_cart__emty > p:first-of-type {
@@ -644,6 +649,12 @@ body .t4s-btn__checkout .t4s-btn-icon {
 
 #t4s-mini_cart .t4s-mini_cart__emty {
   padding: 48px 24px;
+}
+
+/* Tiroir vide : le pied (sous-total à zéro), masqué par le thème, gardait sa hauteur
+   et coupait les suggestions. */
+#t4s-mini_cart .t4s-drawer__wrap:has(.t4s-mini_cart__emty) .t4s-drawer__bottom {
+  display: none !important;
 }
 
 /* ---------- Page panier ----------
