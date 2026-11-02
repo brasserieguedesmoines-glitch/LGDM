@@ -13,6 +13,7 @@ Elles sont autonomes. Elles n'ont besoin ni d'application ni de jQuery et foncti
 | `gdm-hero.liquid` | GDM · Bannière d'accueil | Grand titre, image, image mobile ou vidéo de fond, 2 boutons, bandeau note + chiffres, tampon rotatif |
 | `gdm-bandeau-defilant.liquid` | GDM · Bandeau défilant | Texte géant en défilement continu, séparateurs houblon, épi ou étoile, option « bandeaux croisés » |
 | `gdm-bieres.liquid` | GDM · Nos bières | Cartes bières en carrousel ou en grille : degré, IBU, jauge d'amertume, choix 33 cL / 75 cL, ajout au panier direct |
+| `gdm-search.liquid` | GDM · Recherche | Page de résultats : champ de recherche sur la page, bières en cartes « Nos bières », articles et pages en liste, pagination ; sans recherche ou sans résultat, raccourcis de recherche et une sélection de bières |
 | `gdm-vitrine.liquid` | GDM · Vitrine des bières | Bouteilles alignées debout sur un sol texturé, devant un mur sombre moucheté d'orange, grandes flèches rondes ; sous chaque bouteille : nom, degré, format, prix, bouton « + ». Les photos produit (fond transparent) sont recadrées pour que toutes les bouteilles aient la même taille (réglages « Cadrage des photos ») |
 | `gdm-histoire.liquid` | GDM · Notre histoire | Photo + médaillon + tampon « 2016 », texte, points forts avec icônes |
 | `gdm-chiffres.liquid` | GDM · Chiffres clés | Grands chiffres orange animés au défilement |
@@ -32,7 +33,7 @@ Elles sont autonomes. Elles n'ont besoin ni d'application ni de jQuery et foncti
 
 Fichiers partagés (obligatoires) :
 
-- `snippets/gdm-assets.liquid`, `gdm-icon.liquid`, `gdm-stars.liquid`, `gdm-stamp.liquid`
+- `snippets/gdm-assets.liquid`, `gdm-icon.liquid`, `gdm-stars.liquid`, `gdm-stamp.liquid`, `gdm-beer-card.liquid` (carte bière de « Nos bières » et de la recherche ; ses styles sont dans `gdm-sections.css`, car Shopify ne charge le CSS d'une section que sur les pages où elle figure)
 - `assets/gdm-sections.css`, `gdm-sections.js`, `gdm-anton-latin.woff2`, `gdm-inter-latin.woff2`
 
 Habillage de tout le site : `snippets/gdm-site.liquid`, `snippets/gdm-page-skin.liquid`, `assets/gdm-site.css` (chargés par `layout/theme.liquid`).
@@ -121,8 +122,11 @@ Toutes les pages de la copie « LGDM V2 - nouvelles sections GDM » reprennent l
 | Blog | `templates/blog.json` | Grille de tous les articles avec photo et filtres par étiquette |
 | Articles | `templates/article.json` | « À lire aussi » et la gamme en carrousels sous l'article |
 | Contact | `templates/page.contact.json` | Bloc brewpub (horaires du jour, adresse, téléphone, e-mail) puis formulaire |
-| Galerie, recherche, 404 | `templates/page.galerie.json`, `search.json`, `404.json` | Deux photos par ligne sur mobile ; collections de démonstration retirées de la recherche ; 404 avec titre et la gamme |
-| Panier | `templates/cart.json` | La page affichait le panier latéral sans son tiroir (articles et total invisibles) : vraie page panier, total mis à jour après chaque changement |
+| Galerie, 404 | `templates/page.galerie.json`, `404.json` | Deux photos par ligne sur mobile ; 404 avec titre et la gamme |
+| Recherche | `templates/search.json`, `sections/gdm-search.liquid` | Champ de recherche sur la page de résultats (il fallait rouvrir le menu pour corriger), bières en cartes GDM avec ajout au panier, articles et pages ; « aucun résultat » propose des raccourcis (IPA, NEIPA, Sour, Blonde, Barrel Aged) et la gamme au lieu d'une impasse |
+| Recherche instantanée | `sections/search-hidden.liquid`, réglages du thème | Sélecteur « toutes catégories » retiré (une seule catégorie, « Bière ») ; raccourcis en boutons, masqués dès la saisie ; à vide, la gamme au lieu de la collection de démonstration « women » ; champ étiqueté |
+| Panier (page et tiroir) | `templates/cart.json`, `sections/mini_cart.liquid` (= `main-cart.liquid`), `mini_cart_upsell.liquid`, `snippets/cart-item.liquid` | Vraie page panier (articles à gauche, récapitulatif à droite ; sur téléphone, récapitulatif juste sous les articles). Boutons quantité, « changer de contenant » et « retirer » de 44 px avec libellés ; nom sur deux lignes ; bouton « Passer commande » de 54 px (il mesurait 150 px de haut sur la page, à cause de sa flèche) ; sous-total sans « EUR » ; taxes et frais de port rappelés dans le tiroir ; suggestions en rangée de cartes au lieu d'un carrousel à une bière |
+| Compte | réglages du thème (`login_side`) | L'icône compte ouvrait un formulaire e-mail + mot de passe, incompatible avec les nouveaux comptes clients (connexion par code) : elle mène désormais à la connexion Shopify |
 | Traductions | `locales/fr.json` | Textes d'une ancienne boutique retirés (voir ci-dessous) |
 
 **Le contenu des pages, articles et collections n'est pas modifié** : il est enregistré dans la boutique et partagé avec le site en ligne. Leur habillage se fait depuis le thème. Si vous modifiez la mise en page d'une page dans l'administration, régénérez l'habillage :
