@@ -378,7 +378,7 @@
       "sort_button": "Trier",
       "filter_button": "Filtre"
     },
-    "search_for": "Voir tous les résultats pour « {{ terms }} »",
+    "search_for": "Voir tous les résultats",
     "pagination": {
       "view_all": "Voir tout",
       "load_more": "Charger plus",
