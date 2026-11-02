@@ -1,0 +1,742 @@
+{%- comment -%}
+  Le Gué des Moines — Recherche
+  Page de résultats : champ de recherche sur la page (la recherche se corrige
+  sans rouvrir le menu), bières en cartes GDM (même carte que « Nos bières »),
+  articles et pages en liste, pagination.
+  Sans recherche ou sans résultat : raccourcis de recherche et une sélection
+  de bières de la collection choisie, jamais d'impasse.
+{%- endcomment -%}
+{%- liquid
+  assign s = section.settings
+  assign terms = search.terms
+  assign performed = search.performed
+  assign count = search.results_count
+  assign collection = s.collection
+  assign chips = s.suggestions | split: ','
+  assign field_id = 'GdmSearch-' | append: section.id
+-%}
+{%- render 'gdm-assets' -%}
+
+<gdm-section
+  id="gdm-{{ section.id }}"
+  class="gdm gdm-bieres gdm-search"
+  style="--gdm-bg: {{ s.color_bg }}; --gdm-accent: {{ s.color_accent }}; --gdm-cols: 4; --gdm-pt: {{ s.padding_top }}px; --gdm-pb: {{ s.padding_bottom }}px;"
+>
+  <div class="gdm-container">
+    <header class="gdm-search__head">
+      <h1 class="gdm-title">
+        {%- if performed -%}
+          {{ s.title_results | escape }} <em>« {{ terms | escape }} »</em>
+        {%- else -%}
+          {{ s.title | escape }}{% if s.title_accent != blank %} <em>{{ s.title_accent | escape }}</em>{% endif %}
+        {%- endif -%}
+      </h1>
+
+      <form class="gdm-search__form" action="{{ routes.search_url }}" method="get" role="search">
+        <label class="gdm-search__label" for="{{ field_id }}">{{ s.label_field | escape }}</label>
+        <div class="gdm-search__field">
+          {%- render 'gdm-icon', name: 'search', icon_size: 20 -%}
+          <input
+            id="{{ field_id }}"
+            class="gdm-search__input"
+            type="search"
+            name="q"
+            value="{{ terms | escape }}"
+            placeholder="{{ s.placeholder | escape }}"
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+            enterkeyhint="search"
+          >
+          <input type="hidden" name="options[prefix]" value="last">
+          <button class="gdm-btn gdm-btn--primary gdm-search__submit" type="submit">
+            <span class="gdm-search__submit-text">{{ s.label_submit | escape }}</span>
+            <span class="gdm-search__submit-icon">{% render 'gdm-icon', name: 'arrow-right', icon_size: 20 %}<span class="gdm-visually-hidden">{{ s.label_submit | escape }}</span></span>
+          </button>
+        </div>
+      </form>
+
+      {%- if performed -%}
+        <p class="gdm-search__count" role="status">
+          {%- if count == 0 -%}
+            {{ s.label_none | escape }}
+          {%- elsif count == 1 -%}
+            1 {{ s.label_result_one | escape }}
+          {%- else -%}
+            {{ count }} {{ s.label_result_other | escape }}
+          {%- endif -%}
+        </p>
+      {%- endif -%}
+
+      {%- if count == 0 and chips.size > 0 -%}
+        <div class="gdm-search__chips">
+          <p class="gdm-search__chips-label">{{ s.label_suggestions | escape }}</p>
+          <ul role="list">
+            {%- for chip in chips -%}
+              {%- assign chip_text = chip | strip -%}
+              {%- if chip_text == blank -%}{%- continue -%}{%- endif -%}
+              <li><a class="gdm-search__chip" href="{{ routes.search_url }}?q={{ chip_text | url_encode }}&amp;options%5Bprefix%5D=last">{{ chip_text | escape }}</a></li>
+            {%- endfor -%}
+          </ul>
+        </div>
+      {%- endif -%}
+    </header>
+
+    {%- if count > 0 -%}
+      {%- paginate search.results by s.per_page -%}
+        {%- liquid
+          assign product_index = 0
+          assign has_others = false
+        -%}
+        {%- capture product_cards -%}
+          {%- for item in search.results -%}
+            {%- if item.object_type == 'product' -%}
+              {%- render 'gdm-beer-card', product: item, s: s, card_id: section.id, index: product_index -%}
+              {%- assign product_index = product_index | plus: 1 -%}
+            {%- endif -%}
+          {%- endfor -%}
+        {%- endcapture -%}
+        {%- capture other_items -%}
+          {%- for item in search.results -%}
+            {%- if item.object_type == 'product' -%}{%- continue -%}{%- endif -%}
+            <li>
+              <a class="gdm-search__item" href="{{ item.url }}">
+                <span class="gdm-search__item-body">
+                  <span class="gdm-search__item-type">{% if item.object_type == 'article' %}{{ s.label_article | escape }}{% else %}{{ s.label_page | escape }}{% endif %}</span>
+                  <span class="gdm-search__item-title">{{ item.title | escape }}</span>
+                  {%- if item.object_type == 'article' and item.excerpt != blank -%}
+                    <span class="gdm-search__item-text">{{ item.excerpt | strip_html | truncatewords: 24 }}</span>
+                  {%- endif -%}
+                </span>
+                {%- render 'gdm-icon', name: 'arrow-right', icon_size: 20 -%}
+              </a>
+            </li>
+          {%- endfor -%}
+        {%- endcapture -%}
+
+        {%- if product_index > 0 -%}
+          <h2 class="gdm-search__subtitle">{{ s.label_products | escape }}</h2>
+          <div class="gdm-grid gdm-bieres__list">
+            {{ product_cards }}
+          </div>
+        {%- endif -%}
+
+        {%- if other_items != blank -%}
+          <h2 class="gdm-search__subtitle">{{ s.label_others | escape }}</h2>
+          <ul class="gdm-search__list" role="list">
+            {{ other_items }}
+          </ul>
+        {%- endif -%}
+
+        {%- if paginate.pages > 1 -%}
+          <nav class="gdm-search__pages" aria-label="{{ s.label_pagination | escape }}">
+            {%- if paginate.previous -%}
+              <a class="gdm-search__page" href="{{ paginate.previous.url }}" aria-label="{{ s.label_prev | escape }}">{% render 'gdm-icon', name: 'chevron-left', icon_size: 20 %}</a>
+            {%- endif -%}
+            {%- for part in paginate.parts -%}
+              {%- if part.is_link -%}
+                <a class="gdm-search__page" href="{{ part.url }}">{{ part.title }}</a>
+              {%- elsif part.title == paginate.current_page -%}
+                <span class="gdm-search__page is-current" aria-current="page">{{ part.title }}</span>
+              {%- else -%}
+                <span class="gdm-search__page is-gap">{{ part.title }}</span>
+              {%- endif -%}
+            {%- endfor -%}
+            {%- if paginate.next -%}
+              <a class="gdm-search__page" href="{{ paginate.next.url }}" aria-label="{{ s.label_next | escape }}">{% render 'gdm-icon', name: 'chevron-right', icon_size: 20 %}</a>
+            {%- endif -%}
+          </nav>
+        {%- endif -%}
+      {%- endpaginate -%}
+    {%- elsif collection != blank and collection.products_count > 0 -%}
+      <div class="gdm-search__fallback">
+        <div class="gdm-head gdm-head--split">
+          <h2 class="gdm-title">{{ s.fallback_title | escape }}{% if s.fallback_accent != blank %} <em>{{ s.fallback_accent | escape }}</em>{% endif %}</h2>
+          <div class="gdm-head__aside">
+            <a class="gdm-link" href="{{ collection.url }}">
+              {{- s.label_all | escape -}}
+              {%- render 'gdm-icon', name: 'arrow-up-right' -%}
+            </a>
+          </div>
+        </div>
+        <div class="gdm-grid gdm-bieres__list">
+          {%- for product in collection.products limit: s.fallback_limit -%}
+            {%- render 'gdm-beer-card', product: product, s: s, card_id: section.id, index: forloop.index0 -%}
+          {%- endfor -%}
+        </div>
+      </div>
+    {%- endif -%}
+  </div>
+</gdm-section>
+
+{% stylesheet %}
+  .gdm.gdm-search .gdm-search__head {
+    max-width: 760px;
+    margin-bottom: clamp(32px, 4vw, 48px);
+  }
+
+  .gdm.gdm-search .gdm-search__head .gdm-title {
+    margin-bottom: 24px;
+    overflow-wrap: anywhere;
+  }
+
+  .gdm.gdm-search .gdm-search__label {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--gdm-muted);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .gdm.gdm-search .gdm-search__field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 5px 5px 18px;
+    border: 1px solid var(--gdm-border-strong);
+    border-radius: 999px;
+    background: var(--gdm-surface);
+    color: var(--gdm-muted);
+    transition: border-color 0.2s var(--gdm-ease), box-shadow 0.2s var(--gdm-ease);
+  }
+
+  .gdm.gdm-search .gdm-search__field:focus-within {
+    border-color: var(--gdm-accent);
+    box-shadow: 0 0 0 3px var(--gdm-accent-glow);
+  }
+
+  .gdm.gdm-search .gdm-search__field > .gdm-icon {
+    flex: 0 0 auto;
+  }
+
+  .gdm.gdm-search .gdm-search__input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 48px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--gdm-text);
+    font-family: var(--gdm-font-body);
+    font-size: 17px;
+    outline: none;
+    appearance: none;
+  }
+
+  .gdm.gdm-search .gdm-search__input::placeholder {
+    color: var(--gdm-muted);
+    opacity: 1;
+  }
+
+  .gdm.gdm-search .gdm-search__input::-webkit-search-cancel-button {
+    filter: grayscale(1) brightness(1.6);
+    cursor: pointer;
+  }
+
+  .gdm.gdm-search .gdm-search__submit {
+    flex: 0 0 auto;
+    min-height: 48px;
+    padding-inline: 24px;
+  }
+
+  .gdm.gdm-search .gdm-search__submit-icon {
+    display: none;
+  }
+
+  .gdm.gdm-search .gdm-search__count {
+    margin: 16px 0 0;
+    color: var(--gdm-muted);
+    font-size: 15px;
+  }
+
+  .gdm.gdm-search .gdm-search__chips {
+    margin-top: 24px;
+  }
+
+  .gdm.gdm-search .gdm-search__chips-label {
+    margin: 0 0 12px;
+    color: var(--gdm-muted);
+    font-size: 14px;
+  }
+
+  .gdm.gdm-search .gdm-search__chips ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .gdm.gdm-search .gdm-search__chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 18px;
+    border: 1px solid var(--gdm-border-strong);
+    border-radius: 999px;
+    color: var(--gdm-text);
+    font-size: 15px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: border-color 0.2s var(--gdm-ease), color 0.2s var(--gdm-ease);
+  }
+
+  .gdm.gdm-search .gdm-search__chip:hover,
+  .gdm.gdm-search .gdm-search__chip:focus-visible {
+    border-color: var(--gdm-accent);
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-search .gdm-search__subtitle {
+    margin: 0 0 20px;
+    color: var(--gdm-text);
+    font-family: var(--gdm-font-display);
+    font-size: clamp(22px, 2.4vw, 28px);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+  }
+
+  .gdm.gdm-search .gdm-grid + .gdm-search__subtitle {
+    margin-top: clamp(48px, 6vw, 72px);
+  }
+
+  .gdm.gdm-search .gdm-search__list {
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--gdm-border);
+    list-style: none;
+  }
+
+  .gdm.gdm-search .gdm-search__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px 4px;
+    border-bottom: 1px solid var(--gdm-border);
+    color: var(--gdm-text);
+    text-decoration: none;
+  }
+
+  .gdm.gdm-search .gdm-search__item-body {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .gdm.gdm-search .gdm-search__item-type {
+    color: var(--gdm-accent);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .gdm.gdm-search .gdm-search__item-title {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.35;
+    transition: color 0.2s var(--gdm-ease);
+  }
+
+  .gdm.gdm-search .gdm-search__item-text {
+    color: var(--gdm-muted);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  .gdm.gdm-search .gdm-search__item > .gdm-icon {
+    flex: 0 0 auto;
+    color: var(--gdm-muted);
+    transition: transform 0.2s var(--gdm-ease), color 0.2s var(--gdm-ease);
+  }
+
+  .gdm.gdm-search .gdm-search__item:hover .gdm-search__item-title,
+  .gdm.gdm-search .gdm-search__item:hover > .gdm-icon {
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-search .gdm-search__item:hover > .gdm-icon {
+    transform: translateX(3px);
+  }
+
+  .gdm.gdm-search .gdm-search__pages {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: clamp(40px, 5vw, 56px);
+  }
+
+  .gdm.gdm-search .gdm-search__page {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    height: 44px;
+    padding: 0 10px;
+    border: 1px solid var(--gdm-border-strong);
+    border-radius: 999px;
+    color: var(--gdm-text);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .gdm.gdm-search a.gdm-search__page:hover {
+    border-color: var(--gdm-accent);
+    color: var(--gdm-accent);
+  }
+
+  .gdm.gdm-search .gdm-search__page.is-current {
+    border-color: var(--gdm-accent);
+    background: var(--gdm-accent);
+    color: var(--gdm-on-accent);
+  }
+
+  .gdm.gdm-search .gdm-search__page.is-gap {
+    border-color: transparent;
+  }
+
+  .gdm.gdm-search .gdm-search__fallback {
+    padding-top: clamp(32px, 4vw, 48px);
+    border-top: 1px solid var(--gdm-border);
+  }
+
+  @media screen and (max-width: 749px) {
+    .gdm.gdm-search .gdm-search__head .gdm-title {
+      margin-bottom: 20px;
+    }
+
+    .gdm.gdm-search .gdm-search__field {
+      padding-left: 16px;
+    }
+
+    .gdm.gdm-search .gdm-search__submit {
+      width: 48px;
+      min-width: 48px;
+      padding: 0;
+    }
+
+    .gdm.gdm-search .gdm-search__submit-text {
+      display: none;
+    }
+
+    .gdm.gdm-search .gdm-search__submit-icon {
+      display: inline-flex;
+    }
+
+    .gdm.gdm-search .gdm-search__item {
+      padding: 18px 0;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "GDM · Recherche",
+  "tag": "section",
+  "class": "gdm-section-search",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Titres"
+    },
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titre (sans recherche)",
+      "default": "Rechercher"
+    },
+    {
+      "type": "text",
+      "id": "title_accent",
+      "label": "Fin du titre (en couleur)",
+      "default": "sur le site"
+    },
+    {
+      "type": "text",
+      "id": "title_results",
+      "label": "Titre des résultats",
+      "info": "Suivi de la recherche entre guillemets.",
+      "default": "Résultats pour"
+    },
+    {
+      "type": "header",
+      "content": "Champ de recherche"
+    },
+    {
+      "type": "text",
+      "id": "label_field",
+      "label": "Libellé du champ",
+      "default": "Une bière, un style, une page…"
+    },
+    {
+      "type": "text",
+      "id": "placeholder",
+      "label": "Texte d'exemple",
+      "default": "IPA, Sour, brewpub…"
+    },
+    {
+      "type": "text",
+      "id": "label_submit",
+      "label": "Bouton",
+      "default": "Rechercher"
+    },
+    {
+      "type": "textarea",
+      "id": "suggestions",
+      "label": "Raccourcis de recherche",
+      "info": "Séparés par des virgules. Affichés sans recherche ou sans résultat.",
+      "default": "IPA, NEIPA, Sour, Blonde, Barrel Aged"
+    },
+    {
+      "type": "text",
+      "id": "label_suggestions",
+      "label": "Titre des raccourcis",
+      "default": "Recherches fréquentes"
+    },
+    {
+      "type": "header",
+      "content": "Résultats"
+    },
+    {
+      "type": "range",
+      "id": "per_page",
+      "label": "Résultats par page",
+      "min": 8,
+      "max": 48,
+      "step": 4,
+      "default": 24
+    },
+    {
+      "type": "text",
+      "id": "label_result_one",
+      "label": "« résultat »",
+      "default": "résultat"
+    },
+    {
+      "type": "text",
+      "id": "label_result_other",
+      "label": "« résultats »",
+      "default": "résultats"
+    },
+    {
+      "type": "text",
+      "id": "label_none",
+      "label": "Aucun résultat",
+      "default": "Aucun résultat. Essayez un autre mot, ou l'un de ces raccourcis."
+    },
+    {
+      "type": "text",
+      "id": "label_products",
+      "label": "Titre des bières",
+      "default": "Bières"
+    },
+    {
+      "type": "text",
+      "id": "label_others",
+      "label": "Titre des articles et pages",
+      "default": "Articles et pages"
+    },
+    {
+      "type": "text",
+      "id": "label_article",
+      "label": "Étiquette article",
+      "default": "Article"
+    },
+    {
+      "type": "text",
+      "id": "label_page",
+      "label": "Étiquette page",
+      "default": "Page"
+    },
+    {
+      "type": "text",
+      "id": "label_pagination",
+      "label": "Pagination (lecteurs d'écran)",
+      "default": "Pages de résultats"
+    },
+    {
+      "type": "text",
+      "id": "label_prev",
+      "label": "Page précédente",
+      "default": "Page précédente"
+    },
+    {
+      "type": "text",
+      "id": "label_next",
+      "label": "Page suivante",
+      "default": "Page suivante"
+    },
+    {
+      "type": "header",
+      "content": "Sans recherche ou sans résultat"
+    },
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Bières proposées"
+    },
+    {
+      "type": "range",
+      "id": "fallback_limit",
+      "label": "Nombre de bières",
+      "min": 4,
+      "max": 12,
+      "step": 4,
+      "default": 8
+    },
+    {
+      "type": "text",
+      "id": "fallback_title",
+      "label": "Titre",
+      "default": "Nos"
+    },
+    {
+      "type": "text",
+      "id": "fallback_accent",
+      "label": "Fin du titre (en couleur)",
+      "default": "bières"
+    },
+    {
+      "type": "text",
+      "id": "label_all",
+      "label": "Lien vers la collection",
+      "default": "Toute la gamme"
+    },
+    {
+      "type": "header",
+      "content": "Cartes bière"
+    },
+    {
+      "type": "select",
+      "id": "style_source",
+      "label": "Style affiché",
+      "options": [
+        { "value": "none", "label": "Aucun" },
+        { "value": "custom_style", "label": "Métachamp custom.style" },
+        { "value": "type", "label": "Type de produit" },
+        { "value": "beer_style", "label": "Métachamp Style de bière (Shopify)" },
+        { "value": "vendor", "label": "Fournisseur" }
+      ],
+      "default": "custom_style"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_specs",
+      "label": "Degré et IBU",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_bitterness",
+      "label": "Jauge d'amertume",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "show_variants",
+      "label": "Choix du contenant",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_add_to_cart",
+      "label": "Bouton d'ajout au panier",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "label_add",
+      "label": "Bouton d'ajout",
+      "default": "Ajouter"
+    },
+    {
+      "type": "text",
+      "id": "label_view",
+      "label": "Lien sans ajout",
+      "default": "Voir"
+    },
+    {
+      "type": "text",
+      "id": "label_soldout",
+      "label": "Épuisée",
+      "default": "Épuisée"
+    },
+    {
+      "type": "text",
+      "id": "label_sale",
+      "label": "Promotion",
+      "default": "Promo"
+    },
+    {
+      "type": "text",
+      "id": "label_from",
+      "label": "Prix minimum",
+      "default": "dès"
+    },
+    {
+      "type": "text",
+      "id": "label_bitterness",
+      "label": "Amertume",
+      "default": "Amertume"
+    },
+    {
+      "type": "text",
+      "id": "label_format",
+      "label": "Contenant",
+      "default": "Contenant"
+    },
+    {
+      "type": "header",
+      "content": "Apparence"
+    },
+    {
+      "type": "color",
+      "id": "color_bg",
+      "label": "Fond",
+      "default": "#0D0D0D"
+    },
+    {
+      "type": "color",
+      "id": "color_accent",
+      "label": "Accent",
+      "default": "#F0921E"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Marge haute",
+      "min": 0,
+      "max": 160,
+      "step": 8,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Marge basse",
+      "min": 0,
+      "max": 160,
+      "step": 8,
+      "unit": "px",
+      "default": 72
+    }
+  ],
+  "presets": [
+    {
+      "name": "GDM · Recherche"
+    }
+  ],
+  "enabled_on": {
+    "templates": ["search"]
+  }
+}
+{% endschema %}

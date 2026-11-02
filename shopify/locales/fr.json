@@ -358,27 +358,27 @@
   },
   "search": {
     "general": {
-      "title": "Rechercher sur notre site",
+      "title": "Rechercher",
       "heading": {
-        "one": "Résultat de la recherche",
-        "other": "Résultats de recherche"
+        "one": "Résultat",
+        "other": "Résultats"
       },
       "results_others": "Résultats de l'article, page",
-      "quick_search": "Recherche rapide:",
+      "quick_search": "Recherches fréquentes",
       "suggestions": "Suggestions:",
       "close_search": "Fermer la recherche",
-      "suggest": "Besoin d'inspiration ?",
-      "placeholder": "Recherche",
+      "suggest": "Nos bières",
+      "placeholder": "Une bière, un style…",
       "placeholder_products": "Rechercher des produits",
       "submit": "recherche",
       "all_categories": "toutes catégories",
       "no_results": "Aucun résultat correspondant",
-      "no_product_results": "Aucun produit correspondant à votre sélection n'a été trouvé.",
+      "no_product_results": "Aucune bière ne correspond à cette recherche.",
       "sort_by_label": "Trier par:",
       "sort_button": "Trier",
       "filter_button": "Filtre"
     },
-    "search_for": "Recherchez « {{ terms }} »",
+    "search_for": "Voir tous les résultats pour « {{ terms }} »",
     "pagination": {
       "view_all": "Voir tout",
       "load_more": "Charger plus",
@@ -414,8 +414,8 @@
       "taxes_included_discounts_and_shipping_policy_html": "Taxe inclu. Codes <a href=\"{{ link }}\" target=\"_blank\">d&#39;expédition</a> et de réduction calculés à la caisse.",
       "terms_and_conditions_html": "J&#39;accepte les <a href=\"{{ link }}\" target=\"_blank\">termes et conditions</a> .",
       "terms_and_conditions": "J'accepte les termes et conditions.",
-      "edit_item": "Modifier cet élément",
-      "remove_item": "enlever cet article",
+      "edit_item": "Changer de contenant",
+      "remove_item": "Retirer du panier",
       "recurring_mess": "Livraison récurrente tous les {{ frequency }} {{ frequency_unit }}. Modifiez ou annulez à tout moment",
       "agree_checkout": "Vous devez accepter les conditions générales de vente pour pouvoir procéder au paiement."
     },
@@ -453,10 +453,10 @@
       "title": "Panier",
       "close_cart": "Fermer le panier",
       "empty": "Votre panier est vide",
-      "subtotal": "Sous-total :",
-      "checkout": "Passer au paiement (1/2)",
+      "subtotal": "Sous-total",
+      "checkout": "Passer commande",
       "view": "Voir le panier",
-      "title_recommendations": "Recommandations"
+      "title_recommendations": "Vous aimerez aussi"
     },
     "cart_page": {
       "title": "Panier",
@@ -469,7 +469,7 @@
       "empty": "Votre panier est vide.",
       "empty_html": "Avant de procéder au paiement, vous devez ajouter certains produits à votre panier.<br /> Vous trouverez de nombreux produits intéressants sur notre page \"Boutique\".",
       "subtotal": "Sous-total :",
-      "checkout": "Passer au paiement (1/2)",
+      "checkout": "Passer commande",
       "update": "Mise à jour"
     }
   },

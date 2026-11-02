@@ -1,0 +1,31 @@
+{%- comment -%}
+  Suggestions du panier (page et panier latéral), chargées par le thème selon
+  le premier article du panier. Rangée de petites cartes qui défile au doigt,
+  au lieu d'un carrousel à une bière par vue (flèches et points en plus).
+  Styles : assets/gdm-site.css (« Panier »).
+{%- endcomment -%}
+{%- if recommendations.products_count > 0 -%}
+  {%- liquid
+    assign price_varies_style = settings.price_varies_style
+    assign placeholder_img = settings.placeholder_img
+  -%}
+  <div class="t4s-minicart-recommendations gdm-upsell">
+    <p class="gdm-upsell__title">{{ 'cart.mini_cart.title_recommendations' | t }}</p>
+    <ul class="gdm-upsell__track" role="list">
+      {%- for product in recommendations.products -%}
+        {%- assign image = product.featured_media.preview_image | default: placeholder_img -%}
+        <li class="gdm-upsell__item">
+          <a class="gdm-upsell__link" href="{{ product.url }}">
+            <span class="gdm-upsell__media">
+              {%- if image != blank -%}
+                {{ image | image_url: width: 240 | image_tag: loading: 'lazy', widths: '120, 240', sizes: '120px', alt: product.title, class: 'gdm-upsell__img' }}
+              {%- endif -%}
+            </span>
+            <span class="gdm-upsell__name">{{ product.title | escape }}</span>
+            {%- render 'product-price', class_price: 'gdm-upsell__price', product: product, price_varies_style: price_varies_style, type: 'card', isGrouped: false -%}
+          </a>
+        </li>
+      {%- endfor -%}
+    </ul>
+  </div>
+{%- endif -%}

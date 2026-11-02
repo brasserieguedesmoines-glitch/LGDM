@@ -3,17 +3,39 @@
     "main-cart": {
       "type": "main-cart",
       "blocks": {
-        "price": { "type": "price", "settings": {} },
-        "tax": { "type": "tax", "settings": {} },
-        "agree": { "type": "agree", "disabled": true, "settings": {} },
-        "btnc": { "type": "btnc", "disabled": true, "settings": {} },
+        "price": {
+          "type": "price",
+          "settings": {}
+        },
+        "tax": {
+          "type": "tax",
+          "settings": {}
+        },
+        "agree": {
+          "type": "agree",
+          "disabled": true,
+          "settings": {}
+        },
+        "btnc": {
+          "type": "btnc",
+          "disabled": true,
+          "settings": {}
+        },
         "btnck": {
           "type": "btnck",
-          "settings": { "btn_icon": true, "button_style": "default", "btn_cl": "light", "button_effect": "default" }
+          "settings": {
+            "btn_icon": false,
+            "button_style": "default",
+            "btn_cl": "light",
+            "button_effect": "default"
+          }
         },
         "img": {
           "type": "img",
-          "settings": { "svg": "american_express,apple_pay,google_pay,master,paypal,visa", "height": 20 }
+          "settings": {
+            "svg": "american_express,apple_pay,google_pay,master,paypal,visa",
+            "height": 20
+          }
         },
         "btn": {
           "type": "btn",
@@ -27,7 +49,15 @@
           }
         }
       },
-      "block_order": ["price", "tax", "agree", "btnc", "btnck", "img", "btn"],
+      "block_order": [
+        "price",
+        "tax",
+        "agree",
+        "btnc",
+        "btnck",
+        "img",
+        "btn"
+      ],
       "settings": {
         "style": "1",
         "pos": "2",
@@ -41,5 +71,7 @@
       }
     }
   },
-  "order": ["main-cart"]
+  "order": [
+    "main-cart"
+  ]
 }
