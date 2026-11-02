@@ -703,6 +703,29 @@ body .t4s-btn__checkout .t4s-btn-icon {
   padding: 0 !important;
 }
 
+/* Téléphone : récapitulatif et bouton de commande juste sous les articles, suggestions après. */
+@media screen and (max-width: 899px) {
+  .template-cart #MainContent :is(.t4s-drawer__main, .t4s-drawer__scroll) {
+    display: contents;
+  }
+
+  .template-cart #MainContent [data-cart-items] {
+    order: 1;
+  }
+
+  .template-cart #MainContent .t4s-drawer__bottom {
+    order: 2;
+  }
+
+  .template-cart #MainContent [data-cart-upsell-options] {
+    order: 3;
+  }
+
+  .template-cart #MainContent .gdm-upsell {
+    margin-top: 0 !important;
+  }
+}
+
 .template-cart #MainContent .t4s-mini_cart__item {
   margin: 0 0 10px !important;
   padding: 16px !important;
