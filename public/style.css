@@ -831,3 +831,10 @@ main.avec-appels .col-commande { display: flex; flex-direction: column; gap: inh
 .appels-liste.apercu > .appels-liste li { padding-left: 4px; }
 .appels-pied { display: flex; gap: var(--e2); flex-wrap: wrap; }
 .appels textarea { width: 100%; font-family: inherit; }
+
+/* Choix du lieu de livraison (client livré à plusieurs adresses) */
+.choix-adresse { display: flex; flex-direction: column; gap: 6px; margin-top: var(--e3); padding: var(--e3);
+  border: 1px solid var(--accent); border-radius: var(--r-md); background: var(--accent-doux); }
+.choix-adresse label { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-weight: 700; color: var(--texte); margin: 0; }
+.choix-adresse label span { font-weight: 500; font-size: var(--t-sm); color: var(--texte-2); }
+.choix-adresse select { width: 100%; font-weight: 600; }

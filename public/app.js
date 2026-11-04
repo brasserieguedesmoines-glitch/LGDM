@@ -175,25 +175,41 @@ btnDerniereCommande.addEventListener('click', async () => {
 
 // Affiche un sélecteur d'adresse si le client a plusieurs adresses de livraison
 async function chargerAdresses(idClient) {
-  selectAdresse?.remove();
+  selectAdresse?.closest('.choix-adresse')?.remove();
   selectAdresse = null;
   adressesLivraison = [];
   try {
     const data = await apiFetch(`/api/adresses/${idClient}`);
     adressesLivraison = data.livraison ?? [];
     if (adressesLivraison.length >= 2) {
+      // Plusieurs lieux de livraison (ex. Leclerc Blagnac : magasin de Blagnac
+      // et drive de Bruguières) : le choix doit sauter aux yeux, ville en tête.
+      const bloc = document.createElement('div');
+      bloc.className = 'choix-adresse';
+      bloc.innerHTML = `<label for="select-adresse">${ico('carte')} Lieu de livraison
+        <span>${adressesLivraison.length} adresses pour ce client : vérifiez la bonne</span></label>`;
       selectAdresse = document.createElement('select');
       selectAdresse.id = 'select-adresse';
-      selectAdresse.setAttribute('aria-label', 'Adresse de livraison');
       adressesLivraison.forEach((a, i) => {
         const opt = document.createElement('option');
         opt.value = i;
-        opt.textContent = a.complete || [a.ligne1, a.ligne2, a.ligne3, a.ligne4].filter(Boolean).join(', ');
+        opt.textContent = libelleAdresse(a);
         selectAdresse.appendChild(opt);
       });
-      clientSearchSelect.after(selectAdresse);
+      bloc.appendChild(selectAdresse);
+      clientSearchSelect.after(bloc);
     }
   } catch {}
+}
+
+// « Bruguières — Rue Gutenberg » plutôt que l'adresse brute ; un nom porté en
+// première ligne (« DRIVE … ») passe devant.
+function libelleAdresse(a) {
+  const complete = a.complete || [a.ligne1, a.ligne2, a.ligne3, a.ligne4].filter(Boolean).join(', ');
+  const ville = (complete.match(/\b\d{5}\s+([^,]+)/) ?? [])[1]?.trim();
+  const rue = complete.split(',')[0].trim();
+  const nom = a.ligne1 && !/^\d/.test(a.ligne1) && !complete.startsWith(a.ligne1) ? a.ligne1.trim() : '';
+  return [nom, ville, rue].filter(Boolean).filter((x, i, t) => t.indexOf(x) === i).join(' — ') || complete;
 }
 
 // Gamme attendue selon le canal du client :
@@ -570,7 +586,7 @@ btnNouvelleCommande.addEventListener('click', () => {
   masquerSections();
   btnDerniereCommande.style.display = 'none';
   document.getElementById('note-livraison').value = '';
-  selectAdresse?.remove();
+  selectAdresse?.closest('.choix-adresse')?.remove();
   selectAdresse = null;
   adressesLivraison = [];
   setStatut('');
