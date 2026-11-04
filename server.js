@@ -1247,90 +1247,144 @@ async function enParallele(items, concurrence, fn) {
   return resultats;
 }
 
-// Indicateur « actif » des clients, par lots mis en cache.
-// Il n'est fiable que sur la fiche détaillée : la grille tarifaire renvoie
-// actif:true pour des clients pourtant désactivés dans EasyBeer. Une fiche =
-// un appel API, d'où le découpage en lots pour tenir dans la limite Vercel.
-// 15 clients par lot : à froid cela représente ~18 s d'appels EasyBeer, ce qui
-// tient sous le délai maximal d'un appel interne. Avec des lots plus gros, une
-// page froide expirait systématiquement et le filtre ne s'appliquait jamais.
-const CLIENTS_PAR_LOT = 15;
-app.get('/api/cache/clients-actifs/p/:page', async (req, res) => {
-  try {
-    const page = Math.max(1, parseInt(req.params.page) || 1);
-    const tous = await getAllClients();
-    const debut = (page - 1) * CLIENTS_PAR_LOT;
-    const lot = tous.slice(debut, debut + CLIENTS_PAR_LOT);
-    const clients = [];
-    for (const c of lot) {
-      try {
-        const d = await easybeerGet(`/parametres/client/detail/${c.id}`);
-        clients.push({ id: c.id, actif: d?.actif !== false && d?.supprime !== true });
-      } catch {
-        clients.push({ id: c.id, actif: null }); // inconnu : on ne l'exclut pas
+// ---- Clients désactivés dans EasyBeer ----
+// Seule la fiche détaillée dit si un client est désactivé : la grille tarifaire
+// répond actif:true pour des clients pourtant désactivés. Chaque fiche coûte un
+// appel EasyBeer (file de 1,2 s), d'où un statut gardé CLIENT PAR CLIENT dans la
+// base partagée (hash idClient → { a: actif, t: date de vérification }), complété
+// par petites tranches, une fiche à la fois et une seule instance à la fois.
+// Ordre : noms en double d'abord (ce que l'on voit dans la recherche), puis les
+// clients jamais vérifiés, puis les vérifications les plus anciennes.
+// Avant : des lots de 15 clients repérés par leur rang dans la liste
+// alphabétique, 5 en parallèle, 40 lots au plus. Un client ajouté décalait les
+// rangs (les lots en cache ne couvraient plus tout le monde), rien n'était
+// vérifié au-delà de 600 clients, et le parallèle exposait au blocage EasyBeer.
+const CLE_STATUTS = 'lgdm:clients-statut';
+const CLE_VERROU_STATUTS = 'lgdm:clients-statut:verrou';
+const CLE_INACTIFS_ANCIENNE = 'lgdm:clients-inactifs'; // ancienne liste, reprise une fois
+const VALIDITE_DOUBLON_MS = 24 * 3600 * 1000;
+const VALIDITE_STATUT_MS = 7 * 24 * 3600 * 1000;
+const statutsMemoire = new Map(); // poste sans base partagée
+
+// Nom comparé sans accents, casse ni ponctuation : « Bar du Port » = « BAR DU PORT ».
+const cleNomClient = nom => String(nom ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+async function lireStatutsClients() {
+  if (!redisActif()) return new Map(statutsMemoire);
+  const statuts = new Map();
+  const plat = await redis('HGETALL', CLE_STATUTS) ?? [];
+  for (let i = 0; i + 1 < plat.length; i += 2) {
+    try { statuts.set(Number(plat[i]), JSON.parse(plat[i + 1])); } catch {}
+  }
+  // Première lecture : on reprend les désactivés déjà repérés par l'ancien calcul.
+  if (!statuts.size) {
+    const ancienne = await redis('GET', CLE_INACTIFS_ANCIENNE).catch(() => null);
+    if (ancienne) {
+      const { ids = [], le = Date.now() } = JSON.parse(ancienne);
+      for (const id of ids) statuts.set(Number(id), { a: false, t: le });
+      if (ids.length) {
+        await redis('HSET', CLE_STATUTS, ...ids.flatMap(id => [String(id), JSON.stringify({ a: false, t: le })]))
+          .catch(() => {});
       }
     }
-    res.set('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800');
-    res.json({ page, complete: debut + CLIENTS_PAR_LOT < tous.length, clients });
-  } catch (err) {
-    res.status(err.status ?? 502).json({ error: err.message });
   }
-});
+  return statuts;
+}
 
-// Ensemble des clients désactivés dans EasyBeer. En cas d'indisponibilité on
-// renvoie null : mieux vaut ne rien filtrer que vider la liste des relances.
-async function chargerClientsInactifs(req, budgetMs = 75 * 1000) {
-  const t0 = Date.now();
-  const inactifs = new Set();
-  let nbPages = 3;
-  try {
-    nbPages = Math.ceil((await getAllClients()).length / CLIENTS_PAR_LOT);
-  } catch { /* repli : on tentera les premières pages */ }
+async function ecrireStatutClient(id, statut) {
+  statutsMemoire.set(id, statut);
+  if (redisActif()) await redis('HSET', CLE_STATUTS, String(id), JSON.stringify(statut)).catch(() => {});
+}
 
-  // Un échec de page n'interrompt pas la boucle : les déploiements vident le
-  // cache CDN, une page froide peut expirer. On prend ce qui répond et le cache
-  // se remplit page après page — le filtre se complète aux visites suivantes.
-  const pages = Array.from({ length: Math.min(nbPages, 40) }, (_, i) => i + 1);
-  let reussies = 0;
-  await enParallele(pages, 5, async (p) => {
-    if (Date.now() - t0 > budgetMs) return null;
-    try {
-      const r = await fetchInterne(req, `/api/cache/clients-actifs/p/${p}`, 30000);
-      if (!r?.clients) return null;
-      reussies++;
-      for (const c of r.clients) if (c.actif === false) inactifs.add(c.id);
-    } catch { /* page indisponible : ignorée */ }
+// Une seule instance vérifie à la fois : deux vérifications simultanées
+// doubleraient le rythme d'appels et feraient bloquer l'API EasyBeer.
+async function prendreVerrouStatuts(dureeS) {
+  if (!redisActif()) return true;
+  return (await redis('SET', CLE_VERROU_STATUTS, '1', 'NX', 'EX', String(dureeS)).catch(() => null)) === 'OK';
+}
+
+// Vérifie des fiches pendant budgetMs au plus (0 = lecture seule) et renvoie
+// les statuts connus, la liste des clients et le nombre de fiches à revoir.
+let verificationStatuts = null;
+async function verifierStatutsClients(budgetMs = 0) {
+  const tous = await getAllClientsPartage();
+  if (verificationStatuts) await verificationStatuts.catch(() => {});
+  const statuts = await lireStatutsClients();
+  const parNom = new Map();
+  for (const c of tous) {
+    const k = cleNomClient(c.nom);
+    parNom.set(k, (parNom.get(k) ?? 0) + 1);
+  }
+  const maintenant = Date.now();
+  const priorite = c => {
+    const s = statuts.get(c.id);
+    const doublon = parNom.get(cleNomClient(c.nom)) > 1;
+    if (!s) return doublon ? 0 : 2;
+    // Fiche illisible la dernière fois (a: null) : on retente au bout d'une heure.
+    const validite = s.a === null ? 3600 * 1000 : doublon ? VALIDITE_DOUBLON_MS : VALIDITE_STATUT_MS;
+    if (maintenant - s.t > validite) return doublon ? 1 : 3;
     return null;
-  });
-  if (!reussies) return null;
-  console.log(`clients inactifs : ${inactifs.size} sur ${reussies}/${pages.length} pages`);
-  inactifs.complet = reussies === pages.length;
-  return inactifs;
+  };
+  const file = tous.map(c => ({ c, p: priorite(c) })).filter(x => x.p !== null)
+    .sort((x, y) => x.p - y.p || (statuts.get(x.c.id)?.t ?? 0) - (statuts.get(y.c.id)?.t ?? 0));
+  let restants = file.length;
+  if (!budgetMs || !file.length) return { statuts, tous, restants };
+
+  const dureeVerrouS = Math.ceil(budgetMs / 1000) + 30;
+  if (!(await prendreVerrouStatuts(dureeVerrouS))) return { statuts, tous, restants };
+  verificationStatuts = (async () => {
+    const t0 = Date.now();
+    for (const { c } of file) {
+      if (Date.now() - t0 > budgetMs) break;
+      try {
+        const d = await easybeerGet(`/parametres/client/detail/${c.id}`);
+        const statut = { a: d?.actif !== false && d?.supprime !== true, t: Date.now() };
+        statuts.set(c.id, statut);
+        await ecrireStatutClient(c.id, statut);
+        restants--;
+      } catch (e) {
+        if (e.status === 503) break; // EasyBeer saturé : inutile d'insister
+        // Statut inconnu : le client reste dans la liste, sans bloquer la file.
+        const statut = { a: null, t: Date.now() };
+        statuts.set(c.id, statut);
+        await ecrireStatutClient(c.id, statut);
+        restants--;
+      }
+    }
+  })();
+  try { await verificationStatuts; }
+  finally {
+    verificationStatuts = null;
+    if (redisActif()) await redis('DEL', CLE_VERROU_STATUTS).catch(() => {});
+  }
+  return { statuts, tous, restants };
 }
 
-// Même liste, partagée via Redis : complète, elle est gardée 12 h ;
-// partielle (pages froides), 10 min seulement, pour se compléter vite.
-const CLE_INACTIFS = 'lgdm:clients-inactifs';
-async function inactifsPartages(req, budgetMs = 60 * 1000) {
-  if (redisActif()) {
-    const v = await redis('GET', CLE_INACTIFS).catch(() => null);
-    if (v) return new Set(JSON.parse(v).ids);
+// Clients désactivés parmi ceux encore listés. null si la liste des clients est
+// indisponible : mieux vaut ne rien filtrer que vider la liste des relances.
+async function inactifsPartages(req, budgetMs = 0) {
+  try {
+    const { statuts, tous } = await verifierStatutsClients(budgetMs);
+    const listes = new Set(tous.map(c => c.id));
+    return new Set([...statuts].filter(([id, s]) => s.a === false && listes.has(id)).map(([id]) => id));
+  } catch (e) {
+    console.warn('clients inactifs indisponibles —', e.message);
+    return null;
   }
-  const inactifs = await chargerClientsInactifs(req, budgetMs);
-  if (inactifs && redisActif()) {
-    await redis('SET', CLE_INACTIFS, JSON.stringify({ ids: [...inactifs], le: Date.now(), complet: inactifs.complet }),
-      'EX', inactifs.complet ? 12 * 3600 : 600).catch(() => {});
-  }
-  return inactifs;
 }
 
-// Clients désactivés dans EasyBeer, pour les retirer de la recherche de la
-// prise de commande. Le calcul lit une fiche par client (lent à froid) : le
-// résultat est gardé 12 h dans la base partagée.
+// Clients désactivés, pour les retirer de la recherche de la prise de commande.
+// ?verifier=0 : réponse immédiate avec les statuts déjà connus ; sinon, jusqu'à
+// 40 s de vérifications avant de répondre (environ 30 fiches).
 app.get('/api/clients-inactifs', async (req, res) => {
   try {
-    const inactifs = await inactifsPartages(req);
-    res.json(inactifs ? { ids: [...inactifs] } : { ids: [], inconnu: true });
+    const budget = req.query.verifier === '0' ? 0 : 40 * 1000;
+    const { statuts, tous, restants } = await verifierStatutsClients(budget);
+    const listes = new Set(tous.map(c => c.id));
+    const ids = [...statuts].filter(([id, s]) => s.a === false && listes.has(id)).map(([id]) => id);
+    res.set('Cache-Control', 'no-store');
+    res.json({ ids, restants });
   } catch (err) {
     res.status(err.status ?? 502).json({ error: err.message });
   }

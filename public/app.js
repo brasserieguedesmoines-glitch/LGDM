@@ -133,11 +133,14 @@ async function chargerClients() {
     const options = clients.map(c => ({ value: String(c.id), label: c.nom }));
     clientsCharges = clients;
     // Clients désactivés dans EasyBeer : retirés de la recherche dès qu'ils sont
-    // connus (la liste est lue en direct par le champ de recherche).
-    apiFetch('/api/clients-inactifs').then(r => {
+    // connus (la liste est lue en direct par le champ de recherche). D'abord ceux
+    // déjà vérifiés (réponse immédiate), puis ceux que la vérification ajoute.
+    const retirerInactifs = r => {
       const inactifs = new Set((r.ids ?? []).map(String));
       for (let i = options.length - 1; i >= 0; i--) if (inactifs.has(options[i].value)) options.splice(i, 1);
-    }).catch(() => {});
+    };
+    apiFetch('/api/clients-inactifs?verifier=0').then(retirerInactifs).catch(() => {})
+      .then(() => apiFetch('/api/clients-inactifs')).then(retirerInactifs).catch(() => {});
 
     clientSearchSelect = createSearchSelect('Nom du client…', options, async (value) => {
       currentIdClient = value;
