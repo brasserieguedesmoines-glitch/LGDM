@@ -424,7 +424,7 @@
 
     function rendreProduits() {
       const gamme = nouvelle.client?.canal === 'GMS' ? 'gms' : 'classique';
-      const dansGamme = nouvelle.produits.filter(p => (p.gamme ?? 'classique') === gamme);
+      const dansGamme = nouvelle.produits.filter(p => [gamme, 'toutes'].includes(p.gamme ?? 'classique'));
       const liste = nouvelle.toute || !dansGamme.length ? nouvelle.produits : dansGamme;
       $('n-produits').innerHTML = `<div class="pied-f" style="margin:0 0 var(--e2)">
           <input type="search" id="n-fprod" placeholder="Filtrer les produits…" style="flex:1;min-width:180px">

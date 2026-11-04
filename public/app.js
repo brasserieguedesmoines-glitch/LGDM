@@ -104,6 +104,22 @@ const modalOverlay = document.getElementById('modal-overlay');
 const modalDetail = document.getElementById('modal-detail');
 const btnNouvelleCommande = document.getElementById('btn-nouvelle-commande');
 
+// ---- Sélection d'un client depuis un autre module (liste d'appels) ----
+let clientsCharges = [];
+window.selectionnerClient = async (id) => {
+  const c = clientsCharges.find(x => String(x.id) === String(id));
+  if (!c || !clientSearchSelect) return false;
+  clientSearchSelect.setValue(String(c.id), c.nom);
+  currentIdClient = String(c.id);
+  currentIdClientType = c.idClientType ?? null;
+  currentCanal = c.canal ?? null;
+  toutesGammes = false;
+  document.getElementById('section-client').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  await chargerTarifs(currentIdClient);
+  btnDerniereCommande.style.display = 'flex';
+  return true;
+};
+
 // ---- Chargement initial des clients ----
 async function chargerClients() {
   try {
@@ -115,6 +131,7 @@ async function chargerClients() {
       clientCanalIndex[String(c.id)] = c.canal;
     });
     const options = clients.map(c => ({ value: String(c.id), label: c.nom }));
+    clientsCharges = clients;
     // Clients désactivés dans EasyBeer : retirés de la recherche dès qu'ils sont
     // connus (la liste est lue en direct par le champ de recherche).
     apiFetch('/api/clients-inactifs').then(r => {
@@ -180,23 +197,29 @@ async function chargerAdresses(idClient) {
 }
 
 // Gamme attendue selon le canal du client :
-// GMS → La Bruguiéroise, tout le reste → gamme classique
+// GMS → La Bruguiéroise, tout le reste → gamme classique (bière de Noël : partout)
 function gammeAttendue() {
   return currentCanal === 'GMS' ? 'gms' : 'classique';
+}
+
+// Un produit de la gamme « toutes » (bière de Noël) est proposé à tous les canaux
+function dansGamme(p, attendue = gammeAttendue()) {
+  const g = p.gamme ?? 'classique';
+  return g === attendue || g === 'toutes';
 }
 
 // Catalogue effectivement proposé dans les listes déroulantes
 function catalogueFiltre() {
   if (toutesGammes) return catalogue;
   const attendue = gammeAttendue();
-  const filtre = catalogue.filter(p => (p.gamme ?? 'classique') === attendue);
+  const filtre = catalogue.filter(p => dansGamme(p, attendue));
   return filtre.length ? filtre : catalogue; // jamais de liste vide
 }
 
 // Bandeau indiquant la gamme active, avec bascule vers le catalogue complet
 function majBandeauGamme() {
   const attendue = gammeAttendue();
-  const nbGamme = catalogue.filter(p => (p.gamme ?? 'classique') === attendue).length;
+  const nbGamme = catalogue.filter(p => dansGamme(p, attendue)).length;
   if (!catalogue.length || !nbGamme || nbGamme === catalogue.length) {
     infoGamme.style.display = 'none';
     return;
@@ -380,7 +403,7 @@ fichierPhoto?.addEventListener('change', async () => {
       const p = l.index !== null ? catalogue[l.index] : null;
       if (!p) { inconnues.push(l.libelleLu || '?'); continue; }
       if (!l.certain) aVerifier++;
-      if ((p.gamme ?? 'classique') !== gammeAttendue() && !toutesGammes) { toutesGammes = true; majBandeauGamme(); }
+      if (!dansGamme(p) && !toutesGammes) { toutesGammes = true; majBandeauGamme(); }
       const valeur = JSON.stringify({ idProduit: p.idProduit, idContenant: p.idContenant, idLot: p.idLot ?? 1, idStockBouteille: p.idStockBouteille, gtin: p.gtin });
       ajouterLigne(valeur, `${p.libelle} ${p.contenant}`);
       const div = lignesContainer.lastElementChild;
@@ -423,7 +446,7 @@ async function preRemplirDerniereCommande(idClient) {
     const attendue = gammeAttendue();
     const horsGamme = elements.some(e => {
       const p = catalogue.find(p => p.idProduit === e.stockProduit?.idProduit && p.idContenant === e.stockProduit?.idContenant);
-      return p && (p.gamme ?? 'classique') !== attendue;
+      return p && !dansGamme(p, attendue);
     });
     if (horsGamme && !toutesGammes) { toutesGammes = true; majBandeauGamme(); }
 
@@ -503,6 +526,7 @@ btnEnvoyer.addEventListener('click', async () => {
     const ref = result.map?.numero ?? result.map?.id ?? result.reference ?? result.idCommande ?? result.id ?? '';
     modalDetail.textContent = ref ? `Référence : ${ref}` : 'Commande enregistrée avec succès.';
     modalOverlay.style.display = 'flex';
+    window.appels?.commandePassee(commande.idClient);   // retire le client de la liste d'appels
   } catch (err) {
     setStatut('Erreur lors de l\'envoi : ' + err.message, true);
   } finally {
@@ -524,6 +548,7 @@ document.getElementById('btn-attente')?.addEventListener('click', async () => {
   if (!commande) return;
   try {
     await magasinRuptures.enregistrer({ id: Date.now(), creeLe: Date.now(), type: 'rupture', statut: 'attente', campagne: '', commande });
+    window.appels?.commandePassee(commande.idClient);
   } catch {
     setStatut('Impossible d’enregistrer la mise en attente.', true);
     return;

@@ -17,7 +17,11 @@
   <script src="donnees.js"></script>
 </head>
 <body>
-  <main class="etroit">
+  <main class="avec-appels">
+    <!-- Liste d'appels de la semaine (facultative), remplie par appels.js -->
+    <section id="appels" class="appels" aria-labelledby="titre-appels"></section>
+
+    <div class="col-commande">
     <!-- Étape 1 : sélection du client -->
     <section id="section-client" aria-labelledby="titre-client">
       <div>
@@ -78,6 +82,7 @@
       </button>
       <p id="msg-statut" role="status" aria-live="polite"></p>
     </section>
+    </div>
   </main>
 
   <!-- Confirmation -->
@@ -96,5 +101,6 @@
     });
   </script>
   <script src="app.js" defer></script>
+  <script src="appels.js" defer></script>
 </body>
 </html>

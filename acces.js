@@ -116,7 +116,7 @@ export function monterPro(app, d) {
   }
 
   // Catalogue d'un client : sa gamme (CHR/cavistes → classique, GMS → La
-  // Bruguiéroise), avec ses prix HT de grille.
+  // Bruguiéroise ; la bière de Noël pour tous), avec ses prix HT de grille.
   // Le calcul est lent (grille du canal : jusqu'à une minute pour les CHR,
   // puis un prix par produit) : il est gardé 12 h dans la base partagée, donc
   // commun à toutes les instances, et préparé dès la création du lien.
@@ -125,7 +125,7 @@ export function monterPro(app, d) {
   async function calculerCatalogue(req, lien) {
     const tous = await getProduitsClient(lien.idClient);
     const gamme = lien.canal === 'GMS' ? 'gms' : 'classique';
-    const filtres = tous.filter(p => (p.gamme ?? 'classique') === gamme);
+    const filtres = tous.filter(p => [gamme, 'toutes'].includes(p.gamme ?? 'classique'));
     const liste = filtres.length ? filtres : tous;
     // Prix demandés par paquets de 6 plutôt qu'un par un.
     const produits = [];
