@@ -21,9 +21,14 @@ const PAGES = [
   window.fetch = async (...args) => {
     const r = await natif(...args);
     const url = String(args[0]?.url ?? args[0] ?? '');
+    // Seul le refus de l'appli elle-même (« connexion: true ») renvoie à la
+    // connexion : un 401 relayé depuis EasyBeer n'a rien à voir avec la session.
     if (r.status === 401 && /^\/api\//.test(url) && !url.startsWith('/api/auth/') && !redirige) {
-      redirige = true;
-      location.href = '/connexion.html?retour=' + encodeURIComponent(location.pathname + location.search + location.hash);
+      const corps = await r.clone().json().catch(() => ({}));
+      if (corps.connexion === true) {
+        redirige = true;
+        location.href = '/connexion.html?retour=' + encodeURIComponent(location.pathname + location.search + location.hash);
+      }
     }
     return r;
   };

@@ -115,6 +115,7 @@
       <input type="search" id="f-q" placeholder="Rechercher un client ou un produit…" aria-label="Rechercher">
       <select id="f-type" aria-label="Type"><option value="">Ruptures et précommandes</option><option value="rupture">Ruptures</option><option value="precommande">Précommandes</option></select>
       <select id="f-camp" aria-label="Campagne"><option value="">Toutes les campagnes</option></select>
+      <button class="bouton" id="b-pdf" title="Exporte en PDF ce qui est affiché (filtres compris)">Exporter en PDF</button>
     </div>
     <div id="liste"><div class="vide-page"><span class="loader"></span> Chargement…</div></div>
   </main>
@@ -464,6 +465,29 @@
       });
       fermerPanneau(); vue = 'attente'; rendre();
     }
+
+    // --- Export PDF de la vue affichée ------------------------------------------
+    $('b-pdf').innerHTML = (window.ico ? ico('telecharger') : '') + ' Exporter en PDF';
+    $('b-pdf').addEventListener('click', async () => {
+      const entrees = filtrees();
+      if (!entrees.length) return bandeau('Rien à exporter avec ces filtres.', 'erreur');
+      const t = $('f-type').value, c = $('f-camp').value, q = $('f-q').value.trim();
+      const titre = [t === 'precommande' ? 'Précommandes' : t === 'rupture' ? 'Ruptures de stock' : 'Ruptures et précommandes', c]
+        .filter(Boolean).join(' — ');
+      const sousTitre = [vue === 'attente' ? 'en attente' : 'déclenchées', q && `recherche « ${q} »`].filter(Boolean).join(' · ');
+      const b = $('b-pdf'); b.disabled = true; b.innerHTML = '<span class="loader"></span> Préparation…';
+      try {
+        const r = await fetch('/api/ruptures/pdf', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ titre, sousTitre, entrees }) });
+        if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error ?? `HTTP ${r.status}`);
+        const url = URL.createObjectURL(await r.blob());
+        const a = Object.assign(document.createElement('a'), { href: url,
+          download: `${titre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${new Date().toLocaleDateString('sv-SE')}.pdf` });
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+      } catch (e) { bandeau('Export PDF impossible : ' + echap(e.message), 'erreur'); }
+      finally { b.disabled = false; b.innerHTML = ico('telecharger') + ' Exporter en PDF'; }
+    });
 
     document.querySelectorAll('.onglets button').forEach(b => b.addEventListener('click', () => { vue = b.dataset.v; edition = null; rendre(); }));
     ['f-q', 'f-type', 'f-camp'].forEach(id => $(id).addEventListener(id === 'f-q' ? 'input' : 'change', rendre));

@@ -3017,6 +3017,125 @@ app.get('/api/debug-dernieres', async (req, res) => {
   } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
 });
 
+// --- Export PDF des ruptures et précommandes ---
+// La page envoie la vue filtrée qu'elle affiche (type, campagne, recherche) :
+// le PDF reprend exactement ce que l'utilisateur voit. Pour chaque campagne,
+// un récapitulatif à préparer par produit (avec le stock EasyBeer), puis le
+// détail par client avec une case à cocher pour la préparation.
+app.post('/api/ruptures/pdf', async (req, res) => {
+  const { titre, sousTitre, entrees } = req.body ?? {};
+  if (!Array.isArray(entrees) || !entrees.length) return res.status(400).json({ error: 'Rien à exporter' });
+  let stock = null;
+  try { stock = await getStockBouteilleIndex(); } catch {}
+
+  const txt = v => String(v ?? '').replace(/[  ]/g, ' ').replace(/[^\x20-\xff–—’€œŒ]/g, '');
+  const fmtJ = d => d ? new Date(d.length === 10 ? d + 'T12:00' : d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/Paris' }) : '';
+  const cle = l => `${l.idProduit}-${l.idContenant}-${l.idLot ?? 1}`;
+  const nomGroupe = e => e.campagne || (e.type === 'precommande' ? 'Précommandes sans campagne' : 'Ruptures de stock');
+  const groupes = new Map();
+  for (const e of entrees.slice(0, 1000)) {
+    if (!e?.commande?.lignes) continue;
+    const g = nomGroupe(e);
+    if (!groupes.has(g)) groupes.set(g, []);
+    groupes.get(g).push(e);
+  }
+
+  const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true });
+  const nomFichier = `${txt(titre || 'precommandes').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}.pdf`;
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${nomFichier}"`);
+  res.setHeader('Cache-Control', 'no-store');
+  doc.pipe(res);
+
+  const G = 40, D = 555, BAS = 800;
+  const filet = (y, couleur = '#cccccc') => doc.moveTo(G, y).lineTo(D, y).strokeColor(couleur).lineWidth(0.5).stroke();
+  const place = h => { if (doc.y + h > BAS) doc.addPage(); };
+
+  doc.font('Helvetica').fontSize(9).fillColor('#666666').text('Brasserie du Gué des Moines — Bruguières', G, 40);
+  doc.font('Helvetica-Bold').fontSize(18).fillColor('#000000').text(txt(titre || 'Ruptures et précommandes'), G, 56);
+  doc.font('Helvetica').fontSize(9).fillColor('#444444')
+    .text(txt(`${sousTitre ? sousTitre + ' · ' : ''}${entrees.length} commande(s), ${new Set(entrees.map(e => e.commande?.idClient)).size} client(s) · édité le ${new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })}`), G, doc.y + 2, { width: D - G });
+  doc.moveDown(1);
+
+  for (const [g, es] of groupes) {
+    place(90);
+    doc.font('Helvetica-Bold').fontSize(14).fillColor('#000000').text(txt(g), G, doc.y + 6);
+    const dates = es.map(e => e.datePrevue).filter(Boolean).sort();
+    doc.font('Helvetica').fontSize(9).fillColor('#555555')
+      .text(txt(`${es.length} commande(s)${dates[0] ? ` · à déclencher à partir du ${fmtJ(dates[0])}` : ''}`), G, doc.y + 1);
+    doc.moveDown(0.6);
+
+    // Récapitulatif à préparer
+    const besoin = new Map();
+    for (const e of es) for (const l of e.commande.lignes) {
+      const b = besoin.get(cle(l)) ?? { l, q: 0, clients: 0 };
+      b.q += l.quantite; b.clients++; besoin.set(cle(l), b);
+    }
+    const cx = [G, 300, 380, 440, 500];
+    const enTete = (cols, y) => {
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#555555');
+      cols.forEach(([t, x, w, al]) => doc.text(t, x, y, { width: w, align: al ?? 'left' }));
+      filet(y + 11, '#999999');
+    };
+    place(40);
+    doc.font('Helvetica-Bold').fontSize(10).fillColor('#000000').text('À préparer', G, doc.y);
+    let y = doc.y + 4;
+    enTete([['Produit', cx[0], 255], ['Commandes', cx[1], 70, 'right'], ['Quantité', cx[2], 55, 'right'], ['Stock', cx[3], 55, 'right'], ['Manque', cx[4], 55, 'right']], y);
+    y += 15;
+    const nomL = l => txt(`${l.libelle} ${l.contenant ?? ''}`);
+    for (const { l, q, clients } of [...besoin.values()].sort((a, b) => nomL(a.l).localeCompare(nomL(b.l), 'fr', { numeric: true }))) {
+      if (y > BAS - 14) { doc.addPage(); y = 40; }
+      const s = stock?.get(cle(l))?.quantiteDisponible;
+      const manque = s == null ? '' : Math.max(0, q - s);
+      doc.font('Helvetica').fontSize(9).fillColor('#000000').text(txt(`${l.libelle} ${l.contenant ?? ''}`), cx[0], y, { width: 255 });
+      doc.text(String(clients), cx[1], y, { width: 70, align: 'right' });
+      doc.font('Helvetica-Bold').text(String(q), cx[2], y, { width: 55, align: 'right' });
+      doc.font('Helvetica').text(s == null ? '—' : String(s), cx[3], y, { width: 55, align: 'right' });
+      doc.fillColor(manque ? '#b42318' : '#15803d').text(s == null ? '' : manque ? String(manque) : 'ok', cx[4], y, { width: 55, align: 'right' });
+      y += 14;
+    }
+    filet(y);
+    doc.y = y + 10;
+
+    // Détail par client
+    place(40);
+    doc.font('Helvetica-Bold').fontSize(10).fillColor('#000000').text('Détail par client', G, doc.y);
+    y = doc.y + 4;
+    const dx = [G + 16, 215, 300, 440];
+    enTete([['Client', dx[0], 165], ['Prévue le', dx[1], 80], ['Produits', dx[2], 135], ['Note', dx[3], D - dx[3]]], y);
+    y += 15;
+    for (const e of es.slice().sort((a, b) => txt(a.commande.nomClient).localeCompare(txt(b.commande.nomClient), 'fr'))) {
+      const produits = e.commande.lignes.map(l => `${l.quantite} × ${l.libelle} ${l.contenant ?? ''}`.trim()).map(txt).join('\n');
+      const note = txt([e.commande.commentaire, e.statut === 'declenchee' && e.reference ? `envoyée, n° ${e.reference}` : ''].filter(Boolean).join(' · '));
+      doc.font('Helvetica').fontSize(9);
+      const h = Math.max(doc.heightOfString(txt(e.commande.nomClient), { width: 165 }),
+        doc.heightOfString(produits, { width: 135 }), doc.heightOfString(note || ' ', { width: D - dx[3] })) + 6;
+      if (y + h > BAS) { doc.addPage(); y = 40; }
+      doc.rect(G, y + 1, 9, 9).strokeColor('#555555').lineWidth(0.7).stroke();   // case « préparé »
+      doc.font('Helvetica-Bold').fillColor('#000000').text(txt(e.commande.nomClient), dx[0], y, { width: 165 });
+      doc.font('Helvetica').text(fmtJ(e.datePrevue), dx[1], y, { width: 80 });
+      doc.text(produits, dx[2], y, { width: 135 });
+      doc.fillColor('#444444').text(note, dx[3], y, { width: D - dx[3] });
+      y += h;
+      filet(y - 2, '#e5e5e5');
+    }
+    doc.y = y + 16;
+  }
+
+  // Pied de page : numérotation
+  const pages = doc.bufferedPageRange();
+  for (let i = 0; i < pages.count; i++) {
+    doc.switchToPage(pages.start + i);
+    // Écrire sous la marge basse ajouterait une page : on la lève le temps du pied.
+    const marge = doc.page.margins.bottom;
+    doc.page.margins.bottom = 0;
+    doc.font('Helvetica').fontSize(8).fillColor('#888888')
+      .text(`${txt(titre || '')} — page ${i + 1} / ${pages.count}`, G, 815, { width: D - G, align: 'center', lineBreak: false });
+    doc.page.margins.bottom = marge;
+  }
+  doc.end();
+});
+
 // --- Export PDF récapitulatif des commandes ---
 app.get('/api/commandes-pdf', (req, res) => {
   const doc = new PDFDocument({ margin: 40, size: 'A4' });
