@@ -36,7 +36,9 @@ app.use(express.json({ limit: '10mb' }));   // les photos de commandes passent e
 app.use(express.static(join(__dirname, 'public')));
 monterAcces(app);   // avant toute route /api : session d'équipe exigée
 
-const BASE_URL = process.env.EASYBEER_BASE_URL || 'https://api.easybeer.fr';
+// Adresse fixe : la variable EASYBEER_BASE_URL de Vercel est mal saisie (adresse
+// collée trois fois) et la lire coupait tout accès à EasyBeer (10/11/2026).
+const BASE_URL = 'https://api.easybeer.fr';
 const AUTH = Buffer.from(
   `${process.env.EASYBEER_API_USER}:${process.env.EASYBEER_API_PASSWORD}`
 ).toString('base64');
