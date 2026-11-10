@@ -135,7 +135,7 @@ export function monterPro(app, d) {
         if (p.idStockBouteille && lien.idClientType) {
           try {
             const r = await fetchInterne(req, `/api/cache/prix/${p.idStockBouteille}/${lien.idClientType}/${lien.idClient}`);
-            prixHT = typeof r?.prixHT === 'number' ? r.prixHT : null;
+            prixHT = typeof r?.prixHT === 'number' && r.prixHT > 0 ? r.prixHT : null;
           } catch {}
         }
         return {

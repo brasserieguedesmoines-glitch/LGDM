@@ -92,6 +92,17 @@
     .pied-f .msg { font-size: var(--t-sm); }
     .bandeau { padding: 10px 14px; border-radius: var(--r-md); font-size: var(--t-sm); margin-bottom: var(--e3); background: var(--surface-2); }
     .bandeau.ok { background: var(--ok-doux); color: var(--ok); } .bandeau.erreur { background: var(--danger-doux); color: var(--danger); }
+    /* Prix à 0 € sur les commandes déjà envoyées */
+    .verif-barre { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e2) var(--e3); padding: var(--e3) var(--e4);
+      margin-bottom: var(--e3); border: 1px dashed var(--bordure-forte); border-radius: var(--r-lg); background: var(--surface-2); }
+    .verif-barre span { flex: 1; min-width: 240px; font-size: var(--t-sm); color: var(--texte-2); }
+    .prix-verif { margin-top: var(--e3); font-size: var(--t-sm); padding: 8px 12px; border-radius: var(--r-md); background: var(--surface-2); }
+    .prix-verif.ok { background: var(--ok-doux); color: var(--ok); }
+    .prix-verif.erreur { background: var(--danger-doux); color: var(--danger); }
+    .prix-verif.attention { background: var(--alerte-doux); color: var(--texte); }
+    .prix-verif ul { margin: 6px 0; padding-left: 1.2em; }
+    .prix-verif .bouton { margin-top: 6px; }
+    .attente.a-corriger { border-left-color: var(--danger); }
     [hidden] { display: none !important; }
   </style>
 </head>
@@ -137,6 +148,9 @@
     // La liste se redessine à chaque synchronisation : l'état d'envoi et les
     // messages vivent donc ici, pas dans les éléments affichés.
     const enCours = new Set(), retours = new Map();
+    // Vérification des prix dans EasyBeer (onglet « Déclenchées ») : id → résultat.
+    const verifs = new Map(); let occupePrix = false;
+    const eur = n => Number(n).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
     function bandeau(html, classe = '') { const b = $('bandeau'); b.hidden = !html; b.className = 'bandeau ' + classe; b.innerHTML = html; }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -189,7 +203,14 @@
         return;
       }
       if (vue === 'declenchees') {
-        el.innerHTML = l.sort((a, b) => (b.declencheLe ?? 0) - (a.declencheLe ?? 0)).map(carteDeclenchee).join('');
+        const nb = aCorriger(l).length;
+        el.innerHTML = `<div class="verif-barre">
+            <span>Une ligne partie à 0 € (prix pas encore saisi dans EasyBeer au déclenchement) ? Vérifiez les commandes affichées
+              dans EasyBeer, puis appliquez le prix actuel. ${$('f-camp').value ? '' : 'Filtrez sur la campagne pour aller plus vite.'}</span>
+            <button class="bouton" data-prix="verifier" ${occupePrix ? 'disabled' : ''}>Vérifier les prix (${l.length})</button>
+            ${nb ? `<button class="bouton principal" data-prix="corriger" ${occupePrix ? 'disabled' : ''}>Appliquer le nouveau prix (${nb} commande${nb > 1 ? 's' : ''})</button>` : ''}
+          </div>`
+          + l.sort((a, b) => (b.declencheLe ?? 0) - (a.declencheLe ?? 0)).map(carteDeclenchee).join('');
         return;
       }
       // Groupes : une campagne = un groupe ; sans campagne, regroupement par type.
@@ -264,13 +285,99 @@
     }
 
     function carteDeclenchee(e) {
-      return `<article class="attente pret" data-id="${e.id}">
+      const v = verifs.get(String(e.id)), aFaire = v?.lignes?.length && !v.corrigee;
+      return `<article class="attente ${aFaire ? 'a-corriger' : 'pret'}" data-id="${e.id}">
         <div class="haut"><span class="nom">${echap(e.commande.nomClient)}</span><span class="badge ${e.type}">${TYPES[e.type]}</span>
           ${e.campagne ? `<span class="meta">${echap(e.campagne)}</span>` : ''}
           <span class="actions"><button class="bouton danger" data-a="supprimer">Retirer de l'historique</button></span></div>
         <div class="meta">Déclenchée le ${fmtD(e.declencheLe)}${e.reference ? ` — commande EasyBeer n° ${echap(e.reference)}` : ''} · créée le ${fmtD(e.creeLe)}</div>
         <ul class="lignes">${e.commande.lignes.map(l => `<li><strong>${l.quantite} ×</strong> ${echap(l.libelle)} ${echap(l.contenant ?? '')}</li>`).join('')}</ul>
+        ${blocPrix(e)}
       </article>`;
+    }
+
+    // État des prix de la commande dans EasyBeer, une fois vérifiée.
+    function blocPrix(e) {
+      const v = verifs.get(String(e.id));
+      if (!v) return e.prixCorrigeLe ? `<p class="prix-verif ok">✓ Prix corrigé dans EasyBeer le ${fmtD(e.prixCorrigeLe)}${e.totalHTCorrige != null ? ` — total ${eur(e.totalHTCorrige)} HT` : ''}.</p>` : '';
+      if (v.enCours) return '<p class="prix-verif"><span class="loader"></span> Lecture dans EasyBeer…</p>';
+      if (v.erreur) return `<p class="prix-verif erreur">${echap(v.erreur)}</p>`;
+      if (!v.trouvee) return `<p class="prix-verif attention">Commande introuvable parmi les 400 dernières d’EasyBeer${e.reference ? ` (n° ${echap(e.reference)})` : ''} : à vérifier à la main.</p>`;
+      if (v.corrigee) return `<p class="prix-verif ok">✓ Prix corrigé dans EasyBeer (n° ${echap(v.numero)})${v.totalHT != null ? ` — total ${eur(v.totalHT)} HT` : ''}${v.etatAvant && v.etat && v.etatAvant !== v.etat ? ` · état : ${echap(v.etatAvant)} → ${echap(v.etat)}` : ''}.</p>`;
+      if (!v.lignes?.length) return `<p class="prix-verif ok">✓ Prix renseignés dans EasyBeer (n° ${echap(v.numero)})${v.totalHT != null ? ` — total ${eur(v.totalHT)} HT` : ''}.</p>`;
+      const pret = !v.bloquee && v.lignes.every(l => l.nouveauPrixHT != null);
+      return `<div class="prix-verif attention"><b>À 0 € dans EasyBeer (commande n° ${echap(v.numero)}) :</b>
+        <ul>${v.lignes.map(l => `<li>${l.quantite} × ${echap(l.libelle)} : 0 € → ${l.nouveauPrixHT != null
+          ? `<b>${eur(l.nouveauPrixHT)} HT</b> l’unité (prix actuel)` : '<b>prix toujours absent dans EasyBeer</b> — saisissez-le, puis vérifiez à nouveau'}</li>`).join('')}</ul>
+        ${v.bloquee ? `<div>${echap(v.bloquee)}</div>` : ''}
+        ${pret ? `<button class="bouton principal" data-a="corriger" ${occupePrix ? 'disabled' : ''}>Appliquer le nouveau prix</button>` : ''}</div>`;
+    }
+
+    // --- Prix à 0 € : vérification puis correction dans EasyBeer ---------------
+    const aCorriger = es => es.filter(e => {
+      const v = verifs.get(String(e.id));
+      return v?.lignes?.length && !v.corrigee && !v.enCours && !v.bloquee && v.lignes.every(l => l.nouveauPrixHT != null);
+    });
+    async function appelPrix(e, appliquer) {
+      const r = await fetch('/api/commandes/prix-manquants', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reference: e.reference, idClient: e.commande.idClient, envoyeeLe: e.declencheLe, appliquer }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw Object.assign(new Error(d.error ?? `HTTP ${r.status}`), { doublon: !!d.doublon });
+      return d;
+    }
+
+    async function verifierPrix(es) {
+      occupePrix = true;
+      for (const [i, e] of es.entries()) {
+        bandeau(`<span class="loader"></span> Vérification des prix dans EasyBeer : ${i + 1} / ${es.length}…`);
+        verifs.set(String(e.id), { enCours: true }); rendre();
+        try { verifs.set(String(e.id), await appelPrix(e, false)); }
+        catch (err) { verifs.set(String(e.id), { erreur: 'Vérification impossible : ' + err.message }); }
+        rendre();
+      }
+      occupePrix = false;
+      const res = es.map(e => verifs.get(String(e.id)));
+      const zero = res.filter(v => v?.lignes?.length).length, pb = res.filter(v => v?.erreur || v?.trouvee === false).length;
+      const nb = aCorriger(es).length;
+      bandeau(zero
+        ? `<b>${zero} commande(s) avec une ligne à 0 €</b> dans EasyBeer.${nb ? ` ${nb} peuvent recevoir le prix actuel : « Appliquer le nouveau prix ».` : ''}${pb ? ` ${pb} à vérifier à la main.` : ''}`
+        : `Aucune ligne à 0 € sur les ${es.length - pb} commande(s) vérifiées.${pb ? ` ${pb} à vérifier à la main.` : ''}`, zero || pb ? 'erreur' : 'ok');
+      rendre();
+    }
+
+    async function corrigerPrix(es) {
+      es = aCorriger(es);
+      if (!es.length) return;
+      const detail = es.slice(0, 12).map(e => {
+        const v = verifs.get(String(e.id));
+        return `• ${e.commande.nomClient} (n° ${v.numero}) : ${v.lignes.map(l => `${l.quantite} × ${l.libelle} à ${eur(l.nouveauPrixHT)} HT`).join(', ')}`;
+      }).join('\n') + (es.length > 12 ? `\n… et ${es.length - 12} autre(s)` : '');
+      if (!confirm(`Mettre le prix actuel dans EasyBeer sur ${es.length} commande(s) ?\n\n${detail}\n\nSeules les lignes à 0 € changent ; le reste de chaque commande est conservé.`)) return;
+      occupePrix = true;
+      let ok = 0; const echecs = [];
+      for (const [i, e] of es.entries()) {
+        const id = String(e.id), avant = verifs.get(id);
+        bandeau(`<span class="loader"></span> Correction dans EasyBeer : ${i + 1} / ${es.length}…`);
+        verifs.set(id, { ...avant, enCours: true }); rendre();
+        try {
+          const d = await appelPrix(e, true);
+          verifs.set(id, d);
+          if (d.corrigee) {
+            ok++;
+            const brut = magasin.tout().find(x => String(x.id) === id);
+            if (brut) await magasin.enregistrer({ ...brut, prixCorrigeLe: Date.now(), totalHTCorrige: d.totalHT ?? null });
+          } else echecs.push(`${e.commande.nomClient} : ${d.restantes ? `${d.restantes} ligne(s) encore à 0 € après enregistrement` : 'rien à corriger'}`);
+        } catch (err) {
+          verifs.set(id, { ...avant, enCours: false });
+          echecs.push(`${e.commande.nomClient} : ${err.message}`);
+          if (err.doublon) { verifs.set(id, { erreur: err.message }); rendre(); break; }   // on n'aggrave pas un doublon
+        }
+        rendre();
+      }
+      occupePrix = false;
+      bandeau(`${ok} commande(s) corrigée(s) dans EasyBeer.`
+        + (echecs.length ? ` <b>${echecs.length} problème(s)</b> : ${echecs.map(echap).join(' · ')}` : ''), echecs.length ? 'erreur' : 'ok');
+      rendre();
     }
 
     // --- Déclenchement ---------------------------------------------------------
@@ -301,6 +408,8 @@
     $('liste').addEventListener('click', async ev => {
       const bg = ev.target.closest('[data-groupe]');
       if (bg) return declencherGroupe(bg.dataset.groupe, bg);
+      const bp = ev.target.closest('[data-prix]');
+      if (bp) { if (occupePrix) return; return bp.dataset.prix === 'verifier' ? verifierPrix(filtrees()) : corrigerPrix(filtrees()); }
       const art = ev.target.closest('.attente'); const b = ev.target.closest('[data-a]');
       if (!art || !b) return;
       const id = art.dataset.id;
@@ -311,6 +420,7 @@
             magasin.supprimer(brut.id);
           return;
         case 'modifier': edition = String(id); return rendre();
+        case 'corriger': if (!occupePrix) corrigerPrix([norm(brut)]); return;
         case 'annuler': edition = null; return rendre();
         case 'enregistrer': {
           const lignes = brut.commande.lignes.map((l, i) => ({ ...l, quantite: Math.max(0, parseInt(art.querySelector(`[data-i="${i}"]`).value) || 0) }))

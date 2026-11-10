@@ -36,7 +36,7 @@ app.use(express.json({ limit: '10mb' }));   // les photos de commandes passent e
 app.use(express.static(join(__dirname, 'public')));
 monterAcces(app);   // avant toute route /api : session d'équipe exigée
 
-const BASE_URL = 'https://api.easybeer.fr';
+const BASE_URL = process.env.EASYBEER_BASE_URL || 'https://api.easybeer.fr';
 const AUTH = Buffer.from(
   `${process.env.EASYBEER_API_USER}:${process.env.EASYBEER_API_PASSWORD}`
 ).toString('base64');
@@ -278,16 +278,22 @@ async function getAllClientsPartage() {
 }
 
 // Retourne les produits d'un client depuis sa grille tarifaire
-async function getProduitsClient(idClient) {
+// Type de client (= grille tarifaire) : connu par la liste des clients, sinon
+// lu sur sa fiche — 1 appel API au lieu de 10 (getAllClients).
+async function typeDuClient(idClient) {
   let type = clientTypeMap.get(idClient);
   if (!type) {
-    // Fallback léger : 1 appel API au lieu de 10 (getAllClients)
     try {
       const detail = await easybeerGet(`/parametres/client/detail/${idClient}`);
       type = detail?.type?.idClientType;
       if (type) clientTypeMap.set(idClient, type);
     } catch {}
   }
+  return type ?? null;
+}
+
+async function getProduitsClient(idClient) {
+  const type = await typeDuClient(idClient);
   if (!type) throw Object.assign(new Error('Client non trouvé'), { status: 404 });
   const data = await getGrilleByType(type);
 
@@ -1072,10 +1078,35 @@ app.get('/api/cache/prix/:idStock/:ict/:idClient', async (req, res) => {
   try {
     const { idStock, ict, idClient } = req.params;
     const data = await easybeerGet(`/parametres/prix/${idStock}/${ict}/${idClient}`);
-    res.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+    // Un prix absent ou nul n'est pas mis en cache : sinon, une fois le prix
+    // saisi dans EasyBeer, l'ancien « 0 » restait servi jusqu'à un jour.
+    res.set('Cache-Control', prixValable(data?.prixHT)
+      ? 'public, s-maxage=3600, stale-while-revalidate=86400' : 'no-store');
     res.json(data);
   } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
 });
+
+// Prix HT d'un produit pour un client. Un prix absent ou à 0 n'est jamais un
+// tarif valable : la commande partirait « offerte » dans EasyBeer (Noël 2026 :
+// La Belle de Noël 75 cL déclenchée sans prix saisi).
+const prixValable = p => typeof p === 'number' && Number.isFinite(p) && p > 0;
+async function prixClient(req, idStockBouteille, idClientType, idClient) {
+  if (!idStockBouteille || !idClientType || !idClient) return null;
+  try {
+    const d = await fetchInterne(req, `/api/cache/prix/${idStockBouteille}/${idClientType}/${idClient}`);
+    if (prixValable(d?.prixHT)) return d.prixHT;
+  } catch {}
+  // Rien ou 0 dans le cache : on redemande à EasyBeer en direct, pour prendre
+  // un prix qui vient d'être saisi. Une API saturée ou injoignable reste une
+  // erreur (et non un « prix manquant », qui enverrait chercher au mauvais endroit).
+  try {
+    const d = await easybeerGet(`/parametres/prix/${idStockBouteille}/${idClientType}/${idClient}`);
+    return prixValable(d?.prixHT) ? d.prixHT : null;
+  } catch (e) {
+    if (e.status === 503 || e.status === 504) throw e;
+    return null;
+  }
+}
 
 // Détail d'une commande (lignes produits résumées) — cache CDN 6h
 app.get('/api/cache/detail/:idCommande', async (req, res) => {
@@ -2679,7 +2710,9 @@ app.get('/api/debug-liste-variants', async (req, res) => {
 // Construit le payload ModeleCommande attendu par EasyBeer
 async function construirePayloadCommande(req, body, natureOperations) {
   {
-    const { idClient, idClientType, lignes, commentaire, adresseLivraison } = body;
+    const { idClient, lignes, commentaire, adresseLivraison } = body;
+    // Sans type de client, aucun prix ne peut être trouvé : on le retrouve.
+    const idClientType = body.idClientType ?? await typeDuClient(idClient);
     const payload = {};
     // Grille tarifaire complète — via le cache CDN (zéro appel EasyBeer si HIT)
     const typesClient = await fetchInterne(req, '/api/cache/types-client');
@@ -2693,17 +2726,19 @@ async function construirePayloadCommande(req, body, natureOperations) {
     let totalHT = 0;
     let tva = 0;
     let tauxTVARef = grilleTarifaire.tauxTVA;
+    const sansPrix = [];
     for (const l of lignes) {
       const stock = index.get(`${l.idProduit}-${l.idContenant}-${l.idLot ?? 1}`) ?? null;
       const idStockBouteille = stock?.idStockBouteille ?? l.idStockBouteille;
       if (!idStockBouteille) {
         throw Object.assign(new Error(`Stock introuvable pour le produit ${l.idProduit}`), { status: 400 });
       }
-      let prixHT = 0;
-      try {
-        const prixData = await fetchInterne(req, `/api/cache/prix/${idStockBouteille}/${idClientType}/${idClient}`);
-        prixHT = prixData?.prixHT ?? 0;
-      } catch {}
+      // Jamais de ligne à 0 € par défaut : un prix introuvable bloque l'envoi.
+      const prixHT = await prixClient(req, idStockBouteille, idClientType, idClient);
+      if (prixHT === null) {
+        sansPrix.push(l.libelle ? `${l.libelle} ${l.contenant ?? ''}`.trim() : libelleCourt(stock?.libelle ?? `produit ${l.idProduit}`));
+        continue;
+      }
       const prixTotalHT = Math.round(prixHT * l.quantite * 100) / 100;
       const taux = (stock?.tauxTVA?.taux ?? 20) / 100;
       totalHT += prixTotalHT;
@@ -2721,6 +2756,11 @@ async function construirePayloadCommande(req, body, natureOperations) {
         prixTotalHT,
         quantite: l.quantite,
       });
+    }
+    if (sansPrix.length) {
+      throw Object.assign(new Error(`Prix manquant dans EasyBeer pour ${sansPrix.join(', ')}`
+        + `${grilleTarifaire.libelle ? ` (grille ${grilleTarifaire.libelle})` : ''}. Rien n'a été envoyé : `
+        + `renseignez le prix dans EasyBeer, puis renvoyez la commande.`), { status: 400, sansPrix });
     }
     totalHT = Math.round(totalHT * 100) / 100;
     tva = Math.round(tva * 100) / 100;
@@ -2996,6 +3036,130 @@ app.post('/api/commande', async (req, res) => {
   } catch (err) {
     console.error('POST /api/commande', err.message, err.detail);
     res.status(err.status ?? 502).json({ error: err.message, detail: err.detail, payloadEnvoye: payload });
+  }
+});
+
+// --- Lignes à 0 € sur une commande déjà envoyée ---
+// Une commande partie sans prix (produit non tarifé dans EasyBeer au moment de
+// l'envoi) est retrouvée, comparée au prix actuel, puis corrigée sur demande :
+//   POST /api/commandes/prix-manquants { reference, idClient, envoyeeLe, appliquer }
+// Sans « appliquer », rien n'est modifié : on décrit seulement la correction.
+// Une commande par appel : chacune coûte 3 à 6 requêtes EasyBeer (1,2 s l'une).
+const arrondi2 = n => Math.round(n * 100) / 100;
+let commandesRecentes = { t: 0, liste: [] };
+async function trouverCommandeEnvoyee({ reference, idClient, envoyeeLe }) {
+  const chercher = liste => {
+    const ref = String(reference ?? '').trim();
+    if (ref) {
+      const c = liste.find(c => String(c.numero) === ref) ?? liste.find(c => String(c.idCommande) === ref);
+      if (c) return c;
+    }
+    // Sans numéro retenu : la commande du client créée au moment de l'envoi.
+    if (idClient && envoyeeLe) return liste
+      .filter(c => c.client?.idClient === Number(idClient) && Math.abs((c.dateCreation ?? 0) - envoyeeLe) < 15 * 60 * 1000)
+      .sort((a, b) => Math.abs(a.dateCreation - envoyeeLe) - Math.abs(b.dateCreation - envoyeeLe))[0];
+    return null;
+  };
+  const page = async n => {
+    const data = await easybeerPost(`/commande/liste/toutes?numeroPage=${n}&nombreParPage=${PAR_PAGE}&colonneTri=-numero`, FILTRE_COMMANDES);
+    return data?.liste ?? data?.contenu ?? data?.content ?? (Array.isArray(data) ? data : []);
+  };
+  // Les 200 dernières commandes suffisent (envois récents) ; gardées 2 min
+  // pour vérifier toute une campagne sans relire la liste à chaque commande.
+  let relue = false;
+  if (Date.now() - commandesRecentes.t > 2 * 60 * 1000) {
+    commandesRecentes = { t: Date.now(), liste: await page(1) };
+    relue = true;
+  }
+  let c = chercher(commandesRecentes.liste);
+  if (!c && !relue) {               // créée depuis la dernière lecture ?
+    commandesRecentes = { t: Date.now(), liste: await page(1) };
+    c = chercher(commandesRecentes.liste);
+  }
+  if (!c && commandesRecentes.liste.length >= PAR_PAGE) c = chercher(await page(2));
+  return c ?? null;
+}
+
+// Lignes bouteilles sans prix d'une commande détaillée, avec le prix actuel.
+async function lignesSansPrix(req, det) {
+  const idClient = det.client?.idClient;
+  const idClientType = det.grilleTarifaire?.idClientType ?? det.client?.type?.idClientType ?? await typeDuClient(idClient);
+  const lignes = [];
+  for (const [i, e] of (det.elementsBouteilles ?? []).entries()) {
+    if (prixValable(e.prixLotHT)) continue;
+    const idStock = e.stockBouteille?.idStockBouteille ?? e.stockProduit?.idStockBouteille;
+    lignes.push({
+      i, quantite: e.quantite ?? 0,
+      libelle: libelleCourt(e.stockProduit?.libelle ?? e.designation ?? 'Produit'),
+      ancienPrixHT: e.prixLotHT ?? 0,
+      nouveauPrixHT: await prixClient(req, idStock, idClientType, idClient),
+    });
+  }
+  return lignes;
+}
+
+function blocageCorrection(c) {
+  if (c.estAnnulee) return 'commande annulée dans EasyBeer';
+  if (c.estFacturee) return 'déjà facturée : la corriger par un avoir ou une facture rectificative dans EasyBeer';
+  if (c.estArchivee) return 'commande archivée dans EasyBeer';
+  return null;
+}
+
+app.post('/api/commandes/prix-manquants', async (req, res) => {
+  try {
+    const { reference, idClient, envoyeeLe, appliquer } = req.body ?? {};
+    const c = await trouverCommandeEnvoyee({ reference, idClient, envoyeeLe: Number(envoyeeLe) || null });
+    if (!c) return res.json({ trouvee: false });
+    const det = await easybeerGet(`/commande/detail/${c.idCommande}`);
+    const lignes = await lignesSansPrix(req, det);
+    const decrire = d => ({
+      trouvee: true, idCommande: c.idCommande, numero: c.numero ?? d.numero ?? null,
+      client: c.client?.nom ?? d.client?.nom ?? '', etat: d.etat?.libelle ?? c.etat?.libelle ?? '',
+      totalHT: d.totalHT ?? c.totalHT ?? null, bloquee: blocageCorrection({ ...c, ...d }),
+    });
+    if (!appliquer || !lignes.length) return res.json({ ...decrire(det), lignes, corrigee: false });
+
+    const etat = decrire(det);
+    if (etat.bloquee) return res.status(409).json({ error: `Commande n° ${etat.numero} ${etat.bloquee}.` });
+    const toujours = lignes.filter(l => l.nouveauPrixHT === null);
+    if (toujours.length) return res.status(409).json({
+      error: `Prix toujours absent dans EasyBeer pour ${toujours.map(l => l.libelle).join(', ')} : saisissez-le d'abord.` });
+
+    // Seules les lignes à 0 € changent ; les totaux bougent de la différence,
+    // le reste de la commande (autres lignes, livraison, remises) est renvoyé tel quel.
+    let dHT = 0, dTVA = 0;
+    for (const l of lignes) {
+      const e = det.elementsBouteilles[l.i];
+      const avant = Number(e.prixTotalHT) || 0;
+      e.prixLotHT = l.nouveauPrixHT;
+      e.prixTotalHT = arrondi2(l.nouveauPrixHT * (e.quantite ?? 0));
+      dHT += e.prixTotalHT - avant;
+      dTVA += (e.prixTotalHT - avant) * ((e.tauxTVA?.taux ?? 20) / 100);
+    }
+    det.totalHT = arrondi2((Number(det.totalHT) || 0) + dHT);
+    det.tva = arrondi2((Number(det.tva) || 0) + dTVA);
+    det.total = arrondi2((Number(det.total) || 0) + dHT + dTVA);
+    if (typeof det.resteAPayer === 'number') det.resteAPayer = arrondi2(det.resteAPayer + dHT + dTVA);
+
+    console.log(`Correction prix commande ${c.numero} (${c.idCommande}) : +${arrondi2(dHT)} € HT`);
+    const r = await easybeerPost('/commande/enregistrer', det);
+    // EasyBeer doit modifier la commande, pas en créer une seconde : si le
+    // numéro renvoyé diffère, on le dit tout de suite (doublon à supprimer).
+    const numRetour = r?.map?.numero ?? null, idRetour = r?.map?.idCommande ?? r?.map?.id ?? null;
+    if ((numRetour != null && c.numero != null && String(numRetour) !== String(c.numero))
+      || (numRetour == null && idRetour != null && String(idRetour) !== String(c.idCommande))) {
+      return res.status(409).json({ doublon: true, error: `EasyBeer a créé une nouvelle commande (n° ${numRetour ?? idRetour}) `
+        + `au lieu de corriger la n° ${c.numero}. Supprimez la nouvelle dans EasyBeer ; corrections arrêtées.` });
+    }
+    commandesRecentes.t = 0;
+    // Relecture : ce qu'EasyBeer a réellement enregistré.
+    const apres = await easybeerGet(`/commande/detail/${c.idCommande}`);
+    const restantes = (apres.elementsBouteilles ?? []).filter(e => !prixValable(e.prixLotHT)).length;
+    res.json({ ...decrire(apres), lignes, corrigee: restantes === 0, restantes,
+      etatAvant: etat.etat, totalHTAvant: etat.totalHT });
+  } catch (err) {
+    console.error('POST /api/commandes/prix-manquants', err.message, err.detail);
+    res.status(err.status ?? 502).json({ error: err.message });
   }
 });
 
