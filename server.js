@@ -3204,6 +3204,39 @@ app.get('/api/cache/contrat-indicateurs', async (req, res) => {
   } catch (err) { res.status(502).json({ error: err.message }); }
 });
 
+// --- TEMPORAIRE : essai de la synthèse des ventes (structure seulement).
+app.get('/api/cache/sonde-synthese', async (req, res) => {
+  const annee = Number(req.query.annee) || 2026, v = req.query.v ?? 'A';
+  const iso = (a, m, j) => new Date(Date.UTC(a, m, j)).toISOString();
+  const listes = { idsClients: [], idsClientsTournees: [], idsClientsTypes: [], idsCommerciaux: [], idsContenants: [],
+    idsContenantsFuts: [], idsEntrepots: [], idsEtapeBrassage: [], idsPackagings: [], idsProduits: [], idsProduitsCategories: [] };
+  const libre = { type: 'PERIODE_LIBRE', dateDebut: iso(annee, 0, 1), dateFin: iso(annee, 10, 18) };
+  const corps = {
+    A: { periode: libre },
+    B: { periode: libre, ...listes },
+    C: { periode: { type: 'PERIODE_LIBRE', dateDebut: `${annee}-01-01`, dateFin: `${annee}-11-18` }, ...listes },
+    D: { periode: { type: 'ANNEE_COURANTE' }, ...listes },
+    E: { periode: libre, ...listes, inclureCommande: true, inclureVenteDirecte: true, inclureAvoir: true },
+    F: { periode: libre, ...listes, idClient: Number(req.query.client) || undefined, idsClients: req.query.client ? [Number(req.query.client)] : [] },
+  }[v];
+  const chemin = req.query.route ?? '/indicateur/synthese-ventes';
+  try {
+    const d = await easybeerPost(`${chemin}?forceRefresh=false`, corps, 60000);
+    const bf = d?.syntheseVenteBouteilleFut ?? {};
+    res.set('Cache-Control', 'no-store');
+    res.json({ ok: true, cles: Object.keys(d ?? {}), clesBF: Object.keys(bf),
+      totalHT_k: Math.round((bf.totalHT ?? 0) / 1000), quantite: bf.quantite ?? null, volume: Math.round(bf.totalVolume ?? 0),
+      nbProduits: (bf.produits ?? []).length, nbContenants: (bf.contenants ?? []).length, nbTypes: (bf.typesClients ?? []).length,
+      contenants: (bf.contenants ?? []).map(c => c.libelle ?? c.contenant?.libelle),
+      produits: (bf.produits ?? []).slice(0, 40).map(p => p.libelle),
+      typesClients: (bf.typesClients ?? []).map(t => t.libelle),
+      clesProduit: Object.keys((bf.produits ?? [])[0] ?? {}),
+      contenantsDuProduit: ((bf.produits ?? [])[0]?.contenants ?? []).map(c => ({ lib: c.libelle ?? c.contenant?.libelle, cles: Object.keys(c) })).slice(0, 3),
+      ref: { reference: bf.reference ?? null, evolution: bf.evolution ?? null, ecart: bf.ecart ?? null },
+      series: (d?.series ?? []).length, autres: Object.keys(d ?? {}).filter(k => d[k] && typeof d[k] === 'object').map(k => `${k}:${Object.keys(d[k]).length}`) });
+  } catch (err) { res.json({ ok: false, status: err.status ?? null, erreur: String(err.message).slice(0, 300) }); }
+});
+
 // --- Export PDF des ruptures et précommandes ---
 // La page envoie la vue filtrée qu'elle affiche (type, campagne, recherche) :
 // le PDF reprend exactement ce que l'utilisateur voit. Pour chaque campagne,
