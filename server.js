@@ -1239,8 +1239,10 @@ function commandeAllegee(c) {
     dateLivraisonPrevue: c.dateLivraisonPrevue ?? null,
     dateLivraisonReelle: c.dateLivraisonReelle ?? null,
     totalHT: c.totalHT ?? 0,
-    // « total » est le TTC dans le modèle de commande EasyBeer.
-    totalTTC: c.total ?? c.totalTTC ?? null,
+    // TVA de la commande : TTC = HT + TVA. Le champ « total » d'EasyBeer n'est
+    // pas un TTC fiable (0 sur des commandes regroupées, inférieur au HT sur
+    // d'autres) : il n'est pas utilisé.
+    tva: Number.isFinite(c.tva) ? c.tva : null,
     etat: c.etat ? { code: c.etat.code, libelle: c.etat.libelle } : null,
     estDevis: !!c.estDevis, estAnnulee: !!c.estAnnulee,
     estLivree: !!c.estLivree, estFacturee: !!c.estFacturee, estArchivee: !!c.estArchivee,
@@ -2516,11 +2518,13 @@ app.get('/api/pilotage', async (req, res) => {
 // devis, commandes annulées et comptes salariés. La liste EasyBeer ne donne
 // pas les volumes : le bilan porte sur le chiffre d'affaires, les commandes
 // et les clients.
-// Montant d'une commande en HT ou en TTC. Sans total TTC (ancienne entrée du
-// cache), il est estimé à HT × 1,2 — taux de la bière — et compté comme tel.
+// Montant d'une commande en HT ou en TTC (HT + TVA de la commande). Sans TVA
+// connue, le TTC est estimé à HT × 1,2 — taux de la bière — et compté comme tel.
+const ttcConnu = c => Number.isFinite(c.tva) && c.tva >= 0;
 function montantCommande(c, ttc) {
-  if (!ttc) return c.totalHT ?? 0;
-  return c.totalTTC ?? Math.round((c.totalHT ?? 0) * 1.2 * 100) / 100;
+  const ht = c.totalHT ?? 0;
+  if (!ttc) return ht;
+  return Math.round((ttcConnu(c) ? ht + c.tva : ht * 1.2) * 100) / 100;
 }
 
 const CANAUX_BILAN = ['CHR', 'GMS', 'Distributeurs', 'Cavistes', 'Associations', 'Autres pros', 'Particuliers', 'Non catégorisé'];
@@ -2556,7 +2560,7 @@ async function construireBilan(req, annee, mode, ttc = false) {
   const premiere = new Map();
   for (const c of valides) {
     const id = c.client?.idClient, t = c.dateCreation, ht = montantCommande(c, ttc);
-    if (ttc && c.totalTTC == null && t >= debN1) ttcEstimes++;
+    if (ttc && !ttcConnu(c) && t >= debN1) ttcEstimes++;
     if (id && !(premiere.get(id) <= t)) premiere.set(id, t);
     // Courbe mensuelle : années civiles entières, quelle que soit la période.
     const y = new Date(t).getUTCFullYear();
@@ -2625,7 +2629,7 @@ app.get('/api/bilan', async (req, res) => {
     const annee = Math.min(anneeCourante, Math.max(2015, parseInt(req.query.annee) || anneeCourante));
     const mode = req.query.mode === 'complet' ? 'complet' : 'adate';
     const ttc = req.query.taxe === 'ttc';
-    const cle = `lgdm:bilan:v3:${annee}:${mode}:${ttc ? 'ttc' : 'ht'}`;   // v3 : HT ou TTC
+    const cle = `lgdm:bilan:v4:${annee}:${mode}:${ttc ? 'ttc' : 'ht'}`;   // v4 : TTC = HT + TVA
     const frais = req.query.frais !== undefined;
     const m = bilansMemoire.get(cle);
     if (!frais && m && Date.now() - m.genere < 30 * 60 * 1000) return res.json(m);
@@ -2675,17 +2679,19 @@ async function syntheseVentes([debut, fin], idClient = null, ttc = false) {
   const d = await easybeerPost('/indicateur/synthese-ventes?forceRefresh=false', corps, 60000);
   const bf = d?.syntheseVenteBouteilleFut ?? {};
   const r2 = x => Math.round((x ?? 0) * 100) / 100;
+  // TTC d'EasyBeer seulement s'il est cohérent (≥ HT) ; sinon HT × 1,2.
+  const montant = o => !ttc ? o.totalHT : (Number.isFinite(o.totalTTC) && o.totalTTC >= (o.totalHT ?? 0) ? o.totalTTC : (o.totalHT ?? 0) * 1.2);
   return (bf.produits ?? []).map(p => {
     const formats = (p.contenants ?? []).map(c => {
       const f = formatContenant(c.libelle ?? c.contenant?.libelle);
       const q = c.quantite ?? 0;
       // Litres recalculés depuis la contenance ; à défaut, volume EasyBeer (hL).
       const litres = f.litres ? q * f.litres : (c.totalVolume ?? 0) * 100;
-      return { ...f, quantite: q, totalHT: r2(ttc ? c.totalTTC : c.totalHT), litres: r2(litres) };
+      return { ...f, quantite: q, totalHT: r2(montant(c)), litres: r2(litres) };
     });
     return { idProduit: p.idProduit, libelle: p.libelle ?? '', gamme: gammeProduit(p.libelle), formats,
       quantite: p.quantite ?? formats.reduce((s, f) => s + f.quantite, 0),
-      totalHT: r2(ttc ? p.totalTTC : p.totalHT), litres: r2(formats.reduce((s, f) => s + f.litres, 0)) };
+      totalHT: r2(montant(p)), litres: r2(formats.reduce((s, f) => s + f.litres, 0)) };
   });
 }
 
@@ -2725,7 +2731,7 @@ app.get('/api/bilan/produits', async (req, res) => {
     const annee = Math.min(anneeCourante, Math.max(2015, parseInt(req.query.annee) || anneeCourante));
     const mode = req.query.mode === 'complet' ? 'complet' : 'adate';
     const ttc = req.query.taxe === 'ttc';
-    const cle = `lgdm:bilan-produits:v1:${annee}:${mode}:${ttc ? 'ttc' : 'ht'}`;
+    const cle = `lgdm:bilan-produits:v2:${annee}:${mode}:${ttc ? 'ttc' : 'ht'}`;
     const frais = req.query.frais !== undefined;
     const m = bilanProduitsMemoire.get(cle);
     if (!frais && m && Date.now() - m.genere < 30 * 60 * 1000) return res.json(m);
@@ -2788,7 +2794,7 @@ app.get('/api/bilan/client', async (req, res) => {
     const nom = siennes[0]?.client?.nom ?? (await getAllClientsPartage().catch(() => [])).find(c => c.id === id)?.nom ?? `Client ${id}`;
     const b = {
       id, nom, annee, mode, genere: Date.now(), taxe: ttc ? 'ttc' : 'ht',
-      ttcEstimes: ttc ? siennes.filter(c => c.totalTTC == null && c.dateCreation >= periode.n1[0]).length : 0,
+      ttcEstimes: ttc ? siennes.filter(c => !ttcConnu(c) && c.dateCreation >= periode.n1[0]).length : 0,
       canal: canalParLibelleEtNom(types.find(t => t.idClientType === clientTypeMap.get(id))?.libelle, nom),
       periode: { n: [periode.n[0], periode.n[1] - 1], n1: [periode.n1[0], periode.n1[1] - 1] },
       commandes: { n: resume(dans(periode.n)), n1: resume(dans(periode.n1)) },
