@@ -56,7 +56,8 @@
     @media (max-width: 900px) { .clients4 { grid-template-columns: minmax(0, 1fr); } }
     .liste-c { list-style: none; padding: 0; margin: 0; font-size: var(--t-sm); }
     .liste-c li { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--bordure); }
-    .liste-c li span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .liste-c li span:first-child { display: block; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .graphes > * { min-width: 0; }
     .liste-c li span:last-child { white-space: nowrap; font-variant-numeric: tabular-nums; }
     .filtre-canaux { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: var(--e3) var(--e4); }
     .lbl-filtre { font-size: var(--t-xs); font-weight: 600; color: var(--texte-2); text-transform: uppercase; letter-spacing: .04em; margin-right: 4px; }
@@ -73,6 +74,29 @@
     .chiffre-cle { font-size: var(--t-xl); font-weight: 700; }
     .vide { text-align: center; padding: 48px; color: var(--texte-2); }
     #entete-impression { display: none; }
+    .onglets-bilan { display: flex; gap: 6px; border-bottom: 1px solid var(--bordure-forte); margin-bottom: var(--e4); flex-wrap: wrap; }
+    .onglets-bilan button { background: none; border: 0; border-bottom: 3px solid transparent; padding: 10px 14px; margin-bottom: -1px;
+      font-weight: 600; font-size: var(--t-md); color: var(--texte-2); cursor: pointer; width: auto; }
+    .onglets-bilan button[aria-selected="true"] { color: var(--texte); border-bottom-color: var(--accent); }
+    .recherche-fiche { position: relative; max-width: 520px; margin-bottom: var(--e4); }
+    .recherche-fiche label { display: block; font-size: var(--t-xs); font-weight: 600; color: var(--texte-2); margin-bottom: 4px; }
+    .recherche-fiche input { width: 100%; }
+    .resultats-fiche { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 4px); background: var(--surface);
+      border: 1px solid var(--bordure-forte); border-radius: var(--r-md); box-shadow: var(--ombre-1); max-height: 340px; overflow-y: auto; }
+    .resultats-fiche button { display: flex; justify-content: space-between; gap: 10px; width: 100%; text-align: left; background: none; border: 0;
+      border-bottom: 1px solid var(--bordure); padding: 9px 12px; color: var(--texte); cursor: pointer; font-size: var(--t-sm); }
+    .resultats-fiche button:hover, .resultats-fiche button:focus { background: var(--surface-2); }
+    .resultats-fiche small { color: var(--texte-3); }
+    .fiche-tete { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: var(--e3); }
+    .fiche-tete h2 { font-size: var(--t-xl); }
+    .fiche-tete span { font-size: var(--t-sm); color: var(--texte-2); }
+    .note-source { font-size: var(--t-xs); color: var(--texte-3); margin: -6px 0 var(--e3); }
+    .outils-table { display: flex; gap: var(--e2); flex-wrap: wrap; margin-bottom: var(--e2); }
+    .outils-table select { width: auto; }
+    .petit { font-size: var(--t-xs); color: var(--texte-2); }
+    /* Tableau et graphique côte à côte seulement s'il y a la place pour les 9 colonnes */
+    .duo-format { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--e3); align-items: start; }
+    @media (min-width: 1700px) { .duo-format { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); } }
 
     @media print {
       @page { size: A4; margin: 12mm; }
@@ -96,8 +120,22 @@
       <button class="bouton" id="b-imprimer">Imprimer</button>
       <button class="bouton" id="b-csv">Export CSV</button>
     </div>
+    <div class="onglets-bilan" role="tablist" aria-label="Vues du bilan">
+      <button role="tab" data-o="clients" aria-selected="true">Clients &amp; marché</button>
+      <button role="tab" data-o="produits" aria-selected="false">Produits</button>
+      <button role="tab" data-o="fiche" aria-selected="false">Fiche client</button>
+    </div>
     <p class="portee" id="portee">Chargement du bilan… (jusqu'à 2 min la première fois)</p>
-    <div id="contenu"></div>
+    <div id="vue-clients"><div id="contenu"></div></div>
+    <div id="vue-produits" hidden></div>
+    <div id="vue-fiche" hidden>
+      <div class="recherche-fiche">
+        <label for="f-client">Client</label>
+        <input type="search" id="f-client" placeholder="Rechercher un client (nom, ville…)" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="f-client-res">
+        <div id="f-client-res" class="resultats-fiche" role="listbox" hidden></div>
+      </div>
+      <div id="fiche-contenu"><div class="vide">Recherchez un client pour afficher son bilan personnalisé : chiffre d'affaires, commandes, produits achetés, comparés à l'an dernier.</div></div>
+    </div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
@@ -117,12 +155,12 @@
       if (pts) {
         const d = Math.round((n - n1) * 10) / 10;
         const cl = Math.abs(d) < 0.5 ? 'stable' : d > 0 ? 'hausse' : 'baisse';
-        return `<span class="evol ${cl}">${cl === 'stable' ? '≈ ' : d > 0 ? '▲ +' : '▼ '}${d.toLocaleString('fr-FR')} pt</span>`;
+        return `<span class="evol ${cl}">${cl === 'stable' ? '≈ ' : d > 0 ? '▲ +' : '▼ '}${(d || 0).toLocaleString('fr-FR')} pt</span>`;
       }
       if (!n1) return n ? '<span class="evol hausse">nouveau</span>' : '<span class="evol stable">—</span>';
       const p = (n - n1) / n1 * 100;
       const cl = Math.abs(p) < 1 ? 'stable' : p > 0 ? 'hausse' : 'baisse';
-      return `<span class="evol ${cl}">${cl === 'stable' ? '≈ ' : p > 0 ? '▲ +' : '▼ '}${Math.round(p).toLocaleString('fr-FR')} %</span>`;
+      return `<span class="evol ${cl}">${cl === 'stable' ? '≈ ' : p > 0 ? '▲ +' : '▼ '}${(Math.round(p) || 0).toLocaleString('fr-FR')} %</span>`;
     }
 
     async function charger(frais = false) {
@@ -151,7 +189,7 @@
       remplirAnnees(B.anneesDisponibles);
       $('f-annee').value = B.annee;
       const a = B.annee, [dn, fn] = B.periode.n, [dn1, fn1] = B.periode.n1;
-      $('portee').innerHTML = `Du <b>${fmtD(dn)}</b> au <b>${fmtD(fn)}</b> comparé au ${fmtD(dn1)} – ${fmtD(fn1)}
+      if (onglet === 'clients') $('portee').innerHTML = `Du <b>${fmtD(dn)}</b> au <b>${fmtD(fn)}</b> comparé au ${fmtD(dn1)} – ${fmtD(fn1)}
         · par date de commande · montants HT · hors devis, commandes annulées et comptes salariés
         · calculé le ${new Date(B.genere).toLocaleString('fr-FR')}`;
       $('entete-impression').innerHTML = `<h1 style="font-size:18pt">Bilan ${a} vs ${a - 1} — Brasserie du Gué des Moines</h1>`;
@@ -314,19 +352,308 @@
       URL.revokeObjectURL(lien.href);
     }
 
-    $('f-annee').innerHTML = `<option value="${new Date().getFullYear()}">${new Date().getFullYear()} vs ${new Date().getFullYear() - 1}</option>`;
+    // =========================================================================
+    //  Onglets : Clients & marché (ci-dessus), Produits, Fiche client
+    // =========================================================================
+    const GAMMES = { classique: 'Gamme classique', gms: 'La Bruguiéroise (GMS)', toutes: 'Saisonnières (Noël)' };
+    const hl = l => ((l ?? 0) / 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' hL';
+    const parametres = () => ({ annee: $('f-annee').value || new Date().getFullYear(), mode: $('f-mode').value });
+    let onglet = 'clients', P = null, F = null, clePv = '', graphesP = [], graphesF = [], clientsListe = null;
+
+    function lireHash() {
+      const h = new URLSearchParams(location.hash.slice(1));
+      return { o: ['produits', 'fiche'].includes(h.get('o')) ? h.get('o') : 'clients', client: h.get('client') };
+    }
+    function ecrireHash(extra = {}) {
+      const h = new URLSearchParams({ o: onglet, ...extra });
+      if (onglet === 'fiche' && F && !extra.client) h.set('client', F.id);
+      history.replaceState(null, '', '#' + h);
+    }
+
+    function afficherOnglet(o, { charger: doitCharger = true } = {}) {
+      onglet = o;
+      document.querySelectorAll('.onglets-bilan button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.o === o)));
+      $('vue-clients').hidden = o !== 'clients'; $('vue-produits').hidden = o !== 'produits'; $('vue-fiche').hidden = o !== 'fiche';
+      $('b-csv').hidden = o === 'fiche' && !F;
+      ecrireHash();
+      if (!doitCharger) return;
+      if (o === 'clients') { if (B) rendrePortee(B); else charger(); }
+      if (o === 'produits') { if (P && clePv === JSON.stringify(parametres())) rendrePortee(P, 'produits'); else chargerProduits(); }
+      if (o === 'fiche') {
+        const p = parametres();
+        if (F && (String(F.annee) !== String(p.annee) || F.mode !== p.mode)) chargerFiche(F.id);
+        else if (F) rendrePortee(F, 'fiche'); else $('portee').textContent = '';
+      }
+    }
+
+    function rendrePortee(d, type = 'clients') {
+      const [dn, fn] = d.periode.n, [dn1, fn1] = d.periode.n1;
+      const source = type === 'clients' ? 'par date de commande · montants HT · hors devis, commandes annulées et comptes salariés'
+        : type === 'produits' ? 'synthèse des ventes EasyBeer (bouteilles et fûts) · montants HT'
+        : 'commandes et synthèse des ventes EasyBeer · montants HT';
+      $('portee').innerHTML = `Du <b>${fmtD(dn)}</b> au <b>${fmtD(fn)}</b> comparé au ${fmtD(dn1)} – ${fmtD(fn1)} · ${source}
+        · calculé le ${new Date(d.genere).toLocaleString('fr-FR')}`;
+    }
+
+    async function lireJSON(url) {
+      const r = await fetch(url);
+      const brut = await r.text();
+      let d; try { d = JSON.parse(brut); } catch { throw new Error(r.status === 504 ? 'délai dépassé côté serveur, réessayez' : `HTTP ${r.status}`); }
+      if (d.error) throw new Error(d.error);
+      return d;
+    }
+
+    // --- Graphiques communs ----------------------------------------------------
+    function barresH(canvas, labels, n1, n, a, fmt = eur) {
+      const cN = css('--annee-n'), cN1 = css('--annee-n1'), grille = css('--grille');
+      return new Chart(canvas, {
+        type: 'bar',
+        data: { labels, datasets: [
+          { label: String(a - 1), data: n1, backgroundColor: cN1, borderRadius: 4, borderSkipped: 'start', barPercentage: 0.8, categoryPercentage: 0.7 },
+          { label: String(a), data: n, backgroundColor: cN, borderRadius: 4, borderSkipped: 'start', barPercentage: 0.8, categoryPercentage: 0.7 },
+        ] },
+        options: { indexAxis: 'y', maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.dataset.label} : ${fmt(c.parsed.x)}` } } },
+          scales: { x: { grid: { color: grille }, border: { display: false }, ticks: { callback: v => fmt(v) }, beginAtZero: true },
+                    y: { grid: { display: false }, border: { display: false } } } },
+      });
+    }
+    function ligneMois(canvas, mois, a) {
+      const cN = css('--annee-n'), cN1 = css('--annee-n1'), grille = css('--grille');
+      return new Chart(canvas, {
+        type: 'line',
+        data: { labels: MOIS, datasets: [
+          { label: String(a), data: mois.map(m => m.n), borderColor: cN, backgroundColor: cN, borderWidth: 2, pointRadius: 0, pointHoverRadius: 5, tension: 0.25 },
+          { label: String(a - 1), data: mois.map(m => m.n1), borderColor: cN1, backgroundColor: cN1, borderWidth: 2, borderDash: [5, 4], pointRadius: 0, pointHoverRadius: 5, tension: 0.25 },
+        ] },
+        options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.dataset.label} : ${eur(c.parsed.y)}` } } },
+          scales: { x: { grid: { display: false }, border: { display: false } },
+                    y: { grid: { color: grille }, border: { display: false }, ticks: { callback: v => eur(v) }, beginAtZero: true } } },
+      });
+    }
+    const legende = a => `<div class="legende"><span><i style="background:var(--annee-n)"></i>${a}</span><span><i style="background:var(--annee-n1)"></i>${a - 1}</span></div>`;
+    const tuileB = (lbl, n, n1, f, a) => `<div class="tuile"><div class="lbl">${lbl}</div><div class="val">${f(n)}</div>
+      <div class="avant">${a - 1} : ${f(n1)} · ${evol(n, n1)}</div></div>`;
+    const qteEvol = (x, n = 'n', n1 = 'n1') => x ? `${nb(x[n])} <span class="petit">${evol(x[n], x[n1])}</span>` : '—';
+
+    // --- Onglet Produits -------------------------------------------------------
+    async function chargerProduits(frais = false) {
+      $('b-actualiser').disabled = true;
+      $('portee').textContent = 'Chargement du bilan produits… (synthèse des ventes EasyBeer)';
+      const q = new URLSearchParams(parametres()); if (frais) q.set('frais', Date.now());
+      try { P = await lireJSON('/api/bilan/produits?' + q); clePv = JSON.stringify(parametres()); rendreProduits(); }
+      catch (e) { $('portee').innerHTML = `<span style="color:var(--danger)">Bilan produits indisponible : ${echap(e.message)}</span>`; $('vue-produits').innerHTML = ''; }
+      finally { $('b-actualiser').disabled = false; }
+    }
+
+    function rendreProduits() {
+      if (onglet !== 'produits') return;
+      rendrePortee(P, 'produits');
+      const a = P.annee, T = P.totaux;
+      const prixL = x => x.litres ? x.totalHT / x.litres : 0;
+      const familles = P.familles, parts = f => T.n.litres ? Math.round(f.n.litres / T.n.litres * 1000) / 10 : 0;
+      const hausses = P.produits.filter(p => p.n.totalHT && p.n1.totalHT).map(p => ({ ...p, d: p.n.totalHT - p.n1.totalHT }));
+      $('vue-produits').innerHTML = `
+        <p class="note-source">Les montants viennent de la synthèse des ventes EasyBeer (produits vendus) : ils peuvent différer légèrement du chiffre d'affaires de l'onglet Clients, calculé sur les commandes.</p>
+        <div class="tuiles">
+          ${tuileB('CA HT des produits', T.n.totalHT, T.n1.totalHT, eur, a)}
+          ${tuileB('Volume vendu', T.n.litres, T.n1.litres, hl, a)}
+          ${tuileB('Unités vendues', T.n.quantite, T.n1.quantite, nb, a)}
+          ${tuileB('Prix moyen au litre', prixL(T.n), prixL(T.n1), v => v.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }), a)}
+        </div>
+        <div class="carte-b"><h2>Par format</h2><p class="sous">33 cL, 75 cL et fûts : unités, volume et chiffre d'affaires</p>
+          <div class="duo-format"><div class="tableau-defile"><table class="bilan"><thead><tr><th>Format</th><th>Unités ${a - 1}</th><th>Unités ${a}</th><th>Évol.</th>
+              <th>Volume ${a}</th><th>Évol.</th><th>CA ${a}</th><th>Évol.</th><th>Part du volume</th></tr></thead>
+              <tbody>${familles.map(f => `<tr><td><b>${echap(f.famille)}</b></td><td>${nb(f.n1.quantite)}</td><td>${nb(f.n.quantite)}</td><td>${evol(f.n.quantite, f.n1.quantite)}</td>
+                <td>${hl(f.n.litres)}</td><td>${evol(f.n.litres, f.n1.litres)}</td><td>${eur(f.n.totalHT)}</td><td>${evol(f.n.totalHT, f.n1.totalHT)}</td><td>${parts(f).toLocaleString('fr-FR')} %</td></tr>`).join('')}
+              </tbody></table></div>
+            <div>${legende(a)}<div class="zone-graph" style="height:200px"><canvas id="gp-formats" role="img" aria-label="Volume par format"></canvas></div></div></div></div>
+          <div class="carte-b"><h2>Par gamme</h2><p class="sous">Chiffre d'affaires et volume, avec les unités par format</p>
+            <div class="tableau-defile"><table class="bilan"><thead><tr><th>Gamme</th><th>CA ${a - 1}</th><th>CA ${a}</th><th>Évol.</th><th>Volume ${a}</th><th>Évol.</th>
+              <th>33 cL</th><th>75 cL</th><th>Fûts</th></tr></thead>
+              <tbody>${P.gammes.map(g => `<tr><td><b>${GAMMES[g.gamme] ?? echap(g.gamme)}</b></td><td>${eur(g.n1.totalHT)}</td><td>${eur(g.n.totalHT)}</td><td>${evol(g.n.totalHT, g.n1.totalHT)}</td>
+                <td>${hl(g.n.litres)}</td><td>${evol(g.n.litres, g.n1.litres)}</td>
+                <td>${qteEvol(g.familles['33 cL'])}</td><td>${qteEvol(g.familles['75 cL'])}</td><td>${qteEvol(g.familles['Fûts'])}</td></tr>`).join('')}
+              </tbody></table></div></div>
+        <div class="carte-b"><h2>Meilleures ventes</h2><p class="sous">Les 12 produits au plus fort chiffre d'affaires sur la période</p>
+          ${legende(a)}<div class="zone-graph" style="height:380px"><canvas id="gp-top" role="img" aria-label="Meilleures ventes"></canvas></div></div>
+        <div class="carte-b"><h2>Tous les produits</h2>
+          <div class="outils-table">
+            <select id="pt-gamme" aria-label="Gamme"><option value="">Toutes les gammes</option>${Object.entries(GAMMES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
+            <select id="pt-tri" aria-label="Tri"><option value="ca">Trier par CA</option><option value="volume">Trier par volume</option><option value="evol">Trier par évolution</option><option value="nom">Trier par nom</option></select>
+          </div>
+          <div class="tableau-defile" id="pt-table"></div></div>
+        <div class="clients4">
+          <div class="carte-b"><h2>Plus fortes hausses</h2><p class="sous">Écart de CA, produits vendus les deux années</p>
+            ${listeP(hausses.filter(p => p.d > 0).sort((x, y) => y.d - x.d).slice(0, 10), p => `<span class="evol hausse">▲ +${eur(p.d)}</span>`)}</div>
+          <div class="carte-b"><h2>Plus fortes baisses</h2><p class="sous">Écart de CA, produits vendus les deux années</p>
+            ${listeP(hausses.filter(p => p.d < 0).sort((x, y) => x.d - y.d).slice(0, 10), p => `<span class="evol baisse">▼ ${eur(p.d)}</span>`)}</div>
+          <div class="carte-b"><h2>Nouveaux produits</h2><p class="sous">Vendus cette année, pas sur la période ${a - 1}</p>
+            ${listeP(P.produits.filter(p => p.n.totalHT > 0 && !p.n1.quantite), p => eur(p.n.totalHT))}</div>
+          <div class="carte-b"><h2>Plus vendus cette année</h2><p class="sous">Vendus sur la période ${a - 1}, pas sur la période ${a}</p>
+            ${listeP(P.produits.filter(p => p.n1.totalHT > 0 && !p.n.quantite), p => `${eur(p.n1.totalHT)} en ${a - 1}`)}</div>
+        </div>`;
+      rendreTableProduits();
+      $('pt-gamme').addEventListener('change', rendreTableProduits);
+      $('pt-tri').addEventListener('change', rendreTableProduits);
+      graphesP.forEach(g => g.destroy()); graphesP = [];
+      if (window.Chart) {
+        graphesP.push(barresH($('gp-formats'), familles.map(f => f.famille), familles.map(f => f.n1.litres), familles.map(f => f.n.litres), a, hl));
+        const top = P.produits.slice(0, 12);
+        graphesP.push(barresH($('gp-top'), top.map(p => p.libelle), top.map(p => p.n1.totalHT), top.map(p => p.n.totalHT), a));
+      }
+    }
+
+    function listeP(l, val) {
+      return l.length ? `<ul class="liste-c">${l.map(p => `<li><span>${echap(p.libelle)}<span class="canal">${GAMMES[p.gamme] ?? ''}</span></span><span>${val(p)}</span></li>`).join('')}</ul>`
+        : '<p class="sous">Aucun.</p>';
+    }
+
+    function tableProduits(produits, a) {
+      return `<table class="bilan"><thead><tr><th>Produit</th><th>Gamme</th><th>33 cL ${a}</th><th>75 cL ${a}</th><th>Fûts ${a}</th>
+        <th>Volume ${a}</th><th>CA ${a - 1}</th><th>CA ${a}</th><th>Évol.</th></tr></thead>
+        <tbody>${produits.map(p => `<tr><td><b>${echap(p.libelle)}</b></td><td>${GAMMES[p.gamme] ?? ''}</td>
+          <td>${qteEvol(p.formats['33 cL'])}</td><td>${qteEvol(p.formats['75 cL'])}</td><td>${qteEvol(p.formats['Fûts'])}</td>
+          <td>${hl(p.n.litres)}</td><td>${eur(p.n1.totalHT)}</td><td>${eur(p.n.totalHT)}</td><td>${evol(p.n.totalHT, p.n1.totalHT)}</td></tr>`).join('')
+          || '<tr><td colspan="9">Aucun produit.</td></tr>'}</tbody></table>`;
+    }
+    function trierProduits(l, tri) {
+      const evolP = p => p.n1.totalHT ? (p.n.totalHT - p.n1.totalHT) / p.n1.totalHT : (p.n.totalHT ? Infinity : -Infinity);
+      const f = { ca: (x, y) => y.n.totalHT - x.n.totalHT, volume: (x, y) => y.n.litres - x.n.litres,
+        evol: (x, y) => evolP(y) - evolP(x), nom: (x, y) => x.libelle.localeCompare(y.libelle, 'fr') }[tri];
+      return l.slice().sort(f);
+    }
+    function rendreTableProduits() {
+      const g = $('pt-gamme').value;
+      $('pt-table').innerHTML = tableProduits(trierProduits(P.produits.filter(p => !g || p.gamme === g), $('pt-tri').value), P.annee);
+    }
+
+    // --- Onglet Fiche client ---------------------------------------------------
+    const normTxt = t => String(t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    async function chargerListeClients() {
+      if (!clientsListe) clientsListe = await lireJSON('/api/clients').catch(() => []);
+      return clientsListe;
+    }
+    $('f-client').addEventListener('input', async () => {
+      const q = normTxt($('f-client').value.trim()), res = $('f-client-res');
+      if (q.length < 2) { res.hidden = true; return; }
+      const l = (await chargerListeClients()).filter(c => normTxt(c.nom).includes(q)).slice(0, 12);
+      res.innerHTML = l.length ? l.map(c => `<button role="option" data-id="${c.id}">${echap(c.nom)}<small>${echap(c.canal ?? '')}</small></button>`).join('')
+        : '<button disabled>Aucun client trouvé</button>';
+      res.hidden = false; $('f-client').setAttribute('aria-expanded', 'true');
+    });
+    $('f-client').addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); $('f-client-res').querySelector('[data-id]')?.click(); }
+      if (e.key === 'Escape') $('f-client-res').hidden = true;
+    });
+    $('f-client-res').addEventListener('click', e => {
+      const b = e.target.closest('[data-id]'); if (!b) return;
+      $('f-client-res').hidden = true; $('f-client').setAttribute('aria-expanded', 'false');
+      $('f-client').value = b.firstChild.textContent;
+      chargerFiche(+b.dataset.id);
+    });
+    document.addEventListener('click', e => { if (!e.target.closest('.recherche-fiche')) $('f-client-res').hidden = true; });
+
+    async function chargerFiche(id, frais = false) {
+      if (!id) return;
+      ecrireHash({ client: id });
+      $('b-actualiser').disabled = true;
+      $('fiche-contenu').innerHTML = '<div class="vide"><span class="loader"></span> Bilan du client en cours…</div>';
+      const q = new URLSearchParams({ id, ...parametres() }); if (frais) q.set('frais', Date.now());
+      try { F = await lireJSON('/api/bilan/client?' + q); rendreFiche(); }
+      catch (e) { $('fiche-contenu').innerHTML = `<div class="vide" style="color:var(--danger)">Bilan indisponible : ${echap(e.message)}</div>`; }
+      finally { $('b-actualiser').disabled = false; $('b-csv').hidden = !F; }
+    }
+
+    function rendreFiche() {
+      if (onglet !== 'fiche' || !F) return;
+      rendrePortee(F, 'fiche');
+      $('f-client').value = F.nom;
+      const a = F.annee, C = F.commandes, V = F.ventes;
+      const arretes = V ? V.produits.filter(p => p.n1.quantite && !p.n.quantite) : [];
+      const nouveaux = V ? V.produits.filter(p => p.n.quantite && !p.n1.quantite) : [];
+      $('fiche-contenu').innerHTML = `
+        <div class="fiche-tete"><h2>${echap(F.nom)}</h2>
+          ${F.canal ? `<span>${echap(F.canal)}</span>` : ''}
+          ${F.premiere ? `<span>client depuis ${fmtD(F.premiere)}</span>` : ''}
+          ${F.derniere ? `<span>dernière commande le <b>${fmtD(F.derniere)}</b></span>` : '<span>aucune commande</span>'}
+          ${F.frequenceJours ? `<span>commande en moyenne tous les ${F.frequenceJours} jours</span>` : ''}</div>
+        <div class="tuiles">
+          ${tuileB('Chiffre d\'affaires HT', C.n.ca, C.n1.ca, eur, a)}
+          ${tuileB('Commandes', C.n.commandes, C.n1.commandes, nb, a)}
+          ${tuileB('Panier moyen HT', C.n.panier, C.n1.panier, eur, a)}
+          ${V ? tuileB('Volume acheté', V.totaux.n.litres, V.totaux.n1.litres, hl, a) : ''}
+        </div>
+        <div class="graphes">
+          <div class="carte-b"><h2>Chiffre d'affaires mensuel</h2><p class="sous">Années civiles complètes</p>
+            ${legende(a)}<div class="zone-graph"><canvas id="gf-mois" role="img" aria-label="Chiffre d'affaires mensuel du client"></canvas></div></div>
+          <div class="carte-b"><h2>Dernières commandes</h2>
+            ${F.dernieres.length ? `<ul class="liste-c">${F.dernieres.map(c => `<li><span>${fmtD(c.date)} · n° ${echap(c.numero)}<span class="canal">${echap(c.etat)}</span></span><span>${eur(c.totalHT)}</span></li>`).join('')}</ul>`
+              : '<p class="sous">Aucune commande.</p>'}</div>
+        </div>
+        <div class="carte-b"><h2>Produits achetés</h2>
+          ${V ? `<p class="sous">Par format, comparés à la même période ${a - 1}</p><div class="tableau-defile">${tableProduits(V.produits, a)}</div>`
+            : `<p class="sous" style="color:var(--danger)">Détail des produits indisponible : ${echap(F.erreurVentes ?? '')}</p>`}</div>
+        ${V ? `<div class="clients4">
+          <div class="carte-b"><h2>Ne commande plus</h2><p class="sous">Acheté sur la période ${a - 1}, pas cette année : piste de relance</p>
+            ${listeP(arretes, p => `${eur(p.n1.totalHT)} en ${a - 1}`)}</div>
+          <div class="carte-b"><h2>Nouveaux produits</h2><p class="sous">Achetés cette année, pas sur la période ${a - 1}</p>
+            ${listeP(nouveaux, p => eur(p.n.totalHT))}</div>
+        </div>` : ''}`;
+      graphesF.forEach(g => g.destroy()); graphesF = [];
+      if (window.Chart) graphesF.push(ligneMois($('gf-mois'), F.mois, a));
+    }
+
+    function exporterCSVActif() {
+      if (onglet === 'clients') return exporterCSV();
+      const d = onglet === 'produits' ? P : F?.ventes ? { ...F.ventes, annee: F.annee } : null;
+      if (!d) return;
+      const a = d.annee, c = v => `"${String(v ?? '').replace(/"/g, '""')}"`, n = v => String(v ?? '').replace('.', ',');
+      const l = [[onglet === 'produits' ? 'Bilan produits' : `Bilan client — ${F.nom}`, `${a} vs ${a - 1}`], [],
+        ['Produit', 'Gamme', `33 cL ${a - 1}`, `33 cL ${a}`, `75 cL ${a - 1}`, `75 cL ${a}`, `Fûts ${a - 1}`, `Fûts ${a}`, `Litres ${a - 1}`, `Litres ${a}`, `CA ${a - 1}`, `CA ${a}`]];
+      for (const p of d.produits) l.push([p.libelle, GAMMES[p.gamme] ?? '', p.formats['33 cL']?.n1 ?? 0, p.formats['33 cL']?.n ?? 0,
+        p.formats['75 cL']?.n1 ?? 0, p.formats['75 cL']?.n ?? 0, p.formats['Fûts']?.n1 ?? 0, p.formats['Fûts']?.n ?? 0, p.n1.litres, p.n.litres, n(p.n1.totalHT), n(p.n.totalHT)]);
+      const blob = new Blob(['﻿' + l.map(r => r.map(c).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+      const lien = document.createElement('a');
+      lien.href = URL.createObjectURL(blob);
+      lien.download = onglet === 'produits' ? `bilan-produits-${a}-vs-${a - 1}.csv` : `bilan-${normTxt(F.nom).replace(/[^a-z0-9]+/g, '-')}-${a}.csv`;
+      lien.click(); URL.revokeObjectURL(lien.href);
+    }
+
+    document.querySelectorAll('.onglets-bilan button').forEach(b => b.addEventListener('click', () => afficherOnglet(b.dataset.o)));
+
+    // Années proposées d'emblée (la liste exacte arrive avec le bilan Clients).
+    $('f-annee').innerHTML = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i)
+      .map(a => `<option value="${a}">${a} vs ${a - 1}</option>`).join('');
     $('f-annee').addEventListener('change', () => {
       // Une année passée se compare d'office en entier.
       if (+$('f-annee').value < new Date().getFullYear()) $('f-mode').value = 'complet';
-      charger();
+      rechargerActif();
     });
-    $('f-mode').addEventListener('change', () => charger());
-    $('b-actualiser').addEventListener('click', () => charger(true));
+    $('f-mode').addEventListener('change', () => rechargerActif());
+    // Changer de période invalide les trois vues ; seule la vue affichée se recharge.
+    function rechargerActif(frais = false) {
+      if (onglet === 'clients') charger(frais); else B = null;
+      if (onglet === 'produits') chargerProduits(frais); else P = null;
+      if (onglet === 'fiche' && F) chargerFiche(F.id, frais);
+    }
+    $('b-actualiser').addEventListener('click', () => rechargerActif(true));
     $('b-imprimer').addEventListener('click', () => window.print());
-    $('b-csv').addEventListener('click', exporterCSV);
-    document.addEventListener('theme-change', () => { if (B) dessinerGraphes(); });
-    window.addEventListener('beforeprint', () => graphes.forEach(g => g.resize()));
-    charger();
+    $('b-csv').addEventListener('click', exporterCSVActif);
+    document.addEventListener('theme-change', () => {
+      if (B && onglet === 'clients') dessinerGraphes();
+      if (P && onglet === 'produits') rendreProduits();
+      if (F && onglet === 'fiche') rendreFiche();
+    });
+    window.addEventListener('beforeprint', () => [...graphes, ...graphesP, ...graphesF].forEach(g => g.resize()));
+    {
+      const h = lireHash();
+      afficherOnglet(h.o, { charger: false });
+      if (h.o === 'clients') charger();
+      if (h.o === 'produits') chargerProduits();
+      if (h.o === 'fiche' && h.client) chargerFiche(+h.client);
+    }
   </script>
 </body>
 </html>

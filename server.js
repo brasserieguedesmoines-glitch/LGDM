@@ -2631,6 +2631,165 @@ app.get('/api/bilan', async (req, res) => {
   }
 });
 
+// ---- Bilan produits et fiche client : synthèse des ventes EasyBeer ----
+// Route EasyBeer /indicateur/synthese-ventes (vérifiée le 18/11/2026) : ventes
+// par produit et par contenant sur une période libre, filtrable par client.
+// Ses montants portent sur les produits vendus (bouteilles et fûts) : ils
+// peuvent différer du CA de l'onglet Clients, calculé sur les commandes.
+function periodesBilan(annee, mode) {
+  const auj = new Date();
+  const fin = a => mode === 'complet' ? Date.UTC(a + 1, 0, 1) : Date.UTC(a, auj.getUTCMonth(), auj.getUTCDate() + 1);
+  return { n: [Date.UTC(annee, 0, 1), fin(annee)], n1: [Date.UTC(annee - 1, 0, 1), fin(annee - 1)] };
+}
+const LISTES_INDICATEUR = { idsClients: [], idsClientsTournees: [], idsClientsTypes: [], idsCommerciaux: [], idsContenants: [],
+  idsContenantsFuts: [], idsEntrepots: [], idsEtapeBrassage: [], idsPackagings: [], idsProduits: [], idsProduitsCategories: [] };
+
+// Format lisible d'un contenant EasyBeer (« Bouteille - 0.33L », « Fût recyclable - 20L »).
+function formatContenant(libelle) {
+  const l = String(libelle ?? '');
+  const m = l.match(/(\d+(?:[.,]\d+)?)\s*l\b/i);
+  const litres = m ? parseFloat(m[1].replace(',', '.')) : null;
+  if (/f[uû]t|keg/i.test(l)) return { famille: 'Fûts', format: litres ? `Fût ${litres} L` : 'Fût', litres };
+  if (litres && Math.abs(litres - 0.33) < 0.01) return { famille: '33 cL', format: '33 cL', litres };
+  if (litres && Math.abs(litres - 0.75) < 0.01) return { famille: '75 cL', format: '75 cL', litres };
+  return { famille: 'Autres formats', format: litres ? `${Math.round(litres * 100)} cL` : l || 'Autre', litres };
+}
+
+async function syntheseVentes([debut, fin], idClient = null) {
+  const corps = { periode: { type: 'PERIODE_LIBRE', dateDebut: new Date(debut).toISOString(), dateFin: new Date(fin - 1).toISOString() },
+    ...LISTES_INDICATEUR, ...(idClient ? { idClient, idsClients: [idClient] } : {}) };
+  const d = await easybeerPost('/indicateur/synthese-ventes?forceRefresh=false', corps, 60000);
+  const bf = d?.syntheseVenteBouteilleFut ?? {};
+  const r2 = x => Math.round((x ?? 0) * 100) / 100;
+  return (bf.produits ?? []).map(p => {
+    const formats = (p.contenants ?? []).map(c => {
+      const f = formatContenant(c.libelle ?? c.contenant?.libelle);
+      const q = c.quantite ?? 0;
+      // Litres recalculés depuis la contenance ; à défaut, volume EasyBeer (hL).
+      const litres = f.litres ? q * f.litres : (c.totalVolume ?? 0) * 100;
+      return { ...f, quantite: q, totalHT: r2(c.totalHT), litres: r2(litres) };
+    });
+    return { idProduit: p.idProduit, libelle: p.libelle ?? '', gamme: gammeProduit(p.libelle), formats,
+      quantite: p.quantite ?? formats.reduce((s, f) => s + f.quantite, 0),
+      totalHT: r2(p.totalHT), litres: r2(formats.reduce((s, f) => s + f.litres, 0)) };
+  });
+}
+
+// Fusionne N et N-1 : par produit, par famille de format, par gamme, totaux.
+function comparerVentes(pn, pn1) {
+  const vide = () => ({ quantite: 0, totalHT: 0, litres: 0 });
+  const ajoute = (a, x) => { a.quantite += x.quantite; a.totalHT += x.totalHT; a.litres += x.litres; };
+  const produits = new Map(), familles = new Map(), gammes = new Map(), tot = { n: vide(), n1: vide() };
+  for (const [cote, liste] of [['n', pn], ['n1', pn1]]) for (const p of liste) {
+    const pr = produits.get(p.idProduit) ?? { idProduit: p.idProduit, libelle: p.libelle, gamme: p.gamme, n: vide(), n1: vide(), formats: {} };
+    ajoute(pr[cote], p); ajoute(tot[cote], p);
+    const g = gammes.get(p.gamme) ?? { gamme: p.gamme, n: vide(), n1: vide(), familles: {} };
+    ajoute(g[cote], p);
+    for (const f of p.formats) {
+      const fa = familles.get(f.famille) ?? { famille: f.famille, n: vide(), n1: vide() };
+      ajoute(fa[cote], f); familles.set(f.famille, fa);
+      (pr.formats[f.famille] ??= { n: 0, n1: 0 })[cote] += f.quantite;
+      ((g.familles[f.famille] ??= { n: 0, n1: 0 }))[cote] += f.quantite;
+    }
+    produits.set(p.idProduit, pr); gammes.set(p.gamme, g);
+  }
+  const arrondir = o => { for (const k of ['n', 'n1']) { o[k].totalHT = Math.round(o[k].totalHT * 100) / 100; o[k].litres = Math.round(o[k].litres); } return o; };
+  const ORDRE = ['33 cL', '75 cL', 'Fûts', 'Autres formats'];
+  return {
+    totaux: arrondir(tot),
+    familles: [...familles.values()].map(arrondir).sort((a, b) => ORDRE.indexOf(a.famille) - ORDRE.indexOf(b.famille)),
+    gammes: [...gammes.values()].map(arrondir).sort((a, b) => b.n.totalHT - a.n.totalHT),
+    produits: [...produits.values()].map(arrondir).sort((a, b) => b.n.totalHT - a.n.totalHT),
+  };
+}
+
+const bilanProduitsMemoire = new Map();
+app.get('/api/bilan/produits', async (req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store');
+    const anneeCourante = new Date().getUTCFullYear();
+    const annee = Math.min(anneeCourante, Math.max(2015, parseInt(req.query.annee) || anneeCourante));
+    const mode = req.query.mode === 'complet' ? 'complet' : 'adate';
+    const cle = `lgdm:bilan-produits:v1:${annee}:${mode}`;
+    const frais = req.query.frais !== undefined;
+    const m = bilanProduitsMemoire.get(cle);
+    if (!frais && m && Date.now() - m.genere < 30 * 60 * 1000) return res.json(m);
+    if (!frais && redisActif()) {
+      const v = await redis('GET', cle).catch(() => null);
+      if (v) return res.json(JSON.parse(v));
+    }
+    const periode = periodesBilan(annee, mode);
+    const [pn, pn1] = [await syntheseVentes(periode.n), await syntheseVentes(periode.n1)];
+    const b = { annee, mode, genere: Date.now(), periode: { n: [periode.n[0], periode.n[1] - 1], n1: [periode.n1[0], periode.n1[1] - 1] },
+      ...comparerVentes(pn, pn1) };
+    bilanProduitsMemoire.set(cle, b);
+    if (redisActif()) await redis('SET', cle, JSON.stringify(b), 'EX', 6 * 3600).catch(() => {});
+    res.json(b);
+  } catch (err) {
+    console.error('GET /api/bilan/produits', err.message);
+    res.status(err.status === 401 ? 502 : err.status ?? 502).json({ error: err.message });
+  }
+});
+
+// Fiche client : commandes (CA, fréquence, mois par mois) et produits achetés.
+const bilanClientMemoire = new Map();
+app.get('/api/bilan/client', async (req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store');
+    const id = parseInt(req.query.id);
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'id client requis' });
+    const anneeCourante = new Date().getUTCFullYear();
+    const annee = Math.min(anneeCourante, Math.max(2015, parseInt(req.query.annee) || anneeCourante));
+    const mode = req.query.mode === 'complet' ? 'complet' : 'adate';
+    const cle = `${id}:${annee}:${mode}`;
+    const m = bilanClientMemoire.get(cle);
+    if (req.query.frais === undefined && m && Date.now() - m.genere < 15 * 60 * 1000) return res.json(m);
+
+    const periode = periodesBilan(annee, mode);
+    const toutes = await chargerCommandes(req, 120 * 1000);
+    const siennes = toutes.filter(c => c.client?.idClient === id && !c.estDevis && !c.estAnnulee && c.dateCreation)
+      .sort((a, b) => b.dateCreation - a.dateCreation);
+    const dans = ([d, f]) => siennes.filter(c => c.dateCreation >= d && c.dateCreation < f);
+    const resume = l => {
+      const ca = Math.round(l.reduce((s, c) => s + (c.totalHT ?? 0), 0) * 100) / 100;
+      return { ca, commandes: l.length, panier: l.length ? Math.round(ca / l.length * 100) / 100 : 0 };
+    };
+    const mois = Array.from({ length: 12 }, (_, i) => ({ mois: i, n: 0, n1: 0 }));
+    for (const c of siennes) {
+      const d = new Date(c.dateCreation);
+      if (d.getUTCFullYear() === annee) mois[d.getUTCMonth()].n += c.totalHT ?? 0;
+      if (d.getUTCFullYear() === annee - 1) mois[d.getUTCMonth()].n1 += c.totalHT ?? 0;
+    }
+    const dates = siennes.map(c => c.dateCreation).sort((a, b) => a - b);
+    const ecarts = dates.slice(1).map((t, i) => t - dates[i]).filter(x => x > 0);
+    let ventes = null, erreurVentes = null;
+    try {
+      const [pn, pn1] = [await syntheseVentes(periode.n, id), await syntheseVentes(periode.n1, id)];
+      ventes = comparerVentes(pn, pn1);
+    } catch (e) { erreurVentes = e.message; }
+    await getAllClientsPartage().catch(() => {});
+    const types = await getTypesClient().catch(() => []);
+    const nom = siennes[0]?.client?.nom ?? (await getAllClientsPartage().catch(() => [])).find(c => c.id === id)?.nom ?? `Client ${id}`;
+    const b = {
+      id, nom, annee, mode, genere: Date.now(),
+      canal: canalParLibelleEtNom(types.find(t => t.idClientType === clientTypeMap.get(id))?.libelle, nom),
+      periode: { n: [periode.n[0], periode.n[1] - 1], n1: [periode.n1[0], periode.n1[1] - 1] },
+      commandes: { n: resume(dans(periode.n)), n1: resume(dans(periode.n1)) },
+      premiere: dates[0] ?? null, derniere: dates.at(-1) ?? null, nbTotal: siennes.length,
+      frequenceJours: ecarts.length >= 2 ? Math.round(ecarts.reduce((s, x) => s + x, 0) / ecarts.length / 86400000) : null,
+      mois: mois.map(x => ({ ...x, n: Date.UTC(annee, x.mois, 1) > Date.now() ? null : Math.round(x.n), n1: Math.round(x.n1) })),
+      dernieres: siennes.slice(0, 12).map(c => ({ numero: c.numero, date: c.dateCreation, totalHT: c.totalHT ?? 0,
+        etat: c.estLivree ? 'livrée' : c.etat?.libelle ?? '' })),
+      ventes, erreurVentes,
+    };
+    bilanClientMemoire.set(cle, b);
+    res.json(b);
+  } catch (err) {
+    console.error('GET /api/bilan/client', err.message);
+    res.status(err.status === 401 ? 502 : err.status ?? 502).json({ error: err.message });
+  }
+});
+
 // La dernière analyse est gardée dans la base partagée : la page l'affiche
 // immédiatement, puis demande un recalcul (?recalcul) si elle a plus de 30 min.
 const CLE_RELANCES = 'lgdm:relances';
@@ -3181,60 +3340,6 @@ app.get('/api/debug-dernieres', async (req, res) => {
       }));
     res.json(recentes);
   } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
-});
-
-// --- TEMPORAIRE : contrat Swagger des indicateurs EasyBeer (documentation
-// d'API uniquement, aucune donnée). À retirer une fois la route choisie.
-app.get('/api/cache/contrat-indicateurs', async (req, res) => {
-  try {
-    const sw = await easybeerGet('/v2/api-docs', 60000);
-    const motif = new RegExp(String(req.query.motif ?? '^/indicateur/'), 'i');
-    const out = {};
-    for (const [chemin, ops] of Object.entries(sw.paths)) {
-      if (!motif.test(chemin)) continue;
-      for (const [m, d] of Object.entries(ops)) out[`${m.toUpperCase()} ${chemin}`] = {
-        resume: d.summary,
-        params: (d.parameters ?? []).map(x => `${x.name}${x.required ? '*' : ''}:${x.in}:${x.schema?.$ref?.split('/').pop() ?? x.type ?? ''}`),
-        reponse: JSON.stringify(d.responses?.['200']?.schema ?? '').slice(0, 160),
-      };
-    }
-    const def = req.query.def ? sw.definitions[req.query.def] : undefined;
-    res.set('Cache-Control', 'no-store');
-    res.json(def ? { def } : out);
-  } catch (err) { res.status(502).json({ error: err.message }); }
-});
-
-// --- TEMPORAIRE : essai de la synthèse des ventes (structure seulement).
-app.get('/api/cache/sonde-synthese', async (req, res) => {
-  const annee = Number(req.query.annee) || 2026, v = req.query.v ?? 'A';
-  const iso = (a, m, j) => new Date(Date.UTC(a, m, j)).toISOString();
-  const listes = { idsClients: [], idsClientsTournees: [], idsClientsTypes: [], idsCommerciaux: [], idsContenants: [],
-    idsContenantsFuts: [], idsEntrepots: [], idsEtapeBrassage: [], idsPackagings: [], idsProduits: [], idsProduitsCategories: [] };
-  const libre = { type: 'PERIODE_LIBRE', dateDebut: iso(annee, 0, 1), dateFin: iso(annee, 10, 18) };
-  const corps = {
-    A: { periode: libre },
-    B: { periode: libre, ...listes },
-    C: { periode: { type: 'PERIODE_LIBRE', dateDebut: `${annee}-01-01`, dateFin: `${annee}-11-18` }, ...listes },
-    D: { periode: { type: 'ANNEE_COURANTE' }, ...listes },
-    E: { periode: libre, ...listes, inclureCommande: true, inclureVenteDirecte: true, inclureAvoir: true },
-    F: { periode: libre, ...listes, idClient: Number(req.query.client) || undefined, idsClients: req.query.client ? [Number(req.query.client)] : [] },
-  }[v];
-  const chemin = req.query.route ?? '/indicateur/synthese-ventes';
-  try {
-    const d = await easybeerPost(`${chemin}?forceRefresh=false`, corps, 60000);
-    const bf = d?.syntheseVenteBouteilleFut ?? {};
-    res.set('Cache-Control', 'no-store');
-    res.json({ ok: true, cles: Object.keys(d ?? {}), clesBF: Object.keys(bf),
-      totalHT_k: Math.round((bf.totalHT ?? 0) / 1000), quantite: bf.quantite ?? null, volume: Math.round(bf.totalVolume ?? 0),
-      nbProduits: (bf.produits ?? []).length, nbContenants: (bf.contenants ?? []).length, nbTypes: (bf.typesClients ?? []).length,
-      contenants: (bf.contenants ?? []).map(c => c.libelle ?? c.contenant?.libelle),
-      produits: (bf.produits ?? []).slice(0, 40).map(p => p.libelle),
-      typesClients: (bf.typesClients ?? []).map(t => t.libelle),
-      clesProduit: Object.keys((bf.produits ?? [])[0] ?? {}),
-      contenantsDuProduit: ((bf.produits ?? [])[0]?.contenants ?? []).map(c => ({ lib: c.libelle ?? c.contenant?.libelle, cles: Object.keys(c) })).slice(0, 3),
-      ref: { reference: bf.reference ?? null, evolution: bf.evolution ?? null, ecart: bf.ecart ?? null },
-      series: (d?.series ?? []).length, autres: Object.keys(d ?? {}).filter(k => d[k] && typeof d[k] === 'object').map(k => `${k}:${Object.keys(d[k]).length}`) });
-  } catch (err) { res.json({ ok: false, status: err.status ?? null, erreur: String(err.message).slice(0, 300) }); }
 });
 
 // --- Export PDF des ruptures et précommandes ---
