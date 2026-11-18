@@ -1239,6 +1239,8 @@ function commandeAllegee(c) {
     dateLivraisonPrevue: c.dateLivraisonPrevue ?? null,
     dateLivraisonReelle: c.dateLivraisonReelle ?? null,
     totalHT: c.totalHT ?? 0,
+    // « total » est le TTC dans le modèle de commande EasyBeer.
+    totalTTC: c.total ?? c.totalTTC ?? null,
     etat: c.etat ? { code: c.etat.code, libelle: c.etat.libelle } : null,
     estDevis: !!c.estDevis, estAnnulee: !!c.estAnnulee,
     estLivree: !!c.estLivree, estFacturee: !!c.estFacturee, estArchivee: !!c.estArchivee,
@@ -2514,10 +2516,17 @@ app.get('/api/pilotage', async (req, res) => {
 // devis, commandes annulées et comptes salariés. La liste EasyBeer ne donne
 // pas les volumes : le bilan porte sur le chiffre d'affaires, les commandes
 // et les clients.
+// Montant d'une commande en HT ou en TTC. Sans total TTC (ancienne entrée du
+// cache), il est estimé à HT × 1,2 — taux de la bière — et compté comme tel.
+function montantCommande(c, ttc) {
+  if (!ttc) return c.totalHT ?? 0;
+  return c.totalTTC ?? Math.round((c.totalHT ?? 0) * 1.2 * 100) / 100;
+}
+
 const CANAUX_BILAN = ['CHR', 'GMS', 'Distributeurs', 'Cavistes', 'Associations', 'Autres pros', 'Particuliers', 'Non catégorisé'];
 const sansAccent = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
-async function construireBilan(req, annee, mode) {
+async function construireBilan(req, annee, mode, ttc = false) {
   const toutes = await chargerCommandes(req, 150 * 1000);
   if (!toutes.length) throw Object.assign(new Error('Aucune commande récupérée depuis EasyBeer'), { status: 503 });
   await getAllClientsPartage().catch(() => {});        // remplit clientTypeMap
@@ -2538,6 +2547,7 @@ async function construireBilan(req, annee, mode) {
   const valides = toutes.filter(c => !c.estDevis && !c.estAnnulee && c.dateCreation
     && !/^employe\b/.test(sansAccent(c.client?.nom)));
   const plusAncienne = Math.min(...valides.map(c => c.dateCreation));
+  let ttcEstimes = 0;
 
   const vide = () => ({ ca: 0, commandes: 0, clients: new Set() });
   const parCanal = new Map(CANAUX_BILAN.map(k => [k, { n: vide(), n1: vide() }]));
@@ -2545,7 +2555,8 @@ async function construireBilan(req, annee, mode) {
   const parClient = new Map();
   const premiere = new Map();
   for (const c of valides) {
-    const id = c.client?.idClient, t = c.dateCreation, ht = c.totalHT ?? 0;
+    const id = c.client?.idClient, t = c.dateCreation, ht = montantCommande(c, ttc);
+    if (ttc && c.totalTTC == null && t >= debN1) ttcEstimes++;
     if (id && !(premiere.get(id) <= t)) premiere.set(id, t);
     // Courbe mensuelle : années civiles entières, quelle que soit la période.
     const y = new Date(t).getUTCFullYear();
@@ -2582,7 +2593,7 @@ async function construireBilan(req, annee, mode) {
   const suivis = clients.filter(c => c.n > 0 && c.n1 > 0);
 
   return {
-    annee, mode, genere: Date.now(),
+    annee, mode, genere: Date.now(), taxe: ttc ? 'ttc' : 'ht', ttcEstimes,
     periode: { n: [debN, finN - 1], n1: [debN1, finN1 - 1] },
     // L'historique chargé doit remonter au début de l'année précédente,
     // sinon la comparaison serait faussée : on le dit plutôt que de l'ignorer.
@@ -2613,7 +2624,8 @@ app.get('/api/bilan', async (req, res) => {
     const anneeCourante = new Date().getUTCFullYear();
     const annee = Math.min(anneeCourante, Math.max(2015, parseInt(req.query.annee) || anneeCourante));
     const mode = req.query.mode === 'complet' ? 'complet' : 'adate';
-    const cle = `lgdm:bilan:v2:${annee}:${mode}`;   // v2 : listes clients complètes
+    const ttc = req.query.taxe === 'ttc';
+    const cle = `lgdm:bilan:v3:${annee}:${mode}:${ttc ? 'ttc' : 'ht'}`;   // v3 : HT ou TTC
     const frais = req.query.frais !== undefined;
     const m = bilansMemoire.get(cle);
     if (!frais && m && Date.now() - m.genere < 30 * 60 * 1000) return res.json(m);
@@ -2621,7 +2633,7 @@ app.get('/api/bilan', async (req, res) => {
       const v = await redis('GET', cle).catch(() => null);
       if (v) return res.json(JSON.parse(v));
     }
-    const b = await construireBilan(req, annee, mode);
+    const b = await construireBilan(req, annee, mode, ttc);
     bilansMemoire.set(cle, b);
     if (redisActif()) await redis('SET', cle, JSON.stringify(b), 'EX', 6 * 3600).catch(() => {});
     res.json(b);
@@ -2655,7 +2667,9 @@ function formatContenant(libelle) {
   return { famille: 'Autres formats', format: litres ? `${Math.round(litres * 100)} cL` : l || 'Autre', litres };
 }
 
-async function syntheseVentes([debut, fin], idClient = null) {
+// « totalHT » porte le montant retenu : HT, ou TTC quand ttc est demandé
+// (la réponse indique alors taxe: 'ttc' et l'écran l'affiche ainsi).
+async function syntheseVentes([debut, fin], idClient = null, ttc = false) {
   const corps = { periode: { type: 'PERIODE_LIBRE', dateDebut: new Date(debut).toISOString(), dateFin: new Date(fin - 1).toISOString() },
     ...LISTES_INDICATEUR, ...(idClient ? { idClient, idsClients: [idClient] } : {}) };
   const d = await easybeerPost('/indicateur/synthese-ventes?forceRefresh=false', corps, 60000);
@@ -2667,11 +2681,11 @@ async function syntheseVentes([debut, fin], idClient = null) {
       const q = c.quantite ?? 0;
       // Litres recalculés depuis la contenance ; à défaut, volume EasyBeer (hL).
       const litres = f.litres ? q * f.litres : (c.totalVolume ?? 0) * 100;
-      return { ...f, quantite: q, totalHT: r2(c.totalHT), litres: r2(litres) };
+      return { ...f, quantite: q, totalHT: r2(ttc ? c.totalTTC : c.totalHT), litres: r2(litres) };
     });
     return { idProduit: p.idProduit, libelle: p.libelle ?? '', gamme: gammeProduit(p.libelle), formats,
       quantite: p.quantite ?? formats.reduce((s, f) => s + f.quantite, 0),
-      totalHT: r2(p.totalHT), litres: r2(formats.reduce((s, f) => s + f.litres, 0)) };
+      totalHT: r2(ttc ? p.totalTTC : p.totalHT), litres: r2(formats.reduce((s, f) => s + f.litres, 0)) };
   });
 }
 
@@ -2710,7 +2724,8 @@ app.get('/api/bilan/produits', async (req, res) => {
     const anneeCourante = new Date().getUTCFullYear();
     const annee = Math.min(anneeCourante, Math.max(2015, parseInt(req.query.annee) || anneeCourante));
     const mode = req.query.mode === 'complet' ? 'complet' : 'adate';
-    const cle = `lgdm:bilan-produits:v1:${annee}:${mode}`;
+    const ttc = req.query.taxe === 'ttc';
+    const cle = `lgdm:bilan-produits:v1:${annee}:${mode}:${ttc ? 'ttc' : 'ht'}`;
     const frais = req.query.frais !== undefined;
     const m = bilanProduitsMemoire.get(cle);
     if (!frais && m && Date.now() - m.genere < 30 * 60 * 1000) return res.json(m);
@@ -2719,8 +2734,8 @@ app.get('/api/bilan/produits', async (req, res) => {
       if (v) return res.json(JSON.parse(v));
     }
     const periode = periodesBilan(annee, mode);
-    const [pn, pn1] = [await syntheseVentes(periode.n), await syntheseVentes(periode.n1)];
-    const b = { annee, mode, genere: Date.now(), periode: { n: [periode.n[0], periode.n[1] - 1], n1: [periode.n1[0], periode.n1[1] - 1] },
+    const [pn, pn1] = [await syntheseVentes(periode.n, null, ttc), await syntheseVentes(periode.n1, null, ttc)];
+    const b = { annee, mode, genere: Date.now(), taxe: ttc ? 'ttc' : 'ht', periode: { n: [periode.n[0], periode.n[1] - 1], n1: [periode.n1[0], periode.n1[1] - 1] },
       ...comparerVentes(pn, pn1) };
     bilanProduitsMemoire.set(cle, b);
     if (redisActif()) await redis('SET', cle, JSON.stringify(b), 'EX', 6 * 3600).catch(() => {});
@@ -2741,7 +2756,8 @@ app.get('/api/bilan/client', async (req, res) => {
     const anneeCourante = new Date().getUTCFullYear();
     const annee = Math.min(anneeCourante, Math.max(2015, parseInt(req.query.annee) || anneeCourante));
     const mode = req.query.mode === 'complet' ? 'complet' : 'adate';
-    const cle = `${id}:${annee}:${mode}`;
+    const ttc = req.query.taxe === 'ttc';
+    const cle = `${id}:${annee}:${mode}:${ttc ? 'ttc' : 'ht'}`;
     const m = bilanClientMemoire.get(cle);
     if (req.query.frais === undefined && m && Date.now() - m.genere < 15 * 60 * 1000) return res.json(m);
 
@@ -2751,34 +2767,35 @@ app.get('/api/bilan/client', async (req, res) => {
       .sort((a, b) => b.dateCreation - a.dateCreation);
     const dans = ([d, f]) => siennes.filter(c => c.dateCreation >= d && c.dateCreation < f);
     const resume = l => {
-      const ca = Math.round(l.reduce((s, c) => s + (c.totalHT ?? 0), 0) * 100) / 100;
+      const ca = Math.round(l.reduce((s, c) => s + montantCommande(c, ttc), 0) * 100) / 100;
       return { ca, commandes: l.length, panier: l.length ? Math.round(ca / l.length * 100) / 100 : 0 };
     };
     const mois = Array.from({ length: 12 }, (_, i) => ({ mois: i, n: 0, n1: 0 }));
     for (const c of siennes) {
       const d = new Date(c.dateCreation);
-      if (d.getUTCFullYear() === annee) mois[d.getUTCMonth()].n += c.totalHT ?? 0;
-      if (d.getUTCFullYear() === annee - 1) mois[d.getUTCMonth()].n1 += c.totalHT ?? 0;
+      if (d.getUTCFullYear() === annee) mois[d.getUTCMonth()].n += montantCommande(c, ttc);
+      if (d.getUTCFullYear() === annee - 1) mois[d.getUTCMonth()].n1 += montantCommande(c, ttc);
     }
     const dates = siennes.map(c => c.dateCreation).sort((a, b) => a - b);
     const ecarts = dates.slice(1).map((t, i) => t - dates[i]).filter(x => x > 0);
     let ventes = null, erreurVentes = null;
     try {
-      const [pn, pn1] = [await syntheseVentes(periode.n, id), await syntheseVentes(periode.n1, id)];
+      const [pn, pn1] = [await syntheseVentes(periode.n, id, ttc), await syntheseVentes(periode.n1, id, ttc)];
       ventes = comparerVentes(pn, pn1);
     } catch (e) { erreurVentes = e.message; }
     await getAllClientsPartage().catch(() => {});
     const types = await getTypesClient().catch(() => []);
     const nom = siennes[0]?.client?.nom ?? (await getAllClientsPartage().catch(() => [])).find(c => c.id === id)?.nom ?? `Client ${id}`;
     const b = {
-      id, nom, annee, mode, genere: Date.now(),
+      id, nom, annee, mode, genere: Date.now(), taxe: ttc ? 'ttc' : 'ht',
+      ttcEstimes: ttc ? siennes.filter(c => c.totalTTC == null && c.dateCreation >= periode.n1[0]).length : 0,
       canal: canalParLibelleEtNom(types.find(t => t.idClientType === clientTypeMap.get(id))?.libelle, nom),
       periode: { n: [periode.n[0], periode.n[1] - 1], n1: [periode.n1[0], periode.n1[1] - 1] },
       commandes: { n: resume(dans(periode.n)), n1: resume(dans(periode.n1)) },
       premiere: dates[0] ?? null, derniere: dates.at(-1) ?? null, nbTotal: siennes.length,
       frequenceJours: ecarts.length >= 2 ? Math.round(ecarts.reduce((s, x) => s + x, 0) / ecarts.length / 86400000) : null,
       mois: mois.map(x => ({ ...x, n: Date.UTC(annee, x.mois, 1) > Date.now() ? null : Math.round(x.n), n1: Math.round(x.n1) })),
-      dernieres: siennes.slice(0, 12).map(c => ({ numero: c.numero, date: c.dateCreation, totalHT: c.totalHT ?? 0,
+      dernieres: siennes.slice(0, 12).map(c => ({ numero: c.numero, date: c.dateCreation, totalHT: montantCommande(c, ttc),
         etat: c.estLivree ? 'livrée' : c.etat?.libelle ?? '' })),
       ventes, erreurVentes,
     };

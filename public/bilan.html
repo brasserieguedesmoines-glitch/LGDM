@@ -74,6 +74,10 @@
     .chiffre-cle { font-size: var(--t-xl); font-weight: 700; }
     .vide { text-align: center; padding: 48px; color: var(--texte-2); }
     #entete-impression { display: none; }
+    .case-ttc { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 12px; border: 1px solid var(--bordure-forte);
+      border-radius: var(--r-md); background: var(--surface); font-weight: 600; font-size: var(--t-sm); cursor: pointer; user-select: none; margin: 0; }
+    .case-ttc:has(input:checked) { border-color: var(--accent); background: var(--accent-doux); color: var(--accent-texte); }
+    .case-ttc input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
     .onglets-bilan { display: flex; gap: 6px; border-bottom: 1px solid var(--bordure-forte); margin-bottom: var(--e4); flex-wrap: wrap; }
     .onglets-bilan button { background: none; border: 0; border-bottom: 3px solid transparent; padding: 10px 14px; margin-bottom: -1px;
       font-weight: 600; font-size: var(--t-md); color: var(--texte-2); cursor: pointer; width: auto; }
@@ -116,6 +120,7 @@
       <div><label for="f-annee">Année</label><select id="f-annee"></select></div>
       <div><label for="f-mode">Période</label>
         <select id="f-mode"><option value="adate">Du 1er janvier à aujourd'hui</option><option value="complet">Année complète</option></select></div>
+      <label class="case-ttc"><input type="checkbox" id="f-ttc"> Montants TTC</label>
       <button class="bouton" id="b-actualiser">Actualiser</button>
       <button class="bouton" id="b-imprimer">Imprimer</button>
       <button class="bouton" id="b-csv">Export CSV</button>
@@ -149,6 +154,10 @@
     const MOIS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
     const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
     let B = null, graphes = [];
+    // HT ou TTC : choix retenu sur l'appareil ; l'affichage suit la taxe des données reçues.
+    const ttcCoche = () => $('f-ttc').checked;
+    const tx = d => (d?.taxe === 'ttc' ? 'TTC' : 'HT');
+    try { $('f-ttc').checked = localStorage.getItem('lgdm-bilan-ttc') === '1'; } catch {}
 
     // Évolution : signe + flèche + couleur, jamais la couleur seule.
     function evol(n, n1, { pts = false } = {}) {
@@ -166,7 +175,7 @@
     async function charger(frais = false) {
       $('b-actualiser').disabled = true;
       $('portee').textContent = 'Chargement du bilan… (jusqu\'à 2 min la première fois)';
-      const q = new URLSearchParams({ annee: $('f-annee').value || new Date().getFullYear(), mode: $('f-mode').value });
+      const q = new URLSearchParams({ annee: $('f-annee').value || new Date().getFullYear(), mode: $('f-mode').value, taxe: ttcCoche() ? 'ttc' : 'ht' });
       if (frais) q.set('frais', Date.now());
       try {
         const r = await fetch('/api/bilan?' + q);
@@ -190,7 +199,8 @@
       $('f-annee').value = B.annee;
       const a = B.annee, [dn, fn] = B.periode.n, [dn1, fn1] = B.periode.n1;
       if (onglet === 'clients') $('portee').innerHTML = `Du <b>${fmtD(dn)}</b> au <b>${fmtD(fn)}</b> comparé au ${fmtD(dn1)} – ${fmtD(fn1)}
-        · par date de commande · montants HT · hors devis, commandes annulées et comptes salariés
+        · par date de commande · montants ${tx(B)} · hors devis, commandes annulées et comptes salariés
+        ${B.ttcEstimes ? `· TTC estimé (HT × 1,2) pour ${B.ttcEstimes} commande(s) sans total TTC` : ''}
         · calculé le ${new Date(B.genere).toLocaleString('fr-FR')}`;
       $('entete-impression').innerHTML = `<h1 style="font-size:18pt">Bilan ${a} vs ${a - 1} — Brasserie du Gué des Moines</h1>`;
 
@@ -202,10 +212,10 @@
         ${B.typesIndisponibles ? `<div class="avert">${ico('alerte')} Les types de clients EasyBeer n'ont pas pu être lus : les canaux sont déduits des seuls noms, la répartition est approximative. Cliquez sur « Actualiser » dans quelques minutes.</div>` : ''}
         ${B.historiqueIncomplet ? `<div class="avert">${ico('alerte')} L'historique chargé ne remonte pas jusqu'au début de ${a - 1} : la comparaison est incomplète. Cliquez sur « Actualiser » pour recharger.</div>` : ''}
         <div class="tuiles">
-          ${tuile('Chiffre d\'affaires HT', T.n.ca, T.n1.ca, eur)}
+          ${tuile(`Chiffre d'affaires ${tx(B)}`, T.n.ca, T.n1.ca, eur)}
           ${tuile('Commandes', T.n.commandes, T.n1.commandes, nb)}
           ${tuile('Clients ayant commandé', T.n.clients, T.n1.clients, nb)}
-          ${tuile('Panier moyen HT', T.n.panier, T.n1.panier, eur)}
+          ${tuile(`Panier moyen ${tx(B)}`, T.n.panier, T.n1.panier, eur)}
         </div>
 
         <div class="graphes">
@@ -339,7 +349,7 @@
     function exporterCSV() {
       if (!B) return;
       const a = B.annee, c = v => `"${String(v ?? '').replace(/"/g, '""')}"`, n = v => String(v ?? '').replace('.', ',');
-      const l = [['Bilan', `${a} vs ${a - 1}`, B.mode === 'complet' ? 'année complète' : 'à date'], [],
+      const l = [['Bilan', `${a} vs ${a - 1}`, B.mode === 'complet' ? 'année complète' : 'à date', `montants ${tx(B)}`], [],
         ['Canal', `CA ${a - 1}`, `CA ${a}`, `Part ${a - 1} %`, `Part ${a} %`, `Commandes ${a - 1}`, `Commandes ${a}`, `Clients ${a - 1}`, `Clients ${a}`]];
       for (const k of B.canaux) l.push([k.canal, n(k.n1.ca), n(k.n.ca), n(k.part.n1), n(k.part.n), k.n1.commandes, k.n.commandes, k.n1.clients, k.n.clients]);
       l.push(['Total', n(B.totaux.n1.ca), n(B.totaux.n.ca), 100, 100, B.totaux.n1.commandes, B.totaux.n.commandes, B.totaux.n1.clients, B.totaux.n.clients], []);
@@ -357,7 +367,7 @@
     // =========================================================================
     const GAMMES = { classique: 'Gamme classique', gms: 'La Bruguiéroise (GMS)', toutes: 'Saisonnières (Noël)' };
     const hl = l => ((l ?? 0) / 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' hL';
-    const parametres = () => ({ annee: $('f-annee').value || new Date().getFullYear(), mode: $('f-mode').value });
+    const parametres = () => ({ annee: $('f-annee').value || new Date().getFullYear(), mode: $('f-mode').value, taxe: ttcCoche() ? 'ttc' : 'ht' });
     let onglet = 'clients', P = null, F = null, clePv = '', graphesP = [], graphesF = [], clientsListe = null;
 
     function lireHash() {
@@ -381,16 +391,17 @@
       if (o === 'produits') { if (P && clePv === JSON.stringify(parametres())) rendrePortee(P, 'produits'); else chargerProduits(); }
       if (o === 'fiche') {
         const p = parametres();
-        if (F && (String(F.annee) !== String(p.annee) || F.mode !== p.mode)) chargerFiche(F.id);
+        if (F && (String(F.annee) !== String(p.annee) || F.mode !== p.mode || F.taxe !== p.taxe)) chargerFiche(F.id);
         else if (F) rendrePortee(F, 'fiche'); else $('portee').textContent = '';
       }
     }
 
     function rendrePortee(d, type = 'clients') {
       const [dn, fn] = d.periode.n, [dn1, fn1] = d.periode.n1;
-      const source = type === 'clients' ? 'par date de commande · montants HT · hors devis, commandes annulées et comptes salariés'
-        : type === 'produits' ? 'synthèse des ventes EasyBeer (bouteilles et fûts) · montants HT'
-        : 'commandes et synthèse des ventes EasyBeer · montants HT';
+      const source = (type === 'clients' ? `par date de commande · montants ${tx(d)} · hors devis, commandes annulées et comptes salariés`
+        : type === 'produits' ? `synthèse des ventes EasyBeer (bouteilles et fûts) · montants ${tx(d)}`
+        : `commandes et synthèse des ventes EasyBeer · montants ${tx(d)}`)
+        + (d.ttcEstimes ? ` · TTC estimé (HT × 1,2) pour ${d.ttcEstimes} commande(s) sans total TTC` : '');
       $('portee').innerHTML = `Du <b>${fmtD(dn)}</b> au <b>${fmtD(fn)}</b> comparé au ${fmtD(dn1)} – ${fmtD(fn1)} · ${source}
         · calculé le ${new Date(d.genere).toLocaleString('fr-FR')}`;
     }
@@ -457,7 +468,7 @@
       $('vue-produits').innerHTML = `
         <p class="note-source">Les montants viennent de la synthèse des ventes EasyBeer (produits vendus) : ils peuvent différer légèrement du chiffre d'affaires de l'onglet Clients, calculé sur les commandes.</p>
         <div class="tuiles">
-          ${tuileB('CA HT des produits', T.n.totalHT, T.n1.totalHT, eur, a)}
+          ${tuileB(`CA ${tx(P)} des produits`, T.n.totalHT, T.n1.totalHT, eur, a)}
           ${tuileB('Volume vendu', T.n.litres, T.n1.litres, hl, a)}
           ${tuileB('Unités vendues', T.n.quantite, T.n1.quantite, nb, a)}
           ${tuileB('Prix moyen au litre', prixL(T.n), prixL(T.n1), v => v.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }), a)}
@@ -580,9 +591,9 @@
           ${F.derniere ? `<span>dernière commande le <b>${fmtD(F.derniere)}</b></span>` : '<span>aucune commande</span>'}
           ${F.frequenceJours ? `<span>commande en moyenne tous les ${F.frequenceJours} jours</span>` : ''}</div>
         <div class="tuiles">
-          ${tuileB('Chiffre d\'affaires HT', C.n.ca, C.n1.ca, eur, a)}
+          ${tuileB(`Chiffre d'affaires ${tx(F)}`, C.n.ca, C.n1.ca, eur, a)}
           ${tuileB('Commandes', C.n.commandes, C.n1.commandes, nb, a)}
-          ${tuileB('Panier moyen HT', C.n.panier, C.n1.panier, eur, a)}
+          ${tuileB(`Panier moyen ${tx(F)}`, C.n.panier, C.n1.panier, eur, a)}
           ${V ? tuileB('Volume acheté', V.totaux.n.litres, V.totaux.n1.litres, hl, a) : ''}
         </div>
         <div class="graphes">
@@ -610,7 +621,7 @@
       const d = onglet === 'produits' ? P : F?.ventes ? { ...F.ventes, annee: F.annee } : null;
       if (!d) return;
       const a = d.annee, c = v => `"${String(v ?? '').replace(/"/g, '""')}"`, n = v => String(v ?? '').replace('.', ',');
-      const l = [[onglet === 'produits' ? 'Bilan produits' : `Bilan client — ${F.nom}`, `${a} vs ${a - 1}`], [],
+      const l = [[onglet === 'produits' ? 'Bilan produits' : `Bilan client — ${F.nom}`, `${a} vs ${a - 1}`, `montants ${tx(onglet === 'produits' ? P : F)}`], [],
         ['Produit', 'Gamme', `33 cL ${a - 1}`, `33 cL ${a}`, `75 cL ${a - 1}`, `75 cL ${a}`, `Fûts ${a - 1}`, `Fûts ${a}`, `Litres ${a - 1}`, `Litres ${a}`, `CA ${a - 1}`, `CA ${a}`]];
       for (const p of d.produits) l.push([p.libelle, GAMMES[p.gamme] ?? '', p.formats['33 cL']?.n1 ?? 0, p.formats['33 cL']?.n ?? 0,
         p.formats['75 cL']?.n1 ?? 0, p.formats['75 cL']?.n ?? 0, p.formats['Fûts']?.n1 ?? 0, p.formats['Fûts']?.n ?? 0, p.n1.litres, p.n.litres, n(p.n1.totalHT), n(p.n.totalHT)]);
@@ -632,6 +643,10 @@
       rechargerActif();
     });
     $('f-mode').addEventListener('change', () => rechargerActif());
+    $('f-ttc').addEventListener('change', () => {
+      try { localStorage.setItem('lgdm-bilan-ttc', ttcCoche() ? '1' : '0'); } catch {}
+      rechargerActif();
+    });
     // Changer de période invalide les trois vues ; seule la vue affichée se recharge.
     function rechargerActif(frais = false) {
       if (onglet === 'clients') charger(frais); else B = null;
