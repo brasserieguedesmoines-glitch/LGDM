@@ -1239,10 +1239,10 @@ function commandeAllegee(c) {
     dateLivraisonPrevue: c.dateLivraisonPrevue ?? null,
     dateLivraisonReelle: c.dateLivraisonReelle ?? null,
     totalHT: c.totalHT ?? 0,
-    // TVA de la commande : TTC = HT + TVA. Le champ « total » d'EasyBeer n'est
-    // pas un TTC fiable (0 sur des commandes regroupées, inférieur au HT sur
-    // d'autres) : il n'est pas utilisé.
-    tva: Number.isFinite(c.tva) ? c.tva : null,
+    // TTC EasyBeer (« totalTTC »). Ne pas confondre avec « total » / « netAPayer »,
+    // qui ajoutent les consignes de fûts (vérifié le 19/11/2026).
+    totalTTC: Number.isFinite(c.totalTTC) ? c.totalTTC : null,
+    estMere: !!c.estMere, estFille: !!c.estFille,
     etat: c.etat ? { code: c.etat.code, libelle: c.etat.libelle } : null,
     estDevis: !!c.estDevis, estAnnulee: !!c.estAnnulee,
     estLivree: !!c.estLivree, estFacturee: !!c.estFacturee, estArchivee: !!c.estArchivee,
@@ -2518,13 +2518,14 @@ app.get('/api/pilotage', async (req, res) => {
 // devis, commandes annulées et comptes salariés. La liste EasyBeer ne donne
 // pas les volumes : le bilan porte sur le chiffre d'affaires, les commandes
 // et les clients.
-// Montant d'une commande en HT ou en TTC (HT + TVA de la commande). Sans TVA
-// connue, le TTC est estimé à HT × 1,2 — taux de la bière — et compté comme tel.
-const ttcConnu = c => Number.isFinite(c.tva) && c.tva >= 0;
+// Montant d'une commande en HT ou en TTC (« totalTTC » d'EasyBeer, hors
+// consignes). Absent ou incohérent (inférieur au HT), le TTC est estimé à
+// HT × 1,2 — taux de la bière — et compté comme tel.
+const ttcConnu = c => Number.isFinite(c.totalTTC) && c.totalTTC >= (c.totalHT ?? 0) - 0.01;
 function montantCommande(c, ttc) {
   const ht = c.totalHT ?? 0;
   if (!ttc) return ht;
-  return Math.round((ttcConnu(c) ? ht + c.tva : ht * 1.2) * 100) / 100;
+  return ttcConnu(c) ? c.totalTTC : Math.round(ht * 1.2 * 100) / 100;
 }
 
 const CANAUX_BILAN = ['CHR', 'GMS', 'Distributeurs', 'Cavistes', 'Associations', 'Autres pros', 'Particuliers', 'Non catégorisé'];
@@ -2629,7 +2630,7 @@ app.get('/api/bilan', async (req, res) => {
     const annee = Math.min(anneeCourante, Math.max(2015, parseInt(req.query.annee) || anneeCourante));
     const mode = req.query.mode === 'complet' ? 'complet' : 'adate';
     const ttc = req.query.taxe === 'ttc';
-    const cle = `lgdm:bilan:v4:${annee}:${mode}:${ttc ? 'ttc' : 'ht'}`;   // v4 : TTC = HT + TVA
+    const cle = `lgdm:bilan:v5:${annee}:${mode}:${ttc ? 'ttc' : 'ht'}`;   // v5 : totalTTC EasyBeer
     const frais = req.query.frais !== undefined;
     const m = bilansMemoire.get(cle);
     if (!frais && m && Date.now() - m.genere < 30 * 60 * 1000) return res.json(m);
@@ -3363,17 +3364,6 @@ app.get('/api/debug-dernieres', async (req, res) => {
       }));
     res.json(recentes);
   } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
-});
-
-// --- TEMPORAIRE : champs bruts d'une commande de la liste (noms + montants).
-app.get('/api/cache/sonde-champs-commande', async (req, res) => {
-  try {
-    const d = await easybeerPost(`/commande/liste/toutes?numeroPage=1&nombreParPage=8&colonneTri=-numero`, FILTRE_COMMANDES);
-    const l = d?.liste ?? [];
-    const num = o => Object.fromEntries(Object.entries(o).filter(([k, v]) => typeof v === 'number' && /total|tva|ttc|ht|montant|reste|remise|consigne|frais|paye/i.test(k)));
-    res.set('Cache-Control', 'no-store');
-    res.json({ cles: Object.keys(l[0] ?? {}), montants: l.slice(0, 5).map(num) });
-  } catch (err) { res.json({ error: err.message }); }
 });
 
 // --- Export PDF des ruptures et précommandes ---
