@@ -3183,6 +3183,27 @@ app.get('/api/debug-dernieres', async (req, res) => {
   } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
 });
 
+// --- TEMPORAIRE : contrat Swagger des indicateurs EasyBeer (documentation
+// d'API uniquement, aucune donnée). À retirer une fois la route choisie.
+app.get('/api/cache/contrat-indicateurs', async (req, res) => {
+  try {
+    const sw = await easybeerGet('/v2/api-docs', 60000);
+    const motif = new RegExp(String(req.query.motif ?? '^/indicateur/'), 'i');
+    const out = {};
+    for (const [chemin, ops] of Object.entries(sw.paths)) {
+      if (!motif.test(chemin)) continue;
+      for (const [m, d] of Object.entries(ops)) out[`${m.toUpperCase()} ${chemin}`] = {
+        resume: d.summary,
+        params: (d.parameters ?? []).map(x => `${x.name}${x.required ? '*' : ''}:${x.in}:${x.schema?.$ref?.split('/').pop() ?? x.type ?? ''}`),
+        reponse: JSON.stringify(d.responses?.['200']?.schema ?? '').slice(0, 160),
+      };
+    }
+    const def = req.query.def ? sw.definitions[req.query.def] : undefined;
+    res.set('Cache-Control', 'no-store');
+    res.json(def ? { def } : out);
+  } catch (err) { res.status(502).json({ error: err.message }); }
+});
+
 // --- Export PDF des ruptures et précommandes ---
 // La page envoie la vue filtrée qu'elle affiche (type, campagne, recherche) :
 // le PDF reprend exactement ce que l'utilisateur voit. Pour chaque campagne,
