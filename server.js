@@ -3365,6 +3365,17 @@ app.get('/api/debug-dernieres', async (req, res) => {
   } catch (err) { res.status(err.status ?? 502).json({ error: err.message }); }
 });
 
+// --- TEMPORAIRE : champs bruts d'une commande de la liste (noms + montants).
+app.get('/api/cache/sonde-champs-commande', async (req, res) => {
+  try {
+    const d = await easybeerPost(`/commande/liste/toutes?numeroPage=1&nombreParPage=8&colonneTri=-numero`, FILTRE_COMMANDES);
+    const l = d?.liste ?? [];
+    const num = o => Object.fromEntries(Object.entries(o).filter(([k, v]) => typeof v === 'number' && /total|tva|ttc|ht|montant|reste|remise|consigne|frais|paye/i.test(k)));
+    res.set('Cache-Control', 'no-store');
+    res.json({ cles: Object.keys(l[0] ?? {}), montants: l.slice(0, 5).map(num) });
+  } catch (err) { res.json({ error: err.message }); }
+});
+
 // --- Export PDF des ruptures et précommandes ---
 // La page envoie la vue filtrée qu'elle affiche (type, campagne, recherche) :
 // le PDF reprend exactement ce que l'utilisateur voit. Pour chaque campagne,
