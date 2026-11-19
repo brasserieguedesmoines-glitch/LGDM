@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grille tarifaire GMS</title>
+<style>
+/* Polices embarquées (licence SIL OFL) : le document se génère sans connexion. */
+@font-face{ font-family:'Anton'; src:url(assets/fonts/Anton-latin.woff2) format('woff2'); font-weight:400 }
+@font-face{ font-family:'Inter'; src:url(assets/fonts/Inter-Regular.woff2) format('woff2'); font-weight:400 }
+@font-face{ font-family:'Inter'; src:url(assets/fonts/Inter-Medium.woff2) format('woff2'); font-weight:500 }
+@font-face{ font-family:'Inter'; src:url(assets/fonts/Inter-SemiBold.woff2) format('woff2'); font-weight:600 }
+@font-face{ font-family:'Inter'; src:url(assets/fonts/Inter-Bold.woff2) format('woff2'); font-weight:700 }
+/* =====================================================================
+   Grille tarifaire GMS — Le Gué des Moines
+   Pour modifier un prix, un EAN ou un texte : voir le bloc TARIFS / GAMME
+   dans le <script> en bas de page, puis relancer generer-pdf.mjs.
+   ===================================================================== */
+:root{
+  --noir:#0D0D0D; --charbon:#1A1714; --charbon2:#221E19; --ligne-sombre:#3A332B;
+  --ambre:#F0921E; --ambre2:#F5A425; --ambre-fonce:#A85A08; --brun:#5C3A17;
+  --blanc:#FFFFFF; --gris:#A8A39A; --gris-clair:#D9D3C8;
+  --encre:#1A1714; --encre2:#5E584F; --filet:#E6E0D6; --fond-doux:#F7F4EF;
+  --display:'Anton', 'Bebas Neue', 'Oswald', Impact, sans-serif;
+  --texte:'Inter', system-ui, sans-serif;
+}
+@page{ size:A4 landscape; margin:0 }
+*{ box-sizing:border-box; margin:0; padding:0 }
+html,body{ background:#8a857d }
+body{ font-family:var(--texte); color:var(--encre); -webkit-print-color-adjust:exact; print-color-adjust:exact }
+.page{ width:297mm; height:210mm; position:relative; overflow:hidden; margin:10mm auto; background:var(--blanc); page-break-after:always; break-after:page }
+@media print{ html,body{ background:none } .page{ margin:0 } }
+
+/* ---------- éléments communs ---------- */
+.pill{ display:inline-flex; align-items:center; gap:1.6mm; border:0.3mm solid var(--brun); border-radius:99px; padding:1.1mm 3.4mm; font:600 6.6pt/1 var(--texte); letter-spacing:.14em; text-transform:uppercase; color:var(--ambre) }
+.pill::before{ content:""; width:1.4mm; height:1.4mm; border-radius:50%; background:var(--ambre) }
+.display{ font-family:var(--display); font-weight:400; text-transform:uppercase; letter-spacing:.01em; line-height:.92 }
+.num{ font-variant-numeric:tabular-nums lining-nums }
+
+/* ---------- PAGE 1 : couverture (sombre) ---------- */
+.cover{ background:var(--noir); color:var(--blanc); display:grid; grid-template-columns:1.08fr 1fr; padding:15mm 16mm 0 }
+.cover .sceau{ position:absolute; right:-38mm; bottom:-48mm; width:150mm; opacity:.045; pointer-events:none }
+.cover .gauche{ padding-right:12mm; border-right:0.3mm solid var(--ligne-sombre); display:flex; flex-direction:column; height:171mm }
+.cover .droite{ padding-left:12mm; display:flex; flex-direction:column; height:171mm }
+.cover .logo{ width:92mm; margin:2mm 0 0 -1mm }
+.cover .titre{ margin-top:auto }
+.cover h1{ font-size:50pt; margin-top:4mm; color:var(--blanc) }
+.cover h1 span{ color:var(--ambre) }
+.cover .sous-titre{ margin-top:3mm; font:500 10.5pt/1.4 var(--texte); color:var(--gris) }
+.cover .stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:3mm; margin-top:7mm }
+.cover .stat{ background:var(--charbon2); border:0.3mm solid var(--ligne-sombre); border-radius:4mm; padding:3.4mm 3.6mm }
+.cover .stat b{ display:block; font:400 17pt/1 var(--display); color:var(--ambre); letter-spacing:.01em }
+.cover .stat small{ display:block; margin-top:1.4mm; font:500 7pt/1.3 var(--texte); color:var(--gris) }
+
+.cover .pill{ align-self:flex-start }
+.cover h2{ font-size:29pt; line-height:1.04; margin-top:4mm; color:var(--blanc) }
+.cover h2 span{ display:block; margin-top:2.4mm; color:var(--ambre) }
+.histoire{ margin-top:5mm; font:400 10.2pt/1.62 var(--texte); color:var(--gris-clair) }
+.histoire p + p{ margin-top:2.8mm }
+.histoire strong{ color:var(--blanc); font-weight:600 }
+.histoire em{ font-style:normal; color:var(--ambre2); font-weight:600 }
+.distinction{ display:flex; align-items:center; gap:4mm; margin-top:5mm; background:var(--charbon2); border:0.3mm solid var(--ligne-sombre); border-radius:4mm; padding:3mm 4mm }
+.distinction img{ width:17mm; height:17mm; border-radius:50%; box-shadow:0 0 0 0.5mm var(--ambre) }
+.distinction b{ display:block; font:400 13pt/1 var(--display); color:var(--ambre); letter-spacing:.02em }
+.distinction small{ display:block; margin-top:1.2mm; font:500 7.6pt/1.35 var(--texte); color:var(--gris) }
+.coordonnees{ margin-top:auto; padding-top:5mm; border-top:0.3mm solid var(--ligne-sombre) }
+.contact{ margin-top:3.5mm; display:grid; grid-template-columns:1fr auto; align-items:end; gap:4mm }
+.contact .bloc{ font:400 8.8pt/1.55 var(--texte); color:var(--gris-clair) }
+.contact .bloc .nom{ font:400 13pt/1 var(--display); letter-spacing:.04em; text-transform:uppercase; color:var(--blanc); margin-bottom:1.8mm }
+.contact .bloc a{ color:inherit; text-decoration:none }
+.contact .tel{ font:400 21pt/1 var(--display); color:var(--ambre); letter-spacing:.03em; margin-top:2mm }
+.reseaux{ display:flex; gap:2mm }
+.reseaux img{ width:8.5mm; height:8.5mm; border-radius:1.6mm }
+
+.cover .pied{ position:absolute; left:16mm; right:16mm; bottom:6mm; display:flex; justify-content:space-between; gap:6mm; font:500 5.9pt/1.4 var(--texte); letter-spacing:.04em; color:#77716A; text-transform:uppercase }
+
+/* ---------- bandeau des pages intérieures ---------- */
+.bandeau{ background:var(--noir); color:var(--blanc); height:25mm; padding:0 14mm; display:flex; align-items:center; gap:7mm }
+.bandeau .logo{ height:15mm }
+.bandeau .sep{ width:0.3mm; height:12mm; background:var(--ligne-sombre) }
+.bandeau h1{ font-size:25pt; line-height:1 }
+.bandeau h1 span{ color:var(--ambre) }
+.bandeau .meta{ margin-left:auto; text-align:right; display:flex; flex-direction:column; align-items:flex-end; gap:2mm }
+.bandeau .meta small{ font:500 7pt/1.3 var(--texte); color:var(--gris) }
+.interieur .corps{ padding:7mm 14mm 0 }
+.interieur .pied{ position:absolute; left:14mm; right:14mm; bottom:5.5mm; display:flex; justify-content:space-between; align-items:flex-end; gap:6mm; border-top:0.3mm solid var(--filet); padding-top:2.2mm; font:500 6pt/1.45 var(--texte); color:var(--encre2) }
+.interieur .pied .loi{ font-weight:700; color:var(--encre) }
+.interieur .pied .folio{ font:400 9pt/1 var(--display); color:var(--ambre-fonce); letter-spacing:.06em }
+
+/* ---------- PAGE 2 : la gamme ---------- */
+.gamme{ display:grid; grid-template-columns:repeat(4,1fr); grid-template-rows:repeat(2,1fr); gap:4.5mm; height:155mm }
+.carte{ position:relative; display:grid; grid-template-columns:19.5mm 1fr; gap:3.5mm; border:0.3mm solid var(--filet); border-radius:4mm; padding:4mm 4mm 4mm 3.2mm; background:var(--blanc); overflow:hidden }
+.carte::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:1.3mm; background:var(--c) }
+.carte .bouteille{ width:19.5mm; align-self:center; justify-self:center; height:auto }
+.carte .infos{ display:flex; flex-direction:column; min-width:0 }
+.etiquette{ align-self:flex-start; display:inline-block; border-radius:99px; padding:1mm 2.6mm; background:var(--c); color:var(--t); border:0.3mm solid var(--b, var(--c)); font:700 5.9pt/1.15 var(--texte); letter-spacing:.11em; text-transform:uppercase }
+.carte .marque{ margin-top:2.6mm; font:600 6.4pt/1 var(--texte); letter-spacing:.16em; text-transform:uppercase; color:var(--encre2) }
+.carte h3{ font-size:22pt; margin-top:2.2mm; color:var(--encre) }
+.carte .chips{ display:flex; flex-wrap:nowrap; gap:1mm; margin-top:2.4mm }
+.carte .chips span{ white-space:nowrap; border:0.3mm solid var(--filet); background:var(--fond-doux); border-radius:99px; padding:0.8mm 1.7mm; font:600 6.1pt/1.1 var(--texte); color:var(--encre) }
+.carte .chips span.deg{ background:var(--encre); border-color:var(--encre); color:var(--blanc) }
+.carte p{ margin-top:3mm; font:400 7.9pt/1.52 var(--texte); color:var(--encre2) }
+
+/* ---------- PAGE 3 : grille tarifaire ---------- */
+.formats{ display:grid; grid-template-columns:1fr 1fr 1.02fr; gap:4mm }
+.format{ display:grid; grid-template-columns:auto 1fr; align-items:center; gap:4.5mm; border:0.3mm solid var(--filet); border-radius:4mm; padding:3.4mm 4.5mm; background:var(--fond-doux) }
+.format .vol{ font:400 26pt/0.9 var(--display); color:var(--encre); text-align:center; min-width:19mm; padding-right:4.5mm; border-right:0.3mm solid var(--filet) }
+.format .vol small{ display:block; margin-top:1.4mm; font:600 6pt/1 var(--texte); letter-spacing:.14em; color:var(--encre2) }
+.format .prix{ display:flex; align-items:baseline; gap:2mm; flex-wrap:wrap }
+.format .prix b{ font:400 21pt/1 var(--display); color:var(--ambre-fonce); letter-spacing:.01em }
+.format .prix span{ font:600 7.2pt/1 var(--texte); color:var(--encre) }
+.format .detail{ margin-top:1.6mm; font:500 7.3pt/1.45 var(--texte); color:var(--encre2) }
+.format .detail strong{ color:var(--encre); font-weight:700 }
+.conditions{ border-radius:4mm; padding:3.6mm 4.5mm; background:var(--noir); color:var(--gris-clair); font:500 7.3pt/1.5 var(--texte) }
+.conditions .pill{ margin-bottom:2mm }
+.conditions strong{ color:var(--blanc); font-weight:600 }
+
+table.tarifs{ width:100%; margin-top:5mm; border-collapse:separate; border-spacing:0; font-size:8pt }
+.tarifs th{ font:700 6.2pt/1.2 var(--texte); letter-spacing:.1em; text-transform:uppercase; color:var(--encre2); text-align:left; padding:0 2.2mm 1.8mm; white-space:nowrap }
+.tarifs thead tr.groupes th{ padding-bottom:1.6mm }
+.tarifs thead tr.groupes th.g{ text-align:center; color:var(--blanc); background:var(--encre); border-radius:2mm 2mm 0 0; padding:1.7mm 2mm; font-size:6.6pt; letter-spacing:.14em }
+.tarifs thead tr.groupes th.g span{ color:var(--ambre2) }
+.tarifs thead tr.colonnes th{ border-bottom:0.5mm solid var(--encre); padding-top:1.8mm }
+.tarifs thead tr.colonnes th.d, .tarifs td.d{ text-align:right }
+.tarifs thead tr.colonnes th.c, .tarifs td.c{ text-align:center }
+.tarifs td{ padding:0 2.2mm; height:14.2mm; border-bottom:0.3mm solid var(--filet); vertical-align:middle; white-space:nowrap }
+.tarifs tbody tr:nth-child(even) td{ background:var(--fond-doux) }
+.tarifs td.groupe-debut, .tarifs th.groupe-debut{ border-left:0.3mm solid var(--filet) }
+.ref{ display:flex; align-items:center; gap:2.6mm }
+.ref img{ height:12.4mm; width:auto }
+.ref .n{ display:flex; flex-direction:column; gap:1.2mm }
+.ref .n b{ font:400 13.5pt/1 var(--display); letter-spacing:.02em; text-transform:uppercase; color:var(--encre) }
+.ref .n b small{ font:600 6pt/1 var(--texte); letter-spacing:.14em; color:var(--encre2); margin-right:1.4mm; vertical-align:1.6pt }
+.ref .etiquette{ font-size:5.4pt; padding:0.7mm 2mm }
+.tarifs .px{ font:700 8.6pt/1 var(--texte) }
+.tarifs .pvc{ font:500 8pt/1 var(--texte); color:var(--encre2) }
+.tarifs .deg{ font:600 8pt/1 var(--texte) }
+.tarifs .ean{ font:500 8.2pt/1 var(--texte); letter-spacing:.04em; color:var(--encre) }
+.tarifs .ean i{ font-style:normal; margin-left:.9mm }
+.tarifs .colis{ font:600 8pt/1 var(--texte) }
+</style>
+</head>
+<body>
+
+<!-- ================= PAGE 1 — COUVERTURE ================= -->
+<section class="page cover">
+  <img class="sceau" src="assets/sceau_blanc.png" alt="">
+  <div class="gauche">
+    <img class="logo" src="assets/logo_cream.png" alt="Le Gué des Moines">
+    <div class="titre">
+      <span class="pill">Grandes &amp; moyennes surfaces</span>
+      <h1 class="display">Grille<br>tarifaire <span>GMS</span></h1>
+      <p class="sous-titre">Bières artisanales &amp; locales — gamme La Bruguièroise,<br>brassée et embouteillée à Bruguières (31150).</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="nb-refs">8 bières</b><small>16 références<br>en 33 cl et 75 cl</small></div>
+      <div class="stat"><b>Depuis 2016</b><small>Brasserie artisanale<br>en Haute-Garonne</small></div>
+      <div class="stat"><b>Bruguières</b><small>Brassée et embouteillée<br>sur place</small></div>
+    </div>
+  </div>
+
+  <div class="droite">
+    <span class="pill">Notre histoire</span>
+    <h2 class="display">L’histoire du <span>Gué des Moines</span></h2>
+    <div class="histoire">
+      <p>C’est en <em>2016</em>, dans l’ancienne briqueterie de <strong>Bruguières</strong>, que les cuves du Gué des Moines ont pris place. Le nom vient de l’avenue du <strong>Gamouna</strong>, qui signifie «&#8239;le gué des moines&#8239;» en languedocien. Cette avenue se trouve à Bruguières, la commune dont <strong>Martial</strong>, le brasseur et gérant, est originaire.</p>
+      <p>Nos bières sont aujourd’hui pensées, brassées et embouteillées sur cet <strong>ancien site industriel</strong>. Venez nous voir&#8239;: des visites de la brasserie sont proposées une fois par mois, et notre <strong>espace dégustation</strong> vous accueille du mercredi au samedi.</p>
+    </div>
+    <div class="distinction">
+      <img src="assets/houblon_or.png" alt="Houblon d’Or">
+      <div><b>Houblon d’Or 2023</b><small>Sélectionnée parmi les meilleures brasseries françaises.</small></div>
+    </div>
+    <div class="coordonnees">
+    <span class="pill">Coordonnées</span>
+    <div class="contact">
+      <div class="bloc">
+        <div class="nom">Le Gué des Moines</div>
+        31, rue de la Briqueterie — 31150 Bruguières<br>
+        brasserieguedesmoines@gmail.com<br>
+        <strong style="color:#fff;font-weight:600">www.leguedesmoines.com</strong>
+        <div class="tel num">09 67 48 99 63</div>
+      </div>
+      <div class="reseaux">
+        <img src="assets/icon_tiktok.png" alt="TikTok">
+        <img src="assets/icon_facebook.png" alt="Facebook">
+        <img src="assets/icon_instagram.png" alt="Instagram">
+      </div>
+    </div>
+    </div>
+  </div>
+  <div class="pied"><span class="legal-societe"></span><span>L’abus d’alcool est dangereux pour la santé. À consommer avec modération.</span></div>
+</section>
+
+<!-- ================= PAGE 2 — LA GAMME ================= -->
+<section class="page interieur">
+  <header class="bandeau">
+    <img class="logo" src="assets/logo_cream.png" alt="Le Gué des Moines">
+    <span class="sep"></span>
+    <h1 class="display">La gamme <span>La Bruguièroise</span></h1>
+    <div class="meta"><span class="pill">Bières artisanales &amp; locales</span><small>Brassées à Bruguières (31150) · 33 cl et 75 cl</small></div>
+  </header>
+  <div class="corps"><div class="gamme" id="gamme"></div></div>
+  <footer class="pied"><div><span class="loi">L’abus d’alcool est dangereux pour la santé. À consommer avec modération.</span><br><span class="legal-societe"></span></div><span class="folio">2 / 3</span></footer>
+</section>
+
+<!-- ================= PAGE 3 — GRILLE TARIFAIRE ================= -->
+<section class="page interieur">
+  <header class="bandeau">
+    <img class="logo" src="assets/logo_cream.png" alt="Le Gué des Moines">
+    <span class="sep"></span>
+    <h1 class="display">Grille tarifaire <span>GMS</span></h1>
+    <div class="meta"><span class="pill">Prix HT · droits d’accises inclus</span><small>Hors transport · bouteilles de 33 cl ou 75 cl</small></div>
+  </header>
+  <div class="corps">
+    <div class="formats" id="formats"></div>
+    <table class="tarifs" id="tarifs"></table>
+  </div>
+  <footer class="pied"><div><span class="loi">L’abus d’alcool est dangereux pour la santé. À consommer avec modération.</span><br><span class="legal-societe"></span></div><span class="folio">3 / 3</span></footer>
+</section>
+
+<script>
+/* ======================== DONNÉES À METTRE À JOUR ======================== */
+const SOCIETE = "SAS Paille Freyburger au capital de 5 000 € · RCS Toulouse 809 295 553 · SIRET 809 295 553 00022 · APE 1105Z · N° TVA FR48 809 295 553";
+
+// Prix HT par bouteille, droits d'accises inclus, hors transport.
+const TARIFS = {
+  "33": { libelle: "33 cl", colis: 24, prixHT: 1.90, pvc: 3.10 },
+  "75": { libelle: "75 cl", colis: 6,  prixHT: 3.80, pvc: 6.20 },
+};
+
+// c = couleur de l'étiquette, t = couleur du texte sur l'étiquette, b = bordure (optionnelle)
+const GAMME = [
+  { id:"blonde",  nom:"Blonde",  style:"Blonde Pale Ale",    degre:4.5, c:"#F2EFC6", t:"#5B3D8C", b:"#D9D3A0", ean:{ "33":"3770005751128", "75":"3770005751340" },
+    desc:"Une Pale Ale légère aux délicates notes de miel, appréciée de tous. C’est la plus classique de nos bières." },
+  { id:"blanche", nom:"Blanche", style:"Blanche",            degre:5.8, c:"#B9DAD4", t:"#1E6B62", ean:{ "33":"3770005751098", "75":"3770005751357" },
+    desc:"Brassée avec une levure saison qui lui apporte de la rondeur en bouche. Ses saveurs d’agrumes et de banane la rendent rafraîchissante." },
+  { id:"ambree",  nom:"Ambrée",  style:"Ambrée",             degre:5.8, c:"#E5492E", t:"#FFFFFF", ean:{ "33":"3770005751111", "75":"3770005751319" },
+    desc:"Une ambrée aromatique à la belle rondeur en bouche, aux saveurs fruitées relevées de notes d’orange." },
+  { id:"ipa",     nom:"IPA",     style:"Blonde IPA",         degre:5.8, c:"#2CD42A", t:"#0A3509", ean:{ "33":"3770005751081", "75":"3770005751333" },
+    desc:"Une Indian Pale Ale sèche aux arômes de fruits exotiques, avec une amertume rafraîchissante parfaitement équilibrée." },
+  { id:"brune",   nom:"Brune",   style:"Brune Stout",        degre:7.5, c:"#1B2B3C", t:"#7FD0C4", ean:{ "33":"3770005751043", "75":"3770005751371" },
+    desc:"Une Stout brassée avec du malt fumé à la tourbe, qui lui confère un goût unique et distinctif. Équilibrée en bouche." },
+  { id:"triple",  nom:"Triple",  style:"Triple style belge", degre:8,   c:"#E5007E", t:"#FFFFFF", ean:{ "33":"3770005751425", "75":"3770005751449" },
+    desc:"À la fois rafraîchissante et sucrée. Son houblonnage léger apporte des notes d’agrumes qui viennent équilibrer sa douceur." },
+  { id:"neipa",   nom:"NEIPA",   style:"Blonde NEIPA",       degre:5.8, c:"#27A8E0", t:"#FFFFFF", ean:{ "33":"3770005751487", "75":"3770005751470" },
+    desc:"Trouble et généreuse, aux arômes intenses de fruits tropicaux et d’agrumes. Douce, juteuse et peu amère, avec une finale ultra-rafraîchissante." },
+  { id:"sour",    nom:"Sour",    style:"Sour",               degre:5.8, c:"#FFFFFF", t:"#E0157F", b:"#F3A6CB", ean:{ "33":"3770005751524", "75":"3770005751531" },
+    desc:"Acidulée et portée par de belles notes de framboise fraîche. Entre douceur fruitée et acidité vive, une finale légère et désaltérante." },
+];
+/* ======================================================================== */
+
+const euro = n => n.toLocaleString("fr-FR",{minimumFractionDigits:2, maximumFractionDigits:2}) + " €";
+const deg  = n => n.toLocaleString("fr-FR",{maximumFractionDigits:1}) + " % vol.";
+const ean  = e => `${e[0]}<i>${e.slice(1,7)}</i><i>${e.slice(7)}</i>`;
+const vars = b => `--c:${b.c};--t:${b.t};${b.b?`--b:${b.b};`:""}`;
+
+document.querySelectorAll(".legal-societe").forEach(el => el.textContent = SOCIETE);
+document.getElementById("nb-refs").textContent = `${GAMME.length} bières`;
+
+document.getElementById("gamme").innerHTML = GAMME.map(b => `
+  <article class="carte" style="${vars(b)}">
+    <img class="bouteille" src="assets/bottle_${b.id}.png" alt="">
+    <div class="infos">
+      <span class="etiquette">${b.style}</span>
+      <div class="marque">La Bruguièroise</div>
+      <h3 class="display">${b.nom}</h3>
+      <div class="chips"><span class="deg">${deg(b.degre)}</span><span>33 cl · 75 cl</span></div>
+      <p>${b.desc}</p>
+    </div>
+  </article>`).join("");
+
+document.getElementById("formats").innerHTML = Object.values(TARIFS).map(f => `
+  <div class="format">
+    <div class="vol">${f.libelle.replace(" cl","")}<small>CL</small></div>
+    <div>
+      <div class="prix"><b class="num">${euro(f.prixHT)}</b><span>HT la bouteille</span></div>
+      <div class="detail">PVC conseillé <strong class="num">${euro(f.pvc)}</strong> · Colis de <strong>${f.colis}</strong>, soit <strong class="num">${euro(f.prixHT*f.colis)} HT</strong> le colis</div>
+    </div>
+  </div>`).join("") + `
+  <div class="conditions">
+    <span class="pill">Conditions</span><br>
+    <strong>Prix hors taxes</strong>, droits d’accises inclus, hors transport.<br>
+    Codes EAN-13 de chaque référence dans le tableau ci-dessous.
+  </div>`;
+
+const formats = Object.keys(TARIFS);
+document.getElementById("tarifs").innerHTML = `
+  <thead>
+    <tr class="groupes"><th colspan="2"></th>${formats.map(k => `<th class="g" colspan="4">Bouteille ${TARIFS[k].libelle} <span>· colis de ${TARIFS[k].colis}</span></th>`).join("")}</tr>
+    <tr class="colonnes"><th>Référence</th><th class="c">Degré</th>${formats.map(() => `<th class="d groupe-debut">Prix HT</th><th class="d">PVC conseillé</th><th class="c">Colis</th><th>EAN-13 (Gencod)</th>`).join("")}</tr>
+  </thead>
+  <tbody>${GAMME.map(b => `
+    <tr style="${vars(b)}">
+      <td><div class="ref"><img src="assets/bottle_${b.id}.png" alt=""><div class="n"><b><small>La Bruguièroise</small>${b.nom}</b><span class="etiquette">${b.style}</span></div></div></td>
+      <td class="c deg num">${deg(b.degre).replace(" vol.","")}</td>
+      ${formats.map(k => `<td class="d px num groupe-debut">${euro(TARIFS[k].prixHT)}</td><td class="d pvc num">${euro(TARIFS[k].pvc)}</td><td class="c colis num">×${TARIFS[k].colis}</td><td class="ean num">${ean(b.ean[k])}</td>`).join("")}
+    </tr>`).join("")}
+  </tbody>`;
+</script>
+</body>
+</html>
