@@ -1038,9 +1038,14 @@
       <div class="dlg-corps">
         ${r.feuilles?.length > 1 ? `<div style="max-width:320px"><label for="ap-feuille">Feuille du classeur</label><div class="select-enveloppe"><select id="ap-feuille">
           ${r.feuilles.map((f, k) => `<option value="${k}"${k === apercu.feuille ? ' selected' : ''}>${echap(f.nom)}</option>`).join('')}</select></div></div>` : ''}
+        ${tab && r.itineraire ? `<p class="msg-ok" style="font-weight:500">Itinéraire reconnu : l’adresse de chaque client est la destination
+          du trajet qui le précède (colonne « ${echap(r.entete?.[r.colonnes.vers] ?? 'Vers')} »). Les lignes de trajet et le retour au dépôt sont écartés.</p>` : ''}
         ${tab ? `<div class="colonnes-import" aria-label="Colonnes du fichier">
-          ${selectColonne('nom', 'Nom du client')}${selectColonne('adresse', 'Adresse')}${selectColonne('cp', 'Code postal')}
-          ${selectColonne('ville', 'Ville')}${selectColonne('telephone', 'Téléphone')}${selectColonne('consignes', 'Consignes')}
+          ${selectColonne('nom', 'Nom du client')}
+          ${r.itineraire ? selectColonne('vers', 'Trajet : destination') + selectColonne('de', 'Trajet : départ')
+            : selectColonne('adresse', 'Adresse') + selectColonne('cp', 'Code postal') + selectColonne('ville', 'Ville')}
+          ${selectColonne('telephone', 'Téléphone')}${selectColonne('consignes', 'Consignes')}
+          ${r.colonnes?.heure !== undefined || r.itineraire ? selectColonne('heure', 'Horaire prévu') : ''}
         </div>` : ''}
         <div class="resume-adresses" id="ap-resume"></div>
         <label class="options-import" style="margin:0"><span style="display:inline-flex;gap:6px;align-items:center">
