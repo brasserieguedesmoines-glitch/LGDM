@@ -34,9 +34,10 @@ function sessionValide(req) {
   return !!exp && !!sig && Number(exp) > Date.now() && egal(sig, signer(exp));
 }
 
-// Routes accessibles sans session : connexion, espace pro, caches CDN
+// Routes accessibles sans session : connexion, espace pro, espace livreur
+// (accès par jeton personnel, contrôlé dans livraisons.js), caches CDN
 // (catalogue et prix, appelés en interne et mis en cache par le CDN).
-const LIBRES = [/^\/auth\//, /^\/pro\//, /^\/cache\//];
+const LIBRES = [/^\/auth\//, /^\/pro\//, /^\/livreur\//, /^\/cache\//];
 
 export function monterAcces(app) {
   if (!MOT_DE_PASSE) console.warn('APP_MOT_DE_PASSE absent : appli interne NON protégée');

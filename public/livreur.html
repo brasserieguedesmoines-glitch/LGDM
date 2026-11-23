@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <meta name="referrer" content="no-referrer">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Tournée GDM">
+  <title>Ma tournée — Le Gué des Moines</title>
+  <script>
+    try { document.documentElement.dataset.theme = localStorage.getItem('lgdm-livreur-theme') || 'dark'; }
+    catch { document.documentElement.dataset.theme = 'dark'; }
+  </script>
+  <meta name="theme-color" content="#0D0D0D">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="icons.js"></script>
+  <style>
+    /* Identité du Gué des Moines côté terrain : brewpub sombre, accent ambre,
+       titres condensés en majuscules, pastilles. Grandes cibles tactiles. */
+    :root[data-theme="dark"] {
+      --fond: #0D0D0D; --surface: #1A1714; --surface-2: #201C18; --surface-3: #2A2520;
+      --bordure: #2E2822; --bordure-forte: #4A2F12; --texte: #FFFFFF; --texte-2: #A8A39A; --texte-3: #8E897F;
+      --accent: #F0921E; --accent-fonce: #F5A425; --accent-texte: #F5A425; --accent-doux: rgba(240,146,30,.13);
+    }
+    :root { --display: 'Oswald', 'Arial Narrow', system-ui, sans-serif; }
+    [hidden] { display: none !important; }
+    html, body { background: var(--fond); }
+    body { font-size: 16px; padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+    .ico { width: 20px; height: 20px; }
+
+    .haut { position: sticky; top: 0; z-index: 40; background: color-mix(in srgb, var(--fond) 92%, transparent);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-bottom: 1px solid var(--bordure);
+      padding: calc(10px + env(safe-area-inset-top)) 16px 12px; }
+    .haut .in { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
+    .ligne-marque { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .ligne-marque img { width: 34px; height: 34px; object-fit: contain; flex: none; }
+    :root:not([data-theme="dark"]) .ligne-marque img { filter: invert(1); }
+    .titre { flex: 1; min-width: 0; }
+    .titre h1 { font-family: var(--display); font-weight: 600; font-size: 1.45rem; line-height: 1.1; text-transform: uppercase;
+      letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--texte); }
+    .titre p { font-size: .875rem; color: var(--texte-2); line-height: 1.3; }
+    .rond { width: 44px; height: 44px; min-height: 44px; border-radius: 50%; border: 1px solid var(--bordure-forte); background: transparent;
+      color: var(--texte-2); display: grid; place-items: center; padding: 0; flex: none; text-decoration: none; }
+    .rond:hover { color: var(--texte); }
+    :root[data-theme="dark"] .rond .i-lune, :root:not([data-theme="dark"]) .rond .i-soleil { display: none; }
+    .progression { display: flex; flex-direction: column; gap: 6px; }
+    .progression .phrase { font-size: 1rem; font-weight: 600; color: var(--texte); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+    .progression .phrase b { font-family: var(--display); font-size: 1.3rem; color: var(--accent-texte); font-weight: 600; }
+    .progression .pb { color: var(--danger); font-size: .875rem; font-weight: 600; }
+    .barre { display: flex; height: 8px; border-radius: 999px; background: var(--surface-3); overflow: hidden; gap: 2px; }
+    .barre i { display: block; height: 100%; transition: width .3s ease; }
+    .barre .l { background: var(--ok); } .barre .p { background: var(--danger); }
+
+    main.page { max-width: 640px; margin: 0 auto; padding: 14px 12px; display: flex; flex-direction: column; gap: 12px; }
+    .bandeau { border-radius: 14px; padding: 12px 14px; font-size: .9375rem; display: flex; gap: 10px; align-items: flex-start; }
+    .bandeau .ico { flex: none; margin-top: 1px; }
+    .bandeau.ko { background: var(--danger-doux); color: var(--danger); border: 1px solid var(--danger); }
+    .bandeau.info { background: var(--surface-2); color: var(--texte-2); border: 1px solid var(--bordure); }
+    .bandeau.ok { background: var(--ok-doux); color: var(--ok); border: 1px solid var(--ok); font-weight: 600; }
+    .bandeau button { margin-top: 8px; }
+
+    /* --- Pastilles de statut ----------------------------------------------- */
+    .st { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; font-size: .75rem;
+      font-weight: 700; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; border: 1px solid var(--bordure-forte); }
+    .st::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .st.a_livrer { color: var(--accent-texte); background: var(--accent-doux); }
+    .st.livree { color: var(--ok); background: var(--ok-doux); border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
+    .st.probleme { color: var(--danger); background: var(--danger-doux); border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
+    .st.attente { color: var(--texte-2); background: var(--surface-3); }
+
+    /* --- Carte d'un arrêt ---------------------------------------------------- */
+    .arret { background: var(--surface); border: 1px solid var(--bordure); border-radius: 18px; padding: 16px; display: flex;
+      flex-direction: column; gap: 12px; scroll-margin-top: 150px; transition: border-color .2s, background .2s; }
+    .arret.livree { background: color-mix(in srgb, var(--ok) 11%, var(--surface)); border-color: color-mix(in srgb, var(--ok) 55%, transparent); gap: 8px; }
+    .arret.probleme { border-color: color-mix(in srgb, var(--danger) 60%, transparent); }
+    .arret.focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-doux); }
+    .arret-tete { display: flex; gap: 12px; align-items: flex-start; }
+    .num { flex: none; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-family: var(--display);
+      font-weight: 600; font-size: 1.35rem; color: var(--accent-texte); border: 2px solid var(--accent); background: var(--accent-doux); }
+    .arret.livree .num { color: var(--ok); border-color: var(--ok); background: var(--ok-doux); }
+    .arret.probleme .num { color: var(--danger); border-color: var(--danger); background: var(--danger-doux); }
+    .qui { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+    .qui h2 { font-size: 1.2rem; font-weight: 700; line-height: 1.25; color: var(--texte); overflow-wrap: anywhere; }
+    .adresse { display: flex; gap: 8px; font-size: 1rem; color: var(--texte); line-height: 1.4; overflow-wrap: anywhere; }
+    .adresse .ico { color: var(--texte-3); flex: none; margin-top: 2px; }
+    .arret.livree .adresse, .arret.livree .tel { font-size: .9375rem; color: var(--texte-2); }
+    .tel { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--accent-texte); font-weight: 600;
+      text-decoration: none; font-size: 1rem; align-self: flex-start; }
+    .tel .ico { color: var(--accent-texte); }
+    .consignes { background: var(--surface-2); border-left: 3px solid var(--accent); border-radius: 10px; padding: 10px 12px;
+      font-size: .9688rem; color: var(--texte); white-space: pre-line; overflow-wrap: anywhere; }
+    .consignes b { display: block; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--accent-texte); margin-bottom: 2px; }
+    .info-statut { font-size: .9375rem; font-weight: 600; display: flex; gap: 8px; align-items: flex-start; }
+    .info-statut.ok { color: var(--ok); }
+    .info-statut.ko { color: var(--danger); flex-direction: column; gap: 4px; }
+    .info-statut.ko q { font-weight: 500; color: var(--texte); }
+    .retour-nav { font-size: .875rem; color: var(--accent-texte); background: var(--accent-doux); border-radius: 10px; padding: 8px 12px; }
+    .alerte-adresse { font-size: .875rem; color: var(--alerte); display: flex; gap: 6px; }
+
+    .actions { display: flex; flex-direction: column; gap: 10px; }
+    .gros { min-height: 58px; width: 100%; border-radius: 16px; font-size: 1.0625rem; font-weight: 700; display: flex; align-items: center;
+      justify-content: center; gap: 10px; text-decoration: none; border: 2px solid transparent; cursor: pointer; padding: 0 16px;
+      font-family: var(--police); -webkit-tap-highlight-color: transparent; }
+    .gros:active { transform: scale(.985); }
+    .gros .ico { width: 22px; height: 22px; }
+    .gros.waze { background: var(--surface-2); color: var(--texte); border-color: var(--bordure-forte); }
+    .gros.valider { background: var(--accent); color: #1A1206; }
+    .gros.valider:disabled, .gros.waze[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+    .secondaires { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+    .lien-btn { background: none; border: 0; min-height: 44px; padding: 0 4px; color: var(--texte-2); font-weight: 600; font-size: .9375rem;
+      text-decoration: underline; text-underline-offset: 3px; width: auto; cursor: pointer; }
+    .lien-btn.danger { color: var(--danger); }
+    .autres-gps { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: var(--surface-2); border-radius: 12px; padding: 10px; }
+    .autres-gps p { grid-column: 1 / -1; font-size: .875rem; color: var(--texte-2); }
+    .autres-gps a, .autres-gps button { min-height: 46px; border-radius: 12px; border: 1px solid var(--bordure-forte); background: var(--surface);
+      color: var(--texte); font-weight: 600; font-size: .9375rem; display: flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }
+    .echec { background: var(--danger-doux); border: 1px solid var(--danger); border-radius: 12px; padding: 12px; color: var(--danger);
+      font-size: .9375rem; display: flex; flex-direction: column; gap: 10px; }
+    .echec b { color: var(--danger); }
+    .echec .gros { min-height: 50px; background: var(--danger); color: #fff; }
+
+    /* --- Barre « prochain arrêt » ------------------------------------------- */
+    .suivant { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+      background: color-mix(in srgb, var(--fond) 94%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      border-top: 1px solid var(--bordure); }
+    .suivant button { max-width: 640px; margin: 0 auto; width: 100%; min-height: 56px; border-radius: 16px; border: 1px solid var(--bordure-forte);
+      background: var(--surface); color: var(--texte); display: flex; align-items: center; gap: 12px; padding: 0 14px; text-align: left; cursor: pointer; }
+    .suivant .num { width: 36px; height: 36px; font-size: 1.05rem; }
+    .suivant .t { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+    .suivant .t small { font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--texte-2); font-weight: 700; }
+    .suivant .t span { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* --- Feuilles de confirmation (bas d'écran, atteignables au pouce) ------- */
+    dialog.feuille { margin: auto auto 0; width: 100%; max-width: 640px; border: 0; padding: 0; background: transparent; color: var(--texte); max-height: 92dvh; }
+    dialog.feuille::backdrop { background: rgba(0,0,0,.62); }
+    .feuille-in { background: var(--surface); border: 1px solid var(--bordure); border-bottom: 0; border-radius: 22px 22px 0 0;
+      padding: 18px 16px calc(16px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 14px; }
+    .feuille-in .poignee { width: 44px; height: 5px; border-radius: 999px; background: var(--bordure-forte); align-self: center; }
+    .feuille-in h2 { font-family: var(--display); font-weight: 600; font-size: 1.6rem; text-transform: uppercase; line-height: 1.15; color: var(--texte); }
+    .feuille-in .pour { font-size: 1rem; color: var(--texte-2); }
+    .feuille-in .pour b { color: var(--texte); }
+    .gros.secondaire { background: transparent; color: var(--texte); border-color: var(--bordure-forte); }
+    .gros.danger { background: var(--danger); color: #fff; }
+    .motifs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .motifs label { margin: 0; min-height: 52px; border-radius: 14px; border: 1px solid var(--bordure-forte); background: var(--surface-2);
+      display: flex; align-items: center; gap: 8px; padding: 0 12px; font-size: .9375rem; font-weight: 600; color: var(--texte); cursor: pointer; }
+    .motifs input { width: 20px; height: 20px; accent-color: var(--danger); flex: none; }
+    .motifs label:has(input:checked) { border-color: var(--danger); background: var(--danger-doux); }
+    .feuille-in textarea { font-size: 1rem; min-height: 96px; }
+    .feuille-in .err { color: var(--danger); font-size: .9375rem; font-weight: 600; }
+    .feuille-in label.obl { font-size: .9375rem; font-weight: 600; color: var(--texte); margin: 0; }
+
+    /* --- Liste des tournées du livreur ---------------------------------------- */
+    .groupe { font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--texte-2); margin: 10px 4px 0; }
+    .carte-tournee { background: var(--surface); border: 1px solid var(--bordure); border-radius: 18px; padding: 16px; display: flex;
+      flex-direction: column; gap: 10px; text-decoration: none; color: var(--texte); }
+    .carte-tournee h2 { font-family: var(--display); font-weight: 600; text-transform: uppercase; font-size: 1.3rem; line-height: 1.15; }
+    .carte-tournee p { color: var(--texte-2); font-size: .9375rem; }
+    .carte-tournee .gros { min-height: 52px; }
+    .vide { text-align: center; color: var(--texte-2); padding: 48px 12px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+    .vide .ico { width: 36px; height: 36px; color: var(--texte-3); }
+    .toast { position: fixed; left: 12px; right: 12px; bottom: calc(86px + env(safe-area-inset-bottom)); z-index: 60; max-width: 616px; margin: 0 auto;
+      background: var(--texte); color: var(--fond); padding: 14px 16px; border-radius: 14px; font-weight: 600; font-size: 1rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,.45); text-align: center; }
+    .toast.ko { background: var(--danger); color: #fff; }
+    .toast.ok { background: var(--ok); color: #06210F; }
+    .pied-page { text-align: center; font-size: .8125rem; color: var(--texte-3); padding: 8px 0 16px; }
+  </style>
+</head>
+<body>
+  <header class="haut"><div class="in">
+    <div class="ligne-marque">
+      <img src="logo.png" alt="Le Gué des Moines">
+      <div class="titre"><h1 id="titre">Ma tournée</h1><p id="sous-titre">Le Gué des Moines</p></div>
+      <a class="rond" id="b-liste" href="#" hidden aria-label="Mes tournées"><svg class="ico" aria-hidden="true"><use href="#i-liste"/></svg></a>
+      <button class="rond" id="b-theme" aria-label="Basculer entre thème sombre et clair">
+        <svg class="ico i-soleil" aria-hidden="true"><use href="#i-soleil"/></svg>
+        <svg class="ico i-lune" aria-hidden="true"><use href="#i-lune"/></svg>
+      </button>
+    </div>
+    <div class="progression" id="progression" hidden></div>
+  </div></header>
+
+  <main class="page" id="page">
+    <div class="vide"><span class="loader"></span>Chargement de la tournée…</div>
+  </main>
+
+  <div class="suivant" id="suivant" hidden></div>
+  <div id="annonces" class="sr-only" aria-live="polite"></div>
+
+  <dialog class="feuille" id="dlg-valider" aria-labelledby="dv-titre">
+    <form method="dialog" class="feuille-in">
+      <span class="poignee" aria-hidden="true"></span>
+      <h2 id="dv-titre">Tout est livré et conforme ?</h2>
+      <p class="pour" id="dv-pour"></p>
+      <button class="gros valider" value="oui" id="dv-oui"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Oui, valider la livraison</button>
+      <button class="gros secondaire" value="non">Annuler</button>
+    </form>
+  </dialog>
+
+  <dialog class="feuille" id="dlg-probleme" aria-labelledby="dp-titre">
+    <form class="feuille-in" id="f-probleme" novalidate>
+      <span class="poignee" aria-hidden="true"></span>
+      <h2 id="dp-titre">Signaler un problème</h2>
+      <p class="pour" id="dp-pour"></p>
+      <fieldset style="border:0;padding:0;margin:0">
+        <legend class="sr-only">Motif</legend>
+        <div class="motifs" id="dp-motifs"></div>
+      </fieldset>
+      <label class="obl" for="dp-commentaire">Commentaire (obligatoire)</label>
+      <textarea id="dp-commentaire" maxlength="1000" placeholder="Ce qui s’est passé : client absent, ce qui manque, ce qui a été laissé…"></textarea>
+      <p class="err" id="dp-err" role="alert"></p>
+      <button class="gros danger" type="submit" id="dp-ok">Enregistrer le problème</button>
+      <button class="gros secondaire" type="button" id="dp-annuler">Annuler</button>
+    </form>
+  </dialog>
+
+  <script src="livreur.js"></script>
+</body>
+</html>
