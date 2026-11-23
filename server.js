@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { monterProspection } from './prospection.js';
 import { monterAcces, monterPro, JETON_INTERNE } from './acces.js';
+import { monterLivraisons } from './livraisons.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -3098,6 +3099,25 @@ async function redis(...commande) {
   return data.result;
 }
 
+// Plusieurs commandes en un seul aller-retour (route /pipeline d'Upstash).
+// Une commande en erreur fait échouer l'ensemble : l'appelant ne doit jamais
+// travailler sur un résultat partiel sans le savoir.
+async function redisPipeline(commandes) {
+  if (!commandes.length) return [];
+  const { signal, fin } = avecDelai(15_000);
+  const r = await fetch(`${REDIS_URL.replace(/\/+$/, '')}/pipeline`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${REDIS_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(commandes),
+    signal,
+  }).finally(fin);
+  const data = await r.json().catch(() => null);
+  if (!r.ok || !Array.isArray(data)) throw new Error(data?.error ?? `Redis HTTP ${r.status}`);
+  const ko = data.find(x => x?.error);
+  if (ko) throw new Error(ko.error);
+  return data.map(x => x.result);
+}
+
 const cleEspace = e => `lgdm:${e}`;
 
 function verifierEspace(req, res) {
@@ -3194,6 +3214,9 @@ async function aDejaCommandeDesFuts(req, idClient) {
 }
 
 monterPro(app, { redis, redisActif, getProduitsClient, fetchInterne, construirePayloadCommande, easybeerPost, aDejaCommandeDesFuts });
+
+// --- Tournées de livraison : préparation brasserie, suivi livreur ---
+monterLivraisons(app, { redis, pipeline: redisPipeline, redisActif, depot: DEPOT });
 
 // --- Création de commande ---
 app.post('/api/commande', async (req, res) => {

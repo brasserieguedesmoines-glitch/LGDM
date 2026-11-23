@@ -855,6 +855,7 @@
             <span class="actions">
               <button data-action="carte">Voir sur la carte</button>
               <button data-action="imprimer">${'' }Feuille de route</button>
+              <button data-action="livreur" title="Créer une tournée de livraison à envoyer sur le téléphone du livreur">Envoyer au livreur</button>
             </span>
           </div>
           <div class="meta">
@@ -969,8 +970,28 @@
         const carte = b.closest('.tournee');
         const t = ts[parseInt(carte.dataset.idx)];
         if (b.dataset.action === 'imprimer') imprimerFeuilleRoute(carte, t);
+        else if (b.dataset.action === 'livreur') envoyerAuLivreur(t);
         else afficherTourneeSurCarte(t);
       }));
+    }
+
+    // Reprise dans « Tournées de livraison » : les arrêts passent par l'aperçu
+    // d'import, où la brasserie vérifie les adresses avant d'enregistrer.
+    function envoyerAuLivreur(t) {
+      const tel = c => (String(c ?? '').match(/(?:(?:\+|00)33[\s.\-]?|\b0)[1-9](?:[\s.\-]?\d{2}){4}/) ?? [''])[0];
+      const arrets = t.arrets.map(a => ({
+        nom: a.client,
+        adresse: String(a.adresse ?? '').replace(/,\s*France\s*$/i, ''),
+        telephone: tel(a.contact),
+        consignes: [`Créneau ${a.creneau}`, a.numero ? `Commande n°${a.numero}` : '',
+          [a.bouteilles ? `${a.bouteilles} bouteilles` : '', a.futs ? `${a.futs} fût${a.futs > 1 ? 's' : ''}` : ''].filter(Boolean).join(' + ')]
+          .filter(Boolean).join(' · '),
+      }));
+      const jour = /^\d{4}-\d{2}-\d{2}/.test(t.jour ?? '') ? t.jour.slice(0, 10) : null;
+      try {
+        localStorage.setItem('lgdm-tl-import', JSON.stringify({ nom: `${t.nom}${t.jour ? ' — ' + jourLong(t.jour) : ''}`, date: jour, arrets }));
+      } catch { alert('Stockage du navigateur indisponible : impossible de reprendre la tournée.'); return; }
+      location.href = '/tournees.html#import-pilotage';
     }
 
     function imprimerFeuilleRoute(carte, t) {
