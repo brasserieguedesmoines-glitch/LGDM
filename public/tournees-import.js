@@ -29,6 +29,14 @@
     ['cp', /^(cp|code ?postal|c\.p\.?|postal|zip)\b/i],
     ['ville', /^(ville|commune|localit[eé]|city)\b/i],
     ['complement', /^(compl[eé]ment|adresse ?2|ligne ?2|b[aâ]timent)/i],
+    // Exports de planificateurs d'itinéraire : une ligne par trajet (De → Vers)
+    ['de', /^(de|depuis|from|origine|provenance|point de d[eé]part|adresse de d[eé]part)\s*$/i],
+    ['vers', /^(vers|[àa]|to|destination|jusqu'?[àa]|point d'arriv[eé]e|adresse d'arriv[eé]e)\s*$/i],
+    ['depart', /^(d[eé]part|heure de d[eé]part|h\.? ?d[eé]part)\s*$/i],
+    ['arrivee', /^(arriv[eé]e|heure d'arriv[eé]e|h\.? ?arriv[eé]e|eta)\s*$/i],
+    ['heure', /^(heure|horaire pr[eé]vu|heure pr[eé]vue|rdv|rendez-vous)\s*$/i],
+    ['distance', /^(distance|km|kilom[eè]tres?)\b/i],
+    ['duree', /^(dur[eé]e|temps)\b/i],
     ['adresse', /^(adresse|addr|rue|voie|n[°o]? et rue|lieu de livraison|adresse de livraison|ligne ?1)/i],
     ['nom', /^(nom|client|raison sociale|enseigne|[eé]tablissement|soci[eé]t[eé]|destinataire|magasin|compte|point de livraison|libell[eé])/i],
     ['contact', /^(contact|interlocuteur|responsable|g[eé]rant)/i],
@@ -37,6 +45,12 @@
   ];
   const CHAMPS = ['nom', 'adresse', 'complement', 'cp', 'ville', 'telephone', 'consignes', 'contact', 'ordre'];
 
+  const estAdresse = v => !!v && !/@/.test(v) && !RE_TEL.test(v)
+    && (RE_CP.test(v) || RE_NUMERO_VOIE.test(v) || (RE_VOIE.test(v) && /\d/.test(v)));
+  const RE_HEURE = /^\d{1,2}\s*[:h]\s*\d{2}(:\d{2})?$/i;
+  // Valeurs inutiles au livreur : heures isolées, distances, durées, e-mails.
+  const estTechnique = v => RE_HEURE.test(v) || /^[\d.,]+\s*(km|m)$/i.test(v)
+    || /^(\d+\s*h\s*)?\d+\s*min(\s*\d+\s*s)?$/i.test(v) || /^\d+\s*s$/i.test(v) || /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v);
   const propre = s => String(s ?? '').replace(/ /g, ' ').replace(/[ \t]+/g, ' ').trim();
   const estEntete = c => !!c && c.length <= 40 && !RE_TEL.test(c) && !/^\d+$/.test(c);
   function champEntete(c) {
@@ -78,8 +92,9 @@
   }
 
   // --- Composition d'un arrêt à partir de morceaux ---------------------------
+  const sansPays = s => propre(s).replace(/,?\s*france\s*$/i, '');
   function composerAdresse(rue, cp, ville) {
-    rue = propre(rue); cp = propre(cp); ville = propre(ville);
+    rue = sansPays(rue); cp = propre(cp); ville = sansPays(ville);
     // Code postal lu comme nombre par le tableur : 1150 → 01150
     if (/^\d{4}$/.test(cp)) cp = '0' + cp;
     const fin = [cp, ville].filter(Boolean).join(' ');
@@ -156,6 +171,7 @@
     let cols = imposees ? { ...imposees } : (entete ? lireEntetes(entete) : devinerColonnes(donnees));
     // Pas de colonne « nom » trouvée par l'en-tête : on la cherche par le contenu.
     if (!imposees && cols.nom === undefined && cols.adresse === undefined) cols = { ...devinerColonnes(donnees), ...cols };
+    if (!imposees) affinerColonnes(cols, donnees);
     // Avec en-tête, les colonnes non reconnues deviennent des consignes
     // (« Produits : 3 fûts »), sauf l'e-mail, inutile au livreur.
     if (entete) {
@@ -164,27 +180,91 @@
     }
 
     const val = (r, j) => j === undefined || j === null || j < 0 ? '' : propre(r[j]);
-    let arrets = donnees.map((r, i) => {
-      const tel = val(r, cols.telephone) || (r.join(' ').match(RE_TEL) ?? [''])[0];
-      const consignes = [val(r, cols.consignes)];
-      if (val(r, cols.complement)) consignes.unshift(`Complément d’adresse : ${val(r, cols.complement)}`);
-      if (val(r, cols.contact)) consignes.push(`Contact : ${val(r, cols.contact)}`);
-      for (const j of cols.autres ?? []) {
-        const v = val(r, j);
-        if (v && !RE_TEL.test(v) || v && !tel) consignes.push(entete?.[j] ? `${entete[j]} : ${v}` : v);
-      }
-      return {
-        ...arret({ nom: val(r, cols.nom), adresse: composerAdresse(val(r, cols.adresse), val(r, cols.cp), val(r, cols.ville)),
-          telephone: tel, consignes }),
-        _ordre: Number(val(r, cols.ordre)) || null, _ligne: i,
-      };
-    }).filter(a => a.nom || a.adresse);
+    const base = { colonnes: cols, entete, lignes: lignesUtiles, largeur: Math.max(0, ...lignesUtiles.map(r => r.length)), forme: 'tableau' };
+    if (cols.de !== undefined && cols.vers !== undefined) return { ...base, arrets: lireItineraire(donnees, cols, entete, val), itineraire: true };
+    let arrets = donnees.map((r, i) => ({
+      ...arretDeLigne(r, cols, entete, val, composerAdresse(val(r, cols.adresse), val(r, cols.cp), val(r, cols.ville))),
+      _ordre: Number(val(r, cols.ordre)) || null, _ligne: i,
+    })).filter(a => a.nom || a.adresse);
     // Totaux, sous-titres : une ligne sans adresse ni téléphone dont le « nom »
     // est un mot isolé (TOTAL, Tournée 2…) n'est pas un client.
     arrets = arrets.filter(a => a.adresse || a.telephone || !/^(total|sous-total|tourn[ée]e)\b/i.test(a.nom));
     if (cols.ordre !== undefined && arrets.every(a => a._ordre)) arrets.sort((a, b) => a._ordre - b._ordre || a._ligne - b._ligne);
-    return { arrets: arrets.map(({ _ordre, _ligne, ...a }) => a), colonnes: cols, entete, lignes: lignesUtiles,
-      largeur: Math.max(0, ...lignesUtiles.map(r => r.length)), forme: 'tableau' };
+    return { ...base, arrets: arrets.map(({ _ordre, _ligne, ...a }) => a) };
+  }
+
+  // Une ligne de client → arrêt (l'adresse est fournie par l'appelant).
+  function arretDeLigne(r, cols, entete, val, adresse) {
+    // Cellule par cellule : une heure voisine (« 09:08 ») fausserait le numéro.
+    const tel = val(r, cols.telephone) || (r.map(propre).find(c => RE_TEL.test(c))?.match(RE_TEL)[0] ?? '');
+    const consignes = [val(r, cols.consignes)];
+    if (val(r, cols.complement)) consignes.unshift(`Complément d’adresse : ${val(r, cols.complement)}`);
+    if (val(r, cols.heure)) consignes.unshift(`Horaire prévu : ${val(r, cols.heure)}`);
+    if (val(r, cols.contact)) consignes.push(`Contact : ${val(r, cols.contact)}`);
+    for (const j of cols.autres ?? []) {
+      const v = val(r, j);
+      if (!v || estTechnique(v) || (RE_TEL.test(v) && tel)) continue;
+      consignes.push(entete?.[j] ? `${entete[j]} : ${v}` : v);
+    }
+    return arret({ nom: val(r, cols.nom), adresse, telephone: tel, consignes });
+  }
+
+  // Colonnes « Départ » / « Arrivée » : adresses (trajet) ou heures selon leur
+  // contenu. Une colonne « Destination » seule est l'adresse du client.
+  function affinerColonnes(cols, donnees) {
+    const part = (j, test) => {
+      const v = donnees.slice(0, 80).map(r => propre(r[j])).filter(Boolean);
+      return v.length ? v.filter(test).length / v.length : 0;
+    };
+    const heures = {};
+    for (const [k, adr] of [['depart', 'de'], ['arrivee', 'vers']]) {
+      const j = cols[k];
+      if (j === undefined) continue;
+      delete cols[k];                    // ni adresse ni heure : reste en consigne
+      if (cols[adr] === undefined && part(j, estAdresse) >= 0.3) cols[adr] = j;
+      else if (part(j, v => RE_HEURE.test(v)) >= 0.5) heures[k] = j;
+    }
+    if (cols.vers !== undefined && cols.de === undefined && cols.adresse === undefined) { cols.adresse = cols.vers; delete cols.vers; }
+    if (cols.de !== undefined && cols.vers === undefined) delete cols.de;
+    // Itinéraire : sur la ligne d'un client, « Départ » est le début de l'arrêt,
+    // donc l'heure d'arrivée chez lui. Liste simple : on préfère « Arrivée ».
+    const itin = cols.de !== undefined && cols.vers !== undefined;
+    const choix = itin ? (heures.depart ?? heures.arrivee) : (heures.arrivee ?? heures.depart);
+    if (cols.heure === undefined && choix !== undefined) cols.heure = choix;
+  }
+
+  // Export d'itinéraire : des lignes de trajet (De → Vers) encadrent les
+  // lignes de clients. L'adresse d'un client est la destination du trajet
+  // qui y mène ; sur sa propre ligne, De/Vers portent souvent son téléphone
+  // et son e-mail. Les trajets eux-mêmes (Départ, Trajet, Retour) et le
+  // retour au dépôt ne sont pas des livraisons.
+  const LIBELLE_TRAJET = /^(d[ée]part|trajet|retour|arriv[ée]e|total|pause|d[ée]p[ôo]t|fin|d[ée]but)\b/i;
+  function lireItineraire(donnees, cols, entete, val) {
+    const cle = s => sansPays(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+    const sortie = [];
+    let depot = null, attente = null;
+    const libre = lib => lib && !LIBELLE_TRAJET.test(lib) ? lib : '';
+    const trajetSeul = t => arret({ nom: libre(t.libelle), adresse: t.adresse });
+    for (const r of donnees) {
+      if (r.some(c => /^(sous-)?total\b/i.test(propre(c)))) continue;
+      const de = val(r, cols.de), vers = val(r, cols.vers);
+      if (estAdresse(vers) && (!de || estAdresse(de))) {
+        if (depot === null) depot = de ? cle(de) : '';
+        // Deux trajets de suite : la destination du premier était un arrêt
+        // sans ligne de client.
+        if (attente && cle(attente.adresse) !== depot) sortie.push(trajetSeul(attente));
+        attente = { adresse: sansPays(vers), libelle: val(r, cols.nom) };
+        continue;
+      }
+      const nom = val(r, cols.nom) || libre(attente?.libelle);
+      if (!nom) continue;
+      const propreAdr = composerAdresse(val(r, cols.adresse), val(r, cols.cp), val(r, cols.ville));
+      sortie.push(arretDeLigne(r, { ...cols, autres: (cols.autres ?? []).filter(j => j !== cols.de && j !== cols.vers) },
+        entete, (rr, j) => j === cols.nom ? nom : val(rr, j), propreAdr || attente?.adresse || ''));
+      attente = null;
+    }
+    if (attente && cle(attente.adresse) !== depot) sortie.push(trajetSeul(attente));
+    return sortie.filter(a => a.nom || a.adresse);
   }
 
   // --- Texte libre ------------------------------------------------------------------

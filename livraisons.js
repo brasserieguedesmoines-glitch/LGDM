@@ -89,6 +89,7 @@ function hashEnObjet(plat) {
 const VOIES = 'rue|r|av|ave|avenue|bd|boulevard|chemin|che|ch|route|rte|impasse|imp|all[ée]e|all|place|pl|quai|cours|lotissement|lot|r[ée]sidence|zone|za|zi|zac|faubourg|fg|passage|square|sq|voie|esplanade|promenade|rond-point|sentier|mont[ée]e|traverse|cit[ée]|hameau|lieu-dit|ld|parvis|port|parc|domaine|chemin';
 const RE_NUMERO = new RegExp(`(^|[\\s,])\\d{1,4}\\s*(bis|ter|quater|[a-d])?\\s*,?\\s+(${VOIES})\\b`, 'i');
 const RE_CP = /\b(0[1-9]|[1-8]\d|9[0-8])\d{3}\b/;
+const RE_ZONE_EN_TETE = /^\s*(?:zac|za|zi|zae|zone|parc|centre commercial|c\.?\s?c\.?|lotissement|lot\.?|r[ée]sidence|b[aâ]timent|b[aâ]t\.?|immeuble|espace|p[oô]le|galerie)\b[^,]*,\s*(.{8,})$/i;
 
 export function controleForme(adresse) {
   const a = ligne(adresse, 300);
@@ -420,7 +421,17 @@ export function monterLivraisons(app, { redis, pipeline, redisActif, depot }) {
         const k = i++;
         const a = adresses[k];
         const geo = a.length >= 8 ? await geocoder(a) : [];
-        resultats[k] = analyserAdresse(a, geo, depot);
+        let r = analyserAdresse(a, geo, depot);
+        // « ZAC de la Gravette, 1 rue de la Gravette… » : le nom de zone placé
+        // en tête trouble la recherche. On vérifie aussi l'adresse sans lui ;
+        // reconnue, elle donne la destination exacte et l'adresse saisie (avec
+        // la zone, utile au livreur) est conservée telle quelle.
+        const zone = a.match(RE_ZONE_EN_TETE);
+        if (r.niveau !== 'ok' && zone) {
+          const sans = analyserAdresse(zone[1], await geocoder(zone[1]), depot);
+          if (sans.niveau === 'ok') r = { ...sans, adresse: a, suggestion: '', message: 'Adresse reconnue' };
+        }
+        resultats[k] = r;
       }
     }));
     res.json({ resultats });
