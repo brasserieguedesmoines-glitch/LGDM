@@ -31,6 +31,13 @@
 
 import crypto from 'crypto';
 import fetch from 'node-fetch';
+import PDFDocument from 'pdfkit';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+
+// Logo (blanc) pour l'en-tête sombre du rapport PDF ; facultatif.
+let LOGO = null;
+try { LOGO = readFileSync(fileURLToPath(new URL('./public/logo.png', import.meta.url))); } catch {}
 
 const K = {
   livreurs: 'lgdm:tl:livreurs',
@@ -40,6 +47,9 @@ const K = {
   livree: id => `lgdm:tl:livree:${id}`,
   probleme: id => `lgdm:tl:probleme:${id}`,
   journal: id => `lgdm:tl:journal:${id}`,
+  note: id => `lgdm:tl:note:${id}`,                    // hash idArret → note du livreur
+  photos: id => `lgdm:tl:photos:${id}`,                // hash idPhoto → métadonnées
+  photo: (id, p) => `lgdm:tl:photo:${id}:${p}`,        // image (base64), expire
 };
 
 export const MOTIFS = {
@@ -52,6 +62,10 @@ export const MOTIFS = {
 };
 
 const MAX_ARRETS = 150;
+const MAX_PHOTOS_ARRET = 3;
+const MAX_PHOTO = 950_000;               // caractères base64 (≈ 700 Ko), sous la limite d'Upstash
+const DUREE_PHOTO = 183 * 86400;         // 6 mois ; le rapport PDF les garde au-delà
+const RE_PHOTO = /^p[a-f0-9]{20}$/;
 const JOURS_ACTIVES = 60;        // au-delà, une tournée non close passe dans l'historique
 const PAGE_HISTORIQUE = 40;
 
@@ -228,13 +242,17 @@ export function monterLivraisons(app, { redis, pipeline, redisActif, depot }) {
   // États (validations, problèmes) de plusieurs tournées en un seul aller-retour
   async function etats(tournees) {
     if (!tournees.length) return [];
-    const r = await pipeline(tournees.flatMap(t => [['HGETALL', K.livree(t.id)], ['HGETALL', K.probleme(t.id)]]));
-    return tournees.map((t, i) => ({ livrees: hashEnObjet(r[2 * i]), problemes: hashEnObjet(r[2 * i + 1]) }));
+    const r = await pipeline(tournees.flatMap(t => [['HGETALL', K.livree(t.id)], ['HGETALL', K.probleme(t.id)],
+      ['HGETALL', K.note(t.id)], ['HGETALL', K.photos(t.id)]]));
+    return tournees.map((t, i) => ({ livrees: hashEnObjet(r[4 * i]), problemes: hashEnObjet(r[4 * i + 1]),
+      notes: hashEnObjet(r[4 * i + 2]), photos: hashEnObjet(r[4 * i + 3]) }));
   }
 
-  function vueArret(a, i, liv, pb) {
+  function vueArret(a, i, liv, pb, note = null, photos = []) {
     return {
       ...a, numero: i + 1,
+      note: note ? { texte: note.texte, le: note.le, par: note.par?.nom ?? '' } : null,
+      photos,
       statut: liv ? 'livree' : pb ? 'probleme' : 'a_livrer',
       livraison: liv ? { le: liv.le, par: liv.par?.nom ?? '' } : null,
       probleme: pb ? { motif: pb.motif, motifLibelle: MOTIFS[pb.motif] ?? pb.motif, commentaire: pb.commentaire,
@@ -251,7 +269,10 @@ export function monterLivraisons(app, { redis, pipeline, redisActif, depot }) {
   }
 
   function vueTournee(t, e, parId) {
-    const arrets = t.arrets.map((a, i) => vueArret(a, i, e.livrees[a.id], e.problemes[a.id]));
+    const photosPar = {};
+    for (const [id, m] of Object.entries(e.photos ?? {})) (photosPar[m.idArret] ??= []).push({ id, le: m.le, par: m.par?.nom ?? '' });
+    Object.values(photosPar).forEach(l => l.sort((a, b) => a.le - b.le));
+    const arrets = t.arrets.map((a, i) => vueArret(a, i, e.livrees[a.id], e.problemes[a.id], e.notes?.[a.id], photosPar[a.id] ?? []));
     const stats = {
       total: arrets.length,
       livrees: arrets.filter(a => a.statut === 'livree').length,
@@ -295,7 +316,7 @@ export function monterLivraisons(app, { redis, pipeline, redisActif, depot }) {
         // Coordonnées seulement pour une adresse reconnue sans ambiguïté.
         lat: a.verif?.niveau === 'ok' ? a.lat ?? null : null,
         lng: a.verif?.niveau === 'ok' ? a.lng ?? null : null,
-        statut: a.statut, livraison: a.livraison, probleme: a.probleme,
+        statut: a.statut, livraison: a.livraison, probleme: a.probleme, note: a.note, photos: a.photos,
       })),
     };
   }
@@ -370,6 +391,215 @@ export function monterLivraisons(app, { redis, pipeline, redisActif, depot }) {
       motif, commentaire })).catch(err => console.error('livraisons: journal', err.message));
     return renvoyerArret(res, t, { idArret: a.id });
   }));
+
+  // Note libre du livreur sur un arrêt (accès, à qui c'est remis…). Texte
+  // vide : la note est retirée. Modifiable jusqu'à la clôture de la tournée.
+  app.post('/api/livreur/:jeton/tournee/:id/arret/:idArret/note', (req, res) => repondre(res, async () => {
+    const { l, t, a, operation } = await preparerEcriture(req);
+    const texte = bloc(req.body?.texte, 1000);
+    const avant = await lireJSON(K.note(t.id), a.id);
+    if (avant?.operation === operation) return renvoyerArret(res, t, { idArret: a.id, rejoue: true });
+    if (!texte) {
+      if (avant) {
+        await redis('HDEL', K.note(t.id), a.id);
+        await redis('RPUSH', K.journal(t.id), JSON.stringify({ type: 'note_supprimee', idArret: a.id, nom: a.nom, le: Date.now(), par: l.nom })).catch(() => {});
+      }
+    } else {
+      const note = { texte, le: Date.now(), par: { id: l.id, nom: l.nom }, operation };
+      await redis('HSET', K.note(t.id), a.id, JSON.stringify(note));
+      await redis('RPUSH', K.journal(t.id), JSON.stringify({ type: 'note', idArret: a.id, nom: a.nom, le: note.le, par: l.nom, texte })).catch(() => {});
+    }
+    return renvoyerArret(res, t, { idArret: a.id });
+  }));
+
+  // Photo (preuve de dépôt quand personne ne peut signer). Compressée sur le
+  // téléphone ; l'identifiant découle de l'opération, un renvoi ne la double pas.
+  app.post('/api/livreur/:jeton/tournee/:id/arret/:idArret/photo', (req, res) => repondre(res, async () => {
+    const { l, t, a, operation } = await preparerEcriture(req);
+    const m = String(req.body?.image ?? '').match(/^data:image\/(jpeg|png);base64,([A-Za-z0-9+/]+={0,2})$/);
+    if (!m) throw erreur(400, 'Photo illisible : reprenez-la.');
+    if (m[2].length > MAX_PHOTO) throw erreur(413, 'Photo trop lourde : reprenez-la.');
+    const idPhoto = 'p' + crypto.createHash('sha1').update(`${t.id}|${operation}`).digest('hex').slice(0, 20);
+    const metas = hashEnObjet(await redis('HGETALL', K.photos(t.id)));
+    if (metas[idPhoto]) return renvoyerArret(res, t, { idArret: a.id, idPhoto, rejoue: true });
+    if (Object.values(metas).filter(x => x.idArret === a.id).length >= MAX_PHOTOS_ARRET) {
+      throw erreur(409, `${MAX_PHOTOS_ARRET} photos au maximum par arrêt : supprimez-en une avant d’en ajouter.`);
+    }
+    await redis('SET', K.photo(t.id, idPhoto), m[2], 'EX', DUREE_PHOTO);
+    const meta = { idArret: a.id, le: Date.now(), par: { id: l.id, nom: l.nom }, type: m[1], octets: Math.round(m[2].length * 0.75) };
+    await redis('HSET', K.photos(t.id), idPhoto, JSON.stringify(meta));
+    await redis('RPUSH', K.journal(t.id), JSON.stringify({ type: 'photo', idArret: a.id, nom: a.nom, le: meta.le, par: l.nom })).catch(() => {});
+    return renvoyerArret(res, t, { idArret: a.id, idPhoto });
+  }));
+
+  app.delete('/api/livreur/:jeton/tournee/:id/arret/:idArret/photo/:idPhoto', (req, res) => repondre(res, async () => {
+    const l = await livreurDuJeton(req.params.jeton);
+    const t = await tourneeDuLivreur(l, req.params.id);
+    if (t.clotureeLe) throw erreur(409, 'Tournée clôturée : la photo ne peut plus être retirée.');
+    const meta = RE_PHOTO.test(req.params.idPhoto) ? await lireJSON(K.photos(t.id), req.params.idPhoto) : null;
+    if (meta && meta.idArret === req.params.idArret) {
+      await pipeline([['HDEL', K.photos(t.id), req.params.idPhoto], ['DEL', K.photo(t.id, req.params.idPhoto)],
+        ['RPUSH', K.journal(t.id), JSON.stringify({ type: 'photo_supprimee', idArret: meta.idArret,
+          nom: t.arrets.find(x => x.id === meta.idArret)?.nom ?? '', le: Date.now(), par: l.nom })]]);
+    }
+    return renvoyerArret(res, t, { idArret: req.params.idArret });
+  }));
+
+  async function envoyerPhoto(res, t, idPhoto) {
+    const meta = RE_PHOTO.test(idPhoto ?? '') ? await lireJSON(K.photos(t.id), idPhoto) : null;
+    const data = meta ? await redis('GET', K.photo(t.id, idPhoto)) : null;
+    if (!data) throw erreur(404, 'Photo introuvable ou expirée');
+    res.set('Content-Type', meta.type === 'png' ? 'image/png' : 'image/jpeg');
+    res.set('Cache-Control', 'private, max-age=86400');
+    res.send(Buffer.from(data, 'base64'));
+  }
+
+  app.get('/api/livreur/:jeton/tournee/:id/photo/:idPhoto', (req, res) => repondre(res, async () => {
+    const l = await livreurDuJeton(req.params.jeton);
+    await envoyerPhoto(res, await tourneeDuLivreur(l, req.params.id), req.params.idPhoto);
+  }));
+
+  app.get('/api/livreur/:jeton/tournee/:id/rapport.pdf', (req, res) => repondre(res, async () => {
+    const l = await livreurDuJeton(req.params.jeton);
+    const t = await tourneeDuLivreur(l, req.params.id);
+    const [e] = await etats([t]);
+    await rapportPDF(res, vueTournee(t, e, new Map([[l.id, l]])), { inline: true });
+  }));
+
+  // =========================================================================
+  //  Rapport PDF de la tournée
+  // =========================================================================
+  // Livraisons validées d'abord (heure, livreur, note, photos), puis problèmes
+  // et arrêts non livrés. En-tête sombre aux couleurs de la brasserie, corps
+  // clair pour l'impression.
+  async function rapportPDF(res, v, { inline = false } = {}) {
+    const ids = v.arrets.flatMap(a => a.photos.map(p => p.id));
+    const brut = ids.length ? await pipeline(ids.map(id => ['GET', K.photo(v.id, id)])) : [];
+    const images = new Map(ids.map((id, i) => [id, brut[i] ? Buffer.from(brut[i], 'base64') : null]));
+    const net = s => String(s ?? '').replace(/[\u202f\u00a0]/g, ' ');
+    const quand = t => net(new Date(t).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }));
+    const dateTournee = net(new Date(`${v.date}T12:00:00Z`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' }));
+    const C = { orange: '#D97706', noir: '#0D0D0D', texte: '#1A1714', gris: '#6B6760', clair: '#F6F2EC', bord: '#E4DCCF',
+      vert: '#15803D', vertClair: '#ECFDF3', rouge: '#B42318', rougeClair: '#FEF3F2' };
+    const fichier = `tournee-${sansAccent(v.nom).replace(/\s+/g, '-').slice(0, 40) || 'livraisons'}-${v.date}.pdf`;
+
+    const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true,
+      info: { Title: `Tournée ${v.nom} — ${v.date}`, Author: 'Le Gué des Moines' } });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `${inline ? 'inline' : 'attachment'}; filename="${fichier}"`);
+    doc.pipe(res);
+    const M = 40, W = doc.page.width, L = W - 2 * M, BAS = doc.page.height - 50;
+    const besoin = h => { if (doc.y + h > BAS) { doc.addPage(); doc.y = M; } };
+
+    // En-tête
+    doc.rect(0, 0, W, 112).fill(C.noir);
+    let x0 = M;
+    if (LOGO) { try { doc.image(LOGO, M, 22, { fit: [58, 66] }); x0 = M + 74; } catch {} }
+    doc.font('Helvetica-Bold').fontSize(8.5).fillColor(C.orange).text('RAPPORT DE TOURNÉE', x0, 28, { characterSpacing: 1.6 });
+    doc.font('Helvetica-Bold').fontSize(21).fillColor('#FFFFFF').text(net(v.nom).toUpperCase(), x0, 42, { width: W - x0 - M, height: 26, ellipsis: true });
+    doc.font('Helvetica').fontSize(10).fillColor('#A8A39A')
+      .text(`${dateTournee}  ·  Livreur : ${v.livreur?.nom ?? '—'}`, x0, 76, { width: W - x0 - M });
+
+    // Chiffres clés
+    const s = v.stats, y = 128, lc = (L - 20) / 3;
+    [[`${s.livrees} / ${s.total}`, s.livrees > 1 ? 'livraisons validées' : 'livraison validée', C.vert],
+     [String(s.problemes), s.problemes > 1 ? 'problèmes signalés' : 'problème signalé', s.problemes ? C.rouge : C.gris],
+     [String(s.aLivrer), s.aLivrer > 1 ? 'arrêts non livrés' : 'arrêt non livré', s.aLivrer ? C.orange : C.gris]].forEach(([val, lib, col], k) => {
+      const x = M + k * (lc + 10);
+      doc.lineWidth(0.8).roundedRect(x, y, lc, 54, 10).fillAndStroke(C.clair, C.bord);
+      doc.font('Helvetica-Bold').fontSize(20).fillColor(col).text(val, x + 14, y + 9, { width: lc - 28 });
+      doc.font('Helvetica').fontSize(9).fillColor(C.gris).text(lib, x + 14, y + 35, { width: lc - 28 });
+    });
+    doc.font('Helvetica').fontSize(8.5).fillColor(C.gris)
+      .text(`Édité le ${quand(Date.now())}${v.clotureeLe ? '  ·  tournée clôturée' : s.aLivrer ? '  ·  tournée en cours' : ''}`, M, y + 64, { width: L });
+
+    const titre = t => {
+      besoin(70);
+      doc.y += 14;
+      doc.font('Helvetica-Bold').fontSize(9).fillColor(C.orange).text(t.toUpperCase(), M, doc.y, { characterSpacing: 1.4 });
+      doc.moveTo(M, doc.y + 3).lineTo(M + L, doc.y + 3).lineWidth(0.8).strokeColor(C.bord).stroke();
+      doc.y += 12;
+    };
+
+    const encadre = (x, largeur, etiquette, texte, fond, couleur) => {
+      doc.font('Helvetica').fontSize(9.5);
+      const h = doc.heightOfString(net(texte), { width: largeur - 20 });
+      const y0 = doc.y + 5;
+      doc.roundedRect(x, y0, largeur, h + 24, 6).fill(fond);
+      doc.font('Helvetica-Bold').fontSize(7.5).fillColor(couleur).text(etiquette, x + 10, y0 + 6, { characterSpacing: 1 });
+      doc.font('Helvetica').fontSize(9.5).fillColor(C.texte).text(net(texte), x + 10, y0 + 17, { width: largeur - 20 });
+      doc.y = y0 + h + 24;
+    };
+
+    const blocArret = a => {
+      const x = M + 40, lt = L - 40;
+      doc.font('Helvetica').fontSize(9.5);
+      const hTxt = t => t ? doc.heightOfString(net(t), { width: lt - 20 }) + 30 : 0;
+      const hPhotos = a.photos.length ? 160 : 0;
+      besoin(Math.min(64 + hTxt(a.note?.texte) + hTxt(a.probleme?.commentaire) + (a.consignes ? 16 : 0) + hPhotos, BAS - M));
+      const y0 = doc.y;
+      const col = a.statut === 'livree' ? C.vert : a.statut === 'probleme' ? C.rouge : C.orange;
+      doc.lineWidth(1.2).circle(M + 13, y0 + 12, 12).fillAndStroke(a.statut === 'livree' ? C.vertClair : a.statut === 'probleme' ? C.rougeClair : C.clair, col);
+      doc.font('Helvetica-Bold').fontSize(10.5).fillColor(col).text(String(a.numero), M + 1, y0 + 7, { width: 24, align: 'center' });
+      doc.font('Helvetica-Bold').fontSize(12).fillColor(C.texte).text(net(a.nom), x, y0, { width: lt });
+      doc.font('Helvetica').fontSize(9.5).fillColor(C.gris).text(net([a.adresse, a.telephone].filter(Boolean).join('   ·   ')) || 'Adresse non renseignée', x, doc.y + 1, { width: lt });
+      const statut = a.statut === 'livree' ? `Validée le ${quand(a.livraison.le)}${a.livraison.par ? ` par ${a.livraison.par}` : ''}`
+        : a.statut === 'probleme' ? `Problème signalé le ${quand(a.probleme.le)}${a.probleme.par ? ` par ${a.probleme.par}` : ''} : ${a.probleme.motifLibelle}`
+        : 'Non livrée';
+      doc.font('Helvetica-Bold').fontSize(9.5).fillColor(col).text(net(statut), x, doc.y + 4, { width: lt });
+      if (a.probleme && a.statut === 'probleme') encadre(x, lt, 'COMMENTAIRE DU LIVREUR', a.probleme.commentaire, C.rougeClair, C.rouge);
+      if (a.probleme && a.statut === 'livree') {
+        doc.font('Helvetica').fontSize(8.5).fillColor(C.gris)
+          .text(net(`Problème signalé auparavant (${quand(a.probleme.le)}) : ${a.probleme.motifLibelle} — ${a.probleme.commentaire}`), x, doc.y + 3, { width: lt });
+      }
+      if (a.note) encadre(x, lt, `NOTE DU LIVREUR  ·  ${quand(a.note.le)}`, a.note.texte, C.clair, C.orange);
+      if (a.consignes) {
+        doc.font('Helvetica-Oblique').fontSize(8.5).fillColor(C.gris).text(net(`Consignes : ${a.consignes.replace(/\n+/g, ' · ')}`), x, doc.y + 4, { width: lt });
+      }
+      if (a.photos.length) {
+        const bw = (lt - 2 * 8) / 3, bh = 130, py = doc.y + 8;
+        a.photos.slice(0, 3).forEach((p, k) => {
+          const px = x + k * (bw + 8);
+          const img = images.get(p.id);
+          doc.lineWidth(0.6).roundedRect(px, py, bw, bh, 4).fillAndStroke(C.clair, C.bord);
+          let ok = false;
+          if (img) { try { doc.image(img, px + 2, py + 2, { fit: [bw - 4, bh - 4], align: 'center', valign: 'center' }); ok = true; } catch {} }
+          if (!ok) doc.font('Helvetica').fontSize(8.5).fillColor(C.gris).text('Photo expirée ou illisible', px, py + bh / 2 - 5, { width: bw, align: 'center' });
+          doc.font('Helvetica').fontSize(7.5).fillColor(C.gris).text(net(`Photo ${k + 1}  ·  ${quand(p.le)}`), px, py + bh + 4, { width: bw, align: 'center' });
+        });
+        doc.y = py + bh + 18;
+      }
+      doc.y += 8;
+      doc.moveTo(x, doc.y).lineTo(M + L, doc.y).lineWidth(0.5).strokeColor(C.bord).stroke();
+      doc.y += 12;
+    };
+
+    doc.y = y + 82;
+    const groupes = [
+      ['Livraisons validées', v.arrets.filter(a => a.statut === 'livree')],
+      ['Problèmes signalés', v.arrets.filter(a => a.statut === 'probleme')],
+      ['Arrêts non livrés', v.arrets.filter(a => a.statut === 'a_livrer')],
+    ];
+    for (const [t, liste] of groupes) {
+      if (!liste.length && t !== 'Livraisons validées') continue;
+      titre(`${t} (${liste.length})`);
+      if (!liste.length) doc.font('Helvetica').fontSize(10).fillColor(C.gris).text('Aucune livraison validée pour l’instant.', M, doc.y);
+      liste.forEach(blocArret);
+    }
+
+    // Pied de page
+    const pages = doc.bufferedPageRange();
+    for (let i = 0; i < pages.count; i++) {
+      doc.switchToPage(pages.start + i);
+      const marge = doc.page.margins.bottom;
+      doc.page.margins.bottom = 0;
+      doc.font('Helvetica').fontSize(7.5).fillColor(C.gris)
+        .text(net(`Le Gué des Moines — Bruguières   ·   ${v.nom}   ·   ${dateTournee}   ·   page ${i + 1} / ${pages.count}`),
+          M, doc.page.height - 28, { width: L, align: 'center', lineBreak: false });
+      doc.page.margins.bottom = marge;
+    }
+    doc.end();
+  }
 
   // =========================================================================
   //  Côté brasserie (session d'équipe)
@@ -521,6 +751,17 @@ export function monterLivraisons(app, { redis, pipeline, redisActif, depot }) {
     res.json(await detail(await lireTournee(req.params.id)));
   }));
 
+  app.get(`${B}/:id/photos/:idPhoto`, (req, res) => repondre(res, async () => {
+    await envoyerPhoto(res, await lireTournee(req.params.id), req.params.idPhoto);
+  }));
+
+  app.get(`${B}/:id/rapport.pdf`, (req, res) => repondre(res, async () => {
+    const t = await lireTournee(req.params.id);
+    const [e] = await etats([t]);
+    const parId = new Map((await livreurs()).map(l => [l.id, l]));
+    await rapportPDF(res, vueTournee(t, e, parId), { inline: req.query.voir === '1' });
+  }));
+
   app.post(B, (req, res) => repondre(res, async () => {
     const ls = await livreurs();
     const t = { id: nouvelId('t'), ...lireEntete(req.body, ls), arrets: nettoyerArrets(req.body?.arrets ?? []),
@@ -558,7 +799,8 @@ export function monterLivraisons(app, { redis, pipeline, redisActif, depot }) {
     if (Object.keys(e.livrees).length || Object.keys(e.problemes).length) {
       throw erreur(409, 'Des livraisons sont déjà enregistrées sur cette tournée : clôturez-la plutôt, pour garder l’historique.');
     }
-    const cmds = [['HDEL', K.tournees, t.id], ['ZREM', K.index, t.id], ['DEL', K.journal(t.id)]];
+    const cmds = [['HDEL', K.tournees, t.id], ['ZREM', K.index, t.id], ['DEL', K.journal(t.id)], ['DEL', K.note(t.id)],
+      ['DEL', K.photos(t.id)], ...Object.keys(e.photos ?? {}).map(p => ['DEL', K.photo(t.id, p)])];
     if (t.idLivreur) cmds.push(['ZREM', K.indexLivreur(t.idLivreur), t.id]);
     await pipeline(cmds);
     res.json({ ok: true });
