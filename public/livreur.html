@@ -73,56 +73,86 @@
     .st.probleme { color: var(--danger); background: var(--danger-doux); border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
     .st.attente { color: var(--texte-2); background: var(--surface-3); }
 
-    /* --- Carte d'un arrêt ---------------------------------------------------- */
-    .arret { background: var(--surface); border: 1px solid var(--bordure); border-radius: 18px; padding: 16px; display: flex;
-      flex-direction: column; gap: 12px; scroll-margin-top: 150px; transition: border-color .2s, background .2s; }
-    .arret.livree { background: color-mix(in srgb, var(--ok) 11%, var(--surface)); border-color: color-mix(in srgb, var(--ok) 55%, transparent); gap: 8px; }
+    /* --- Carte d'un arrêt : compacte, quatre boutons sur une ligne --------- */
+    .arret { background: var(--surface); border: 1px solid var(--bordure); border-radius: 16px; padding: 12px 12px 10px; display: flex;
+      flex-direction: column; gap: 8px; scroll-margin-top: 140px; transition: border-color .2s, background .2s; }
+    .arret.livree { background: color-mix(in srgb, var(--ok) 10%, var(--surface)); border-color: color-mix(in srgb, var(--ok) 50%, transparent); }
     .arret.probleme { border-color: color-mix(in srgb, var(--danger) 60%, transparent); }
     .arret.focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-doux); }
-    .arret-tete { display: flex; gap: 12px; align-items: flex-start; }
-    .num { flex: none; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-family: var(--display);
-      font-weight: 600; font-size: 1.35rem; color: var(--accent-texte); border: 2px solid var(--accent); background: var(--accent-doux); }
+    .arret-tete { display: flex; gap: 10px; align-items: center; }
+    .num { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-family: var(--display);
+      font-weight: 600; font-size: 1.1rem; color: var(--accent-texte); border: 2px solid var(--accent); background: var(--accent-doux); }
+    .num .ico { width: 18px; height: 18px; }
     .arret.livree .num { color: var(--ok); border-color: var(--ok); background: var(--ok-doux); }
     .arret.probleme .num { color: var(--danger); border-color: var(--danger); background: var(--danger-doux); }
-    .qui { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
-    .qui h2 { font-size: 1.2rem; font-weight: 700; line-height: 1.25; color: var(--texte); overflow-wrap: anywhere; }
-    .adresse { display: flex; gap: 8px; font-size: 1rem; color: var(--texte); line-height: 1.4; overflow-wrap: anywhere; }
-    .adresse .ico { color: var(--texte-3); flex: none; margin-top: 2px; }
-    .arret.livree .adresse, .arret.livree .tel { font-size: .9375rem; color: var(--texte-2); }
-    .tel { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--accent-texte); font-weight: 600;
-      text-decoration: none; font-size: 1rem; align-self: flex-start; }
+    .qui { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .qui h2 { font-size: 1.02rem; font-weight: 700; line-height: 1.2; color: var(--texte); overflow-wrap: anywhere; }
+    .qui .st { flex: none; }
+    .infos { display: flex; flex-direction: column; gap: 2px; padding-left: 46px; }
+    .adresse { display: block; font-size: .9375rem; color: var(--texte); line-height: 1.35; overflow-wrap: anywhere; }
+    .arret.livree .adresse { color: var(--texte-2); font-size: .875rem; }
+    .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0 14px; font-size: .9rem; color: var(--texte-2); }
+    .meta .ico { width: 16px; height: 16px; }
+    .tel { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; color: var(--accent-texte); font-weight: 600; text-decoration: none; }
     .tel .ico { color: var(--accent-texte); }
-    .consignes { background: var(--surface-2); border-left: 3px solid var(--accent); border-radius: 10px; padding: 10px 12px;
-      font-size: .9688rem; color: var(--texte); white-space: pre-line; overflow-wrap: anywhere; }
-    .consignes b { display: block; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--accent-texte); margin-bottom: 2px; }
-    .info-statut { font-size: .9375rem; font-weight: 600; display: flex; gap: 8px; align-items: flex-start; }
+    .horaire { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; color: var(--texte); }
+    .consignes { background: var(--surface-2); border-left: 3px solid var(--accent); border-radius: 8px; padding: 6px 10px;
+      font-size: .875rem; color: var(--texte); white-space: pre-line; overflow-wrap: anywhere; }
+    .note-arret { background: var(--surface-2); border-radius: 8px; padding: 6px 10px; font-size: .875rem; color: var(--texte); white-space: pre-line;
+      overflow-wrap: anywhere; display: flex; gap: 6px; }
+    .note-arret .ico { width: 15px; height: 15px; color: var(--accent-texte); flex: none; margin-top: 2px; }
+    .info-statut { font-size: .875rem; font-weight: 600; display: flex; gap: 6px; align-items: flex-start; }
+    .info-statut .ico { width: 16px; height: 16px; flex: none; margin-top: 1px; }
     .info-statut.ok { color: var(--ok); }
-    .info-statut.ko { color: var(--danger); flex-direction: column; gap: 4px; }
+    .info-statut.ko { color: var(--danger); flex-direction: column; gap: 2px; }
     .info-statut.ko q { font-weight: 500; color: var(--texte); }
-    .retour-nav { font-size: .875rem; color: var(--accent-texte); background: var(--accent-doux); border-radius: 10px; padding: 8px 12px; }
-    .alerte-adresse { font-size: .875rem; color: var(--alerte); display: flex; gap: 6px; }
+    .retour-nav { font-size: .8125rem; color: var(--accent-texte); display: flex; gap: 6px; align-items: center; }
+    .retour-nav .ico { width: 15px; height: 15px; }
+    .alerte-adresse { font-size: .8125rem; color: var(--alerte); display: flex; gap: 6px; }
 
-    .actions { display: flex; flex-direction: column; gap: 10px; }
-    .gros { min-height: 58px; width: 100%; border-radius: 16px; font-size: 1.0625rem; font-weight: 700; display: flex; align-items: center;
+    .boutons { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+    .boutons.deux { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .bt { position: relative; min-height: 62px; border-radius: 14px; border: 1px solid var(--bordure-forte); background: var(--surface-2);
+      color: var(--texte); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 6px 2px;
+      font-family: var(--police); font-size: .8125rem; font-weight: 700; text-decoration: none; cursor: pointer; width: auto;
+      -webkit-tap-highlight-color: transparent; }
+    .boutons.deux .bt { min-height: 46px; flex-direction: row; gap: 8px; }
+    .bt:active { transform: scale(.97); }
+    .bt .ico { width: 24px; height: 24px; }
+    .boutons.deux .bt .ico { width: 20px; height: 20px; }
+    .bt.actif { border-color: var(--accent); color: var(--accent-texte); }
+    .bt.waze { background: #33CCFF; border-color: #33CCFF; color: #052636; }
+    .bt.valider { background: #22C55E; border-color: #22C55E; color: #04210F; }
+    .bt:disabled, .bt[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+    .bt .compte { position: absolute; top: 5px; right: 6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+      background: var(--accent); color: #1A1206; font-size: .6875rem; line-height: 18px; text-align: center; }
+    .bt .loader { width: 14px; height: 14px; position: absolute; top: 6px; right: 6px; }
+    .secondaires { display: flex; justify-content: space-between; gap: 8px; }
+    .lien-btn { background: none; border: 0; min-height: 36px; padding: 0 2px; color: var(--texte-2); font-weight: 600; font-size: .8125rem;
+      text-decoration: underline; text-underline-offset: 3px; width: auto; cursor: pointer; }
+    .lien-btn.danger { color: var(--danger); }
+    .autres-gps { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--surface-2); border-radius: 12px; padding: 8px; }
+    .autres-gps p { grid-column: 1 / -1; font-size: .8125rem; color: var(--texte-2); }
+    .autres-gps a { min-height: 44px; border-radius: 10px; border: 1px solid var(--bordure-forte); background: var(--surface);
+      color: var(--texte); font-weight: 600; font-size: .875rem; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+    .vignettes { display: flex; gap: 6px; flex-wrap: wrap; }
+    .vignette { position: relative; width: 58px; height: 58px; border-radius: 10px; overflow: hidden; border: 1px solid var(--bordure-forte);
+      padding: 0; background: var(--surface-2); min-height: 0; cursor: pointer; }
+    .vignette img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .vignette.attente img { opacity: .5; }
+    .vignette .loader { position: absolute; inset: 0; margin: auto; }
+    .echec { background: var(--danger-doux); border: 1px solid var(--danger); border-radius: 12px; padding: 10px; color: var(--danger);
+      font-size: .875rem; display: flex; flex-direction: column; gap: 8px; }
+    .echec b { color: var(--danger); }
+    .gros { min-height: 56px; width: 100%; border-radius: 16px; font-size: 1.0625rem; font-weight: 700; display: flex; align-items: center;
       justify-content: center; gap: 10px; text-decoration: none; border: 2px solid transparent; cursor: pointer; padding: 0 16px;
       font-family: var(--police); -webkit-tap-highlight-color: transparent; }
     .gros:active { transform: scale(.985); }
     .gros .ico { width: 22px; height: 22px; }
     .gros.waze { background: var(--surface-2); color: var(--texte); border-color: var(--bordure-forte); }
-    .gros.valider { background: var(--accent); color: #1A1206; }
-    .gros.valider:disabled, .gros.waze[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
-    .secondaires { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
-    .lien-btn { background: none; border: 0; min-height: 44px; padding: 0 4px; color: var(--texte-2); font-weight: 600; font-size: .9375rem;
-      text-decoration: underline; text-underline-offset: 3px; width: auto; cursor: pointer; }
-    .lien-btn.danger { color: var(--danger); }
-    .autres-gps { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: var(--surface-2); border-radius: 12px; padding: 10px; }
-    .autres-gps p { grid-column: 1 / -1; font-size: .875rem; color: var(--texte-2); }
-    .autres-gps a, .autres-gps button { min-height: 46px; border-radius: 12px; border: 1px solid var(--bordure-forte); background: var(--surface);
-      color: var(--texte); font-weight: 600; font-size: .9375rem; display: flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }
-    .echec { background: var(--danger-doux); border: 1px solid var(--danger); border-radius: 12px; padding: 12px; color: var(--danger);
-      font-size: .9375rem; display: flex; flex-direction: column; gap: 10px; }
-    .echec b { color: var(--danger); }
-    .echec .gros { min-height: 50px; background: var(--danger); color: #fff; }
+    .gros.valider { background: #22C55E; color: #04210F; }
+    .gros.accent { background: var(--accent); color: #1A1206; }
+    .echec .gros { min-height: 46px; background: var(--danger); color: #fff; }
 
     /* --- Barre « prochain arrêt » ------------------------------------------- */
     .suivant { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
@@ -154,6 +184,9 @@
     .feuille-in textarea { font-size: 1rem; min-height: 96px; }
     .feuille-in .err { color: var(--danger); font-size: .9375rem; font-weight: 600; }
     .feuille-in label.obl { font-size: .9375rem; font-weight: 600; color: var(--texte); margin: 0; }
+
+    .feuille-in .visu { width: 100%; max-height: 62dvh; object-fit: contain; border-radius: 12px; background: #000; }
+    .feuille-in .astuce { font-size: .9375rem; color: var(--texte-2); }
 
     /* --- Liste des tournées du livreur ---------------------------------------- */
     .groupe { font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--texte-2); margin: 10px 4px 0; }
@@ -199,6 +232,7 @@
       <h2 id="dv-titre">Tout est livré et conforme ?</h2>
       <p class="pour" id="dv-pour"></p>
       <button class="gros valider" value="oui" id="dv-oui"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Oui, valider la livraison</button>
+      <button class="gros secondaire" type="button" id="dv-photo"><svg class="ico" aria-hidden="true"><use href="#i-photo"/></svg>Personne pour signer ? Photo d’abord</button>
       <button class="gros secondaire" value="non">Annuler</button>
     </form>
   </dialog>
@@ -219,6 +253,31 @@
       <button class="gros secondaire" type="button" id="dp-annuler">Annuler</button>
     </form>
   </dialog>
+
+  <dialog class="feuille" id="dlg-note" aria-labelledby="dn-titre">
+    <form class="feuille-in" id="f-note" novalidate>
+      <span class="poignee" aria-hidden="true"></span>
+      <h2 id="dn-titre">Note de livraison</h2>
+      <p class="pour" id="dn-pour"></p>
+      <label class="obl" for="dn-texte">Note pour la brasserie</label>
+      <textarea id="dn-texte" maxlength="1000" placeholder="Remis à…, déposé dans la réserve, fûts vides repris, client à rappeler…"></textarea>
+      <p class="err" id="dn-err" role="alert"></p>
+      <button class="gros accent" type="submit">Enregistrer la note</button>
+      <button class="gros secondaire" type="button" id="dn-suppr">Supprimer la note</button>
+      <button class="gros secondaire" type="button" id="dn-annuler">Annuler</button>
+    </form>
+  </dialog>
+
+  <dialog class="feuille" id="dlg-voir" aria-label="Photo">
+    <div class="feuille-in">
+      <img class="visu" id="dvoir-img" alt="Photo de livraison">
+      <p class="astuce" id="dvoir-info"></p>
+      <button class="gros secondaire" type="button" id="dvoir-suppr" style="color:var(--danger)">Supprimer cette photo</button>
+      <button class="gros secondaire" type="button" id="dvoir-fermer">Fermer</button>
+    </div>
+  </dialog>
+
+  <input type="file" id="photo-input" accept="image/*" capture="environment" hidden>
 
   <script src="livreur.js"></script>
 </body>

@@ -248,6 +248,7 @@
         <a class="tl-btn mini" href="#t/${t.id}">${ico('liste')} Suivre</a>
         ${t.statut !== 'cloturee' ? `<a class="tl-btn mini" href="#modifier/${t.id}">${ico('crayon')} Modifier</a>` : ''}
         ${t.livreur ? `<button class="tl-btn mini" data-partager="${t.id}">${ico('partager')} Partager</button>` : ''}
+        ${s.livrees + s.problemes ? `<a class="tl-btn mini" href="${API}/${t.id}/rapport.pdf">${ico('pdf')} Rapport PDF</a>` : ''}
       </div>
     </article>`;
   }
@@ -279,7 +280,7 @@
     }
     const h = etat.historique;
     vue.innerHTML = barre('historique') + (h.length ? `<div class="table-wrap"><table class="table-histo">
-        <thead><tr><th>Date</th><th>Tournée</th><th>Livreur</th><th class="n">Livrées</th><th class="n">Problèmes</th><th>État</th></tr></thead>
+        <thead><tr><th>Date</th><th>Tournée</th><th>Livreur</th><th class="n">Livrées</th><th class="n">Problèmes</th><th>État</th><th><span class="sr-only">Rapport</span></th></tr></thead>
         <tbody>${h.map(t => `<tr data-id="${t.id}" tabindex="0">
           <td>${enDate(t.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</td>
           <td><a href="#t/${t.id}" style="color:inherit;font-weight:600;text-decoration:none">${echap(t.nom)}</a></td>
@@ -287,6 +288,7 @@
           <td class="n">${t.stats.livrees} / ${t.stats.total}</td>
           <td class="n" style="${t.stats.problemes ? 'color:var(--danger);font-weight:700' : ''}">${t.stats.problemes}</td>
           <td>${pastilleTournee(t)}${t.stats.aLivrer && t.statut === 'cloturee' ? ` <span class="carte-soustitre">${t.stats.aLivrer} non livré${t.stats.aLivrer > 1 ? 's' : ''}</span>` : ''}</td>
+          <td><a class="tl-btn mini" href="${API}/${t.id}/rapport.pdf">${ico('pdf')} PDF</a></td>
         </tr>`).join('')}</tbody></table></div>
         ${etat.histoSuite ? '<button class="tl-btn" id="histo-plus" style="align-self:center">Afficher les tournées plus anciennes</button>' : ''}`
       : `<div class="vide-bloc">${ico('archive')}<b>Aucune tournée dans l’historique</b>
@@ -326,6 +328,10 @@
       case 'livree': return `<b>Livraison validée</b> — ${echap(e.nom)}`;
       case 'probleme': return `<b style="color:var(--danger)">Problème signalé</b> — ${echap(e.nom)} : ${echap(({ client_absent: 'Client absent', livraison_partielle: 'Livraison partielle', adresse_incorrecte: 'Adresse incorrecte', refus: 'Livraison refusée', acces_impossible: 'Accès impossible' })[e.motif] ?? 'Autre motif')} — « ${echap(e.commentaire)} »`;
       case 'reinitialise': return `<b>Remis « à livrer »</b> par la brasserie — ${echap(e.nom)}`;
+      case 'note': return `<b>Note</b> — ${echap(e.nom)} : « ${echap(e.texte)} »`;
+      case 'note_supprimee': return `<b>Note retirée</b> — ${echap(e.nom)}`;
+      case 'photo': return `<b>Photo ajoutée</b> — ${echap(e.nom)}`;
+      case 'photo_supprimee': return `<b>Photo retirée</b> — ${echap(e.nom)}`;
       case 'cloturee': return '<b>Tournée clôturée</b> par la brasserie';
       case 'rouverte': return '<b>Tournée rouverte</b> par la brasserie';
       default: return echap(e.type);
@@ -346,6 +352,7 @@
         </div>
         <div class="actions">
           ${!t.clotureeLe ? `<a class="tl-btn" href="#modifier/${t.id}">${ico('crayon')} Modifier</a>` : ''}
+          <a class="tl-btn" href="${API}/${t.id}/rapport.pdf" data-rapport>${ico('pdf')} Rapport PDF</a>
           <button class="tl-btn" data-action="dupliquer">${ico('copier')} Dupliquer</button>
           ${t.clotureeLe ? `<button class="tl-btn" data-action="rouvrir">${ico('annuler')} Rouvrir</button>`
             : `<button class="tl-btn" data-action="cloturer">${ico('archive')} Clôturer</button>`}
@@ -399,7 +406,10 @@
         ${a.livraison ? `<b>${heure(a.livraison.le)}</b> · ${jourCourt(a.livraison.le)}<br>par ${echap(a.livraison.par)}` : ''}
         ${a.probleme ? `${pbAvant ? '<div style="margin-top:4px">Problème signalé auparavant :</div>' : `<b>${heure(a.probleme.le)}</b> · ${jourCourt(a.probleme.le)} · ${echap(a.probleme.par)}`}
           <div class="commentaire"${pbAvant ? ' style="opacity:.75"' : ''}><b>${echap(a.probleme.motifLibelle)}</b>${pbAvant ? ` (${heure(a.probleme.le)})` : ''} — ${echap(a.probleme.commentaire)}</div>` : ''}
-        ${!a.livraison && !a.probleme ? '<span class="carte-soustitre">—</span>' : ''}
+        ${a.note ? `<div class="note-suivi"><b>Note</b> (${heure(a.note.le)}) — ${echap(a.note.texte)}</div>` : ''}
+        ${a.photos?.length ? `<div class="miniatures">${a.photos.map(ph => `<a href="${API}/${t.id}/photos/${ph.id}" target="_blank" rel="noopener"
+          title="Photo de ${heure(ph.le)}${ph.par ? ` par ${echap(ph.par)}` : ''}"><img src="${API}/${t.id}/photos/${ph.id}" alt="Photo de livraison" loading="lazy"></a>`).join('')}</div>` : ''}
+        ${!a.livraison && !a.probleme && !a.note && !a.photos?.length ? '<span class="carte-soustitre">—</span>' : ''}
       </td>
       <td>${a.statut !== 'a_livrer' && !t.clotureeLe ? `<button class="tl-btn mini discret" data-reinit="${a.id}" title="Correction : remettre cet arrêt « à livrer »">${ico('annuler')} Remettre à livrer</button>` : ''}</td>
     </tr>`;
