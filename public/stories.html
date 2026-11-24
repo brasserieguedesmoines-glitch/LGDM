@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#F7F7F8">
+  <title>Stories matchs — Le Gué des Moines</title>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'light';</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Anton : titres compressés de la marque, dessinés dans la story -->
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="icons.js"></script>
+  <script src="ui.js"></script>
+  <script src="shell.js"></script>
+  <style>
+    [hidden] { display: none !important; }
+    main.st { max-width: 1240px; }
+
+    .st-btn { min-height: 40px; padding: 0 14px; border-radius: var(--r-md); border: 1px solid var(--bordure-forte);
+      background: var(--surface); color: var(--texte); font-weight: 600; font-size: var(--t-sm); cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; width: auto; }
+    .st-btn:hover:not(:disabled) { background: var(--surface-3); }
+    .st-btn.principal { background: var(--accent); border-color: var(--accent); color: var(--sur-accent); }
+    .st-btn.principal:hover:not(:disabled) { background: var(--accent-fonce); }
+    .st-btn.discret { border-color: transparent; background: transparent; color: var(--texte-2); }
+    .st-btn.discret:hover:not(:disabled) { background: var(--surface-3); color: var(--texte); }
+    .st-btn.mini { min-height: 30px; padding: 0 10px; font-size: var(--t-xs); }
+    .st-btn.danger { color: var(--danger); }
+    .st-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .st-btn.principal .loader { border-color: rgba(26,18,6,0.3); border-top-color: var(--sur-accent); }
+
+    /* --- Demande à l'agent ---------------------------------------------------- */
+    .agent { gap: var(--e3); }
+    .agent textarea { min-height: 96px; font-size: var(--t-md); }
+    .agent-pied { display: flex; align-items: center; gap: var(--e3); flex-wrap: wrap; }
+    .agent-pied .st-btn.principal { min-width: 200px; }
+    .interrupteur { display: inline-flex; align-items: center; gap: 8px; font-size: var(--t-sm); color: var(--texte-2);
+      margin: 0 auto 0 0; cursor: pointer; user-select: none; }
+    .interrupteur input { width: 16px; height: 16px; accent-color: var(--accent); }
+    .exemples { display: flex; gap: 6px; flex-wrap: wrap; }
+    .exemples button { min-height: 30px; padding: 0 12px; border-radius: var(--r-full); border: 1px solid var(--bordure);
+      background: var(--surface-2); color: var(--texte-2); font-size: var(--t-xs); font-weight: 500; }
+    .exemples button:hover { border-color: var(--accent); color: var(--accent-texte); }
+    .statut { font-size: var(--t-sm); color: var(--texte-2); display: flex; align-items: center; gap: 8px; }
+    .statut.ko { color: var(--danger); }
+    .note { border-radius: var(--r-md); padding: 10px 12px; font-size: var(--t-sm); line-height: 1.5; }
+    .note.attention { background: var(--alerte-doux); color: var(--alerte); }
+    .note a { color: inherit; }
+    .sources { font-size: var(--t-xs); color: var(--texte-2); display: flex; flex-direction: column; gap: 2px; }
+    .sources a { color: var(--accent-texte); overflow-wrap: anywhere; }
+
+    /* --- Atelier : réglages à gauche, aperçu à droite -------------------------- */
+    .atelier { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: var(--e5); align-items: start; }
+    .apercu { position: sticky; top: 72px; display: flex; flex-direction: column; gap: var(--e3); align-items: center; }
+    .apercu canvas { width: 100%; max-width: 380px; aspect-ratio: 9 / 16; height: auto; border-radius: 18px;
+      background: #0D0D0D; box-shadow: var(--ombre-3); display: block; }
+    .apercu-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 380px; }
+    .apercu-aide { font-size: var(--t-xs); color: var(--texte-3); text-align: center; max-width: 380px; }
+    @media (max-width: 900px) {
+      .atelier { grid-template-columns: minmax(0, 1fr); }
+      .apercu { position: static; order: -1; }
+    }
+
+    .reglages { gap: var(--e4); }
+    .grille { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e3); }
+    .grille .large { grid-column: 1 / -1; }
+    @media (max-width: 560px) { .grille { grid-template-columns: minmax(0, 1fr); } }
+    .champ label { margin-bottom: 4px; }
+    .compteur { float: right; font-weight: 400; color: var(--texte-3); }
+    .formats { display: inline-flex; border: 1px solid var(--bordure-forte); border-radius: var(--r-md); padding: 3px; gap: 3px; }
+    .formats button { min-height: 32px; padding: 0 14px; border-radius: 7px; font-size: var(--t-sm); font-weight: 600; color: var(--texte-2); }
+    .formats button[aria-pressed="true"] { background: var(--accent-doux); color: var(--accent-texte); }
+
+    .matchs { display: flex; flex-direction: column; gap: var(--e3); }
+    .match { border: 1px solid var(--bordure); border-radius: var(--r-md); padding: var(--e3); background: var(--surface-2);
+      display: flex; flex-direction: column; gap: var(--e3); }
+    .match-tete { display: flex; align-items: center; gap: 8px; font-size: var(--t-sm); font-weight: 600; }
+    .match-tete .num { width: 22px; height: 22px; border-radius: 50%; background: var(--accent-doux); color: var(--accent-texte);
+      display: inline-grid; place-items: center; font-size: var(--t-xs); }
+    .match-tete .st-btn { margin-left: auto; }
+    .match-tete .ordre { margin-left: 0; }
+    .equipes { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: end; }
+    .equipes .vs { font-weight: 700; color: var(--texte-3); padding-bottom: 10px; font-size: var(--t-xs); }
+    .equipe { display: flex; gap: 6px; align-items: center; }
+    .equipe input[type="color"] { width: 40px; height: 40px; flex-shrink: 0; padding: 2px; border: 1px solid var(--bordure-forte);
+      border-radius: var(--r-sm); background: var(--surface); cursor: pointer; }
+    @media (max-width: 560px) {
+      .equipes { grid-template-columns: minmax(0, 1fr); }
+      .equipes .vs { display: none; }
+    }
+    .details { display: grid; grid-template-columns: 1.2fr 1fr 1.4fr 1.2fr; gap: 8px; }
+    @media (max-width: 700px) { .details { grid-template-columns: 1fr 1fr; } }
+    input[type="time"] { width: 100%; min-height: var(--cible); padding: var(--e2) var(--e3); border: 1px solid var(--bordure-forte);
+      border-radius: var(--r-sm); font-family: inherit; font-size: var(--t-md); background: var(--surface); color: var(--texte); }
+    :root[data-theme="dark"] input[type="time"] { color-scheme: dark; }
+    .match select { padding-right: 28px; }
+    .manque { border-color: var(--alerte) !important; }
+
+    .photo { display: flex; align-items: center; gap: var(--e3); flex-wrap: wrap; }
+    .photo input[type="file"] { display: none; }
+    .photo .nom { font-size: var(--t-sm); color: var(--texte-2); }
+    .legende-bloc textarea { min-height: 150px; font-size: var(--t-sm); }
+    .titre-bloc { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <main class="st">
+    <section class="agent" aria-labelledby="t-agent">
+      <h2 id="t-agent"><svg class="ico" aria-hidden="true"><use href="#i-ecran"/></svg>Que diffuse-t-on ?</h2>
+      <p class="carte-soustitre">Décrivez les matchs en une phrase, ou demandez simplement « les matchs du Stade Toulousain ce week-end » :
+        l'agent retrouve les dates, heures et chaînes, puis prépare la story et sa légende.</p>
+      <label for="demande" class="sr-only">Demande</label>
+      <textarea id="demande" maxlength="1500" placeholder="Ex. : Toulouse – La Rochelle samedi soir et France – Afrique du Sud dimanche. Mets en avant notre bière de Noël en pression."></textarea>
+      <div class="exemples" id="exemples" aria-label="Exemples de demandes">
+        <button type="button">Les matchs du Stade Toulousain ce week-end</button>
+        <button type="button">Le prochain match du XV de France</button>
+        <button type="button">Les matchs de rugby à ne pas rater cette semaine</button>
+        <button type="button">Le prochain match du Toulouse FC</button>
+      </div>
+      <div class="agent-pied">
+        <label class="interrupteur"><input type="checkbox" id="recherche" checked> Vérifier les horaires sur internet</label>
+        <button class="st-btn principal" id="btn-preparer" type="button">
+          <svg class="ico" aria-hidden="true"><use href="#i-etincelle"/></svg>Préparer la story
+        </button>
+      </div>
+      <div class="statut" id="statut" role="status" aria-live="polite" hidden></div>
+      <div class="note attention" id="remarques" hidden></div>
+      <div class="sources" id="sources" hidden></div>
+    </section>
+
+    <div class="atelier">
+      <section class="reglages" aria-labelledby="t-reglages">
+        <div class="titre-bloc">
+          <h2 id="t-reglages"><svg class="ico" aria-hidden="true"><use href="#i-crayon"/></svg>Contenu de la story</h2>
+          <div class="formats" role="group" aria-label="Mise en page">
+            <button type="button" data-format="affiche" aria-pressed="true">Affiche</button>
+            <button type="button" data-format="programme" aria-pressed="false">Programme</button>
+          </div>
+        </div>
+        <p class="carte-soustitre" id="aide-format"></p>
+
+        <div class="grille">
+          <div class="champ"><label for="f-badge">Bandeau <span class="compteur" data-pour="f-badge"></span></label>
+            <input type="text" id="f-badge" maxlength="30" placeholder="DIFFUSION EN DIRECT"></div>
+          <div class="champ"><label for="f-offre">Bouton du bas <span class="compteur" data-pour="f-offre"></span></label>
+            <input type="text" id="f-offre" maxlength="60" placeholder="Venez tôt, ça va être plein !"></div>
+          <div class="champ large"><label for="f-titre">Accroche <span class="compteur" data-pour="f-titre"></span></label>
+            <input type="text" id="f-titre" maxlength="40" placeholder="LE CHOC DU WEEK-END"></div>
+          <div class="champ large"><label for="f-sous-titre">Sous-titre <span class="compteur" data-pour="f-sous-titre"></span></label>
+            <input type="text" id="f-sous-titre" maxlength="80" placeholder="On vous attend devant l'écran géant !"></div>
+        </div>
+
+        <h3 style="margin:0">Matchs</h3>
+        <div class="matchs" id="matchs"></div>
+        <div><button class="st-btn" type="button" id="btn-ajouter"><svg class="ico" aria-hidden="true"><use href="#i-plus"/></svg>Ajouter un match</button></div>
+
+        <h3 style="margin:0">Photo de fond <span class="case">(facultatif)</span></h3>
+        <div class="photo">
+          <label class="st-btn" for="f-photo" style="margin:0"><svg class="ico" aria-hidden="true"><use href="#i-photo"/></svg>Choisir une photo</label>
+          <input type="file" id="f-photo" accept="image/*">
+          <span class="nom" id="photo-nom">Aucune — fond sombre aux couleurs du Gué</span>
+          <button class="st-btn discret mini" type="button" id="btn-sans-photo" hidden>Retirer</button>
+        </div>
+
+        <div class="legende-bloc">
+          <div class="titre-bloc" style="margin-bottom:6px">
+            <label for="f-legende" style="margin:0">Légende Instagram (à coller avec la story ou en publication)</label>
+            <button class="st-btn mini" type="button" id="btn-copier"><svg class="ico" aria-hidden="true"><use href="#i-copier"/></svg>Copier</button>
+          </div>
+          <textarea id="f-legende" maxlength="2200" placeholder="La légende proposée par l'agent apparaîtra ici."></textarea>
+        </div>
+
+        <div><button class="st-btn discret mini" type="button" id="btn-vider"><svg class="ico" aria-hidden="true"><use href="#i-annuler"/></svg>Repartir de zéro</button></div>
+      </section>
+
+      <aside class="apercu" aria-label="Aperçu de la story">
+        <canvas id="story" width="1080" height="1920" role="img" aria-label="Aperçu de la story Instagram"></canvas>
+        <div class="apercu-actions">
+          <button class="st-btn principal" type="button" id="btn-partager"><svg class="ico" aria-hidden="true"><use href="#i-partager"/></svg>Partager</button>
+          <button class="st-btn" type="button" id="btn-telecharger"><svg class="ico" aria-hidden="true"><use href="#i-telecharger"/></svg>Télécharger</button>
+        </div>
+        <p class="apercu-aide">Image 1080 × 1920 px. Sur téléphone, « Partager » ouvre Instagram directement.
+          Le haut et le bas restent libres pour les barres d'Instagram.</p>
+      </aside>
+    </div>
+  </main>
+
+  <script src="stories-matchs.js"></script>
+</body>
+</html>

@@ -7,6 +7,7 @@ import { dirname, join } from 'path';
 import { monterProspection } from './prospection.js';
 import { monterAcces, monterPro, JETON_INTERNE } from './acces.js';
 import { monterLivraisons } from './livraisons.js';
+import { monterStories } from './stories.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -3068,6 +3069,9 @@ app.post('/api/lecture-commande', async (req, res) => {
 
 // --- Module de prospection (connecteur EasyBeer isolé) ---
 monterProspection(app, { easybeerGet, easybeerPost });
+
+// --- Stories Instagram des matchs diffusés (agent IA, voir stories.js) ---
+monterStories(app);
 
 // ===========================================================================
 //  Données partagées de l'équipe (prospects, commandes en attente…)
