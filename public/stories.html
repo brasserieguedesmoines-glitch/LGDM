@@ -54,7 +54,7 @@
     /* --- Atelier : réglages à gauche, aperçu à droite -------------------------- */
     .atelier { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: var(--e5); align-items: start; }
     .apercu { position: sticky; top: 72px; display: flex; flex-direction: column; gap: var(--e3); align-items: center; }
-    .apercu canvas { width: 100%; max-width: 380px; aspect-ratio: 9 / 16; height: auto; border-radius: 18px;
+    .apercu canvas { width: 100%; max-width: 380px; aspect-ratio: 9 / 16; height: auto; border-radius: 18px;   /* ratio mis à jour selon le format */
       background: #000; box-shadow: var(--ombre-3); display: block; }
     .apercu-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 380px; }
     .apercu-aide { font-size: var(--t-xs); color: var(--texte-3); text-align: center; max-width: 380px; }
@@ -189,13 +189,17 @@
       </section>
 
       <aside class="apercu" aria-label="Aperçu de la story">
+        <div class="formats" role="group" aria-label="Format de l'image">
+          <button type="button" data-taille="story" aria-pressed="true">Story 9:16</button>
+          <button type="button" data-taille="post" aria-pressed="false">Post 3:4</button>
+        </div>
         <canvas id="story" width="1080" height="1920" role="img" aria-label="Aperçu de la story Instagram"></canvas>
         <div class="apercu-actions">
           <button class="st-btn principal" type="button" id="btn-partager"><svg class="ico" aria-hidden="true"><use href="#i-partager"/></svg>Partager</button>
           <button class="st-btn" type="button" id="btn-telecharger"><svg class="ico" aria-hidden="true"><use href="#i-telecharger"/></svg>Télécharger</button>
         </div>
-        <p class="apercu-aide">Image 1080 × 1920 px. Sur téléphone, « Partager » ouvre Instagram directement.
-          Le haut et le bas restent libres pour les barres d'Instagram.</p>
+        <p class="apercu-aide" id="apercu-aide"></p>
+        <p class="apercu-aide">Sur téléphone, « Partager » ouvre Instagram directement.</p>
       </aside>
     </div>
   </main>

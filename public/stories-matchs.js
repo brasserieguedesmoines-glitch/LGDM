@@ -23,6 +23,8 @@ const matchVide = () => ({
 const storyVide = () => ({
   format: 'affiche', badge: 'DIFFUSION EN DIRECT', titre: '', sousTitre: '',
   matchs: [matchVide()], offre: '', legende: '', logos: true,
+  taille: 'story',                         // 'story' (9:16) ou 'post' (3:4, fil Instagram)
+
 });
 
 let story = storyVide();
@@ -104,7 +106,15 @@ function sauverBrouillon() {
 // dégradé ni de cadre : les blocs se séparent par l'espace et, dans le
 // programme, par de simples filets. Tous les textes sont posés sur leur ligne
 // de base (hauteur des capitales), ce qui rend les espacements réguliers.
-const L = 1080, H = 1920;
+// Deux formats d'image. La zone lisible d'une story évite le haut (barre de
+// progression, profil) et le bas (champ de réponse) qu'Instagram recouvre ;
+// un post du fil n'a rien par-dessus : simples marges.
+const L = 1080;
+const TAILLES = {
+  story: { h: 1920, haut: 260, bas: 1650, libelle: 'Story' },
+  post: { h: 1440, haut: 110, bas: 1330, libelle: 'Post' },
+};
+let H = 1920, HAUT = 260, BAS = 1650;
 const C = {
   fond: '#000000',
   ambre: '#F5A425',
@@ -116,8 +126,6 @@ const C = {
 };
 const DISPLAY = '"Anton", Impact, "Arial Narrow", sans-serif';
 const TEXTE = '"Oswald", "Arial Narrow", sans-serif';
-// Zone lisible : Instagram couvre le haut (barre de progression, profil) et le bas (champ de réponse).
-const HAUT = 260, BAS = 1650;
 const MARGE = 90;
 const LARGEUR = L - 2 * MARGE;
 const SIGNATURE = 'LE GUÉ DES MOINES · BRUGUIÈRES';
@@ -569,7 +577,15 @@ function dessinerProgramme() {
   page.dessiner();
 }
 
+function appliquerTaille() {
+  const t = TAILLES[story.taille] ?? TAILLES.story;
+  if (canvas.height !== t.h) canvas.height = t.h;
+  ({ h: H, haut: HAUT, bas: BAS } = t);
+  canvas.style.aspectRatio = `${L} / ${H}`;
+}
+
 function dessiner() {
+  appliquerTaille();
   ctx.save();
   ctx.clearRect(0, 0, L, H);
   mesurerRatios();
@@ -599,7 +615,16 @@ function majCompteurs() {
   });
 }
 
+function rendreTaille() {
+  const post = story.taille === 'post';
+  document.querySelectorAll('[data-taille]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.taille === (post ? 'post' : 'story'))));
+  $('apercu-aide').textContent = post
+    ? 'Image 1080 × 1440 px (3:4), le format des posts du fil Instagram.'
+    : "Image 1080 × 1920 px (9:16). Le haut et le bas restent libres pour les barres d'Instagram.";
+}
+
 function rendreFormat() {
+  rendreTaille();
   document.querySelectorAll('[data-format]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.format === story.format)));
   const n = story.matchs.length;
   $('aide-format').textContent = story.format === 'affiche'
@@ -682,6 +707,11 @@ function changer() {
 for (const [id, cle] of Object.entries(CHAMPS)) {
   $(id).addEventListener('input', e => { story[cle] = e.target.value; majCompteurs(); changer(); });
 }
+document.querySelectorAll('[data-taille]').forEach(b => b.addEventListener('click', () => {
+  story.taille = b.dataset.taille;
+  rendreTaille();
+  changer();
+}));
 document.querySelectorAll('[data-format]').forEach(b => b.addEventListener('click', () => {
   story.format = b.dataset.format;
   rendreFormat();
@@ -858,7 +888,7 @@ $('btn-vider').addEventListener('click', () => {
 // ---------------------------------------------------------------------------
 function nomFichier() {
   const d = story.matchs.find(m => m.date)?.date || new Date().toISOString().slice(0, 10);
-  return `story-gue-des-moines-${d}.png`;
+  return `${story.taille === 'post' ? 'post' : 'story'}-gue-des-moines-${d}.png`;
 }
 async function enImage() {
   await polices;
@@ -892,7 +922,7 @@ $('btn-partager').addEventListener('click', async () => {
     // texte joint à une story partagée.
     if (story.legende) navigator.clipboard?.writeText(story.legende).catch(() => {});
     try {
-      await navigator.share({ files: [fichier], title: 'Story Le Gué des Moines' });
+      await navigator.share({ files: [fichier], title: `${(TAILLES[story.taille] ?? TAILLES.story).libelle} Le Gué des Moines` });
     } catch (err) {
       if (err.name !== 'AbortError') alert('Partage impossible : ' + err.message);
     }
