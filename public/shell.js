@@ -12,6 +12,7 @@ const PAGES = [
   { href: '/visites.html', icone: 'carte', libelle: 'Y aller' },
   { href: '/prospection.html', icone: 'clients', libelle: 'Prospection' },
   { href: '/commandes-pro.html', icone: 'colis', libelle: 'Commandes pro' },
+  { href: '/stories.html', icone: 'etoile', libelle: 'Stories Instagram' },
 ];
 
 // Session d'équipe : toute réponse 401 de l'API renvoie vers la connexion,

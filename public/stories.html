@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LGDM — Stories Instagram</title>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'light';</script>
+  <meta name="theme-color" content="#F7F7F8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="icons.js"></script>
+  <script src="ui.js"></script>
+  <script src="shell.js"></script>
+  <script src="stories.js"></script>
+  <style>
+    .stories-grille { display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+                      gap: var(--e5); align-items: start; }
+    /* Sur téléphone, les stories passent avant le formulaire : on les voit tout de suite */
+    @media (max-width: 960px) { .stories-grille { grid-template-columns: minmax(0, 1fr); }
+                                .colonne-galerie { order: -1; } }
+
+    .reglages { gap: var(--e4); }
+    @media (min-width: 961px) { .reglages { position: sticky; top: var(--e4); } }
+    .reglages h3 { margin-bottom: var(--e2); }
+    .reglages input, .reglages textarea { width: 100%; }
+
+    .ligne { display: grid; gap: var(--e2); align-items: end; margin-bottom: var(--e2);
+             padding: var(--e3); border: 1px solid var(--bordure); border-radius: var(--r-md);
+             background: var(--surface-2); }
+    .ligne label { margin-bottom: 4px; font-size: var(--t-xs); }
+    .ligne-jour { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) auto; }
+    .ligne-stand { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+    @media (max-width: 420px) {
+      .ligne-jour { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+      .ligne-jour > :first-child { grid-column: 1 / -1; }
+    }
+    .btn-ajout { align-self: flex-start; color: var(--accent-texte); font-weight: 600; }
+
+    .barre-galerie { display: flex; align-items: center; justify-content: space-between;
+                     gap: var(--e3); margin-bottom: var(--e4); flex-wrap: wrap; }
+    .barre-galerie p { color: var(--texte-2); font-size: var(--t-sm); }
+    .barre-galerie button.primary { width: auto; }
+
+    .galerie { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: var(--e4); }
+    @media (max-width: 520px) { .galerie { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e3); } }
+
+    .story { display: flex; flex-direction: column; gap: var(--e2); margin: 0; min-width: 0; }
+    .story canvas { width: 100%; height: auto; aspect-ratio: 9 / 16; display: block;
+                    border-radius: 14px; background: #0D0D0D; cursor: zoom-in;
+                    box-shadow: var(--ombre-2); }
+    .story figcaption { display: flex; flex-direction: column; gap: 2px; }
+    .story figcaption strong { font-size: var(--t-md); }
+    .story figcaption span { font-size: var(--t-xs); color: var(--texte-3); }
+    .story .options { display: grid; gap: var(--e2); }
+    .story .options label { margin-bottom: 2px; font-size: var(--t-xs); }
+    .story .options select, .story .options input { width: 100%; min-height: var(--cible-min); font-size: var(--t-sm); }
+    .story .actions { display: grid; grid-template-columns: 1fr; gap: var(--e2); }
+    .story .actions.deux { grid-template-columns: 1fr 1fr; }
+    .story .actions button { min-height: var(--cible-min); font-size: var(--t-sm); padding: 0 var(--e2); }
+
+    .astuce { margin-top: var(--e5); font-size: var(--t-sm); color: var(--texte-2); line-height: 1.55; }
+
+    #zoom { border: none; padding: 0; background: transparent; max-width: 100vw; max-height: 100vh; margin: auto; }
+    #zoom::backdrop { background: rgba(0,0,0,0.85); }
+    #zoom img { display: block; height: min(92vh, 177vw); width: auto; border-radius: 16px; cursor: zoom-out; }
+  </style>
+</head>
+<body>
+  <main class="large">
+    <div class="stories-grille">
+      <section class="reglages" aria-labelledby="titre-reglages">
+        <div>
+          <h2 id="titre-reglages">Infos de l'événement</h2>
+          <p class="carte-soustitre">Les stories se mettent à jour à chaque modification.
+            Réglages conservés sur cet appareil.</p>
+        </div>
+
+        <div><label for="s-nom">Événement</label>
+          <input type="text" id="s-nom" data-k="nom" placeholder="Marché de Noël"></div>
+        <div><label for="s-lieu">Ville</label>
+          <input type="text" id="s-lieu" data-k="lieu" placeholder="Bruguières"></div>
+        <div><label for="s-adresse">Précision du lieu (facultatif)</label>
+          <input type="text" id="s-adresse" data-k="adresse" placeholder="Place de la mairie, stand n° 12…"></div>
+
+        <div>
+          <h3>Jours et horaires</h3>
+          <div id="jours"></div>
+          <button type="button" class="btn-tertiaire btn-ajout" id="ajout-jour"></button>
+        </div>
+
+        <div><label for="s-accroche">Phrase d'accroche</label>
+          <input type="text" id="s-accroche" data-k="accroche"></div>
+
+        <div>
+          <h3>À déguster au stand</h3>
+          <div id="stand"></div>
+          <button type="button" class="btn-tertiaire btn-ajout" id="ajout-stand"></button>
+        </div>
+
+        <div><label for="s-merci">Message de remerciement</label>
+          <textarea id="s-merci" data-k="merci" rows="4"></textarea></div>
+
+        <button type="button" class="btn-tertiaire" id="reinit">Revenir aux réglages de départ</button>
+      </section>
+
+      <div class="colonne-galerie">
+        <div class="barre-galerie">
+          <p>Format story Instagram 1080 × 1920 · touchez une image pour l'agrandir</p>
+          <button type="button" class="primary" id="tout"></button>
+        </div>
+        <div class="galerie" id="galerie"></div>
+        <p class="astuce">
+          <strong>Astuce Instagram :</strong> une fois l'image chargée dans la story, ajoutez par-dessus
+          le sticker « Lieu » (Bruguières) ou le sticker « Compte à rebours » : il prévient vos abonnés
+          à l'ouverture du marché. Le contenu est placé hors des zones masquées par Instagram
+          (haut et bas de l'écran).
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <dialog id="zoom"><img alt=""></dialog>
+
+  <script>
+  const CLE = 'lgdm-stories';
+  const DEFAUT = {
+    nom: 'Marché de Noël',
+    lieu: 'Bruguières',
+    adresse: '',
+    jours: [
+      { date: '2026-11-27', horaires: '18h – 21h', mention: 'Nocturne' },
+      { date: '2026-11-28', horaires: '', mention: '' },
+      { date: '2026-11-29', horaires: '', mention: '' },
+    ],
+    accroche: 'On vous attend au stand du Gué des Moines !',
+    stand: [
+      { nom: 'La Belle de Noël', desc: 'Notre bière de Noël' },
+      { nom: 'Nos bières artisanales', desc: 'Brassées à Bruguières' },
+    ],
+    merci: "Merci à toutes celles et ceux qui sont passés nous voir au marché de Noël. Belles fêtes de fin d'année !",
+    options: { rebours: { n: null }, jour: { jour: 0, titre: 'auto' } },
+  };
+  const copie = o => JSON.parse(JSON.stringify(o));
+
+  function charger() {
+    try {
+      const s = JSON.parse(localStorage.getItem(CLE) || 'null');
+      if (s && typeof s === 'object') return { ...copie(DEFAUT), ...s, options: { ...copie(DEFAUT).options, ...(s.options || {}) } };
+    } catch {}
+    return copie(DEFAUT);
+  }
+  function sauver() { try { localStorage.setItem(CLE, JSON.stringify(etat)); } catch {} }
+
+  let etat = charger();
+  let logoImg = null;
+  const canvases = {};
+
+  const echap = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const slug = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+  // Compte à rebours : par défaut, le nombre de jours réel jusqu'au premier jour
+  function nRebours() {
+    const n = etat.options.rebours?.n;
+    if (n) return n;
+    const premier = Stories.joursTries(etat)[0];
+    return Math.max(1, premier ? Stories.joursAvant(premier.date) : 1);
+  }
+  function optionsDe(id) {
+    if (id === 'rebours') return { n: nRebours() };
+    return etat.options[id] || {};
+  }
+
+  // ------------------------------------------------------------ formulaire
+  function monterFormulaire() {
+    document.querySelectorAll('[data-k]').forEach(el => {
+      el.value = etat[el.dataset.k] ?? '';
+      el.oninput = () => { etat[el.dataset.k] = el.value; changer(); };
+    });
+    rendreJours();
+    rendreStand();
+  }
+
+  function rendreJours() {
+    const zone = document.getElementById('jours');
+    zone.innerHTML = etat.jours.map((j, i) => `
+      <div class="ligne ligne-jour">
+        <div><label for="j-d-${i}">Date</label><input type="date" id="j-d-${i}" data-i="${i}" data-c="date" value="${echap(j.date)}"></div>
+        <div><label for="j-h-${i}">Horaires</label><input type="text" id="j-h-${i}" data-i="${i}" data-c="horaires" value="${echap(j.horaires)}" placeholder="ex. 10h – 19h"></div>
+        <div><label for="j-m-${i}">Mention</label><input type="text" id="j-m-${i}" data-i="${i}" data-c="mention" value="${echap(j.mention)}" placeholder="ex. Nocturne"></div>
+        <button type="button" class="btn-icone" data-suppr="${i}" aria-label="Retirer ce jour">${ico('corbeille')}</button>
+      </div>`).join('');
+    zone.querySelectorAll('input').forEach(el => el.oninput = () => {
+      etat.jours[el.dataset.i][el.dataset.c] = el.value;
+      if (el.dataset.c === 'date') majOptionsJour();
+      changer();
+    });
+    zone.querySelectorAll('[data-suppr]').forEach(b => b.onclick = () => {
+      etat.jours.splice(+b.dataset.suppr, 1); rendreJours(); majOptionsJour(); changer();
+    });
+  }
+
+  function rendreStand() {
+    const zone = document.getElementById('stand');
+    zone.innerHTML = etat.stand.map((s, i) => `
+      <div class="ligne ligne-stand">
+        <div><label for="st-n-${i}">Nom</label><input type="text" id="st-n-${i}" data-i="${i}" data-c="nom" value="${echap(s.nom)}"></div>
+        <div><label for="st-d-${i}">Détail</label><input type="text" id="st-d-${i}" data-i="${i}" data-c="desc" value="${echap(s.desc)}"></div>
+        <button type="button" class="btn-icone" data-suppr="${i}" aria-label="Retirer cette ligne">${ico('corbeille')}</button>
+      </div>`).join('');
+    zone.querySelectorAll('input').forEach(el => el.oninput = () => {
+      etat.stand[el.dataset.i][el.dataset.c] = el.value; changer();
+    });
+    zone.querySelectorAll('[data-suppr]').forEach(b => b.onclick = () => {
+      etat.stand.splice(+b.dataset.suppr, 1); rendreStand(); changer();
+    });
+    document.getElementById('ajout-stand').hidden = etat.stand.length >= 5;
+  }
+
+  // -------------------------------------------------------------- galerie
+  const PARTAGE = (() => {
+    try {
+      const f = new File([new Blob(['x'], { type: 'image/png' })], 'x.png', { type: 'image/png' });
+      return !!navigator.canShare && navigator.canShare({ files: [f] });
+    } catch { return false; }
+  })();
+
+  function nomFichier(id) {
+    const i = Stories.MODELES.findIndex(m => m.id === id) + 1;
+    let suffixe = '';
+    if (id === 'rebours') suffixe = `-j${nRebours()}`;
+    if (id === 'jour') { const { j } = Stories.titreDuJour(etat, optionsDe('jour')); if (j) suffixe = `-${j.date}`; }
+    return `story-${slug(etat.nom)}-${slug(etat.lieu)}-${i}-${id}${suffixe}.png`;
+  }
+  const blobDe = id => new Promise(r => canvases[id].toBlob(r, 'image/png'));
+  async function fichierDe(id) { return new File([await blobDe(id)], nomFichier(id), { type: 'image/png' }); }
+
+  async function telecharger(id) {
+    const url = URL.createObjectURL(await blobDe(id));
+    const a = Object.assign(document.createElement('a'), { href: url, download: nomFichier(id) });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+  async function partager(ids) {
+    const files = await Promise.all(ids.map(fichierDe));
+    try { await navigator.share({ files, title: `Stories — ${etat.nom} ${etat.lieu}` }); }
+    catch (e) { if (e.name !== 'AbortError') ids.forEach(telecharger); }
+  }
+
+  function majOptionsJour() {
+    const sel = document.getElementById('opt-jour');
+    if (!sel) return;
+    const jours = Stories.joursTries(etat);
+    const o = etat.options.jour;
+    if (o.jour >= jours.length) o.jour = 0;
+    sel.innerHTML = jours.map((j, i) =>
+      `<option value="${i}"${i === +o.jour ? ' selected' : ''}>${Stories.majuscule(Stories.dateLongue(Stories.laDate(j.date)))}</option>`).join('');
+  }
+
+  function optionsHTML(id) {
+    if (id === 'rebours') return `
+      <div><label for="opt-n">Jours restants</label>
+        <input type="number" id="opt-n" min="1" max="99" inputmode="numeric" value="${nRebours()}"></div>`;
+    if (id === 'jour') return `
+      <div><label for="opt-jour">Jour</label><select id="opt-jour"></select></div>
+      <div><label for="opt-titre">Titre</label>
+        <select id="opt-titre">
+          ${[['auto', 'Automatique'], ['soir', "C'est ce soir !"], ['aujourdhui', "C'est aujourd'hui !"],
+             ['dernier', 'Dernier jour !'], ['weekend', 'Tout le week-end !']]
+            .map(([v, l]) => `<option value="${v}"${etat.options.jour.titre === v ? ' selected' : ''}>${l}</option>`).join('')}
+        </select></div>`;
+    return '';
+  }
+
+  function monterGalerie() {
+    const g = document.getElementById('galerie');
+    g.innerHTML = Stories.MODELES.map(m => `
+      <figure class="story" data-id="${m.id}">
+        <canvas width="${Stories.W}" height="${Stories.H}" role="img" aria-label="Aperçu de la story ${echap(m.nom)}"></canvas>
+        <figcaption><strong>${echap(m.nom)}</strong><span>${echap(m.quand)}</span></figcaption>
+        ${optionsHTML(m.id) ? `<div class="options">${optionsHTML(m.id)}</div>` : ''}
+        <div class="actions${PARTAGE ? ' deux' : ''}">
+          <button type="button" class="secondary" data-act="dl">${ico('telecharger')}Télécharger</button>
+          ${PARTAGE ? `<button type="button" class="secondary" data-act="partager">${ico('partager')}Partager</button>` : ''}
+        </div>
+      </figure>`).join('');
+    g.querySelectorAll('.story').forEach(f => {
+      const id = f.dataset.id;
+      canvases[id] = f.querySelector('canvas');
+      canvases[id].onclick = () => zoomer(id);
+      f.querySelector('[data-act="dl"]').onclick = () => telecharger(id);
+      f.querySelector('[data-act="partager"]')?.addEventListener('click', () => partager([id]));
+    });
+    majOptionsJour();
+    document.getElementById('opt-n').oninput = e => {
+      const n = Math.round(+e.target.value);
+      etat.options.rebours = { n: n >= 1 ? Math.min(n, 99) : null };
+      changer();
+    };
+    document.getElementById('opt-jour').onchange = e => { etat.options.jour.jour = +e.target.value; changer(); };
+    document.getElementById('opt-titre').onchange = e => { etat.options.jour.titre = e.target.value; changer(); };
+  }
+
+  function zoomer(id) {
+    const d = document.getElementById('zoom');
+    d.querySelector('img').src = canvases[id].toDataURL('image/png');
+    d.querySelector('img').alt = `Story ${Stories.MODELES.find(m => m.id === id).nom}, en grand`;
+    d.showModal();
+  }
+  document.getElementById('zoom').onclick = e => e.currentTarget.close();
+
+  // --------------------------------------------------------------- rendu
+  let minuteur = null;
+  function changer() { sauver(); clearTimeout(minuteur); minuteur = setTimeout(rendreTout, 120); }
+  function rendreTout() {
+    for (const m of Stories.MODELES) Stories.rendreStory(m.id, etat, optionsDe(m.id), logoImg, canvases[m.id]);
+  }
+
+  async function polices() {
+    const charges = Promise.all([
+      document.fonts.load('100px Anton', 'ÉÈËÀÛ0123456789'),
+      document.fonts.load('400 40px Inter'), document.fonts.load('500 40px Inter'),
+      document.fonts.load('600 40px Inter'), document.fonts.load('700 40px Inter'),
+    ]).then(() => document.fonts.ready);
+    await Promise.race([charges, new Promise(r => setTimeout(r, 4000))]).catch(() => {});
+  }
+  function chargerLogo() {
+    return new Promise(r => {
+      const img = new Image();
+      img.onload = () => r(img); img.onerror = () => r(null);
+      img.src = 'logo.png';
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    monterCoquille({ titre: 'Stories Instagram', actif: '/stories.html' });
+    document.getElementById('ajout-jour').innerHTML = `${ico('plus')}Ajouter un jour`;
+    document.getElementById('ajout-stand').innerHTML = `${ico('plus')}Ajouter une ligne`;
+    document.getElementById('tout').innerHTML = PARTAGE ? `${ico('partager')}Tout partager / enregistrer` : `${ico('telecharger')}Tout télécharger`;
+
+    document.getElementById('ajout-jour').onclick = () => {
+      const der = Stories.joursTries(etat).at(-1);
+      let date = '';
+      if (der) { const d = Stories.laDate(der.date); d.setDate(d.getDate() + 1);
+        date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+      etat.jours.push({ date, horaires: '', mention: '' }); rendreJours(); majOptionsJour(); changer();
+    };
+    document.getElementById('ajout-stand').onclick = () => { etat.stand.push({ nom: '', desc: '' }); rendreStand(); changer(); };
+    document.getElementById('reinit').onclick = () => {
+      if (!confirm('Revenir aux réglages de départ ? Vos modifications seront perdues.')) return;
+      etat = copie(DEFAUT); sauver(); monterFormulaire(); monterGalerie(); rendreTout();
+    };
+    document.getElementById('tout').onclick = async () => {
+      const ids = Stories.MODELES.map(m => m.id);
+      if (PARTAGE) return partager(ids);
+      for (const id of ids) { await telecharger(id); await new Promise(r => setTimeout(r, 350)); }
+    };
+
+    monterFormulaire();
+    monterGalerie();
+    [logoImg] = await Promise.all([chargerLogo(), polices()]);
+    rendreTout();
+    window.storiesPretes = true;
+  });
+  </script>
+</body>
+</html>
