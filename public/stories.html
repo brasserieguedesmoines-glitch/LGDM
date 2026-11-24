@@ -8,8 +8,8 @@
   <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'light';</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <!-- Anton : titres compressés de la marque, dessinés dans la story -->
-  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Anton (titres, noms, heure) et Oswald (textes) : les deux familles de la story -->
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=Oswald:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="icons.js"></script>
   <script src="ui.js"></script>
@@ -152,14 +152,14 @@
         <p class="carte-soustitre" id="aide-format"></p>
 
         <div class="grille">
-          <div class="champ"><label for="f-badge">Bandeau <span class="compteur" data-pour="f-badge"></span></label>
+          <div class="champ"><label for="f-badge">Surtitre <span class="compteur" data-pour="f-badge"></span></label>
             <input type="text" id="f-badge" maxlength="30" placeholder="DIFFUSION EN DIRECT"></div>
-          <div class="champ"><label for="f-offre">Bouton du bas <span class="compteur" data-pour="f-offre"></span></label>
-            <input type="text" id="f-offre" maxlength="60" placeholder="Venez tôt, ça va être plein !"></div>
-          <div class="champ large"><label for="f-titre">Accroche <span class="compteur" data-pour="f-titre"></span></label>
-            <input type="text" id="f-titre" maxlength="40" placeholder="LE CHOC DU WEEK-END"></div>
-          <div class="champ large"><label for="f-sous-titre">Sous-titre <span class="compteur" data-pour="f-sous-titre"></span></label>
-            <input type="text" id="f-sous-titre" maxlength="80" placeholder="On vous attend devant l'écran géant !"></div>
+          <div class="champ"><label for="f-offre">Offre (facultatif) <span class="compteur" data-pour="f-offre"></span></label>
+            <input type="text" id="f-offre" maxlength="60" placeholder="Ex. : bière de Noël à la pression"></div>
+          <div class="champ large"><label for="f-titre">Titre (facultatif) <span class="compteur" data-pour="f-titre"></span></label>
+            <input type="text" id="f-titre" maxlength="40" placeholder="Ex. : DEMI-FINALE, DERBY, SAMEDI SOIR… ou rien"></div>
+          <div class="champ large"><label for="f-sous-titre">Sous-titre (facultatif) <span class="compteur" data-pour="f-sous-titre"></span></label>
+            <input type="text" id="f-sous-titre" maxlength="80" placeholder="Ex. : réservation conseillée"></div>
         </div>
 
         <div class="titre-bloc">

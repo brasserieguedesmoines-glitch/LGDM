@@ -21,8 +21,8 @@ const matchVide = () => ({
   logoDomicile: '', logoExterieur: '',     // '' = automatique, 'aucun', ou image ajoutée à la main
 });
 const storyVide = () => ({
-  format: 'affiche', badge: 'DIFFUSION EN DIRECT', titre: 'CE WEEK-END AU GUÉ', sousTitre: '',
-  matchs: [matchVide()], offre: 'Venez tôt, ça va être plein !', legende: '', logos: true,
+  format: 'affiche', badge: 'DIFFUSION EN DIRECT', titre: '', sousTitre: '',
+  matchs: [matchVide()], offre: '', legende: '', logos: true,
 });
 
 let story = storyVide();
@@ -97,17 +97,30 @@ function sauverBrouillon() {
 // ---------------------------------------------------------------------------
 //  Dessin de la story
 // ---------------------------------------------------------------------------
+// Parti pris graphique : fond noir plat ; deux familles condensées de la même
+// veine (Anton pour les titres, les noms et l'heure ; Oswald pour tout le
+// reste) ; une seule couleur d'accent, l'ambre de la marque, réservée au
+// surtitre, à l'heure du coup d'envoi et à l'offre. Pas d'ombre, de halo, de
+// dégradé ni de cadre : les blocs se séparent par l'espace et, dans le
+// programme, par de simples filets. Tous les textes sont posés sur leur ligne
+// de base (hauteur des capitales), ce qui rend les espacements réguliers.
 const L = 1080, H = 1920;
 const C = {
-  fond: '#000000', carte: '#1A1714', carte2: '#201C18',
-  ambre: '#F5A425', ambreFonce: '#F0921E', brun: '#5C3A17',
-  blanc: '#FFFFFF', gris: '#A8A39A', surAmbre: '#1A1206',
+  fond: '#000000',
+  ambre: '#F5A425',
+  blanc: '#FFFFFF',
+  gris: '#A8A39A',
+  filet: '#2E2A26',
+  medaillon: '#1C1A17',
+  surAmbre: '#1A1206',
 };
-const DISPLAY = '"Anton", "Bebas Neue", Impact, "Arial Narrow", sans-serif';
-const TEXTE = '"Inter", system-ui, -apple-system, sans-serif';
-// Zones masquées par Instagram (profil en haut, champ de réponse en bas) :
-// rien d'important n'y est placé.
-const HAUT_UTILE = 200, BAS_UTILE = 1680;
+const DISPLAY = '"Anton", Impact, "Arial Narrow", sans-serif';
+const TEXTE = '"Oswald", "Arial Narrow", sans-serif';
+// Zone lisible : Instagram couvre le haut (barre de progression, profil) et le bas (champ de réponse).
+const HAUT = 260, BAS = 1650;
+const MARGE = 90;
+const LARGEUR = L - 2 * MARGE;
+const SIGNATURE = 'LE GUÉ DES MOINES · BRUGUIÈRES';
 
 const canvas = $('story');
 const ctx = canvas.getContext('2d');
@@ -119,19 +132,40 @@ function espacement(px) {
   if ('letterSpacing' in ctx) ctx.letterSpacing = `${px}px`;
 }
 const largeurTexte = t => ctx.measureText(t).width;
+// Hauteur des capitales en proportion du corps, mesurée à chaque dessin (les
+// polices web peuvent arriver après le premier rendu).
+const RATIO = { [DISPLAY]: 0.73, [TEXTE]: 0.7 };
+function mesurerRatios() {
+  for (const f of [DISPLAY, TEXTE]) {
+    police(100, f);
+    const a = ctx.measureText('H').actualBoundingBoxAscent;
+    if (a > 0) RATIO[f] = a / 100;
+  }
+}
+const ratioCapitale = famille => RATIO[famille];
 
-/** Taille de police la plus grande (≤ max) pour que le texte tienne en largeur. */
+/** Taille la plus grande (≤ max) pour que le texte tienne en largeur. */
 function ajuster(txt, max, largeur, famille = DISPLAY, graisse = '400') {
   police(max, famille, graisse);
   const w = largeurTexte(txt);
-  const t = w > largeur ? Math.max(18, Math.floor(max * largeur / w)) : max;
+  const t = w > largeur ? Math.max(16, Math.floor(max * largeur / w)) : max;
   police(t, famille, graisse);
   return t;
 }
 
-function rectArrondi(x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.roundRect(x, y, w, h, r);
+/**
+ * Écrit une ligne dont le haut des capitales tombe en y.
+ * Renvoie la taille réellement utilisée (réduite si le texte dépasse `largeur`).
+ */
+function ecrire(txt, x, y, { taille, famille = TEXTE, graisse = '400', couleur = C.blanc, align = 'left', suivi = 0, largeur = LARGEUR }) {
+  espacement(suivi);
+  const t = ajuster(txt, taille, largeur, famille, graisse);
+  ctx.fillStyle = couleur;
+  ctx.textAlign = align;
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(txt, x, y + t * ratioCapitale(famille));
+  espacement(0);
+  return t;
 }
 
 /** Coupe un titre en 1 à 3 lignes équilibrées, à la plus grande taille possible. */
@@ -139,8 +173,7 @@ function couperTitre(titre, largeur, max) {
   const mots = titre.split(/\s+/).filter(Boolean);
   if (!mots.length) return { lignes: [], taille: max };
   police(max);
-  const mesure = t => largeurTexte(t);
-  const tailleDe = lignes => Math.min(max, Math.floor(max * largeur / Math.max(...lignes.map(mesure))));
+  const tailleDe = lignes => Math.min(max, Math.floor(max * largeur / Math.max(...lignes.map(largeurTexte))));
   const candidats = [[mots.join(' ')]];
   for (let i = 1; i < mots.length; i++) candidats.push([mots.slice(0, i).join(' '), mots.slice(i).join(' ')]);
   for (let i = 1; i < mots.length; i++) {
@@ -148,22 +181,21 @@ function couperTitre(titre, largeur, max) {
       candidats.push([mots.slice(0, i).join(' '), mots.slice(i, j).join(' '), mots.slice(j).join(' ')]);
     }
   }
-  // Une ligne si elle reste grande ; sinon le découpage le plus équilibré.
   const seuils = { 1: max * 0.78, 2: max * 0.62, 3: 0 };
   for (const n of [1, 2, 3]) {
     const options = candidats.filter(c => c.length === n);
     if (!options.length) continue;
     const meilleur = options.reduce((a, b) => (tailleDe(b) > tailleDe(a) ? b : a));
     const t = tailleDe(meilleur);
-    if (t >= seuils[n] || n === Math.min(3, mots.length)) return { lignes: meilleur, taille: Math.max(t, 60) };
+    if (t >= seuils[n] || n === Math.min(3, mots.length)) return { lignes: meilleur, taille: Math.max(t, 56) };
   }
   return { lignes: [mots.join(' ')], taille: tailleDe([mots.join(' ')]) };
 }
 
-/** Coupe un texte courant sur plusieurs lignes (sous-titre). */
+/** Coupe un texte courant sur plusieurs lignes (police courante). */
 function couperTexte(txt, largeur, maxLignes) {
   // Espace insécable avant « ! ? : ; » : la ponctuation ne part jamais seule à la ligne
-  const mots = txt.replace(/\s+([!?:;»])/g, '\u00A0$1').replace(/(«)\s+/g, '$1\u00A0').split(/ +/).filter(Boolean);
+  const mots = txt.replace(/\s+([!?:;»])/g, ' $1').replace(/(«)\s+/g, '$1 ').split(/ +/).filter(Boolean);
   const lignes = [];
   let courante = '';
   for (const m of mots) {
@@ -177,193 +209,6 @@ function couperTexte(txt, largeur, maxLignes) {
     lignes[maxLignes - 1] = lignes[maxLignes - 1].replace(/\s*\S*$/, '') + '…';
   }
   return lignes;
-}
-
-const MOIS_COURTS = ['JANV.', 'FÉVR.', 'MARS', 'AVR.', 'MAI', 'JUIN', 'JUIL.', 'AOÛT', 'SEPT.', 'OCT.', 'NOV.', 'DÉC.'];
-function jourMatch(iso, long) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso || '')) return '';
-  const d = new Date(`${iso}T12:00:00`);
-  if (long) return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
-  const jour = d.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '').toUpperCase();
-  return `${jour}. ${d.getDate()} ${MOIS_COURTS[d.getMonth()]}`;
-}
-const heureMatch = h => (/^\d{2}:\d{2}$/.test(h || '') ? h.replace(':', 'H') : '');
-const nomEquipe = (n, defaut) => (n || defaut).toUpperCase();
-
-function dessinerFond() {
-  ctx.fillStyle = C.fond;
-  ctx.fillRect(0, 0, L, H);
-  if (!photo) return;
-  // Recadrage « cover » puis voile noir : le texte reste lisible quelle que soit la photo.
-  const pw = photo.width, ph = photo.height;
-  const e = Math.max(L / pw, H / ph);
-  ctx.drawImage(photo, (L - pw * e) / 2, (H - ph * e) / 2, pw * e, ph * e);
-  const voile = ctx.createLinearGradient(0, 0, 0, H);
-  voile.addColorStop(0, 'rgba(0,0,0,0.72)');
-  voile.addColorStop(0.35, 'rgba(0,0,0,0.86)');
-  voile.addColorStop(1, 'rgba(0,0,0,0.95)');
-  ctx.fillStyle = voile;
-  ctx.fillRect(0, 0, L, H);
-}
-
-/** Logo, nom de la maison et badge pilule. Renvoie l'ordonnée sous l'en-tête.
- *  Avec trace = false, ne dessine rien : sert à mesurer avant de choisir la mise en page. */
-function dessinerEntete(compact, trace = true) {
-  const hLogo = compact ? 104 : 140;
-  const yLogo = HAUT_UTILE + (compact ? 0 : 10);
-  if (trace && logo.complete && logo.naturalWidth) {
-    const wLogo = hLogo * logo.naturalWidth / logo.naturalHeight;
-    ctx.drawImage(logo, (L - wLogo) / 2, yLogo, wLogo, hLogo);
-  }
-  let y = yLogo + hLogo + (compact ? 50 : 62);
-  if (trace) {
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillStyle = C.gris;
-    police(compact ? 24 : 27, TEXTE, '600');
-    espacement(7);
-    ctx.fillText('LE GUÉ DES MOINES · BRUGUIÈRES', L / 2, y);
-    espacement(0);
-  }
-
-  const badge = (story.badge || '').trim().toUpperCase();
-  y += compact ? 34 : 42;
-  if (badge) {
-    const h = compact ? 60 : 68;
-    if (trace) {
-      police(compact ? 25 : 28, TEXTE, '700');
-      espacement(5);
-      const w = largeurTexte(badge) + 34 + 70;
-      const x = (L - w) / 2;
-      rectArrondi(x, y, w, h, h / 2);
-      ctx.fillStyle = 'rgba(245,164,37,0.08)';
-      ctx.fill();
-      ctx.lineWidth = 2.5;
-      ctx.strokeStyle = C.brun;
-      ctx.stroke();
-      ctx.fillStyle = C.ambre;
-      ctx.beginPath(); ctx.arc(x + 38, y + h / 2, 7, 0, Math.PI * 2); ctx.fill();
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(badge, x + 62, y + h / 2 + 2);
-      espacement(0);
-    }
-    y += h;
-  }
-  return y;
-}
-
-/** Hauteur et dessin de l'accroche + sous-titre. */
-function mesurerTitre(maxTaille) {
-  const titre = (story.titre || '').trim().toUpperCase();
-  const t = couperTitre(titre, 960, maxTaille);
-  police(40, TEXTE, '500');
-  const sous = story.sousTitre ? couperTexte(story.sousTitre.trim(), 920, 2) : [];
-  const hTitre = t.lignes.length * t.taille * 1.04;
-  return { ...t, sous, hauteur: hTitre + (sous.length ? 26 + sous.length * 52 : 0) };
-}
-function dessinerTitre(m, y) {
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  police(m.taille);
-  m.lignes.forEach((ligne, i) => {
-    // Dernière ligne en ambre quand l'accroche tient sur plusieurs lignes
-    ctx.fillStyle = m.lignes.length > 1 && i === m.lignes.length - 1 ? C.ambre : C.blanc;
-    ctx.fillText(ligne, L / 2, y + i * m.taille * 1.04);
-  });
-  let yy = y + m.lignes.length * m.taille * 1.04;
-  if (m.sous.length) {
-    yy += 26;
-    police(40, TEXTE, '500');
-    ctx.fillStyle = C.gris;
-    m.sous.forEach((l, i) => ctx.fillText(l, L / 2, yy + i * 52));
-    yy += m.sous.length * 52;
-  }
-  return yy;
-}
-
-function dessinerBouton(yCentre) {
-  const offre = (story.offre || '').trim().toUpperCase();
-  if (!offre) return;
-  const h = 98;
-  const taille = ajuster(offre, 38, 800, TEXTE, '800');
-  espacement(1);
-  const w = Math.min(960, largeurTexte(offre) + 120);
-  const x = (L - w) / 2, y = yCentre - h / 2;
-  ctx.shadowColor = 'rgba(245,164,37,0.35)';
-  ctx.shadowBlur = 40;
-  rectArrondi(x, y, w, h, h / 2);
-  ctx.fillStyle = C.ambre;
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = C.surAmbre;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  police(taille, TEXTE, '800');
-  ctx.fillText(offre, L / 2, y + h / 2 + 2);
-  espacement(0);
-}
-
-function carte(x, y, w, h, r = 36) {
-  rectArrondi(x, y, w, h, r);
-  ctx.fillStyle = 'rgba(26,23,20,0.92)';
-  ctx.fill();
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-  ctx.stroke();
-}
-
-function marqueEquipe(couleur, x, y, w, h) {
-  if (!couleur) return;
-  rectArrondi(x, y, w, h, Math.min(w, h) / 2);
-  ctx.fillStyle = couleur;
-  ctx.fill();
-  // Liseré clair : une couleur sombre (noir, bleu nuit) reste visible sur le fond
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-  ctx.stroke();
-}
-
-function initiales(nom) {
-  const mots = nom.split(/[\s-]+/).filter(m => m && !/^(de|du|des|d'|l'|et)$/i.test(m));
-  if (!mots.length) return '?';
-  return (mots.length === 1 ? mots[0].slice(0, 2) : mots[0][0] + mots[1][0]).toUpperCase();
-}
-function couleurClaire(hex) {
-  if (!/^#[0-9a-f]{6}$/i.test(hex || '')) return false;
-  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
-  return 0.299 * r + 0.587 * g + 0.114 * b > 165;
-}
-
-/** Logo de l'équipe dans un carré de côté t centré en (cx, cy) ; à défaut, médaillon aux initiales. */
-function dessinerBlason(m, cote, cx, cy, t) {
-  const img = imageLogo(m, cote);
-  ctx.save();
-  if (img) {
-    const e = Math.min(t / img.naturalWidth, t / img.naturalHeight);
-    const w = img.naturalWidth * e, h = img.naturalHeight * e;
-    // Halo clair : les parties sombres d'un logo (noir, bleu marine) restent lisibles sur le noir
-    ctx.shadowColor = 'rgba(255,255,255,0.32)';
-    ctx.shadowBlur = Math.max(8, t * 0.1);
-    ctx.drawImage(img, cx - w / 2, cy - h / 2, w, h);
-  } else {
-    const couleur = m[`couleur${SUFFIXE[cote]}`];
-    const r = t * 0.42;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fillStyle = couleur || '#2A2622';
-    ctx.fill();
-    ctx.lineWidth = Math.max(2, t * 0.012);
-    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-    ctx.stroke();
-    const txt = initiales(nomEquipe(m[cote], cote === 'domicile' ? 'Équipe 1' : 'Équipe 2'));
-    ctx.fillStyle = couleurClaire(couleur) ? '#111111' : C.blanc;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ajuster(txt, r * 0.95, r * 1.4);
-    ctx.fillText(txt, cx, cy + r * 0.05);
-  }
-  ctx.restore();
 }
 
 /** Nom d'équipe sur une ou deux lignes, à la plus grande taille possible. */
@@ -381,228 +226,353 @@ function couperNom(nom, largeur, max) {
   return meilleur.taille > une ? meilleur : { lignes: [nom], taille: une };
 }
 
-// --- Mise en page « Affiche » : un seul match, en grand ----------------------
-function dessinerAffiche() {
-  const m = story.matchs[0] ?? matchVide();
-  // Avec au moins un logo : les deux blasons face à face. Sinon, noms empilés.
-  const faceAFace = aUnLogo(m, 'domicile') || aUnLogo(m, 'exterieur');
-  const hCarte = faceAFace ? 690 : 620, hBouton = story.offre ? 98 : 0;
-  // Du plus aéré au plus serré : on garde la première mise en page qui tient
-  // au-dessus de la zone masquée par Instagram (accroche longue, sous-titre sur deux lignes…).
-  const essais = [
-    { compact: false, tMax: 150, ecart: 60 },
-    { compact: false, tMax: 126, ecart: 44 },
-    { compact: true, tMax: 120, ecart: 36 },
-    { compact: true, tMax: 100, ecart: 28 },
-  ];
-  let choix, titre, zoneHaut, total;
-  for (choix of essais) {
-    zoneHaut = dessinerEntete(choix.compact, false) + (choix.compact ? 40 : 56);
-    titre = mesurerTitre(choix.tMax);
-    total = titre.hauteur + choix.ecart + hCarte + (hBouton ? choix.ecart + hBouton : 0);
-    if (zoneHaut + total <= BAS_UTILE) break;
-  }
-  dessinerEntete(choix.compact);
-  let y = zoneHaut + Math.max(0, (BAS_UTILE - zoneHaut - total) / 2);
-  y = dessinerTitre(titre, y) + choix.ecart;
+const MOIS_COURTS = ['JANV.', 'FÉVR.', 'MARS', 'AVR.', 'MAI', 'JUIN', 'JUIL.', 'AOÛT', 'SEPT.', 'OCT.', 'NOV.', 'DÉC.'];
+function jourMatch(iso, long) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso || '')) return '';
+  const d = new Date(`${iso}T12:00:00`);
+  if (long) return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
+  const jour = d.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '').toUpperCase();
+  return `${jour}. ${d.getDate()} ${MOIS_COURTS[d.getMonth()]}`;
+}
+const heureMatch = h => (/^\d{2}:\d{2}$/.test(h || '') ? h.replace(':', 'H') : '');
+const nomEquipe = (n, defaut) => (n || defaut).toUpperCase();
+const infosMatch = m => [m.competition, m.diffuseur].filter(Boolean).join(' — ').toUpperCase();
 
-  // Carte du match
-  const x = 60, w = L - 120;
-  carte(x, y, w, hCarte);
+function dessinerFond() {
+  ctx.fillStyle = C.fond;
+  ctx.fillRect(0, 0, L, H);
+  if (!photo) return;
+  // Photo recadrée en « cover » sous un voile noir uniforme : le texte reste lisible.
+  const pw = photo.width, ph = photo.height;
+  const e = Math.max(L / pw, H / ph);
+  ctx.drawImage(photo, (L - pw * e) / 2, (H - ph * e) / 2, pw * e, ph * e);
+  ctx.fillStyle = 'rgba(0,0,0,0.8)';
+  ctx.fillRect(0, 0, L, H);
+}
+
+function initiales(nom) {
+  const mots = nom.split(/[\s-]+/).filter(m => m && !/^(de|du|des|d'|l'|et)$/i.test(m));
+  if (!mots.length) return '?';
+  return (mots.length === 1 ? mots[0].slice(0, 2) : mots[0][0] + mots[1][0]).toUpperCase();
+}
+
+/** Logo de l'équipe, sans déformation, dans un carré de côté t centré en (cx, cy).
+ *  À défaut de logo : médaillon sobre (anneau à la couleur du club, initiales). */
+function dessinerBlason(m, cote, cx, cy, t) {
+  const img = imageLogo(m, cote);
+  if (img) {
+    const e = Math.min(t / img.naturalWidth, t / img.naturalHeight);
+    const w = img.naturalWidth * e, h = img.naturalHeight * e;
+    ctx.drawImage(img, cx - w / 2, cy - h / 2, w, h);
+    return;
+  }
+  const r = t * 0.44;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = C.medaillon;
+  ctx.fill();
+  ctx.lineWidth = Math.max(3, t * 0.025);
+  ctx.strokeStyle = m[`couleur${SUFFIXE[cote]}`] || '#5C5650';
+  ctx.stroke();
+  const txt = initiales(nomEquipe(m[cote], cote === 'domicile' ? 'Équipe 1' : 'Équipe 2'));
+  const taille = ajuster(txt, r * 0.9, r * 1.3);
+  ctx.fillStyle = C.blanc;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
-  if (m.competition) {
-    ctx.fillStyle = C.ambre;
-    espacement(5);
-    ajuster(m.competition.toUpperCase(), 30, w - 120, TEXTE, '700');
-    ctx.fillText(m.competition.toUpperCase(), L / 2, y + 74);
-    espacement(0);
-  }
-  if (faceAFace) {
-    const cy = y + 258, t = 250, dx = 240;
-    dessinerBlason(m, 'domicile', L / 2 - dx, cy, t);
-    dessinerBlason(m, 'exterieur', L / 2 + dx, cy, t);
-    police(96);
-    ctx.fillStyle = C.ambre;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('VS', L / 2, cy + 6);
-    ctx.textBaseline = 'top';
-    ctx.fillStyle = C.blanc;
-    for (const [cote, cx, defaut] of [['domicile', L / 2 - dx, 'Équipe 1'], ['exterieur', L / 2 + dx, 'Équipe 2']]) {
-      const { lignes, taille } = couperNom(nomEquipe(m[cote], defaut), 400, 58);
-      police(taille);
-      lignes.forEach((l, i) => ctx.fillText(l, cx, y + 412 + i * taille * 1.04));
-    }
-    ctx.textBaseline = 'alphabetic';
-  } else {
-    const yA = y + 200, yB = y + 404;
-    for (const [nom, couleur, yy] of [
-      [nomEquipe(m.domicile, 'Équipe 1'), m.couleurDomicile, yA],
-      [nomEquipe(m.exterieur, 'Équipe 2'), m.couleurExterieur, yB],
-    ]) {
-      ajuster(nom, 112, w - 140);
-      ctx.fillStyle = C.blanc;
-      ctx.fillText(nom, L / 2, yy);
-      marqueEquipe(couleur, L / 2 - 50, yy + 18, 100, 10);
-    }
-    // « VS » entre les deux équipes, sous la couleur de la première
-    const yVs = y + 292;
-    ctx.strokeStyle = 'rgba(245,164,37,0.35)';
-    ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(x + 120, yVs - 21); ctx.lineTo(L / 2 - 60, yVs - 21); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(L / 2 + 60, yVs - 21); ctx.lineTo(x + w - 120, yVs - 21); ctx.stroke();
-    police(52);
-    ctx.fillStyle = C.ambre;
-    ctx.fillText('VS', L / 2, yVs);
-  }
+  ctx.fillText(txt, cx, cy + taille * ratioCapitale(DISPLAY) / 2);
+}
 
-  // Bandeau date · coup d'envoi · chaîne (codes « cartes de stats » de la marque)
-  const yBande = y + hCarte - 150;
-  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-  ctx.beginPath(); ctx.moveTo(x + 40, yBande); ctx.lineTo(x + w - 40, yBande); ctx.stroke();
-  const cellules = [
-    { valeur: jourMatch(m.date) || 'DATE ?', legende: 'LE', couleur: C.blanc },
-    { valeur: heureMatch(m.heure) || '--H--', legende: "COUP D'ENVOI", couleur: C.ambre },
-    { valeur: (m.diffuseur || 'ÉCRAN GÉANT').toUpperCase(), legende: 'SUR', couleur: C.blanc },
-  ];
-  const wc = w / 3;
-  cellules.forEach((c, i) => {
-    const cx = x + wc * i + wc / 2;
-    if (i) {
-      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-      ctx.beginPath(); ctx.moveTo(x + wc * i, yBande + 28); ctx.lineTo(x + wc * i, y + hCarte - 28); ctx.stroke();
-    }
-    ctx.fillStyle = c.couleur;
-    ajuster(c.valeur, i === 1 ? 74 : 54, wc - 40);
-    ctx.textBaseline = 'middle';
-    ctx.fillText(c.valeur, cx, yBande + 66);
-    ctx.fillStyle = C.gris;
-    police(20, TEXTE, '600');
-    espacement(3);
-    ctx.fillText(c.legende, cx, yBande + 122);
-    espacement(0);
-    ctx.textBaseline = 'alphabetic';
-  });
+// --- Blocs communs aux deux mises en page ------------------------------------
+// Chaque bloc connaît sa hauteur avant d'être dessiné : la page est composée
+// d'abord (choix des tailles, répartition des espaces), dessinée ensuite.
 
-  if (hBouton) dessinerBouton(y + hCarte + choix.ecart + hBouton / 2);
+function blocSurtitre(align) {
+  const txt = (story.badge || '').trim().toUpperCase();
+  if (!txt) return null;
+  const taille = 32;
+  return {
+    h: taille * ratioCapitale(TEXTE),
+    dessiner: y => ecrire(txt, align === 'center' ? L / 2 : MARGE, y,
+      { taille, graisse: '500', couleur: C.ambre, align, suivi: 4 }),
+  };
+}
+
+function blocTitre(align, max) {
+  const titre = (story.titre || '').trim().toUpperCase();
+  if (!titre) return null;
+  const { lignes, taille } = couperTitre(titre, LARGEUR, max);
+  const pas = taille * 1.02;
+  return {
+    h: (lignes.length - 1) * pas + taille * ratioCapitale(DISPLAY),
+    dessiner: y => lignes.forEach((l, i) => ecrire(l, align === 'center' ? L / 2 : MARGE, y + i * pas,
+      { taille, famille: DISPLAY, align })),
+  };
+}
+
+function blocSousTitre(align) {
+  const txt = (story.sousTitre || '').trim();
+  if (!txt) return null;
+  const taille = 38, pas = 52;
+  police(taille, TEXTE, '400');
+  const lignes = couperTexte(txt, align === 'center' ? 860 : LARGEUR, 2);
+  return {
+    h: (lignes.length - 1) * pas + taille * ratioCapitale(TEXTE),
+    dessiner: y => lignes.forEach((l, i) => ecrire(l, align === 'center' ? L / 2 : MARGE, y + i * pas,
+      { taille, couleur: C.gris, align })),
+  };
+}
+
+/** Offre réelle (prix, bière…) : pastille ambre pleine, à plat, comme les boutons de la marque. */
+function blocOffre(align) {
+  const txt = (story.offre || '').trim().toUpperCase();
+  if (!txt) return null;
+  const h = 80, taille = 32;
+  espacement(1.5);
+  const t = ajuster(txt, taille, LARGEUR - 96, TEXTE, '500');
+  const w = Math.min(LARGEUR, largeurTexte(txt) + 96);
+  espacement(0);
+  return {
+    h,
+    dessiner: y => {
+      const x = align === 'center' ? (L - w) / 2 : MARGE;
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, h / 2);
+      ctx.fillStyle = C.ambre;
+      ctx.fill();
+      ecrire(txt, x + w / 2, y + (h - t * ratioCapitale(TEXTE)) / 2,
+        { taille: t, graisse: '500', couleur: C.surAmbre, align: 'center', suivi: 1.5 });
+    },
+  };
+}
+
+/** Signature : le logo de la maison et son nom en clair (le texte du logo est illisible en petit). */
+function blocSignature(align, hLogo) {
+  const taille = 22;
+  const cap = taille * ratioCapitale(TEXTE);
+  const ok = logo.complete && logo.naturalWidth;
+  const wLogo = ok ? hLogo * logo.naturalWidth / logo.naturalHeight : hLogo;
+  if (align === 'center') {
+    return {
+      h: hLogo + 22 + cap,
+      dessiner: y => {
+        if (ok) ctx.drawImage(logo, (L - wLogo) / 2, y, wLogo, hLogo);
+        ecrire(SIGNATURE, L / 2, y + hLogo + 22, { taille, couleur: C.gris, align: 'center', suivi: 3 });
+      },
+    };
+  }
+  return {
+    h: hLogo,
+    dessiner: y => {
+      if (ok) ctx.drawImage(logo, MARGE, y, wLogo, hLogo);
+      ecrire(SIGNATURE, MARGE + wLogo + 28, y + (hLogo - cap) / 2, { taille, couleur: C.gris, suivi: 3 });
+    },
+  };
+}
+
+/**
+ * Compose la page en trois groupes : l'en-tête est calé en haut de la zone
+ * lisible, la signature en bas, et le corps (le match, la liste) est centré
+ * optiquement entre les deux. À l'intérieur d'un groupe, les écarts sont fixes.
+ * `tient` est faux s'il reste moins de `minAir` au-dessus ou au-dessous du corps.
+ */
+function composer({ tete = [], corps = [], pied = [] }, minAir = 64) {
+  const t = tete.filter(Boolean), c = corps.filter(Boolean), p = pied.filter(Boolean);
+  const hauteur = blocs => blocs.reduce((s, x, i) => s + x.h + (i < blocs.length - 1 ? x.ecart : 0), 0);
+  const ht = hauteur(t), hc = hauteur(c), hp = hauteur(p);
+  const air = BAS - HAUT - ht - hc - hp;
+  const poser = (blocs, y) => blocs.forEach(x => { x.dessiner(y); y += x.h + x.ecart; });
+  return {
+    air,
+    tient: air >= minAir * ((t.length ? 1 : 0) + (p.length ? 1 : 0)),
+    dessiner() {
+      poser(t, HAUT);
+      poser(p, BAS - hp);
+      poser(c, HAUT + ht + Math.max(0, air) * (t.length ? 0.46 : 0.42));   // centre optique, un peu au-dessus du milieu
+    },
+  };
+}
+const avec = (bloc, ecart = 0) => (bloc ? Object.assign(bloc, { ecart }) : null);
+
+// --- Mise en page « Affiche » : un seul match, en grand ----------------------
+function blocMatchAffiche(m, k) {
+  const capD = ratioCapitale(DISPLAY);
+  const a = nomEquipe(m.domicile, 'Équipe 1'), b = nomEquipe(m.exterieur, 'Équipe 2');
+  // Avec au moins un logo : les deux blasons face à face. Sinon, les noms seuls, en grand.
+  if (aUnLogo(m, 'domicile') || aUnLogo(m, 'exterieur')) {
+    const t = 290 * k, dx = 230;
+    const na = couperNom(a, 400, 56 * k), nb = couperNom(b, 400, 56 * k);
+    const taille = Math.min(na.taille, nb.taille);        // même corps pour les deux noms
+    const pas = taille * 1.04;
+    const nLignes = Math.max(na.lignes.length, nb.lignes.length);
+    const hNoms = (nLignes - 1) * pas + taille * capD;
+    return {
+      h: t + 36 * k + hNoms,
+      dessiner: y => {
+        dessinerBlason(m, 'domicile', L / 2 - dx, y + t / 2, t);
+        dessinerBlason(m, 'exterieur', L / 2 + dx, y + t / 2, t);
+        const tVs = 34;
+        ecrire('VS', L / 2, y + t / 2 - tVs * ratioCapitale(TEXTE) / 2, { taille: tVs, graisse: '500', couleur: C.gris, align: 'center', suivi: 3 });
+        for (const [n, cx] of [[na, L / 2 - dx], [nb, L / 2 + dx]]) {
+          n.lignes.forEach((l, i) => ecrire(l, cx, y + t + 36 * k + i * pas, { taille, famille: DISPLAY, align: 'center', largeur: 420 }));
+        }
+      },
+    };
+  }
+  police(118 * k);
+  const taille = Math.min(118 * k, Math.floor(118 * k * LARGEUR / Math.max(largeurTexte(a), largeurTexte(b))));
+  const cap = taille * capD, tVs = 34, capVs = tVs * ratioCapitale(TEXTE), g = 34 * k;
+  return {
+    h: cap + g + capVs + g + cap,
+    dessiner: y => {
+      ecrire(a, L / 2, y, { taille, famille: DISPLAY, align: 'center' });
+      ecrire('VS', L / 2, y + cap + g, { taille: tVs, graisse: '500', couleur: C.gris, align: 'center', suivi: 3 });
+      ecrire(b, L / 2, y + cap + g + capVs + g, { taille, famille: DISPLAY, align: 'center' });
+    },
+  };
+}
+
+/** Date en toutes lettres, heure en grand (l'information n° 1), compétition et chaîne. */
+function blocHoraire(m, k) {
+  const tDate = 42 * k, tInfos = 30 * k;
+  const date = jourMatch(m.date, true) || 'DATE À CONFIRMER';
+  const heure = heureMatch(m.heure) || 'HORAIRE À CONFIRMER';
+  // Corps réel de l'heure (une mention « à confirmer » est réduite pour tenir) :
+  // les espaces se calculent sur ce qui est vraiment dessiné.
+  const tHeure = ajuster(heure, (heureMatch(m.heure) ? 190 : 96) * k, LARGEUR);
+  const infos = infosMatch(m);
+  const capT = ratioCapitale(TEXTE), capD = ratioCapitale(DISPLAY);
+  const g1 = 30 * k, g2 = 34 * k;
+  return {
+    h: tDate * capT + g1 + tHeure * capD + (infos ? g2 + tInfos * capT : 0),
+    dessiner: y => {
+      ecrire(date, L / 2, y, { taille: tDate, graisse: '500', align: 'center', suivi: 3 });
+      let yy = y + tDate * capT + g1;
+      ecrire(heure, L / 2, yy, { taille: tHeure, famille: DISPLAY, couleur: C.ambre, align: 'center' });
+      yy += tHeure * capD + g2;
+      if (infos) ecrire(infos, L / 2, yy, { taille: tInfos, couleur: C.gris, align: 'center', suivi: 2 });
+    },
+  };
+}
+
+function dessinerAffiche() {
+  const m = story.matchs[0] ?? matchVide();
+  let page;
+  // Le corps prend la plus grande échelle qui laisse de l'air au-dessus et au-dessous.
+  for (const k of [1.12, 1.04, 1, 0.92, 0.84, 0.76, 0.68, 0.62]) {
+    page = composer({
+      tete: [
+        avec(blocSurtitre('center'), story.titre ? 30 : 26),
+        avec(blocTitre('center', Math.min(1, k) * 128), 26),
+        avec(blocSousTitre('center')),
+      ],
+      corps: [avec(blocMatchAffiche(m, k), 96 * k), avec(blocHoraire(m, k))],
+      pied: [avec(blocOffre('center'), 52), avec(blocSignature('center', 88))],
+    });
+    if (page.tient) break;
+  }
+  page.dessiner();
 }
 
 // --- Mise en page « Programme » : 2 à 6 matchs -------------------------------
+// Une grille de programme TV : colonne date/heure, colonne affiche, filets fins.
+function blocListe(matchs, hLigne) {
+  const capT = ratioCapitale(TEXTE), capD = ratioCapitale(DISPLAY);
+  const wHeure = Math.max(210, Math.min(270, hLigne * 0.9));   // colonne date / heure
+  const xD = MARGE + wHeure + 26;                               // début de la colonne des équipes
+  const wD = L - MARGE - xD;
+  const filet = y => {
+    ctx.fillStyle = C.filet;
+    ctx.fillRect(MARGE, y - 1, LARGEUR, 2);
+  };
+  return {
+    h: matchs.length * hLigne,
+    dessiner: y0 => {
+      filet(y0);
+      matchs.forEach((m, i) => {
+        const y = y0 + i * hLigne;
+        filet(y + hLigne);
+
+        // Colonne date / heure
+        const tJour = Math.max(22, Math.min(32, hLigne * 0.11));
+        const tHeure = Math.max(52, Math.min(112, hLigne * 0.38));
+        const gJ = Math.max(12, hLigne * 0.07);
+        const hBloc = tJour * capT + gJ + tHeure * capD;
+        const yb = y + (hLigne - hBloc) / 2;
+        ecrire(jourMatch(m.date) || 'DATE À CONFIRMER', MARGE, yb, { taille: tJour, graisse: '500', couleur: C.gris, suivi: 2, largeur: wHeure });
+        ecrire(heureMatch(m.heure) || 'À CONFIRMER', MARGE, yb + tJour * capT + gJ, { taille: tHeure, famille: DISPLAY, couleur: C.ambre, largeur: wHeure });
+
+        // Colonne des équipes
+        const infos = infosMatch(m);
+        const tInfos = Math.max(20, Math.min(30, hLigne * 0.105));
+        const logos = aUnLogo(m, 'domicile') || aUnLogo(m, 'exterieur');
+        const a = nomEquipe(m.domicile, 'Équipe 1'), b = nomEquipe(m.exterieur, 'Équipe 2');
+        if (hLigne >= 196) {
+          // Une équipe par ligne, logo en tête de ligne
+          const tNom = Math.min(76, hLigne * 0.24);
+          const tLogo = logos ? tNom * 1.3 : 0;
+          const hEq = Math.max(tLogo, tNom * capD);         // hauteur d'une ligne d'équipe
+          const gEq = logos ? 12 : tNom * 0.4;              // entre les deux équipes
+          const gI = Math.max(16, hLigne * 0.08);
+          const hTout = 2 * hEq + gEq + (infos ? gI + tInfos * capT : 0);
+          let yy = y + (hLigne - hTout) / 2;
+          const decal = logos ? tLogo + 24 : 0;
+          police(tNom);
+          const nomTaille = Math.min(tNom, ...[a, b].map(nm => Math.floor(tNom * (wD - decal) / Math.max(largeurTexte(nm), 1))));
+          for (const [cote, nom] of [['domicile', a], ['exterieur', b]]) {
+            if (logos) dessinerBlason(m, cote, xD + tLogo / 2, yy + hEq / 2, tLogo);
+            ecrire(nom, xD + decal, yy + (hEq - nomTaille * capD) / 2, { taille: nomTaille, famille: DISPLAY, largeur: wD - decal });
+            yy += hEq + gEq;
+          }
+          yy += gI - gEq;
+          if (infos) ecrire(infos, xD, yy, { taille: tInfos, couleur: C.gris, suivi: 2, largeur: wD });
+        } else {
+          // Affiche sur une ligne, logos alignés au bout
+          let wTexte = wD;
+          if (logos) {
+            const t = Math.min(hLigne * 0.5, 72);
+            const cxB = L - MARGE - t / 2, cxA = cxB - t - 16;
+            dessinerBlason(m, 'domicile', cxA, y + hLigne / 2, t);
+            dessinerBlason(m, 'exterieur', cxB, y + hLigne / 2, t);
+            wTexte = wD - 2 * t - 48;
+          }
+          const tNom = Math.min(50, hLigne * 0.34);
+          const gI = Math.max(12, hLigne * 0.09);
+          espacement(0);
+          const tN = ajuster(`${a} – ${b}`, tNom, wTexte);
+          const hTout = tN * capD + (infos ? gI + tInfos * capT : 0);
+          const yy = y + (hLigne - hTout) / 2;
+          ecrire(`${a} – ${b}`, xD, yy, { taille: tN, famille: DISPLAY, largeur: wTexte });
+          if (infos) ecrire(infos, xD, yy + tN * capD + gI, { taille: tInfos, couleur: C.gris, suivi: 2, largeur: wTexte });
+        }
+      });
+    },
+  };
+}
+
 function dessinerProgramme() {
   const matchs = story.matchs.slice(0, MAX_MATCHS);
   const n = Math.max(1, matchs.length);
-  const compact = n >= 4;
-  let y = dessinerEntete(compact);
-  const titre = mesurerTitre(compact ? 118 : 140);
-  const hBouton = story.offre ? 98 : 0;
-  const ecart = n >= 5 ? 16 : 22;
-  const zoneHaut = y + (compact ? 40 : 56);
-  const zoneBas = BAS_UTILE - (hBouton ? hBouton + 50 : 0);
-  const dispo = zoneBas - zoneHaut - titre.hauteur - 50;
-  const hLigne = Math.min(250, Math.floor((dispo - ecart * (n - 1)) / n));
-  const total = titre.hauteur + 50 + n * hLigne + (n - 1) * ecart;
-  y = zoneHaut + Math.max(0, (zoneBas - zoneHaut - total) / 2);
-  y = dessinerTitre(titre, y) + 50;
-
-  const x = 60, w = L - 120;
-  matchs.forEach((m, i) => {
-    const yy = y + i * (hLigne + ecart);
-    carte(x, yy, w, hLigne, 30);
-    const wGauche = 250;
-    // Bloc date / heure
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'alphabetic';
-    const tHeure = Math.min(96, hLigne * 0.4);
-    const tJour = Math.max(20, Math.min(30, hLigne * 0.13));
-    const blocH = tJour + 12 + tHeure * 0.86;
-    const yBloc = yy + (hLigne - blocH) / 2;
-    ctx.fillStyle = C.gris;
-    espacement(2);
-    ajuster(jourMatch(m.date) || 'DATE ?', tJour, wGauche - 40, TEXTE, '700');
-    ctx.textBaseline = 'top';
-    ctx.fillText(jourMatch(m.date) || 'DATE ?', x + wGauche / 2, yBloc);
-    espacement(0);
-    ctx.fillStyle = C.ambre;
-    ajuster(heureMatch(m.heure) || '--H--', tHeure, wGauche - 40);
-    ctx.fillText(heureMatch(m.heure) || '--H--', x + wGauche / 2, yBloc + tJour + 12);
-
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-    ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(x + wGauche, yy + 22); ctx.lineTo(x + wGauche, yy + hLigne - 22); ctx.stroke();
-
-    // Bloc équipes
-    const xd = x + wGauche + 36, wd = w - wGauche - 70;
-    const infos = [m.competition, m.diffuseur].filter(Boolean).join('  ·  ').toUpperCase();
-    const tInfos = Math.max(18, Math.min(24, hLigne * 0.1));
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    const a = nomEquipe(m.domicile, 'Équipe 1'), b = nomEquipe(m.exterieur, 'Équipe 2');
-    const avecLogos = aUnLogo(m, 'domicile') || aUnLogo(m, 'exterieur');
-    if (hLigne >= 190) {
-      const tEq = Math.min(62, hLigne * 0.25);
-      const pas = avecLogos ? tEq * 1.32 : tEq * 1.08;     // un logo a besoin d'un peu plus de hauteur
-      const hBloc = pas * 2 + (infos ? 14 + tInfos : 0);
-      let yd = yy + (hLigne - hBloc) / 2 + (pas - tEq) / 2;
-      for (const [cote, nom, couleur] of [['domicile', a, m.couleurDomicile], ['exterieur', b, m.couleurExterieur]]) {
-        let decalage = couleur ? 28 : 0;
-        if (avecLogos) {
-          const t = tEq * 1.2;
-          dessinerBlason(m, cote, xd + t / 2, yd + tEq * 0.45, t);
-          ctx.textAlign = 'left';
-          ctx.textBaseline = 'top';
-          decalage = t + 20;
-        } else {
-          marqueEquipe(couleur, xd, yd + tEq * 0.12, 10, tEq * 0.78);
-        }
-        ctx.fillStyle = C.blanc;
-        ajuster(nom, tEq, wd - decalage);
-        ctx.fillText(nom, xd + decalage, yd);
-        yd += pas;
-      }
-      yd -= (pas - tEq) / 2;
-      if (infos) {
-        ctx.fillStyle = C.gris;
-        espacement(2);
-        ajuster(infos, tInfos, wd, TEXTE, '600');
-        ctx.fillText(infos, xd, yd + 14);
-        espacement(0);
-      }
-    } else {
-      const ligne = `${a} – ${b}`;
-      const tEq = Math.min(54, hLigne * 0.36);
-      const hBloc = tEq * 1.1 + (infos ? 10 + tInfos : 0);
-      const yd = yy + (hLigne - hBloc) / 2;
-      let wTexte = wd;
-      if (avecLogos) {
-        // Les deux logos côte à côte, au bout de la ligne
-        const t = Math.min(hLigne * 0.66, 88);
-        const cxB = x + w - 30 - t / 2, cxA = cxB - t - 12;
-        dessinerBlason(m, 'domicile', cxA, yy + hLigne / 2, t);
-        dessinerBlason(m, 'exterieur', cxB, yy + hLigne / 2, t);
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        wTexte = wd - 2 * t - 40;
-      }
-      ctx.fillStyle = C.blanc;
-      ajuster(ligne, tEq, wTexte);
-      ctx.fillText(ligne, xd, yd);
-      if (infos) {
-        ctx.fillStyle = C.gris;
-        espacement(2);
-        ajuster(infos, tInfos, wTexte, TEXTE, '600');
-        ctx.fillText(infos, xd, yd + tEq * 1.1 + 10);
-        espacement(0);
-      }
-    }
-  });
-
-  if (hBouton) dessinerBouton(zoneBas + 50 + hBouton / 2);
+  const plafond = n <= 2 ? 300 : n === 3 ? 260 : 230;   // peu de matchs : des lignes plus généreuses
+  let page;
+  for (const k of [1, 0.9, 0.8, 0.7]) {
+    const tete = [
+      avec(blocSurtitre('left'), story.titre ? 28 : 24),
+      avec(blocTitre('left', 120 * k), 24),
+      avec(blocSousTitre('left')),
+    ];
+    const pied = [avec(blocOffre('left'), 48), avec(blocSignature('left', 80))];
+    const sansListe = composer({ tete, pied });
+    const hLigne = Math.min(plafond, Math.floor((sansListe.air - 2 * 64) / n));
+    page = composer({ tete, corps: [avec(blocListe(matchs, Math.max(hLigne, 100)))], pied });
+    if (hLigne >= 116) break;
+  }
+  page.dessiner();
 }
 
 function dessiner() {
   ctx.save();
   ctx.clearRect(0, 0, L, H);
+  mesurerRatios();
   dessinerFond();
   if (story.format === 'programme') dessinerProgramme();
   else dessinerAffiche();
@@ -1023,7 +993,7 @@ $('exemples').addEventListener('click', e => {
 // ---------------------------------------------------------------------------
 const polices = Promise.all([
   document.fonts.load('100px "Anton"'),
-  ...['500', '600', '700', '800'].map(g => document.fonts.load(`${g} 40px "Inter"`)),
+  ...['400', '500'].map(g => document.fonts.load(`${g} 40px "Oswald"`)),
 ]).catch(() => {});
 
 lireBrouillon();
