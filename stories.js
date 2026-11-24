@@ -6,7 +6,8 @@
 // du Stade Toulousain ce week-end ». L'agent (Claude) :
 //   1. cherche sur le web les dates, heures et chaînes qui manquent ;
 //   2. rédige l'accroche, le sous-titre et la légende Instagram ;
-//   3. renvoie le tout sous une forme fixe (outil « proposer_story »), que la
+//   3. indique la page Wikipédia de chaque équipe, d'où l'appli tire son logo ;
+//   4. renvoie le tout sous une forme fixe (outil « proposer_story »), que la
 //      page transforme en image 1080 × 1920 prête à publier.
 //
 // Rien n'est publié automatiquement : la page affiche la proposition, l'équipe
@@ -46,6 +47,7 @@ Règles de rédaction :
 - Noms d'équipes : forme courte et usuelle (« Stade Toulousain » ou « Toulouse », « La Rochelle », « France », « Afrique du Sud »), sans sponsor.
 - « offre » : uniquement si la demande mentionne une offre, un prix ou une bière à mettre en avant. N'invente jamais de prix ni de promotion. Sinon, une invitation courte sans engagement commercial (« Venez tôt, ça va être plein ! », « Bière fraîche & ambiance garantie »).
 - « couleurDomicile » / « couleurExterieur » : couleur principale du maillot de chaque équipe en hexadécimal (#RRGGBB), par exemple #E30613 pour le rouge du Stade Toulousain, #FFD100 pour le jaune de La Rochelle, #002395 pour le bleu de France. Si tu ne sais pas, mets "".
+- « wikiDomicile » / « wikiExterieur » : titre exact de l'article Wikipédia en français consacré au club ou à la sélection (pas à une saison, un joueur ou un match) ; l'appli s'en sert pour afficher le logo. Exemples : « Stade toulousain », « Stade rochelais », « Union Bordeaux Bègles », « Équipe de France de rugby à XV », « Équipe d'Afrique du Sud de rugby à XV », « Toulouse Football Club », « Olympique de Marseille ». Si tu n'es pas sûr, mets "".
 - « format » : "affiche" pour un seul match mis en avant, "programme" à partir de deux matchs (${MAX_MATCHS} au maximum, les plus importants d'abord dans l'ordre chronologique).
 - « legende » : légende Instagram de 2 à 4 lignes avec quelques emojis, qui reprend les matchs et invite à venir au Gué des Moines à Bruguières, suivie de 5 à 8 hashtags pertinents (#LeGueDesMoines #Bruguieres #Toulouse, le sport, la compétition, les équipes).
 - « remarques » : ce que l'équipe doit vérifier avant de publier (heure non confirmée, chaîne incertaine…), ou "" si tout est sûr.
@@ -71,7 +73,7 @@ const OUTIL_STORY = {
         items: {
           type: 'object',
           additionalProperties: false,
-          required: ['sport', 'competition', 'domicile', 'exterieur', 'date', 'heure', 'diffuseur', 'couleurDomicile', 'couleurExterieur'],
+          required: ['sport', 'competition', 'domicile', 'exterieur', 'date', 'heure', 'diffuseur', 'couleurDomicile', 'couleurExterieur', 'wikiDomicile', 'wikiExterieur'],
           properties: {
             sport: { type: 'string', enum: ['rugby', 'football', 'autre'] },
             competition: { type: 'string', description: 'Ex. « Top 14 · 10e journée », « Six Nations »' },
@@ -82,6 +84,8 @@ const OUTIL_STORY = {
             diffuseur: { type: 'string', description: 'Chaîne, ex. « Canal+ », « France 2 », ou ""' },
             couleurDomicile: { type: 'string', description: '#RRGGBB ou ""' },
             couleurExterieur: { type: 'string', description: '#RRGGBB ou ""' },
+            wikiDomicile: { type: 'string', description: 'Titre de l\'article Wikipédia (fr) de l\'équipe, ou ""' },
+            wikiExterieur: { type: 'string', description: 'Titre de l\'article Wikipédia (fr) de l\'équipe, ou ""' },
           },
         },
       },
@@ -106,6 +110,8 @@ const texte = (v, max) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, m
 const RE_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const RE_HEURE = /^([01]\d|2[0-3]):[0-5]\d$/;
 const RE_COULEUR = /^#[0-9a-fA-F]{6}$/;
+const RE_TITRE_WIKI = /^[^#<>[\]{}|\n\r]{2,120}$/;
+const titreWiki = v => (RE_TITRE_WIKI.test(String(v ?? '').trim()) ? String(v).trim() : '');
 
 function nettoyer(p) {
   const matchs = (Array.isArray(p.matchs) ? p.matchs : []).slice(0, MAX_MATCHS).map(m => ({
@@ -118,6 +124,8 @@ function nettoyer(p) {
     diffuseur: texte(m.diffuseur, 30),
     couleurDomicile: RE_COULEUR.test(m.couleurDomicile) ? m.couleurDomicile.toUpperCase() : '',
     couleurExterieur: RE_COULEUR.test(m.couleurExterieur) ? m.couleurExterieur.toUpperCase() : '',
+    wikiDomicile: titreWiki(m.wikiDomicile),
+    wikiExterieur: titreWiki(m.wikiExterieur),
   }));
   return {
     format: matchs.length > 1 ? 'programme' : 'affiche',
@@ -143,6 +151,53 @@ function messageErreur(err) {
   if (err instanceof Anthropic.APIError) return `API Anthropic (${err.status ?? '?'}) : ${err.message}`;
   return err.message;
 }
+
+// ---------------------------------------------------------------------------
+//  Logos des équipes (Wikipédia)
+// ---------------------------------------------------------------------------
+// Le logo d'un club est l'image principale de son article Wikipédia. Le serveur
+// la télécharge et la renvoie lui-même : servie depuis notre domaine, l'image
+// peut être dessinée dans la story sans bloquer l'export (règle CORS du canevas).
+const UA_WIKI = 'StoriesMatchs/1.0 (outil interne)';   // Wikimedia exige un User-Agent explicite
+const HOTES_IMAGES = new Set(['thumb.wikimedia.org', 'upload.wikimedia.org']);
+const cacheLogos = new Map();                            // titre → { logo, a }
+const DUREE_CACHE = 24 * 3600 * 1000;
+
+async function logoWikipedia(titre) {
+  const enCache = cacheLogos.get(titre);
+  if (enCache && Date.now() - enCache.a < DUREE_CACHE) return enCache.logo;
+
+  const url = new URL('https://fr.wikipedia.org/w/api.php');
+  for (const [k, v] of Object.entries({
+    action: 'query', prop: 'pageimages', piprop: 'thumbnail', pithumbsize: '400',
+    pilicense: 'any', redirects: '1', format: 'json', formatversion: '2', titles: titre,
+  })) url.searchParams.set(k, v);
+  const r = await fetch(url, { headers: { 'User-Agent': UA_WIKI }, signal: AbortSignal.timeout(8000) });
+  if (!r.ok) throw new Error(`Wikipédia HTTP ${r.status}`);
+  const source = (await r.json())?.query?.pages?.[0]?.thumbnail?.source;
+
+  let logo = null;
+  const adresse = source ? new URL(source) : null;
+  if (adresse && adresse.protocol === 'https:' && HOTES_IMAGES.has(adresse.hostname)) {
+    const ri = await fetch(adresse, { headers: { 'User-Agent': UA_WIKI }, signal: AbortSignal.timeout(8000) });
+    const type = (ri.headers.get('content-type') ?? '').split(';')[0];
+    if (ri.ok && /^image\/(png|jpeg|webp|gif)$/.test(type)) {
+      const octets = Buffer.from(await ri.arrayBuffer());
+      if (octets.length <= 2_000_000) logo = { type, octets };
+    }
+  }
+  if (cacheLogos.size >= 300) cacheLogos.delete(cacheLogos.keys().next().value);
+  cacheLogos.set(titre, { logo, a: Date.now() });   // l'absence de logo est aussi mémorisée
+  return logo;
+}
+
+const CONSIGNES_TITRES = "Pour chaque équipe sportive de la liste, donne le titre exact de l'article Wikipédia en français consacré au club ou à la sélection nationale (jamais une saison, un joueur, un match ou une ville). Exemples : « Stade toulousain », « Stade rochelais », « Union Bordeaux Bègles », « Équipe de France de rugby à XV », « Équipe d'Irlande de rugby à XV », « Toulouse Football Club », « Olympique de Marseille », « Paris Saint-Germain Football Club ». Garde l'ordre de la liste ; mets une chaîne vide si tu n'es pas sûr.";
+const SCHEMA_TITRES = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['titres'],
+  properties: { titres: { type: 'array', items: { type: 'string' } } },
+};
 
 export function monterStories(app) {
   // Le client n'est créé qu'à la première demande : sans clé, le reste de
@@ -217,6 +272,51 @@ export function monterStories(app) {
     } catch (err) {
       console.error('stories:', err.message);
       res.status(502).json({ error: 'Préparation impossible : ' + messageErreur(err) });
+    }
+  });
+
+  // Logo d'une équipe, à partir du titre de son article Wikipédia
+  app.get('/api/stories/logo', async (req, res) => {
+    const titre = titreWiki(req.query.page);
+    if (!titre) return res.status(400).json({ error: 'Titre de page invalide' });
+    try {
+      const logo = await logoWikipedia(titre);
+      if (!logo) return res.status(404).json({ error: 'Aucun logo sur cette page' });
+      res.set('Content-Type', logo.type);
+      res.set('Cache-Control', 'private, max-age=604800');
+      res.send(logo.octets);
+    } catch (err) {
+      console.error('stories/logo:', err.message);
+      res.status(502).json({ error: 'Wikipédia injoignable' });
+    }
+  });
+
+  // Titres Wikipédia d'équipes saisies à la main (pour retrouver leur logo)
+  app.post('/api/stories/logos', async (req, res) => {
+    if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: 'Agent non configuré.' });
+    const equipes = (Array.isArray(req.body?.equipes) ? req.body.equipes : []).slice(0, 12)
+      .map(e => ({ nom: texte(e?.nom, 40), sport: ['rugby', 'football'].includes(e?.sport) ? e.sport : 'sport non précisé' }))
+      .filter(e => e.nom.length >= 2);
+    if (!equipes.length) return res.status(400).json({ error: 'Aucune équipe à chercher.' });
+
+    client ??= new Anthropic({ timeout: 240_000, maxRetries: 1 });
+    try {
+      const r = await client.beta.messages.create({
+        model: MODELE,
+        max_tokens: 4000,
+        betas: ['server-side-fallback-2026-07-01'],
+        fallbacks: 'default',
+        output_config: { effort: 'low', format: { type: 'json_schema', schema: SCHEMA_TITRES } },
+        system: CONSIGNES_TITRES,
+        messages: [{ role: 'user', content: equipes.map((e, i) => `${i + 1}. ${e.nom} (${e.sport})`).join('\n') }],
+      });
+      if (r.stop_reason === 'refusal') throw new Error('demande refusée');
+      const brut = r.content.filter(b => b.type === 'text').map(b => b.text).join('');
+      const titres = JSON.parse(brut).titres ?? [];
+      res.json({ titres: equipes.map((_, i) => titreWiki(titres[i])) });
+    } catch (err) {
+      console.error('stories/logos:', err.message);
+      res.status(502).json({ error: 'Recherche des logos impossible : ' + messageErreur(err) });
     }
   });
 }

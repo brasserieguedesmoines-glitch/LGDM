@@ -17,16 +17,72 @@ const MAX_MATCHS = 6;
 const matchVide = () => ({
   sport: 'rugby', competition: '', domicile: '', exterieur: '', date: '', heure: '',
   diffuseur: '', couleurDomicile: '', couleurExterieur: '',
+  wikiDomicile: '', wikiExterieur: '',     // article Wikipédia d'où vient le logo
+  logoDomicile: '', logoExterieur: '',     // '' = automatique, 'aucun', ou image ajoutée à la main
 });
 const storyVide = () => ({
   format: 'affiche', badge: 'DIFFUSION EN DIRECT', titre: 'CE WEEK-END AU GUÉ', sousTitre: '',
-  matchs: [matchVide()], offre: 'Venez tôt, ça va être plein !', legende: '',
+  matchs: [matchVide()], offre: 'Venez tôt, ça va être plein !', legende: '', logos: true,
 });
 
 let story = storyVide();
 let photo = null;          // ImageBitmap / HTMLImageElement de la photo de fond (jamais stockée)
 const logo = new Image();
 logo.src = 'logo.png';
+
+// --- Logos des équipes -------------------------------------------------------
+// Par ordre de priorité : le logo ajouté à la main sur ce match, puis celui déjà
+// ajouté pour une équipe du même nom (mémorisé sur l'appareil), enfin l'image de
+// l'article Wikipédia indiqué par l'agent. À défaut, un médaillon aux initiales.
+const CLE_LOGOS = 'lgdm-logos-equipes';
+const SUFFIXE = { domicile: 'Domicile', exterieur: 'Exterieur' };
+const normaliser = n => String(n ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+let bibliotheque = {};
+try { bibliotheque = JSON.parse(localStorage.getItem(CLE_LOGOS) || '{}') || {}; } catch {}
+
+function retenirLogo(nom, dataUrl) {
+  const cle = normaliser(nom);
+  if (!cle) return;
+  bibliotheque[cle] = dataUrl;
+  try { localStorage.setItem(CLE_LOGOS, JSON.stringify(bibliotheque)); }
+  catch { delete bibliotheque[cle]; }   // stockage plein : le logo reste sur ce match seulement
+}
+
+function sourceLogo(m, cote) {
+  const manuel = m[`logo${SUFFIXE[cote]}`] || '';
+  if (manuel === 'aucun') return null;
+  if (manuel.startsWith('data:image/')) return manuel;
+  const memorise = bibliotheque[normaliser(m[cote])];
+  if (memorise) return memorise;
+  const wiki = m[`wiki${SUFFIXE[cote]}`];
+  return wiki ? `/api/stories/logo?page=${encodeURIComponent(wiki)}` : null;
+}
+
+const images = new Map();   // source → { img, ok: null (en cours) | true | false }
+function etatLogo(source) {
+  if (!source) return null;
+  let e = images.get(source);
+  if (!e) {
+    e = { img: new Image(), ok: null };
+    e.img.onload = () => { e.ok = true; redessiner(); };
+    e.img.onerror = () => { e.ok = false; redessiner(); };
+    e.img.src = source;
+    images.set(source, e);
+  }
+  return e;
+}
+const imageLogo = (m, cote) => {
+  if (story.logos === false) return null;
+  const e = etatLogo(sourceLogo(m, cote));
+  return e?.ok ? e.img : null;
+};
+/** Vrai si l'équipe a un logo affiché ou en cours de chargement. */
+const aUnLogo = (m, cote) => {
+  if (story.logos === false) return false;
+  const e = etatLogo(sourceLogo(m, cote));
+  return !!e && e.ok !== false;
+};
 
 function lireBrouillon() {
   try {
@@ -43,7 +99,7 @@ function sauverBrouillon() {
 // ---------------------------------------------------------------------------
 const L = 1080, H = 1920;
 const C = {
-  fond: '#0D0D0D', carte: '#1A1714', carte2: '#201C18',
+  fond: '#000000', carte: '#1A1714', carte2: '#201C18',
   ambre: '#F5A425', ambreFonce: '#F0921E', brun: '#5C3A17',
   blanc: '#FFFFFF', gris: '#A8A39A', surAmbre: '#1A1206',
 };
@@ -134,60 +190,20 @@ function jourMatch(iso, long) {
 const heureMatch = h => (/^\d{2}:\d{2}$/.test(h || '') ? h.replace(':', 'H') : '');
 const nomEquipe = (n, defaut) => (n || defaut).toUpperCase();
 
-function dessinerFond(sport) {
+function dessinerFond() {
   ctx.fillStyle = C.fond;
   ctx.fillRect(0, 0, L, H);
-
-  if (photo) {
-    // Recadrage « cover » puis voile sombre : le texte reste lisible quelle que soit la photo.
-    const pw = photo.width, ph = photo.height;
-    const e = Math.max(L / pw, H / ph);
-    ctx.drawImage(photo, (L - pw * e) / 2, (H - ph * e) / 2, pw * e, ph * e);
-    const voile = ctx.createLinearGradient(0, 0, 0, H);
-    voile.addColorStop(0, 'rgba(13,13,13,0.72)');
-    voile.addColorStop(0.35, 'rgba(13,13,13,0.86)');
-    voile.addColorStop(1, 'rgba(13,13,13,0.95)');
-    ctx.fillStyle = voile;
-    ctx.fillRect(0, 0, L, H);
-  }
-
-  // Halo ambré en haut, rappel discret en bas
-  let g = ctx.createRadialGradient(L / 2, -120, 40, L / 2, -120, 1100);
-  g.addColorStop(0, 'rgba(245,164,37,0.30)');
-  g.addColorStop(1, 'rgba(245,164,37,0)');
-  ctx.fillStyle = g;
+  if (!photo) return;
+  // Recadrage « cover » puis voile noir : le texte reste lisible quelle que soit la photo.
+  const pw = photo.width, ph = photo.height;
+  const e = Math.max(L / pw, H / ph);
+  ctx.drawImage(photo, (L - pw * e) / 2, (H - ph * e) / 2, pw * e, ph * e);
+  const voile = ctx.createLinearGradient(0, 0, 0, H);
+  voile.addColorStop(0, 'rgba(0,0,0,0.72)');
+  voile.addColorStop(0.35, 'rgba(0,0,0,0.86)');
+  voile.addColorStop(1, 'rgba(0,0,0,0.95)');
+  ctx.fillStyle = voile;
   ctx.fillRect(0, 0, L, H);
-  g = ctx.createRadialGradient(L / 2, H + 200, 40, L / 2, H + 200, 900);
-  g.addColorStop(0, 'rgba(240,146,30,0.16)');
-  g.addColorStop(1, 'rgba(240,146,30,0)');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, L, H);
-
-  // Ballon en filigrane
-  ctx.save();
-  ctx.strokeStyle = 'rgba(245,164,37,0.09)';
-  ctx.lineWidth = 6;
-  ctx.translate(890, 760);
-  if (sport === 'football') {
-    ctx.beginPath(); ctx.arc(0, 0, 300, 0, Math.PI * 2); ctx.stroke();
-    ctx.beginPath();
-    for (let i = 0; i < 5; i++) {
-      const a = -Math.PI / 2 + i * 2 * Math.PI / 5;
-      ctx[i ? 'lineTo' : 'moveTo'](Math.cos(a) * 95, Math.sin(a) * 95);
-    }
-    ctx.closePath(); ctx.stroke();
-    for (let i = 0; i < 5; i++) {
-      const a = -Math.PI / 2 + i * 2 * Math.PI / 5;
-      ctx.beginPath(); ctx.moveTo(Math.cos(a) * 95, Math.sin(a) * 95); ctx.lineTo(Math.cos(a) * 300, Math.sin(a) * 300); ctx.stroke();
-    }
-  } else {
-    ctx.rotate(-0.6);
-    ctx.beginPath(); ctx.ellipse(0, 0, 360, 215, 0, 0, Math.PI * 2); ctx.stroke();
-    ctx.beginPath(); ctx.ellipse(0, 0, 360, 75, 0, 0, Math.PI * 2); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(-90, 0); ctx.lineTo(90, 0); ctx.stroke();
-    for (let x = -70; x <= 70; x += 35) { ctx.beginPath(); ctx.moveTo(x, -22); ctx.lineTo(x, 22); ctx.stroke(); }
-  }
-  ctx.restore();
 }
 
 /** Logo, nom de la maison et badge pilule. Renvoie l'ordonnée sous l'en-tête.
@@ -308,10 +324,69 @@ function marqueEquipe(couleur, x, y, w, h) {
   ctx.stroke();
 }
 
+function initiales(nom) {
+  const mots = nom.split(/[\s-]+/).filter(m => m && !/^(de|du|des|d'|l'|et)$/i.test(m));
+  if (!mots.length) return '?';
+  return (mots.length === 1 ? mots[0].slice(0, 2) : mots[0][0] + mots[1][0]).toUpperCase();
+}
+function couleurClaire(hex) {
+  if (!/^#[0-9a-f]{6}$/i.test(hex || '')) return false;
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+  return 0.299 * r + 0.587 * g + 0.114 * b > 165;
+}
+
+/** Logo de l'équipe dans un carré de côté t centré en (cx, cy) ; à défaut, médaillon aux initiales. */
+function dessinerBlason(m, cote, cx, cy, t) {
+  const img = imageLogo(m, cote);
+  ctx.save();
+  if (img) {
+    const e = Math.min(t / img.naturalWidth, t / img.naturalHeight);
+    const w = img.naturalWidth * e, h = img.naturalHeight * e;
+    // Halo clair : les parties sombres d'un logo (noir, bleu marine) restent lisibles sur le noir
+    ctx.shadowColor = 'rgba(255,255,255,0.32)';
+    ctx.shadowBlur = Math.max(8, t * 0.1);
+    ctx.drawImage(img, cx - w / 2, cy - h / 2, w, h);
+  } else {
+    const couleur = m[`couleur${SUFFIXE[cote]}`];
+    const r = t * 0.42;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = couleur || '#2A2622';
+    ctx.fill();
+    ctx.lineWidth = Math.max(2, t * 0.012);
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.stroke();
+    const txt = initiales(nomEquipe(m[cote], cote === 'domicile' ? 'Équipe 1' : 'Équipe 2'));
+    ctx.fillStyle = couleurClaire(couleur) ? '#111111' : C.blanc;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ajuster(txt, r * 0.95, r * 1.4);
+    ctx.fillText(txt, cx, cy + r * 0.05);
+  }
+  ctx.restore();
+}
+
+/** Nom d'équipe sur une ou deux lignes, à la plus grande taille possible. */
+function couperNom(nom, largeur, max) {
+  police(max);
+  const une = Math.min(max, Math.floor(max * largeur / largeurTexte(nom)));
+  const mots = nom.split(/\s+/);
+  if (une >= max * 0.8 || mots.length < 2) return { lignes: [nom], taille: une };
+  let meilleur = null;
+  for (let i = 1; i < mots.length; i++) {
+    const l = [mots.slice(0, i).join(' '), mots.slice(i).join(' ')];
+    const t = Math.min(max, Math.floor(max * largeur / Math.max(...l.map(largeurTexte))));
+    if (!meilleur || t > meilleur.taille) meilleur = { lignes: l, taille: t };
+  }
+  return meilleur.taille > une ? meilleur : { lignes: [nom], taille: une };
+}
+
 // --- Mise en page « Affiche » : un seul match, en grand ----------------------
 function dessinerAffiche() {
   const m = story.matchs[0] ?? matchVide();
-  const hCarte = 620, hBouton = story.offre ? 98 : 0;
+  // Avec au moins un logo : les deux blasons face à face. Sinon, noms empilés.
+  const faceAFace = aUnLogo(m, 'domicile') || aUnLogo(m, 'exterieur');
+  const hCarte = faceAFace ? 690 : 620, hBouton = story.offre ? 98 : 0;
   // Du plus aéré au plus serré : on garde la première mise en page qui tient
   // au-dessus de la zone masquée par Instagram (accroche longue, sous-titre sur deux lignes…).
   const essais = [
@@ -343,25 +418,44 @@ function dessinerAffiche() {
     ctx.fillText(m.competition.toUpperCase(), L / 2, y + 74);
     espacement(0);
   }
-  const yA = y + 200, yB = y + 404;
-  for (const [nom, couleur, yy] of [
-    [nomEquipe(m.domicile, 'Équipe 1'), m.couleurDomicile, yA],
-    [nomEquipe(m.exterieur, 'Équipe 2'), m.couleurExterieur, yB],
-  ]) {
-    ajuster(nom, 112, w - 140);
+  if (faceAFace) {
+    const cy = y + 258, t = 250, dx = 240;
+    dessinerBlason(m, 'domicile', L / 2 - dx, cy, t);
+    dessinerBlason(m, 'exterieur', L / 2 + dx, cy, t);
+    police(96);
+    ctx.fillStyle = C.ambre;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('VS', L / 2, cy + 6);
+    ctx.textBaseline = 'top';
     ctx.fillStyle = C.blanc;
-    ctx.fillText(nom, L / 2, yy);
-    marqueEquipe(couleur, L / 2 - 50, yy + 18, 100, 10);
+    for (const [cote, cx, defaut] of [['domicile', L / 2 - dx, 'Équipe 1'], ['exterieur', L / 2 + dx, 'Équipe 2']]) {
+      const { lignes, taille } = couperNom(nomEquipe(m[cote], defaut), 400, 58);
+      police(taille);
+      lignes.forEach((l, i) => ctx.fillText(l, cx, y + 412 + i * taille * 1.04));
+    }
+    ctx.textBaseline = 'alphabetic';
+  } else {
+    const yA = y + 200, yB = y + 404;
+    for (const [nom, couleur, yy] of [
+      [nomEquipe(m.domicile, 'Équipe 1'), m.couleurDomicile, yA],
+      [nomEquipe(m.exterieur, 'Équipe 2'), m.couleurExterieur, yB],
+    ]) {
+      ajuster(nom, 112, w - 140);
+      ctx.fillStyle = C.blanc;
+      ctx.fillText(nom, L / 2, yy);
+      marqueEquipe(couleur, L / 2 - 50, yy + 18, 100, 10);
+    }
+    // « VS » entre les deux équipes, sous la couleur de la première
+    const yVs = y + 292;
+    ctx.strokeStyle = 'rgba(245,164,37,0.35)';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x + 120, yVs - 21); ctx.lineTo(L / 2 - 60, yVs - 21); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(L / 2 + 60, yVs - 21); ctx.lineTo(x + w - 120, yVs - 21); ctx.stroke();
+    police(52);
+    ctx.fillStyle = C.ambre;
+    ctx.fillText('VS', L / 2, yVs);
   }
-  // « VS » entre les deux équipes, sous la couleur de la première
-  const yVs = y + 292;
-  ctx.strokeStyle = 'rgba(245,164,37,0.35)';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(x + 120, yVs - 21); ctx.lineTo(L / 2 - 60, yVs - 21); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(L / 2 + 60, yVs - 21); ctx.lineTo(x + w - 120, yVs - 21); ctx.stroke();
-  police(52);
-  ctx.fillStyle = C.ambre;
-  ctx.fillText('VS', L / 2, yVs);
 
   // Bandeau date · coup d'envoi · chaîne (codes « cartes de stats » de la marque)
   const yBande = y + hCarte - 150;
@@ -444,17 +538,29 @@ function dessinerProgramme() {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     const a = nomEquipe(m.domicile, 'Équipe 1'), b = nomEquipe(m.exterieur, 'Équipe 2');
+    const avecLogos = aUnLogo(m, 'domicile') || aUnLogo(m, 'exterieur');
     if (hLigne >= 190) {
       const tEq = Math.min(62, hLigne * 0.25);
-      const hBloc = tEq * 2 * 1.08 + (infos ? 14 + tInfos : 0);
-      let yd = yy + (hLigne - hBloc) / 2;
-      for (const [nom, couleur] of [[a, m.couleurDomicile], [b, m.couleurExterieur]]) {
-        marqueEquipe(couleur, xd, yd + tEq * 0.12, 10, tEq * 0.78);
+      const pas = avecLogos ? tEq * 1.32 : tEq * 1.08;     // un logo a besoin d'un peu plus de hauteur
+      const hBloc = pas * 2 + (infos ? 14 + tInfos : 0);
+      let yd = yy + (hLigne - hBloc) / 2 + (pas - tEq) / 2;
+      for (const [cote, nom, couleur] of [['domicile', a, m.couleurDomicile], ['exterieur', b, m.couleurExterieur]]) {
+        let decalage = couleur ? 28 : 0;
+        if (avecLogos) {
+          const t = tEq * 1.2;
+          dessinerBlason(m, cote, xd + t / 2, yd + tEq * 0.45, t);
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'top';
+          decalage = t + 20;
+        } else {
+          marqueEquipe(couleur, xd, yd + tEq * 0.12, 10, tEq * 0.78);
+        }
         ctx.fillStyle = C.blanc;
-        ajuster(nom, tEq, wd - 28);
-        ctx.fillText(nom, xd + (couleur ? 28 : 0), yd);
-        yd += tEq * 1.08;
+        ajuster(nom, tEq, wd - decalage);
+        ctx.fillText(nom, xd + decalage, yd);
+        yd += pas;
       }
+      yd -= (pas - tEq) / 2;
       if (infos) {
         ctx.fillStyle = C.gris;
         espacement(2);
@@ -467,13 +573,24 @@ function dessinerProgramme() {
       const tEq = Math.min(54, hLigne * 0.36);
       const hBloc = tEq * 1.1 + (infos ? 10 + tInfos : 0);
       const yd = yy + (hLigne - hBloc) / 2;
+      let wTexte = wd;
+      if (avecLogos) {
+        // Les deux logos côte à côte, au bout de la ligne
+        const t = Math.min(hLigne * 0.66, 88);
+        const cxB = x + w - 30 - t / 2, cxA = cxB - t - 12;
+        dessinerBlason(m, 'domicile', cxA, yy + hLigne / 2, t);
+        dessinerBlason(m, 'exterieur', cxB, yy + hLigne / 2, t);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        wTexte = wd - 2 * t - 40;
+      }
       ctx.fillStyle = C.blanc;
-      ajuster(ligne, tEq, wd);
+      ajuster(ligne, tEq, wTexte);
       ctx.fillText(ligne, xd, yd);
       if (infos) {
         ctx.fillStyle = C.gris;
         espacement(2);
-        ajuster(infos, tInfos, wd, TEXTE, '600');
+        ajuster(infos, tInfos, wTexte, TEXTE, '600');
         ctx.fillText(infos, xd, yd + tEq * 1.1 + 10);
         espacement(0);
       }
@@ -486,8 +603,7 @@ function dessinerProgramme() {
 function dessiner() {
   ctx.save();
   ctx.clearRect(0, 0, L, H);
-  const sport = story.matchs[0]?.sport ?? 'rugby';
-  dessinerFond(sport);
+  dessinerFond();
   if (story.format === 'programme') dessinerProgramme();
   else dessinerAffiche();
   ctx.restore();
@@ -523,9 +639,30 @@ function rendreFormat() {
 
 function rendreChamps() {
   for (const [id, cle] of Object.entries(CHAMPS)) $(id).value = story[cle] ?? '';
+  $('f-logos').checked = story.logos !== false;
   majCompteurs();
   rendreFormat();
   rendreMatchs();
+}
+
+function htmlLogo(m, i, cote) {
+  const src = story.logos === false ? null : sourceLogo(m, cote);
+  const introuvable = src && images.get(src)?.ok === false;
+  const qui = cote === 'domicile' ? 'à domicile' : "à l'extérieur";
+  const titre = introuvable ? 'Logo introuvable : touchez pour en ajouter un' : src ? 'Changer le logo' : 'Ajouter un logo';
+  return `<span class="logo-case" data-i="${i}" data-cote="${cote}">
+      <label class="logo-btn${introuvable ? ' introuvable' : ''}" title="${titre}">
+        ${src && !introuvable
+          ? `<img src="${echap(src)}" alt="Logo de l'équipe ${qui}">`
+          : `<svg class="ico" aria-hidden="true"><use href="#i-photo"/></svg><span class="sr-only">${titre} (équipe ${qui})</span>`}
+        <input type="file" accept="image/*" data-logo="${cote}" hidden>
+      </label>
+      ${src ? `<button type="button" class="logo-retirer" data-action="sans-logo" data-cote="${cote}" aria-label="Retirer le logo de l'équipe ${qui}">×</button>` : ''}
+    </span>`;
+}
+function majLogo(i, cote) {
+  const el = document.querySelector(`.logo-case[data-i="${i}"][data-cote="${cote}"]`);
+  if (el && story.matchs[i]) el.outerHTML = htmlLogo(story.matchs[i], i, cote);
 }
 
 function rendreMatchs() {
@@ -541,11 +678,11 @@ function rendreMatchs() {
       </div>
       <div class="equipes">
         <div class="champ"><label for="m${i}-dom">Domicile</label>
-          <div class="equipe"><input type="text" id="m${i}-dom" data-cle="domicile" maxlength="40" value="${echap(m.domicile)}" placeholder="Stade Toulousain">
+          <div class="equipe">${htmlLogo(m, i, 'domicile')}<input type="text" id="m${i}-dom" data-cle="domicile" maxlength="40" value="${echap(m.domicile)}" placeholder="Stade Toulousain">
           <input type="color" data-cle="couleurDomicile" value="${m.couleurDomicile || '#E30613'}" aria-label="Couleur de l'équipe à domicile"></div></div>
         <span class="vs">VS</span>
         <div class="champ"><label for="m${i}-ext">Extérieur</label>
-          <div class="equipe"><input type="text" id="m${i}-ext" data-cle="exterieur" maxlength="40" value="${echap(m.exterieur)}" placeholder="La Rochelle">
+          <div class="equipe">${htmlLogo(m, i, 'exterieur')}<input type="text" id="m${i}-ext" data-cle="exterieur" maxlength="40" value="${echap(m.exterieur)}" placeholder="La Rochelle">
           <input type="color" data-cle="couleurExterieur" value="${m.couleurExterieur || '#FFD100'}" aria-label="Couleur de l'équipe à l'extérieur"></div></div>
       </div>
       <div class="details">
@@ -558,7 +695,7 @@ function rendreMatchs() {
         <div class="champ"><label for="m${i}-tv">Chaîne</label>
           <input type="text" id="m${i}-tv" data-cle="diffuseur" maxlength="30" value="${echap(m.diffuseur)}" placeholder="Canal+"></div>
       </div>
-      <div class="champ" style="max-width:220px"><label for="m${i}-sport">Sport (ballon en filigrane)</label>
+      <div class="champ" style="max-width:220px"><label for="m${i}-sport">Sport</label>
         <div class="select-enveloppe"><select id="m${i}-sport" data-cle="sport">
           ${[['rugby', 'Rugby'], ['football', 'Football'], ['autre', 'Autre']].map(([v, l]) => `<option value="${v}" ${m.sport === v ? 'selected' : ''}>${l}</option>`).join('')}
         </select></div></div>
@@ -592,13 +729,91 @@ $('matchs').addEventListener('input', e => {
   if (cle === 'date' || cle === 'heure') e.target.classList.toggle('manque', !e.target.value);
   changer();
 });
-$('matchs').addEventListener('change', e => {
-  if (e.target.dataset.cle === 'sport') changer();
+$('matchs').addEventListener('change', async e => {
+  const bloc = e.target.closest('.match');
+  if (!bloc) return;
+  const i = +bloc.dataset.i, m = story.matchs[i];
+  const cle = e.target.dataset.cle;
+  if (cle === 'sport') changer();
+  if (cle === 'domicile' || cle === 'exterieur') equipeRenommee(i, cle);
+
+  // Logo ajouté à la main : réduit, gardé sur ce match et mémorisé pour cette équipe
+  const cote = e.target.dataset.logo;
+  const fichier = e.target.files?.[0];
+  if (cote && fichier) {
+    const img = await chargerImage(fichier);
+    if (!img) return alert('Image illisible, essayez un autre fichier (PNG ou JPG).');
+    const e2 = Math.min(1, 320 / Math.max(img.width, img.height));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(img.width * e2));
+    c.height = Math.max(1, Math.round(img.height * e2));
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    const dataUrl = c.toDataURL('image/png');
+    m[`logo${SUFFIXE[cote]}`] = dataUrl;
+    retenirLogo(m[cote], dataUrl);
+    majLogo(i, cote);
+    changer();
+  }
 });
+
+// Équipe renommée à la main : l'ancien logo ne correspond plus, on cherche le nouveau.
+function equipeRenommee(i, cote) {
+  const m = story.matchs[i];
+  m[`wiki${SUFFIXE[cote]}`] = '';
+  m[`logo${SUFFIXE[cote]}`] = '';
+  majLogo(i, cote);
+  changer();
+  if (m[cote].trim().length >= 2 && !bibliotheque[normaliser(m[cote])]) chercherLogos([[i, cote]]);
+}
+
+async function chercherLogos(liste) {
+  const demandes = liste.map(([i, cote]) => ({ i, cote, nom: story.matchs[i][cote].trim(), sport: story.matchs[i].sport }));
+  try {
+    const r = await fetch('/api/stories/logos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ equipes: demandes.map(d => ({ nom: d.nom, sport: d.sport })) }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error ?? `HTTP ${r.status}`);
+    demandes.forEach((q, k) => {
+      const m = story.matchs[q.i];
+      if (!m || m[q.cote].trim() !== q.nom || !d.titres?.[k]) return;   // renommée entre-temps
+      m[`wiki${SUFFIXE[q.cote]}`] = d.titres[k];
+      majLogo(q.i, q.cote);
+    });
+    changer();
+  } catch (err) {
+    console.warn('Recherche des logos :', err.message);
+  }
+}
+
+// Vignette d'un logo introuvable (page Wikipédia sans image) : icône d'ajout
+$('matchs').addEventListener('error', e => {
+  if (e.target.tagName !== 'IMG') return;
+  const c = e.target.closest('.logo-case');
+  if (!c) return;
+  e.target.closest('.logo-btn').classList.add('introuvable');
+  e.target.closest('.logo-btn').title = 'Logo introuvable : touchez pour en ajouter un';
+  e.target.outerHTML = '<svg class="ico" aria-hidden="true"><use href="#i-photo"/></svg>';
+}, true);
+
+$('f-logos').addEventListener('change', e => {
+  story.logos = e.target.checked;
+  rendreMatchs();
+  changer();
+});
+
 $('matchs').addEventListener('click', e => {
   const bouton = e.target.closest('button[data-action]');
   if (!bouton) return;
   const i = +bouton.closest('.match').dataset.i;
+  if (bouton.dataset.action === 'sans-logo') {
+    story.matchs[i][`logo${SUFFIXE[bouton.dataset.cote]}`] = 'aucun';
+    majLogo(i, bouton.dataset.cote);
+    changer();
+    return;
+  }
   if (bouton.dataset.action === 'suppr' && story.matchs.length > 1) story.matchs.splice(i, 1);
   if (bouton.dataset.action === 'monter' && i > 0) [story.matchs[i - 1], story.matchs[i]] = [story.matchs[i], story.matchs[i - 1]];
   if (story.matchs.length === 1) story.format = 'affiche';
@@ -617,20 +832,24 @@ $('btn-ajouter').addEventListener('click', () => {
   $(`m${story.matchs.length - 1}-dom`).focus();
 });
 
+async function chargerImage(fichier) {
+  try {
+    return await createImageBitmap(fichier);
+  } catch {
+    return new Promise(ok => {
+      const img = new Image();
+      img.onload = () => ok(img);
+      img.onerror = () => ok(null);
+      img.src = URL.createObjectURL(fichier);
+    });
+  }
+}
+
 // Photo de fond : gardée en mémoire uniquement (trop lourde pour le brouillon)
 $('f-photo').addEventListener('change', async e => {
   const fichier = e.target.files?.[0];
   if (!fichier) return;
-  try {
-    photo = await createImageBitmap(fichier);
-  } catch {
-    photo = await new Promise((ok, ko) => {
-      const img = new Image();
-      img.onload = () => ok(img);
-      img.onerror = ko;
-      img.src = URL.createObjectURL(fichier);
-    }).catch(() => null);
-  }
+  photo = await chargerImage(fichier);
   $('photo-nom').textContent = photo ? fichier.name : 'Image illisible, essayez un autre fichier';
   $('btn-sans-photo').hidden = !photo;
   redessiner();
