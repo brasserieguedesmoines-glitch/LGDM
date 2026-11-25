@@ -7,7 +7,7 @@
 // reste donc entre ZONE.haut et ZONE.bas ; seuls les décors débordent.
 
 const W = 1080, H = 1920;
-const ZONE = { logo: 256, haut: 476, bas: 1640 };
+const ZONE = { logo: 256, haut: 548, bas: 1640 };   // ~100 px d'air sous le logo (accents des titres compris)
 
 const C = {
   fond: '#0D0D0D', carte: '#1A1714', carte2: '#201C18',
@@ -501,8 +501,6 @@ function dessinerAnnonce(ctx, d, o, img) {
     ...j, sousTitre: [plusieurs ? lieuDe(j, d) : '', horaires(j.horaires)].filter(Boolean).join(' · '),
   }));
   empiler(ctx, [
-    bPilule(ctx, o.pilule || 'On y sera !'),
-    espace(64),
     bTitre(ctx, deuxLignes(pluriel(d.nom, vs.length)), { max: 215 }),
     espace(52),
     bIconeTexte(ctx, 'lieu', listeEt(vs), { taille: plusieurs ? 70 : 82 }),
@@ -533,8 +531,6 @@ function dessinerRebours(ctx, d, o, img) {
     : [`Ouverture ${JOURS[laDate(premier.date).getDay()]} ${laDate(premier.date).getDate()}`, ...infos].join(' · ');
   const suite = ensuite(gs.slice(i + 1));
   empiler(ctx, [
-    bPilule(ctx, n === 1 ? "C'est demain !" : 'Compte à rebours'),
-    espace(64),
     bTitre(ctx, [`J-${n}`], { couleurs: [C.ambre], lueur: [true], max: 440 }),
     espace(64),
     bTitre(ctx, deuxLignes(d.nom), { couleurs: [C.blanc, C.blanc], lueur: [false, false], max: 130, interligne: 0.22 }),
@@ -579,8 +575,6 @@ function dessinerJour(ctx, d, o, img) {
   const hor = horaires(j?.horaires);
   const suite = ensuite(suivant);
   empiler(ctx, [
-    date ? bPilule(ctx, dateLongue(date)) : null,
-    espace(64),
     bTitre(ctx, lignes, { max: suite ? 225 : 250 }),
     espace(hor ? 70 : 60),
     hor ? bIconeTexte(ctx, 'horloge', hor, { taille: 115, couleur: C.creme }) : null,
@@ -590,6 +584,8 @@ function dessinerJour(ctx, d, o, img) {
     bTitre(ctx, [d.nom], { couleurs: [C.blanc], lueur: [false], max: 92 }),
     espace(30),
     bIconeTexte(ctx, 'lieu', lieu, { taille: 76, couleur: C.ambre }),
+    date ? espace(36) : null,
+    date ? bIconeTexte(ctx, 'calendrier', dateLongue(date), { taille: 58, couleur: C.blanc, couleurIcone: C.gris }) : null,
     espace(52),
     bTexte(ctx, d.accroche, { taille: 38 }),
     suite ? espace(30) : null,
@@ -635,8 +631,6 @@ function dessinerStand(ctx, d, o, img) {
   const pied = [[pluriel(d.nom, vs.length), listeEt(vs)].filter(Boolean).join(' · '), plageCourte(joursTries(d))]
     .filter(Boolean).join('\n');
   empiler(ctx, [
-    bPilule(ctx, o.pilule || 'Sur notre stand'),
-    espace(64),
     bTitre(ctx, ['À déguster', 'au stand'], { max: 200 }),
     espace(64),
     liste,
@@ -652,8 +646,6 @@ function dessinerMerci(ctx, d, o, img) {
   const vs = villes(d);
   const lignes = vs.map((v, i) => (i && i === vs.length - 1 ? `& ${v}` : v) + (i === vs.length - 1 ? ' !' : ''));
   empiler(ctx, [
-    bPilule(ctx, 'Joyeuses fêtes'),
-    espace(70),
     bTitre(ctx, ['Merci'], { couleurs: [C.ambre], lueur: [true], max: 340 }),
     espace(44),
     lignes.length ? bTitre(ctx, lignes, { couleurs: [C.blanc], lueur: [false], max: 150 }) : null,
