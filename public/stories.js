@@ -212,8 +212,9 @@ function guirlande(ctx, p0, p1, p2, n, { taille = 1, alpha = 1, decalage = 0 } =
   ctx.restore();
 }
 
-function decor(ctx, graine) {
+function decor(ctx, graine, { guirlandeY = 0 } = {}) {
   const rnd = hasard(graine);
+  const H = ctx.canvas.height;   // 1920 en story, 1440 en post 3:4
   ctx.fillStyle = C.fond; ctx.fillRect(0, 0, W, H);
 
   // Lumière chaude qui descend de la guirlande
@@ -240,7 +241,7 @@ function decor(ctx, graine) {
   ctx.save();
   for (let i = 0; i < 190; i++) {
     const x = rnd() * W, y = rnd() * H;
-    const centre = Math.abs(x - W / 2) < 440 && y > ZONE.haut - 20 && y < ZONE.bas + 220;
+    const centre = Math.abs(x - W / 2) < 440 && y > H * 0.24 && y < H * 0.97;
     const r = centre ? 1 + rnd() * 1.2 : 1.2 + rnd() ** 2.2 * 5;
     const a = (0.12 + rnd() * 0.5) * (centre ? 0.35 : 1);
     ctx.fillStyle = `rgba(255,255,255,${a})`;
@@ -251,20 +252,21 @@ function decor(ctx, graine) {
 
   // Quelques flocons et étincelles, cantonnés aux marges
   const marge = () => (rnd() < 0.5 ? 40 + rnd() * 90 : W - 40 - rnd() * 90);
-  for (let i = 0; i < 5; i++) flocon(ctx, marge(), 520 + rnd() * 1150, 14 + rnd() * 16, 0.16 + rnd() * 0.16);
-  for (let i = 0; i < 4; i++) etincelle(ctx, marge(), 560 + rnd() * 1050, 9 + rnd() * 10, C.ambre, 0.55 + rnd() * 0.35);
+  for (let i = 0; i < 5; i++) flocon(ctx, marge(), H * (0.27 + rnd() * 0.6), 14 + rnd() * 16, 0.16 + rnd() * 0.16);
+  for (let i = 0; i < 4; i++) etincelle(ctx, marge(), H * (0.29 + rnd() * 0.55), 9 + rnd() * 10, C.ambre, 0.55 + rnd() * 0.35);
 
   // Guirlandes lumineuses en haut (sous la barre d'Instagram : purement décoratives)
-  guirlande(ctx, { x: -60, y: 118 }, { x: 600, y: 300 }, { x: 1140, y: 40 }, 11, { taille: 0.72, alpha: 0.55, decalage: 1 });
-  guirlande(ctx, { x: -60, y: 36 }, { x: 430, y: 290 }, { x: 1140, y: 120 }, 12);
+  const gy = guirlandeY;
+  guirlande(ctx, { x: -60, y: 118 + gy }, { x: 600, y: 300 + gy }, { x: 1140, y: 40 + gy }, 11, { taille: 0.72, alpha: 0.55, decalage: 1 });
+  guirlande(ctx, { x: -60, y: 36 + gy }, { x: 430, y: 290 + gy }, { x: 1140, y: 120 + gy }, 12);
 }
 
-function logo(ctx, img, largeur = 168) {
+function logo(ctx, img, largeur = 168, y = ZONE.logo) {
   if (!img) return;
   const h = largeur * img.naturalHeight / img.naturalWidth;
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 30;
-  ctx.drawImage(img, W / 2 - largeur / 2, ZONE.logo, largeur, h);
+  ctx.drawImage(img, W / 2 - largeur / 2, y, largeur, h);
   ctx.restore();
 }
 
@@ -654,21 +656,113 @@ function dessinerMerci(ctx, d, o, img) {
   ], ZONE.haut + 20);
 }
 
+
+// ------------------------------------------------- récap 3:4 (post Facebook)
+// Pas d'interface Instagram par-dessus : seules des marges classiques comptent.
+const POST = { h: 1440, logo: 222, haut: 446, bas: 1376 };
+
+// Horaires d'un marché : « 18h – 21h » s'ils sont identiques chaque jour,
+// sinon « Sam. 10h – 19h · Dim. 10h – 18h »
+function horairesMarche(g) {
+  const hs = g.jours.map(j => horaires(j.horaires));
+  if (!hs.some(Boolean)) return '';
+  if (hs.every(h => h === hs[0])) return hs[0];
+  return g.jours.map((j, i) => hs[i] ? `${majuscule(JOURS[laDate(j.date).getDay()].slice(0, 3))}. ${hs[i]}` : '')
+    .filter(Boolean).join(' · ');
+}
+
+function carteMarche(ctx, g, x, y, w, h) {
+  const ds = g.jours.map(j => laDate(j.date));
+  ctx.save();
+  rr(ctx, x, y, w, h, 30);
+  const fond = ctx.createLinearGradient(x, y, x, y + h);
+  fond.addColorStop(0, 'rgba(32,28,24,0.95)'); fond.addColorStop(1, 'rgba(26,23,20,0.95)');
+  ctx.fillStyle = fond; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = C.filet; ctx.stroke();
+
+  // Colonne dates : « 27 » ou « 28-29 », mois dessous
+  const col = 250;
+  const num = ds.length === 1 ? String(ds[0].getDate())
+    : `${ds[0].getDate()}-${ds[ds.length - 1].getDate()}`;
+  const tNum = tailleQuiTient(ctx, [num], Math.round(h * 0.44), col - 50);
+  const pNum = `${tNum}px ${DISPLAY}`, capNum = hauteurCap(ctx, pNum);
+  const tMois = Math.round(h * 0.12), pMois = `600 ${tMois}px ${TEXTE}`, capMois = hauteurCap(ctx, pMois);
+  const bloc = capNum + h * 0.09 + capMois, y0 = y + (h - bloc) / 2;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.font = pNum; ctx.fillStyle = C.ambre;
+  ctx.shadowColor = 'rgba(245,164,37,0.45)'; ctx.shadowBlur = 22;
+  ctx.fillText(num, x + col / 2, y0 + capNum);
+  ctx.shadowBlur = 0;
+  ctx.font = pMois; ctx.fillStyle = C.gris;
+  texteEspace(ctx, MOIS[ds[ds.length - 1].getMonth()].toUpperCase(), x + col / 2, y0 + bloc, tMois * 0.16, 'center');
+  ctx.fillStyle = C.filet;
+  ctx.fillRect(x + col, y + h * 0.18, 2, h * 0.64);
+
+  // Ville, jours en toutes lettres, horaires et mention en texte simple
+  const xt = x + col + 44, lt = w - col - 80;
+  const ville = String(g.lieu || '').toUpperCase();
+  const tVille = tailleQuiTient(ctx, [ville], Math.round(h * 0.3), lt);
+  const pVille = `${tVille}px ${DISPLAY}`, capVille = hauteurCap(ctx, pVille);
+  const jours = majuscule(ds.length === 2
+    ? `${JOURS[ds[0].getDay()]} et ${JOURS[ds[1].getDay()]}`
+    : ds.length === 1 ? JOURS[ds[0].getDay()] : plageDates(g.jours));
+  const tJ = Math.round(h * 0.15), pJ = `600 ${tJ}px ${TEXTE}`, capJ = hauteurCap(ctx, pJ);
+  const infos = [horairesMarche(g), ...new Set(g.jours.map(j => String(j.mention || '').trim()).filter(Boolean))]
+    .filter(Boolean).join(' · ');
+  const tI = Math.round(h * 0.135), pI = `500 ${tI}px ${TEXTE}`, capI = infos ? hauteurCap(ctx, pI) : 0;
+  const e1 = h * 0.1, e2 = infos ? h * 0.085 : 0;
+  const yt = y + (h - (capVille + e1 + capJ + e2 + capI)) / 2;
+  ctx.textAlign = 'left';
+  ctx.font = pVille; ctx.fillStyle = C.blanc;
+  ctx.fillText(ville, xt, yt + capVille);
+  ctx.font = pJ; ctx.fillStyle = C.creme;
+  ctx.fillText(jours, xt, yt + capVille + e1 + capJ);
+  if (infos) {
+    ctx.font = pI; ctx.fillStyle = C.gris;
+    ctx.fillText(couper(ctx, infos, lt)[0], xt, yt + capVille + e1 + capJ + e2 + capI);
+  }
+  ctx.restore();
+}
+
+function dessinerRecap(ctx, d, o, img) {
+  decor(ctx, 31, { guirlandeY: -26 });
+  logo(ctx, img, 140, POST.logo);
+  const gs = marches(d).filter(g => g.lieu);
+  const vs = villes(d);
+  const hCarte = gs.length > 2 ? 160 : 196, gap = 22, largeur = 920;
+  const cartes = gs.length ? {
+    h: gs.length * hCarte + (gs.length - 1) * gap,
+    dessiner(y) { gs.forEach((g, i) => carteMarche(ctx, g, W / 2 - largeur / 2, y + i * (hCarte + gap), largeur, hCarte)); },
+  } : null;
+  const plage = plageDates(joursTries(d));
+  empiler(ctx, [
+    bTitre(ctx, deuxLignes(pluriel(d.nom, vs.length)), { max: 160 }),
+    plage ? espace(40) : null,
+    bTitre(ctx, [majuscule(plage)], { couleurs: [C.blanc], lueur: [false], max: 62 }),
+    espace(52),
+    cartes,
+    espace(46),
+    bTexte(ctx, d.accroche, { taille: 36, couleur: C.gris }),
+  ], POST.haut, POST.bas);
+}
+
 const MODELES = [
   { id: 'annonce', nom: 'Annonce', quand: 'Dès maintenant', dessiner: dessinerAnnonce },
   { id: 'rebours', nom: 'Compte à rebours', quand: 'Les jours d’avant', dessiner: dessinerRebours },
   { id: 'jour', nom: 'Le jour J', quand: 'Le jour même', dessiner: dessinerJour },
   { id: 'stand', nom: 'Sur le stand', quand: 'Pendant le marché', dessiner: dessinerStand },
   { id: 'merci', nom: 'Merci', quand: 'Après le marché', dessiner: dessinerMerci },
+  { id: 'recap', nom: 'Récap · post Facebook', quand: 'Format 3:4 · 1080 × 1440', format: [W, POST.h], dessiner: dessinerRecap },
 ];
 
 // Rendu d'un modèle sur un canvas (créé au besoin) — utilisé par la page et l'export
 function rendreStory(id, donnees, options = {}, img = null, canvas = null) {
   const m = MODELES.find(x => x.id === id);
   canvas = canvas || document.createElement('canvas');
-  canvas.width = W; canvas.height = H;
+  const [w, h] = m.format || [W, H];
+  canvas.width = w; canvas.height = h;
   const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, W, H);
+  ctx.clearRect(0, 0, w, h);
   m.dessiner(ctx, donnees, options, img);
   return canvas;
 }
