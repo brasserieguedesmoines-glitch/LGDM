@@ -7,6 +7,7 @@ import { dirname, join } from 'path';
 import { monterProspection } from './prospection.js';
 import { monterAcces, monterPro, JETON_INTERNE } from './acces.js';
 import { monterLivraisons } from './livraisons.js';
+import { monterAvent } from './avent.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -3217,6 +3218,9 @@ monterPro(app, { redis, redisActif, getProduitsClient, fetchInterne, construireP
 
 // --- Tournées de livraison : préparation brasserie, suivi livreur ---
 monterLivraisons(app, { redis, pipeline: redisPipeline, redisActif, depot: DEPOT });
+
+// --- Calendrier de l'Avent du Gué : un cadeau par semaine, tiré au sort ---
+monterAvent(app, { redis, redisActif });
 
 // --- Création de commande ---
 app.post('/api/commande', async (req, res) => {

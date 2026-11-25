@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#F7F7F8">
+  <title>Calendrier de l’Avent — Le Gué des Moines</title>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('lgdm-theme') || 'light';</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Caveat+Brush&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="icons.js"></script>
+  <script src="ui.js"></script>
+  <script src="shell.js"></script>
+  <style>
+    [hidden] { display: none !important; }
+    main.av { max-width: 1240px; }
+    .av-display { font-family: 'Anton', 'Impact', sans-serif; font-weight: 400; text-transform: uppercase; letter-spacing: .01em; line-height: 1; }
+
+    /* --- Boutons de la rubrique ------------------------------------------- */
+    .av-btn { min-height: 38px; padding: 0 14px; border-radius: var(--r-md); border: 1px solid var(--bordure-forte);
+      background: var(--surface); color: var(--texte); font-weight: 600; font-size: var(--t-sm); cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; width: auto; text-decoration: none; }
+    .av-btn:hover:not(:disabled) { background: var(--surface-3); }
+    .av-btn.principal { background: var(--accent); border-color: var(--accent); color: var(--sur-accent); }
+    .av-btn.principal:hover:not(:disabled) { background: var(--accent-fonce); }
+    .av-btn.danger { color: var(--danger); }
+    .av-btn.danger:hover:not(:disabled) { background: var(--danger-doux); border-color: var(--danger); }
+    .av-btn.discret { border-color: transparent; background: transparent; color: var(--texte-2); }
+    .av-btn.discret:hover:not(:disabled) { background: var(--surface-3); color: var(--texte); }
+    .av-btn.mini { min-height: 30px; padding: 0 10px; font-size: var(--t-xs); }
+    .av-btn.grand { min-height: 52px; padding: 0 24px; font-size: var(--t-lg); border-radius: var(--r-full); }
+    .av-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .av-btn .ico { width: 15px; height: 15px; }
+    .av-btn.grand .ico { width: 20px; height: 20px; }
+
+    /* --- En-tête : le jeu en une phrase ------------------------------------ */
+    .av-tete { background: #0D0D0D; color: #fff; border: 1px solid #201C18; border-radius: var(--r-lg); padding: var(--e5) var(--e6);
+      display: flex; gap: var(--e5); align-items: center; flex-wrap: wrap; position: relative; overflow: hidden; box-shadow: var(--ombre-2); }
+    .av-tete::after { content: ''; position: absolute; right: -60px; top: -80px; width: 280px; height: 280px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(240,146,30,.22), transparent 70%); pointer-events: none; }
+    .av-tete img { width: 64px; height: 74px; object-fit: contain; flex-shrink: 0; }
+    .av-tete-texte { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 6px; position: relative; z-index: 1; }
+    .av-pilule { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px; border-radius: 999px;
+      border: 1px solid #5C3A17; color: #F5A425; font-size: 0.6875rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    .av-pilule::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #F0921E; }
+    .av-tete h2 { font-family: 'Anton', 'Impact', sans-serif; font-weight: 400; font-size: clamp(1.75rem, 4vw, 2.5rem); text-transform: uppercase;
+      line-height: 1; color: #fff; display: block; }
+    .av-tete h2 em { font-style: normal; color: #F0921E; }
+    .av-tete p { color: #A8A39A; font-size: var(--t-md); max-width: 62ch; }
+    .av-tete-actions { display: flex; gap: var(--e2); flex-wrap: wrap; position: relative; z-index: 1; }
+    .av-tete .av-btn:not(.principal) { background: transparent; border-color: #4A2F12; color: #fff; }
+    .av-tete .av-btn:not(.principal):hover { background: #201C18; }
+
+    /* --- Les portes du calendrier ----------------------------------------- */
+    .av-portes { display: grid; gap: var(--e3); grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+    @media (max-width: 560px) {
+      .av-portes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e2); }
+      .av-porte { min-height: 0; padding: var(--e3); gap: 6px; }
+      .av-porte-num { font-size: 2.1rem; }
+      .av-porte-haut .st { padding: 2px 7px; font-size: .625rem; }
+      .av-porte-cadeau { font-size: var(--t-xs); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+      .av-tete { padding: var(--e5) var(--e4); }
+    }
+    .av-porte { position: relative; text-align: left; background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--r-lg);
+      padding: var(--e4); display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 8px; min-height: 168px;
+      box-shadow: var(--ombre-1); cursor: pointer; width: 100%; font-weight: 400;
+      transition: border-color var(--v-rapide) var(--courbe), transform var(--v-rapide) var(--courbe); }
+    .av-porte:hover { border-color: var(--bordure-forte); transform: translateY(-1px); }
+    .av-porte[aria-selected="true"] { border-color: var(--accent); box-shadow: var(--anneau); }
+    .av-porte-haut { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .av-porte-num { font-family: 'Anton', 'Impact', sans-serif; font-size: 2.75rem; line-height: .9; color: var(--texte-3); }
+    .av-porte.en_cours .av-porte-num, .av-porte.a_tirer .av-porte-num { color: var(--accent); }
+    .av-porte.tiree .av-porte-num { color: var(--texte); }
+    .av-porte-dates { font-size: var(--t-xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--texte-2); }
+    .av-porte-cadeau { font-size: var(--t-sm); color: var(--texte); font-weight: 600; line-height: 1.35; }
+    .av-porte-cadeau.vide { color: var(--texte-3); font-weight: 500; font-style: italic; }
+    .av-porte-pied { margin-top: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: var(--t-xs); color: var(--texte-2); }
+    .av-porte-gagnant { display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--texte); font-size: var(--t-sm); }
+    .av-porte-gagnant .ico { color: var(--accent); }
+
+    /* --- Pastilles de statut ------------------------------------------------ */
+    .st { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 0.6875rem;
+      font-weight: 700; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; border: 1px solid transparent; }
+    .st::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .st.a_venir { background: var(--surface-3); color: var(--texte-2); border-color: var(--bordure-forte); }
+    .st.en_cours { background: var(--accent-doux); color: var(--accent-texte); border-color: var(--accent); }
+    .st.a_tirer { background: var(--alerte-doux); color: var(--alerte); }
+    .st.tiree, .st.remis { background: var(--ok-doux); color: var(--ok); }
+    .st.a_prevenir { background: var(--alerte-doux); color: var(--alerte); }
+    .st.prevenu { background: var(--info-doux); color: var(--info); }
+
+    /* --- Colonne principale + colonne des règles --------------------------- */
+    .av-grille { display: grid; gap: var(--e5); grid-template-columns: minmax(0, 1fr) 330px; align-items: start; }
+    @media (max-width: 1050px) { .av-grille { grid-template-columns: minmax(0, 1fr); } }
+    .av-colonne { display: flex; flex-direction: column; gap: var(--e5); min-width: 0; }
+
+    .av-sem-tete { display: flex; align-items: flex-start; gap: var(--e4); flex-wrap: wrap; }
+    .av-sem-tete .av-porte-num { font-size: 3.5rem; color: var(--accent); }
+    .av-sem-titre { flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .av-sem-titre h2 { font-family: 'Anton', 'Impact', sans-serif; font-weight: 400; text-transform: uppercase; font-size: 1.6rem; line-height: 1.05; }
+    .av-sem-titre p { color: var(--texte-2); font-size: var(--t-sm); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .av-dates-edition { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; background: var(--surface-2); border: 1px solid var(--bordure);
+      border-radius: var(--r-md); padding: 10px 12px; }
+    .av-dates-edition label { margin-bottom: 2px; font-size: var(--t-xs); font-weight: 600; }
+    .av-dates-edition input { width: auto; min-height: 34px; font-size: var(--t-sm); }
+    .av-champ-cadeau { display: flex; gap: 8px; align-items: center; }
+    .av-champ-cadeau input { flex: 1; font-weight: 600; }
+    .av-enregistre { font-size: var(--t-xs); color: var(--ok); white-space: nowrap; min-width: 70px; }
+
+    /* --- Zone de tirage ------------------------------------------------------ */
+    .av-tirage { border-radius: var(--r-lg); border: 1px dashed var(--bordure-forte); background: var(--surface-2); padding: var(--e5);
+      display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--e3); }
+    .av-tirage .chiffres { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .av-chiffre { background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--r-md); padding: 8px 16px; min-width: 110px; }
+    .av-chiffre b { display: block; font-family: 'Anton', 'Impact', sans-serif; font-weight: 400; font-size: 1.75rem; line-height: 1.1; color: var(--texte); }
+    .av-chiffre span { font-size: var(--t-xs); color: var(--texte-2); }
+    .av-tirage .aide { font-size: var(--t-sm); color: var(--texte-2); max-width: 56ch; }
+    .av-avert { display: flex; gap: 8px; align-items: flex-start; text-align: left; background: var(--alerte-doux); color: var(--alerte);
+      border-radius: var(--r-md); padding: 8px 12px; font-size: var(--t-sm); font-weight: 500; max-width: 60ch; }
+    .av-avert .ico { margin-top: 3px; }
+
+    .av-gagnant { background: #0D0D0D; color: #fff; border-radius: var(--r-lg); padding: var(--e5); display: flex; flex-direction: column; gap: var(--e3);
+      border: 1px solid #201C18; position: relative; overflow: hidden; }
+    .av-gagnant::after { content: ''; position: absolute; left: -40px; bottom: -90px; width: 260px; height: 260px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(240,146,30,.18), transparent 70%); pointer-events: none; }
+    .av-gagnant > * { position: relative; z-index: 1; }
+    .av-gagnant .sur { font-size: 0.6875rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #F5A425; }
+    .av-gagnant .nom { font-family: 'Anton', 'Impact', sans-serif; font-size: clamp(2rem, 5vw, 3rem); line-height: 1; text-transform: uppercase; }
+    .av-gagnant .infos { display: flex; gap: 6px 16px; flex-wrap: wrap; color: #A8A39A; font-size: var(--t-sm); }
+    .av-gagnant .infos a { color: #fff; font-weight: 600; text-decoration: none; display: inline-flex; gap: 6px; align-items: center; }
+    .av-gagnant .infos a:hover { text-decoration: underline; }
+    .av-gagnant .preuve { font-size: var(--t-xs); color: #8A857C; }
+    .av-gagnant .av-btn:not(.principal) { background: transparent; border-color: #4A2F12; color: #fff; }
+    .av-gagnant .av-btn:not(.principal):hover { background: #201C18; }
+    .av-suivi { display: flex; align-self: flex-start; max-width: 100%; background: #1A1714; border: 1px solid #2A2520; border-radius: 999px; padding: 3px; gap: 2px; }
+    .av-suivi button { min-height: 32px; padding: 0 14px; border-radius: 999px; font-size: var(--t-xs); font-weight: 700; color: #A8A39A; width: auto;
+      letter-spacing: .04em; white-space: nowrap; flex: 1 1 auto; }
+    @media (max-width: 420px) { .av-suivi { align-self: stretch; } .av-suivi button { padding: 0 8px; } }
+    .av-suivi button:hover { color: #fff; }
+    .av-suivi button[aria-pressed="true"] { background: #F0921E; color: #1A1206; }
+    .av-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .av-gagnant input.av-note { background: #1A1714; border-color: #2A2520; color: #fff; min-height: 38px; font-size: var(--t-sm); }
+    .av-note::placeholder { color: #8A857C; }
+
+    .av-histo { font-size: var(--t-sm); color: var(--texte-2); }
+    .av-histo summary { cursor: pointer; font-weight: 600; color: var(--texte); }
+    .av-histo ul { margin: 8px 0 0 18px; display: flex; flex-direction: column; gap: 4px; }
+
+    /* --- Participants ------------------------------------------------------- */
+    .av-part-barre { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .av-part-barre h3 { margin: 0 auto 0 0; font-size: var(--t-lg); display: flex; gap: 8px; align-items: baseline; }
+    .av-part-barre h3 small { font-size: var(--t-sm); color: var(--texte-2); font-weight: 500; }
+    .av-ajout { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; background: var(--surface-2); border: 1px solid var(--bordure);
+      border-radius: var(--r-md); padding: 10px 12px; }
+    .av-ajout > div { flex: 1 1 200px; }
+    .av-ajout label { margin-bottom: 2px; font-size: var(--t-xs); font-weight: 600; }
+    .av-ajout input { min-height: 36px; font-size: var(--t-sm); }
+    .av-table { width: 100%; border-collapse: collapse; font-size: var(--t-sm); }
+    .av-table th { text-align: left; font-size: var(--t-xs); color: var(--texte-2); padding: 8px 10px; background: var(--surface-2); border-bottom: 1px solid var(--bordure); }
+    .av-table td { padding: 9px 10px; border-bottom: 1px solid var(--bordure); vertical-align: middle; }
+    .av-table tr.exclu td:not(:last-child) { opacity: .5; }
+    .av-table tr.exclu td:first-child b { text-decoration: line-through; }
+    .av-table .n { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .av-table .act { text-align: right; white-space: nowrap; width: 1%; }
+    .av-table .tag { display: inline-block; font-size: 0.6875rem; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--surface-3);
+      color: var(--texte-2); margin-left: 6px; white-space: nowrap; }
+    .av-table .tag.gagne { background: var(--accent-doux); color: var(--accent-texte); }
+    .av-table .contact { color: var(--texte-2); overflow-wrap: anywhere; }
+    .av-table-wrap { border: 1px solid var(--bordure); border-radius: var(--r-md); overflow: auto; max-height: 560px; }
+    @media (max-width: 700px) {
+      .av-table thead { display: none; }
+      .av-table, .av-table tbody, .av-table tr, .av-table td { display: block; width: auto !important; }
+      .av-table tr { border-bottom: 1px solid var(--bordure); padding: 8px 10px; display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; }
+      .av-table td { border: 0; padding: 0; }
+      .av-table td.act { grid-row: 1 / span 3; grid-column: 2; align-self: center; }
+    }
+    .av-vide { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: var(--e6) var(--e4); color: var(--texte-2); font-size: var(--t-sm); }
+    .av-vide .ico { width: 28px; height: 28px; color: var(--texte-3); }
+
+    /* --- Règles du jeu ------------------------------------------------------ */
+    .av-regles label.option { display: flex; gap: 10px; align-items: flex-start; font-size: var(--t-sm); color: var(--texte); font-weight: 500;
+      margin: 0; cursor: pointer; padding: 8px 10px; border-radius: var(--r-md); border: 1px solid var(--bordure); }
+    .av-regles label.option:hover { background: var(--surface-2); }
+    .av-regles label.option input { accent-color: var(--accent); width: 18px; height: 18px; margin-top: 1px; flex-shrink: 0; }
+    .av-regles label.option span small { display: block; color: var(--texte-2); font-weight: 400; font-size: var(--t-xs); margin-top: 2px; }
+    .av-regles .groupe { display: flex; flex-direction: column; gap: 6px; }
+    .av-regles .groupe-titre { font-size: var(--t-xs); font-weight: 700; color: var(--texte-2); text-transform: uppercase; letter-spacing: .06em; }
+    .av-etapes { counter-reset: e; display: flex; flex-direction: column; gap: 10px; font-size: var(--t-sm); color: var(--texte-2); }
+    .av-etapes li { list-style: none; display: grid; grid-template-columns: 24px 1fr; gap: 8px; }
+    .av-etapes li::before { counter-increment: e; content: counter(e); width: 22px; height: 22px; border-radius: 50%; background: var(--accent-doux);
+      color: var(--accent-texte); font-weight: 700; font-size: var(--t-xs); display: grid; place-items: center; }
+    .av-etapes b { color: var(--texte); }
+
+    /* --- Fenêtres ----------------------------------------------------------- */
+    dialog.av-dialog { border: 1px solid var(--bordure); border-radius: var(--r-lg); padding: 0; background: var(--surface); color: var(--texte);
+      box-shadow: var(--ombre-3); width: min(760px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); margin: auto; }
+    dialog.av-dialog.petit { width: min(520px, calc(100vw - 24px)); }
+    dialog.av-dialog::backdrop { background: rgba(9,9,11,.55); }
+    .dlg { display: flex; flex-direction: column; max-height: calc(100dvh - 26px); }
+    .dlg-tete { padding: 16px 20px; border-bottom: 1px solid var(--bordure); display: flex; gap: 12px; align-items: flex-start; }
+    .dlg-tete h2 { font-size: var(--t-lg); margin: 0; }
+    .dlg-tete p { font-size: var(--t-sm); color: var(--texte-2); margin-top: 2px; }
+    .dlg-tete .av-btn { margin-left: auto; }
+    .dlg-corps { padding: 16px 20px; overflow: auto; display: flex; flex-direction: column; gap: 14px; }
+    .dlg-pied { padding: 12px 20px; border-top: 1px solid var(--bordure); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+    .dlg-pied .info { margin-right: auto; font-size: var(--t-sm); color: var(--texte-2); }
+    .repartition { display: flex; flex-direction: column; border: 1px solid var(--bordure); border-radius: var(--r-md); overflow: hidden; }
+    .repartition div { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--bordure); font-size: var(--t-sm); }
+    .repartition div:last-child { border-bottom: 0; }
+    .repartition .num { font-family: 'Anton', 'Impact', sans-serif; font-size: 1.4rem; width: 28px; color: var(--accent); }
+    .repartition .quoi { flex: 1; min-width: 0; }
+    .repartition .quoi small { display: block; color: var(--texte-2); font-size: var(--t-xs); }
+    .repartition .combien { font-weight: 700; white-space: nowrap; }
+    .repartition .ignore { opacity: .55; }
+    .lecture-info { font-size: var(--t-sm); color: var(--texte-2); display: flex; flex-direction: column; gap: 6px; }
+    .lecture-info b { color: var(--texte); }
+    .lecture-info .ligne-choix { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .lecture-info select { width: auto; min-height: 34px; font-size: var(--t-sm); padding-right: 32px; }
+    .apercu-mini { width: 100%; border-collapse: collapse; font-size: var(--t-xs); }
+    .apercu-mini th { text-align: left; color: var(--texte-2); padding: 5px 6px; border-bottom: 1px solid var(--bordure); }
+    .apercu-mini td { padding: 5px 6px; border-bottom: 1px solid var(--bordure); }
+    .motifs { display: flex; flex-direction: column; gap: 6px; }
+    .motifs label { display: flex; gap: 8px; align-items: center; margin: 0; font-size: var(--t-sm); color: var(--texte); font-weight: 500; cursor: pointer;
+      padding: 8px 10px; border: 1px solid var(--bordure); border-radius: var(--r-md); }
+    .motifs input { accent-color: var(--accent); width: 16px; height: 16px; }
+
+    /* --- Scène du tirage : l'écran que l'on filme ou affiche au bar --------- */
+    dialog.av-scene { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0;
+      background: #0D0D0D; color: #fff; overflow: hidden; }
+    dialog.av-scene::backdrop { background: #0D0D0D; }
+    .av-scene-fond { position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(ellipse at 50% 38%, rgba(240,146,30,.16), transparent 60%); }
+    .av-confettis { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
+    .av-scene-barre { position: absolute; top: 12px; right: 12px; display: flex; gap: 8px; z-index: 4; }
+    .av-scene-barre button { width: 40px; height: 40px; min-height: 40px; padding: 0; border-radius: 50%; border: 1px solid #4A2F12; color: #A8A39A; background: rgba(13,13,13,.6); }
+    .av-scene-barre button:hover { color: #fff; border-color: #F0921E; }
+    .av-scene-contenu { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: clamp(10px, 2.2vh, 22px); padding: 56px 20px 32px; text-align: center; }
+    .av-scene-logo { width: clamp(70px, 11vh, 120px); height: auto; }
+    .av-scene .av-pilule { align-self: center; font-size: clamp(.7rem, 1.6vh, .9rem); padding: 5px 16px; }
+    .av-scene-titre { font-family: 'Anton', 'Impact', sans-serif; font-weight: 400; text-transform: uppercase; line-height: .95;
+      font-size: clamp(2.6rem, 9vh, 6.5rem); color: #fff; }
+    .av-scene-cadeau { font-family: 'Caveat Brush', 'Comic Sans MS', cursive; color: #F0921E; font-size: clamp(1.4rem, 4.2vh, 2.6rem); line-height: 1.1;
+      max-width: 22ch; }
+    .av-rouleau { position: relative; width: min(92vw, 820px); height: clamp(84px, 16vh, 150px); border-radius: 22px; overflow: hidden;
+      background: #1A1714; border: 1px solid #2A2520; display: grid; place-items: center; }
+    .av-rouleau::before, .av-rouleau::after { content: ''; position: absolute; left: 0; right: 0; height: 28%; z-index: 1; pointer-events: none; }
+    .av-rouleau::before { top: 0; background: linear-gradient(#1A1714, transparent); }
+    .av-rouleau::after { bottom: 0; background: linear-gradient(transparent, #1A1714); }
+    .av-rouleau-nom { font-family: 'Anton', 'Impact', sans-serif; text-transform: uppercase; font-size: clamp(2rem, 7.5vh, 5rem); line-height: 1;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 94%; color: #fff; }
+    .av-rouleau-nom.defile { animation: av-defile var(--duree, 90ms) linear; }
+    @keyframes av-defile { from { transform: translateY(-55%); opacity: .2; filter: blur(2px); } to { transform: none; opacity: 1; filter: none; } }
+    .av-rouleau.gagne { border-color: #F0921E; box-shadow: 0 0 0 4px rgba(240,146,30,.18), 0 0 60px rgba(240,146,30,.35); }
+    .av-rouleau.gagne .av-rouleau-nom { color: #F5A425; animation: av-pop .6s cubic-bezier(.2,1.6,.4,1); }
+    @keyframes av-pop { from { transform: scale(.7); } to { transform: none; } }
+    .av-scene-info { color: #A8A39A; font-size: clamp(.9rem, 2vh, 1.15rem); }
+    .av-scene-bravo { font-family: 'Anton', 'Impact', sans-serif; text-transform: uppercase; color: #fff; font-size: clamp(1.6rem, 5vh, 3rem); line-height: 1;
+      animation: av-pop .6s cubic-bezier(.2,1.6,.4,1); }
+    .av-scene-go { min-height: 60px; padding: 0 36px; border-radius: 999px; background: #F0921E; color: #1A1206; font-family: 'Anton', 'Impact', sans-serif;
+      font-size: clamp(1.2rem, 3vh, 1.6rem); text-transform: uppercase; letter-spacing: .03em; font-weight: 400; border: 0; width: auto; }
+    .av-scene-go:hover:not(:disabled) { background: #F5A425; }
+    .av-scene-go .ico { width: 22px; height: 22px; }
+    .av-scene-pied { position: absolute; bottom: 14px; left: 0; right: 0; text-align: center; color: #6E6A63; font-size: .75rem; z-index: 2; padding: 0 16px; }
+    .av-scene-erreur { background: rgba(255,138,122,.12); color: #FF8A7A; border-radius: 12px; padding: 10px 16px; font-weight: 600; max-width: 60ch; }
+
+    .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 200; background: var(--texte); color: var(--fond);
+      padding: 10px 16px; border-radius: var(--r-md); font-size: var(--t-sm); font-weight: 600; box-shadow: var(--ombre-3); max-width: calc(100vw - 32px); }
+    .toast.ko { background: var(--danger); color: #fff; }
+
+    @media print {
+      .av-tete-actions, .av-btn, .av-regles, .av-ajout, .av-suivi, .av-part-barre input, dialog { display: none !important; }
+      .av-grille { grid-template-columns: 1fr; }
+      .av-table-wrap { max-height: none; overflow: visible; }
+      .av-tete, .av-gagnant { background: #fff !important; color: #000 !important; border-color: #ccc !important; }
+      .av-gagnant .nom, .av-gagnant .infos a, .av-tete h2 { color: #000 !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="av" id="vue" aria-live="polite">
+    <div class="av-vide"><span class="loader"></span>Chargement du calendrier…</div>
+  </main>
+
+  <dialog class="av-dialog" id="dlg-import" aria-labelledby="imp-titre"></dialog>
+  <dialog class="av-dialog petit" id="dlg-petit"></dialog>
+  <dialog class="av-scene" id="dlg-scene" aria-label="Tirage au sort"></dialog>
+  <input type="file" id="fichier-import" accept=".xlsx,.xls,.xlsm,.ods,.csv,.txt,.tsv" hidden>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      monterCoquille({ titre: 'Calendrier de l’Avent du Gué', actif: '/avent.html' });
+    });
+  </script>
+  <script src="avent.js" defer></script>
+</body>
+</html>
