@@ -426,8 +426,8 @@ function carteJour(ctx, j, x, y, w, h) {
   const xt = x + col + h * 0.24;
   const pJour = `${Math.round(h * 0.37)}px ${DISPLAY}`;
   const capJour = hauteurCap(ctx, pJour);
-  const hor = horaires(j.horaires);
-  const tHor = Math.round(h * 0.215);
+  const hor = j.sousTitre ?? horaires(j.horaires);
+  const tHor = Math.round(h * 0.23);
   const pHor = `600 ${tHor}px ${TEXTE}`;
   const capHor = hor ? hauteurCap(ctx, pHor) : 0;
   const ecart = hor ? h * 0.12 : 0;
@@ -457,18 +457,55 @@ function joursTries(d) {
   return (d.jours || []).filter(j => laDate(j.date)).sort((a, b) => laDate(a.date) - laDate(b.date));
 }
 
+// Chaque jour a sa ville (repli sur l'ancienne ville unique de l'événement).
+// Des jours consécutifs dans la même ville forment un marché : un week-end peut
+// enchaîner Bruguières le vendredi puis Castelginest le samedi et le dimanche.
+const cleLieu = s => String(s || '').trim().toLowerCase();
+const lieuDe = (j, d) => String(j.lieu || d.lieu || '').trim();
+function marches(d) {
+  const groupes = [];
+  for (const j of joursTries(d)) {
+    const lieu = lieuDe(j, d);
+    const der = groupes[groupes.length - 1];
+    if (der && cleLieu(der.lieu) === cleLieu(lieu)) der.jours.push(j);
+    else groupes.push({ lieu, jours: [j] });
+  }
+  return groupes;
+}
+function villes(d) {
+  const vues = new Map();
+  for (const g of marches(d)) if (g.lieu && !vues.has(cleLieu(g.lieu))) vues.set(cleLieu(g.lieu), g.lieu);
+  return [...vues.values()];
+}
+const listeEt = xs => xs.length < 2 ? (xs[0] || '') : `${xs.slice(0, -1).join(', ')} & ${xs[xs.length - 1]}`;
+// « Marché de Noël » → « Marchés de Noël » quand plusieurs villes sont annoncées
+const pluriel = (nom, n) => n > 1 ? String(nom || '').replace(/^(march)[ée](?=\s|$)/i, (_, a) => `${a}és`) : nom;
+
+// « samedi 28 et dimanche 29 », « vendredi 27 », « du 28 au 30 novembre »
+function joursEnClair(jours) {
+  const ds = jours.map(j => laDate(j.date));
+  const un = x => `${JOURS[x.getDay()]} ${x.getDate()}`;
+  if (ds.length === 1) return un(ds[0]);
+  if (ds.length === 2) return `${un(ds[0])} et ${un(ds[1])}`;
+  return plageDates(jours);
+}
+const ensuite = gs => gs.length ? `Puis ${gs.map(g => `${joursEnClair(g.jours)} à ${g.lieu}`).join(', ')}` : '';
+
 function dessinerAnnonce(ctx, d, o, img) {
   decor(ctx, 11);
   logo(ctx, img);
-  const jours = joursTries(d);
+  const vs = villes(d);
+  const plusieurs = vs.length > 1;
+  // Plusieurs villes : chaque carte indique la sienne avant les horaires
+  const jours = joursTries(d).map(j => ({
+    ...j, sousTitre: [plusieurs ? lieuDe(j, d) : '', horaires(j.horaires)].filter(Boolean).join(' · '),
+  }));
   empiler(ctx, [
     bPilule(ctx, o.pilule || 'On y sera !'),
     espace(64),
-    bTitre(ctx, deuxLignes(d.nom), { max: 215 }),
+    bTitre(ctx, deuxLignes(pluriel(d.nom, vs.length)), { max: 215 }),
     espace(52),
-    bIconeTexte(ctx, 'lieu', d.lieu, { taille: 82 }),
-    d.adresse ? espace(22) : null,
-    bTexte(ctx, d.adresse, { taille: 34 }),
+    bIconeTexte(ctx, 'lieu', listeEt(vs), { taille: plusieurs ? 70 : 82 }),
     espace(52),
     bJours(ctx, jours, { hMax: 140, hTotalMax: 470 }),
     espace(44),
@@ -476,39 +513,54 @@ function dessinerAnnonce(ctx, d, o, img) {
   ]);
 }
 
+// Compte à rebours vers un marché (le premier par défaut)
+function marcheVise(d, o) {
+  const gs = marches(d);
+  const i = Math.min(Math.max(0, Number(o.marche) || 0), Math.max(0, gs.length - 1));
+  return { gs, i, g: gs[i] };
+}
+
 function dessinerRebours(ctx, d, o, img) {
   decor(ctx, 23);
   logo(ctx, img);
-  const jours = joursTries(d);
+  const { gs, i, g } = marcheVise(d, o);
   const n = Math.max(1, Math.min(99, Number(o.n) || 1));
-  const premier = jours[0];
-  const detail = premier
-    ? [majuscule(JOURS[laDate(premier.date).getDay()]) + ' ' + laDate(premier.date).getDate(),
-       horaires(premier.horaires), premier.mention].filter(Boolean).join(' · ')
-    : '';
+  const premier = g?.jours[0];
+  const unJour = g?.jours.length === 1;
+  const quand = g ? (unJour ? dateLongue(laDate(premier.date)) : plageDates(g.jours)) : '';
+  const infos = premier ? [horaires(premier.horaires), premier.mention].filter(Boolean) : [];
+  const detail = !infos.length ? '' : unJour ? infos.join(' · ')
+    : [`Ouverture ${JOURS[laDate(premier.date).getDay()]} ${laDate(premier.date).getDate()}`, ...infos].join(' · ');
+  const suite = ensuite(gs.slice(i + 1));
   empiler(ctx, [
     bPilule(ctx, n === 1 ? "C'est demain !" : 'Compte à rebours'),
-    espace(70),
-    bTitre(ctx, [`J-${n}`], { couleurs: [C.ambre], lueur: [true], max: 470 }),
-    espace(70),
+    espace(64),
+    bTitre(ctx, [`J-${n}`], { couleurs: [C.ambre], lueur: [true], max: 440 }),
+    espace(64),
     bTitre(ctx, deuxLignes(d.nom), { couleurs: [C.blanc, C.blanc], lueur: [false, false], max: 130, interligne: 0.22 }),
     espace(40),
-    bIconeTexte(ctx, 'lieu', d.lieu, { taille: 70, couleur: C.ambre }),
-    espace(56),
-    bIconeTexte(ctx, 'calendrier', plageDates(jours), { taille: 58, couleur: C.blanc, couleurIcone: C.gris }),
-    detail && jours.length > 1 ? espace(26) : null,
-    jours.length > 1 ? bTexte(ctx, detail ? 'Ouverture ' + detail.replace(/^./, c => c.toLowerCase()) : '', { taille: 36 }) : null,
+    bIconeTexte(ctx, 'lieu', g?.lieu, { taille: 70, couleur: C.ambre }),
+    espace(52),
+    bIconeTexte(ctx, 'calendrier', quand, { taille: 58, couleur: C.blanc, couleurIcone: C.gris }),
+    detail ? espace(26) : null,
+    bTexte(ctx, detail, { taille: 38, couleur: C.creme, poids: 600 }),
+    suite ? espace(44) : null,
+    bTexte(ctx, suite, { taille: 34 }),
   ]);
 }
 
 function titreDuJour(d, o) {
   const jours = joursTries(d);
-  const i = Math.min(Math.max(0, Number(o.jour) || 0), Math.max(0, jours.length - 1));
-  const j = jours[i];
+  const idx = Math.min(Math.max(0, Number(o.jour) || 0), Math.max(0, jours.length - 1));
+  const j = jours[idx];
+  const gs = marches(d);
+  const gi = gs.findIndex(g => g.jours.includes(j));
+  const g = gs[gi];
   let choix = o.titre || 'auto';
   if (choix === 'auto') {
     const soir = (heureDebut(j?.horaires) ?? 0) >= 17 || /nocturne/i.test(j?.mention || '');
-    choix = soir ? 'soir' : (jours.length > 1 && i === jours.length - 1 ? 'dernier' : 'aujourdhui');
+    const dernier = g && g.jours.length > 1 && g.jours[g.jours.length - 1] === j;
+    choix = soir ? 'soir' : dernier ? 'dernier' : 'aujourdhui';
   }
   const titres = {
     soir: ["C'est", 'ce soir !'],
@@ -516,31 +568,32 @@ function titreDuJour(d, o) {
     dernier: ['Dernier', 'jour !'],
     weekend: ['Tout le', 'week-end !'],
   };
-  return { j, lignes: titres[choix] || titres.aujourdhui };
+  return { j, lieu: g?.lieu || '', suivant: gi >= 0 ? gs.slice(gi + 1, gi + 2) : [], lignes: titres[choix] || titres.aujourdhui };
 }
 
 function dessinerJour(ctx, d, o, img) {
   decor(ctx, 37);
   logo(ctx, img);
-  const { j, lignes } = titreDuJour(d, o);
+  const { j, lieu, suivant, lignes } = titreDuJour(d, o);
   const date = j ? laDate(j.date) : null;
   const hor = horaires(j?.horaires);
+  const suite = ensuite(suivant);
   empiler(ctx, [
     date ? bPilule(ctx, dateLongue(date)) : null,
     espace(64),
-    bTitre(ctx, lignes, { max: 250 }),
+    bTitre(ctx, lignes, { max: suite ? 225 : 250 }),
     espace(hor ? 70 : 60),
-    hor ? bIconeTexte(ctx, 'horloge', hor, { taille: 120, couleur: C.creme }) : null,
+    hor ? bIconeTexte(ctx, 'horloge', hor, { taille: 115, couleur: C.creme }) : null,
     hor && j?.mention ? espace(34) : null,
     hor && j?.mention ? bPilule(ctx, j.mention, { taille: 26 }) : null,
-    hor ? espace(70) : null,
+    hor ? espace(66) : null,
     bTitre(ctx, [d.nom], { couleurs: [C.blanc], lueur: [false], max: 92 }),
     espace(30),
-    bIconeTexte(ctx, 'lieu', d.lieu, { taille: 76, couleur: C.ambre }),
-    d.adresse ? espace(22) : null,
-    bTexte(ctx, d.adresse, { taille: 34 }),
-    espace(56),
+    bIconeTexte(ctx, 'lieu', lieu, { taille: 76, couleur: C.ambre }),
+    espace(52),
     bTexte(ctx, d.accroche, { taille: 38 }),
+    suite ? espace(30) : null,
+    bTexte(ctx, suite, { taille: 36, poids: 600, couleur: C.creme }),
   ]);
 }
 
@@ -577,8 +630,10 @@ function dessinerStand(ctx, d, o, img) {
       });
     },
   };
-  const jours = joursTries(d);
-  const pied = [d.nom, d.lieu, plageCourte(jours)].filter(Boolean).join(' · ');
+  const vs = villes(d);
+  // Dates sur leur propre ligne : jamais « 27 – 29 » séparé de son mois
+  const pied = [[pluriel(d.nom, vs.length), listeEt(vs)].filter(Boolean).join(' · '), plageCourte(joursTries(d))]
+    .filter(Boolean).join('\n');
   empiler(ctx, [
     bPilule(ctx, o.pilule || 'Sur notre stand'),
     espace(64),
@@ -593,12 +648,15 @@ function dessinerStand(ctx, d, o, img) {
 function dessinerMerci(ctx, d, o, img) {
   decor(ctx, 53);
   logo(ctx, img, 170);
+  // « Bruguières ! » ou « Bruguières / & Castelginest ! »
+  const vs = villes(d);
+  const lignes = vs.map((v, i) => (i && i === vs.length - 1 ? `& ${v}` : v) + (i === vs.length - 1 ? ' !' : ''));
   empiler(ctx, [
     bPilule(ctx, 'Joyeuses fêtes'),
     espace(70),
     bTitre(ctx, ['Merci'], { couleurs: [C.ambre], lueur: [true], max: 340 }),
     espace(44),
-    bTitre(ctx, [d.lieu ? `${d.lieu} !` : ''], { couleurs: [C.blanc], lueur: [false], max: 150 }),
+    lignes.length ? bTitre(ctx, lignes, { couleurs: [C.blanc], lueur: [false], max: 150 }) : null,
     espace(70),
     bTexte(ctx, d.merci, { taille: 40, couleur: C.creme, largeur: 840, interligne: 1.45 }),
   ], ZONE.haut + 20);
@@ -623,4 +681,4 @@ function rendreStory(id, donnees, options = {}, img = null, canvas = null) {
   return canvas;
 }
 
-window.Stories = { W, H, MODELES, rendreStory, joursTries, titreDuJour, joursAvant, laDate, dateLongue, majuscule, plageDates };
+window.Stories = { W, H, MODELES, rendreStory, joursTries, marches, villes, marcheVise, titreDuJour, joursAvant, laDate, dateLongue, majuscule, plageDates };

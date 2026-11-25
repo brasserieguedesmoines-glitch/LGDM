@@ -30,12 +30,13 @@
              padding: var(--e3); border: 1px solid var(--bordure); border-radius: var(--r-md);
              background: var(--surface-2); }
     .ligne label { margin-bottom: 4px; font-size: var(--t-xs); }
-    .ligne-jour { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) auto; }
+    .ligne-jour { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+                  grid-template-areas: "date ville ville" "hor mention suppr"; }
+    .ligne-jour .c-date { grid-area: date; } .ligne-jour .c-ville { grid-area: ville; }
+    .ligne-jour .c-hor { grid-area: hor; } .ligne-jour .c-mention { grid-area: mention; }
+    .ligne-jour .btn-icone { grid-area: suppr; }
     .ligne-stand { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
-    @media (max-width: 420px) {
-      .ligne-jour { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
-      .ligne-jour > :first-child { grid-column: 1 / -1; }
-    }
+    .aide { margin-bottom: var(--e3); }
     .btn-ajout { align-self: flex-start; color: var(--accent-texte); font-weight: 600; }
 
     .barre-galerie { display: flex; align-items: center; justify-content: space-between;
@@ -79,13 +80,10 @@
 
         <div><label for="s-nom">Événement</label>
           <input type="text" id="s-nom" data-k="nom" placeholder="Marché de Noël"></div>
-        <div><label for="s-lieu">Ville</label>
-          <input type="text" id="s-lieu" data-k="lieu" placeholder="Bruguières"></div>
-        <div><label for="s-adresse">Précision du lieu (facultatif)</label>
-          <input type="text" id="s-adresse" data-k="adresse" placeholder="Place de la mairie, stand n° 12…"></div>
-
         <div>
-          <h3>Jours et horaires</h3>
+          <h3>Jours, villes et horaires</h3>
+          <p class="carte-soustitre aide">Une ville différente par jour est possible : les jours qui se suivent
+            dans la même ville forment un marché.</p>
           <div id="jours"></div>
           <button type="button" class="btn-tertiaire btn-ajout" id="ajout-jour"></button>
         </div>
@@ -113,7 +111,7 @@
         <div class="galerie" id="galerie"></div>
         <p class="astuce">
           <strong>Astuce Instagram :</strong> une fois l'image chargée dans la story, ajoutez par-dessus
-          le sticker « Lieu » (Bruguières) ou le sticker « Compte à rebours » : il prévient vos abonnés
+          le sticker « Lieu » ou le sticker « Compte à rebours » : il prévient vos abonnés
           à l'ouverture du marché. Le contenu est placé hors des zones masquées par Instagram
           (haut et bas de l'écran).
         </p>
@@ -127,27 +125,30 @@
   const CLE = 'lgdm-stories';
   const DEFAUT = {
     nom: 'Marché de Noël',
-    lieu: 'Bruguières',
-    adresse: '',
     jours: [
-      { date: '2026-11-27', horaires: '18h – 21h', mention: 'Nocturne' },
-      { date: '2026-11-28', horaires: '', mention: '' },
-      { date: '2026-11-29', horaires: '', mention: '' },
+      { date: '2026-11-27', lieu: 'Bruguières', horaires: '18h – 21h', mention: 'Nocturne' },
+      { date: '2026-11-28', lieu: 'Castelginest', horaires: '', mention: '' },
+      { date: '2026-11-29', lieu: 'Castelginest', horaires: '', mention: '' },
     ],
     accroche: 'On vous attend au stand du Gué des Moines !',
     stand: [
       { nom: 'La Belle de Noël', desc: 'Notre bière de Noël' },
       { nom: 'Nos bières artisanales', desc: 'Brassées à Bruguières' },
     ],
-    merci: "Merci à toutes celles et ceux qui sont passés nous voir au marché de Noël. Belles fêtes de fin d'année !",
-    options: { rebours: { n: null }, jour: { jour: 0, titre: 'auto' } },
+    merci: "Merci à toutes celles et ceux qui sont passés nous voir sur nos marchés de Noël. Belles fêtes de fin d'année !",
+    options: { rebours: { n: null, marche: 0 }, jour: { jour: 0, titre: 'auto' } },
   };
   const copie = o => JSON.parse(JSON.stringify(o));
 
   function charger() {
     try {
       const s = JSON.parse(localStorage.getItem(CLE) || 'null');
-      if (s && typeof s === 'object') return { ...copie(DEFAUT), ...s, options: { ...copie(DEFAUT).options, ...(s.options || {}) } };
+      if (s && typeof s === 'object') {
+        // Ancienne version : une seule ville pour tout l'événement, recopiée sur chaque jour
+        if (s.lieu && Array.isArray(s.jours)) s.jours.forEach(j => { if (!j.lieu) j.lieu = s.lieu; });
+        delete s.lieu; delete s.adresse;
+        return { ...copie(DEFAUT), ...s, options: { ...copie(DEFAUT).options, ...(s.options || {}) } };
+      }
     } catch {}
     return copie(DEFAUT);
   }
@@ -165,11 +166,11 @@
   function nRebours() {
     const n = etat.options.rebours?.n;
     if (n) return n;
-    const premier = Stories.joursTries(etat)[0];
+    const premier = Stories.marcheVise(etat, etat.options.rebours || {}).g?.jours[0];
     return Math.max(1, premier ? Stories.joursAvant(premier.date) : 1);
   }
   function optionsDe(id) {
-    if (id === 'rebours') return { n: nRebours() };
+    if (id === 'rebours') return { n: nRebours(), marche: etat.options.rebours?.marche || 0 };
     return etat.options[id] || {};
   }
 
@@ -187,18 +188,19 @@
     const zone = document.getElementById('jours');
     zone.innerHTML = etat.jours.map((j, i) => `
       <div class="ligne ligne-jour">
-        <div><label for="j-d-${i}">Date</label><input type="date" id="j-d-${i}" data-i="${i}" data-c="date" value="${echap(j.date)}"></div>
-        <div><label for="j-h-${i}">Horaires</label><input type="text" id="j-h-${i}" data-i="${i}" data-c="horaires" value="${echap(j.horaires)}" placeholder="ex. 10h – 19h"></div>
-        <div><label for="j-m-${i}">Mention</label><input type="text" id="j-m-${i}" data-i="${i}" data-c="mention" value="${echap(j.mention)}" placeholder="ex. Nocturne"></div>
+        <div class="c-date"><label for="j-d-${i}">Date</label><input type="date" id="j-d-${i}" data-i="${i}" data-c="date" value="${echap(j.date)}"></div>
+        <div class="c-ville"><label for="j-v-${i}">Ville</label><input type="text" id="j-v-${i}" data-i="${i}" data-c="lieu" value="${echap(j.lieu)}" placeholder="ex. Bruguières"></div>
+        <div class="c-hor"><label for="j-h-${i}">Horaires</label><input type="text" id="j-h-${i}" data-i="${i}" data-c="horaires" value="${echap(j.horaires)}" placeholder="ex. 10h – 19h"></div>
+        <div class="c-mention"><label for="j-m-${i}">Mention</label><input type="text" id="j-m-${i}" data-i="${i}" data-c="mention" value="${echap(j.mention)}" placeholder="ex. Nocturne"></div>
         <button type="button" class="btn-icone" data-suppr="${i}" aria-label="Retirer ce jour">${ico('corbeille')}</button>
       </div>`).join('');
     zone.querySelectorAll('input').forEach(el => el.oninput = () => {
       etat.jours[el.dataset.i][el.dataset.c] = el.value;
-      if (el.dataset.c === 'date') majOptionsJour();
+      if (el.dataset.c === 'date' || el.dataset.c === 'lieu') majOptions();
       changer();
     });
     zone.querySelectorAll('[data-suppr]').forEach(b => b.onclick = () => {
-      etat.jours.splice(+b.dataset.suppr, 1); rendreJours(); majOptionsJour(); changer();
+      etat.jours.splice(+b.dataset.suppr, 1); rendreJours(); majOptions(); changer();
     });
   }
 
@@ -230,9 +232,9 @@
   function nomFichier(id) {
     const i = Stories.MODELES.findIndex(m => m.id === id) + 1;
     let suffixe = '';
-    if (id === 'rebours') suffixe = `-j${nRebours()}`;
-    if (id === 'jour') { const { j } = Stories.titreDuJour(etat, optionsDe('jour')); if (j) suffixe = `-${j.date}`; }
-    return `story-${slug(etat.nom)}-${slug(etat.lieu)}-${i}-${id}${suffixe}.png`;
+    if (id === 'rebours') suffixe = `-j${nRebours()}-${slug(Stories.marcheVise(etat, optionsDe('rebours')).g?.lieu)}`;
+    if (id === 'jour') { const { j, lieu } = Stories.titreDuJour(etat, optionsDe('jour')); if (j) suffixe = `-${j.date}-${slug(lieu)}`; }
+    return `story-${slug(etat.nom)}-${i}-${id}${suffixe}.png`;
   }
   const blobDe = id => new Promise(r => canvases[id].toBlob(r, 'image/png'));
   async function fichierDe(id) { return new File([await blobDe(id)], nomFichier(id), { type: 'image/png' }); }
@@ -245,22 +247,32 @@
   }
   async function partager(ids) {
     const files = await Promise.all(ids.map(fichierDe));
-    try { await navigator.share({ files, title: `Stories — ${etat.nom} ${etat.lieu}` }); }
+    try { await navigator.share({ files, title: `Stories — ${etat.nom}` }); }
     catch (e) { if (e.name !== 'AbortError') ids.forEach(telecharger); }
   }
 
-  function majOptionsJour() {
+  // Listes déroulantes des stories « Compte à rebours » et « Le jour J »
+  function majOptions() {
+    const selM = document.getElementById('opt-marche');
+    if (selM) {
+      const gs = Stories.marches(etat);
+      const r = etat.options.rebours;
+      if ((r.marche || 0) >= gs.length) r.marche = 0;
+      selM.innerHTML = gs.map((g, i) => `<option value="${i}"${i === +(r.marche || 0) ? ' selected' : ''}>${echap(g.lieu || 'Sans ville')} — ${Stories.plageDates(g.jours)}</option>`).join('');
+      document.getElementById('opt-n').value = nRebours();
+    }
     const sel = document.getElementById('opt-jour');
     if (!sel) return;
     const jours = Stories.joursTries(etat);
     const o = etat.options.jour;
     if (o.jour >= jours.length) o.jour = 0;
     sel.innerHTML = jours.map((j, i) =>
-      `<option value="${i}"${i === +o.jour ? ' selected' : ''}>${Stories.majuscule(Stories.dateLongue(Stories.laDate(j.date)))}</option>`).join('');
+      `<option value="${i}"${i === +o.jour ? ' selected' : ''}>${Stories.majuscule(Stories.dateLongue(Stories.laDate(j.date)))}${j.lieu ? ' — ' + echap(j.lieu) : ''}</option>`).join('');
   }
 
   function optionsHTML(id) {
     if (id === 'rebours') return `
+      <div><label for="opt-marche">Marché</label><select id="opt-marche"></select></div>
       <div><label for="opt-n">Jours restants</label>
         <input type="number" id="opt-n" min="1" max="99" inputmode="numeric" value="${nRebours()}"></div>`;
     if (id === 'jour') return `
@@ -293,11 +305,15 @@
       f.querySelector('[data-act="dl"]').onclick = () => telecharger(id);
       f.querySelector('[data-act="partager"]')?.addEventListener('click', () => partager([id]));
     });
-    majOptionsJour();
+    majOptions();
     document.getElementById('opt-n').oninput = e => {
       const n = Math.round(+e.target.value);
-      etat.options.rebours = { n: n >= 1 ? Math.min(n, 99) : null };
+      etat.options.rebours.n = n >= 1 ? Math.min(n, 99) : null;
       changer();
+    };
+    // Autre marché : le nombre de jours repart du calcul automatique
+    document.getElementById('opt-marche').onchange = e => {
+      etat.options.rebours = { n: null, marche: +e.target.value }; majOptions(); changer();
     };
     document.getElementById('opt-jour').onchange = e => { etat.options.jour.jour = +e.target.value; changer(); };
     document.getElementById('opt-titre').onchange = e => { etat.options.jour.titre = e.target.value; changer(); };
@@ -345,7 +361,7 @@
       let date = '';
       if (der) { const d = Stories.laDate(der.date); d.setDate(d.getDate() + 1);
         date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
-      etat.jours.push({ date, horaires: '', mention: '' }); rendreJours(); majOptionsJour(); changer();
+      etat.jours.push({ date, lieu: der?.lieu || '', horaires: '', mention: '' }); rendreJours(); majOptions(); changer();
     };
     document.getElementById('ajout-stand').onclick = () => { etat.stand.push({ nom: '', desc: '' }); rendreStand(); changer(); };
     document.getElementById('reinit').onclick = () => {
