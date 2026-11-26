@@ -88,11 +88,15 @@ body{ font-family:var(--texte); color:var(--encre); -webkit-print-color-adjust:e
 .volet-titre{ font-size:15pt; color:var(--encre); flex:none }
 .volet-titre span{ color:var(--ambre) }
 .sous-titre{ margin-top:1mm; font:500 7pt/1.3 var(--texte); color:var(--encre2); flex:none }
-.liste-gamme{ flex:1; display:flex; flex-direction:column; justify-content:space-between; margin-top:4mm; min-height:0 }
+.liste-gamme{ flex:1; display:flex; flex-direction:column; justify-content:space-between; gap:3mm; margin-top:4mm; min-height:0 }
 .liste-gamme.sans-titre{ margin-top:var(--decalage-titre, 19mm) }   /* aligné sur le volet de gauche */
-.biere{ display:grid; grid-template-columns:var(--l-bouteille, 13mm) 1fr; gap:4mm; align-items:center; min-height:0 }
-.biere img, .biere .absent{ width:var(--l-bouteille, 13mm); height:auto; aspect-ratio:214/720; object-fit:contain }
-.biere .absent{ border:0.3mm dashed var(--filet); border-radius:1.2mm }
+/* Bouteilles couchées, goulot vers la droite, alignées en colonne à gauche */
+/* La bouteille mord sur la marge gauche (4 mm du bord) pour laisser la largeur au texte */
+.biere{ --L:var(--l-bouteille, 50mm); display:grid; grid-template-columns:calc(var(--L) - 4mm) 1fr; gap:4mm; align-items:center; min-height:0 }
+.biere .bouteille{ position:relative; width:var(--L); height:calc(var(--L) * 214 / 720); margin-left:-4mm }
+.biere .bouteille img{ position:absolute; left:50%; top:50%; width:calc(var(--L) * 214 / 720); height:var(--L);
+  transform:translate(-50%, -50%) rotate(90deg); filter:drop-shadow(0 0 0.8mm rgba(0,0,0,.18)) }
+.biere .bouteille .absent{ position:absolute; inset:0; border:0.3mm dashed var(--filet); border-radius:1.2mm }
 .biere h3{ display:flex; align-items:center; gap:1.6mm; font:400 var(--t-nom, 14pt)/1.1 var(--display); letter-spacing:.02em; text-transform:uppercase }
 .biere .style{ margin-top:0.8mm; font:600 7pt/1.3 var(--texte) }
 .biere p{ margin-top:1.2mm; font:400 var(--t-desc, 7.4pt)/1.48 var(--texte); color:var(--encre2) }
@@ -210,7 +214,7 @@ function composerGroupe() {
 // --- Intérieur : la gamme sur deux volets ------------------------------------
 const moitie = Math.ceil(GAMME.length / 2);
 const fiche = b => `<article class="biere">
-  <img src="${photo(b)}" alt="Bouteille ${echap(b.nom)}" ${sansPhoto}>
+  <span class="bouteille"><img src="${photo(b)}" alt="Bouteille ${echap(b.nom)}" ${sansPhoto}></span>
   <div><h3><i class="pastille" style="--c:${b.c}"></i>${echap(b.nom)}</h3>
     <div class="style">${echap(b.style)} · ${deg(b.degre)}</div>
     <p>${echap(b.desc)}</p></div></article>`;
@@ -249,8 +253,8 @@ document.fonts.ready.then(() => {
     return [...el.querySelectorAll("*")].some(c => !c.closest(".sceau, .trop-plein") && c.getBoundingClientRect().bottom - haut > bas);
   };
   const volets = [l1.parentElement, l2.parentElement];
-  for (let lb = 13, td = 7.4, tn = 14; volets.some(deborde) && td > 5.9; lb -= 0.5, td -= 0.1, tn -= 0.3)
-    volets.forEach(v => { v.style.setProperty("--l-bouteille", Math.max(8, lb) + "mm"); v.style.setProperty("--t-desc", td.toFixed(1) + "pt"); v.style.setProperty("--t-nom", Math.max(10, tn).toFixed(1) + "pt"); });
+  for (let lb = 50, td = 7.4, tn = 14; volets.some(deborde) && td > 5.9; lb -= 1.2, td -= 0.1, tn -= 0.3)
+    volets.forEach(v => { v.style.setProperty("--l-bouteille", Math.max(30, lb) + "mm"); v.style.setProperty("--t-desc", td.toFixed(1) + "pt"); v.style.setProperty("--t-nom", Math.max(10, tn).toFixed(1) + "pt"); });
   const grille = document.getElementById("volet-grille");
   for (let h = 5.2, p = 2.6; deborde(grille) && h > 4; h -= 0.1, p = Math.max(1, p - 0.15)) {
     grille.style.setProperty("--h-ligne", h.toFixed(1) + "mm");
