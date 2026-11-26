@@ -9,11 +9,18 @@
 // Écriture immédiate en local puis envoi au serveur : l'interface ne fige
 // jamais en attendant le réseau, et une coupure ne fait pas perdre la saisie.
 
-function creerMagasin(espace, { surChangement = () => {} } = {}) {
+function creerMagasin(espace, { surChangement = () => {}, reprendreUneFois = null } = {}) {
   const cleLocale = `lgdm-${espace}`;
   let items = lireLocal();
   let partage = null;          // null = on ne sait pas encore, true/false ensuite
   let enAttente = new Map();   // enregistrements pas encore acceptés par le serveur
+
+  // Reprise exceptionnelle, une fois par poste, de tout le contenu local : pour
+  // un espace dont le partage a été en panne, chaque poste renvoie ce qu'il a
+  // gardé. Le serveur n'écrase rien de ce qu'il a déjà.
+  const cleReprise = reprendreUneFois ? `lgdm-${espace}-reprise-${reprendreUneFois}` : null;
+  const repriseFaite = () => { try { return localStorage.getItem(cleReprise) === '1'; } catch { return true; } };
+  const marquerReprise = () => { try { localStorage.setItem(cleReprise, '1'); } catch {} };
 
   function lireLocal() {
     try { return JSON.parse(localStorage.getItem(cleLocale)) ?? []; } catch { return []; }
@@ -52,16 +59,25 @@ function creerMagasin(espace, { surChangement = () => {} } = {}) {
     if (!Array.isArray(data.items)) return items;
     partage = true;
 
-    // Première synchronisation d'un poste qui avait déjà des données à lui
-    if (!data.items.length && items.length) {
+    // Premier chargement partagé d'un poste qui avait déjà des données à lui,
+    // ou reprise unique demandée pour cet espace
+    const repriseUnique = !!cleReprise && !repriseFaite();
+    if (items.length && (!data.items.length || repriseUnique)) {
       try {
-        await api('/reprise', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(items),
-        });
+        for (let i = 0; i < items.length; i += 500) {   // le serveur prend 500 enregistrements par envoi
+          await api('/reprise', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(items.slice(i, i + 500)),
+          });
+        }
         data = await api('') ?? data;
-      } catch {}
+        if (repriseUnique) marquerReprise();
+      } catch {
+        return items;   // envoi raté : la copie locale est gardée telle quelle, on réessaiera
+      }
+    } else if (repriseUnique) {
+      marquerReprise();  // rien à reprendre sur ce poste
     }
     await vider();
     items = data.items ?? [];

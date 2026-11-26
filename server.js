@@ -2817,17 +2817,28 @@ app.get('/api/bilan/client', async (req, res) => {
 
 // La dernière analyse est gardée dans la base partagée : la page l'affiche
 // immédiatement, puis demande un recalcul (?recalcul) si elle a plus de 30 min.
-const CLE_RELANCES = 'lgdm:relances';
+// Clé propre à l'analyse : elle était rangée sous « lgdm:relances », la clé de
+// la liste partagée des clients écartés, qu'elle écrasait à chaque recalcul
+// (puis toute lecture des écartés échouait pendant 7 jours). L'ancienne analyse
+// n'est pas effacée : elle sert de repli le temps d'expirer d'elle-même.
+const CLE_RELANCES = 'lgdm:relances:analyse';
+const CLE_RELANCES_ANCIENNE = 'lgdm:relances';
 const RELANCES_FRAICHES_MS = 30 * 60 * 1000;
 app.get('/api/relances', async (req, res) => {
   try {
     res.set('Cache-Control', 'no-store');
     const recalcul = req.query.recalcul !== undefined;
     if (!recalcul && redisActif()) {
-      const v = await redis('GET', CLE_RELANCES).catch(() => null);
+      let v = await redis('GET', CLE_RELANCES).catch(() => null);
+      let ancienne = false;
+      if (!v && await redis('TYPE', CLE_RELANCES_ANCIENNE).catch(() => null) === 'string') {
+        v = await redis('GET', CLE_RELANCES_ANCIENNE).catch(() => null);
+        ancienne = !!v;
+      }
       if (v) {
         const d = JSON.parse(v);
-        return res.json({ ...d, perime: Date.now() - Date.parse(d.generePour) > RELANCES_FRAICHES_MS });
+        // Analyse de l'ancienne clé : affichée tout de suite, recalculée derrière.
+        return res.json({ ...d, perime: ancienne || Date.now() - Date.parse(d.generePour) > RELANCES_FRAICHES_MS });
       }
     }
     const data = await analyserClients(req);
@@ -3118,7 +3129,28 @@ async function redisPipeline(commandes) {
   return data.map(x => x.result);
 }
 
-const cleEspace = e => `lgdm:${e}`;
+// Un hash Redis par espace. Les clients écartés des relances ont leur propre
+// clé : « lgdm:relances » était aussi celle de l'analyse, qui l'écrasait.
+const CLES_ESPACES = { relances: 'lgdm:relances:ecartes' };
+const cleEspace = e => CLES_ESPACES[e] ?? `lgdm:${e}`;
+
+// Écartés restés dans l'ancien hash (si l'analyse ne l'avait pas encore
+// écrasé) : copiés une seule fois, sans rien remplacer, et l'ancien hash est
+// laissé intact. Le témoin empêche une seconde copie, qui ferait revenir un
+// client réintégré entre-temps.
+let repriseEcartesFaite = false;
+async function reprendreAnciensEcartes() {
+  if (repriseEcartesFaite) return;
+  if (await redis('TYPE', CLE_RELANCES_ANCIENNE) === 'hash'
+      && await redis('SET', 'lgdm:relances:ecartes:reprise', String(Date.now()), 'NX')) {
+    const plat = await redis('HGETALL', CLE_RELANCES_ANCIENNE) ?? [];
+    for (let i = 0; i + 1 < plat.length; i += 2) {
+      await redis('HSETNX', cleEspace('relances'), plat[i], plat[i + 1]);
+    }
+    console.log(`relances : ${plat.length / 2} écart(s) repris de l'ancienne clé`);
+  }
+  repriseEcartesFaite = true;
+}
 
 function verifierEspace(req, res) {
   if (!ESPACES.has(req.params.espace)) {
@@ -3136,6 +3168,9 @@ function verifierEspace(req, res) {
 app.get('/api/donnees/:espace', async (req, res) => {
   if (!verifierEspace(req, res)) return;
   try {
+    if (req.params.espace === 'relances') {
+      await reprendreAnciensEcartes().catch(e => console.error('reprise des écartés :', e.message));
+    }
     const plat = await redis('HGETALL', cleEspace(req.params.espace)) ?? [];
     const items = [];
     for (let i = 1; i < plat.length; i += 2) {

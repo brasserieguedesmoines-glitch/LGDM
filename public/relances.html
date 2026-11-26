@@ -220,7 +220,12 @@
     // de clé, donc la liste se remet à zéro toute seule au changement de
     // semaine — aucun ménage à faire. Partagé avec l'équipe quand la base est
     // configurée : inutile que deux personnes rappellent le même client.
-    const ecartes = creerMagasin('relances', { surChangement: () => { if (analyseRecue) render(filtreCourant); } });
+    // Jusqu'en novembre 2026 le partage échouait (clé écrasée par l'analyse) :
+    // chaque poste renvoie une fois les écarts qu'il avait gardés en local.
+    const ecartes = creerMagasin('relances', {
+      surChangement: () => { if (analyseRecue) render(filtreCourant); },
+      reprendreUneFois: '2026-11',
+    });
 
     function semaineISO(d = new Date()) {
       const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));

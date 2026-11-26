@@ -275,7 +275,7 @@
         <div><label for="t-date">Date</label><input type="date" id="t-date"></div>
         <div><label for="t-com">Commercial</label><select id="t-com"><option value="">—</option></select></div>
         <div><label for="t-ville">Secteur</label><select id="t-ville"><option value="">Tous</option></select></div>
-        <button class="btn-raz" id="t-vider">Vider la sélection</button>
+        <button class="btn-raz" id="t-vider" title="Retire les prospects ajoutés depuis cet onglet ; les visites de la page Y aller restent">Vider la sélection</button>
       </div>
       <p class="carte-soustitre" style="margin-bottom:var(--e3)">
         Les prospects sont regroupés par commune. C'est un regroupement géographique,
@@ -1033,7 +1033,7 @@
     document.querySelectorAll('[data-ajout]').forEach(b => b.addEventListener('click', () => {
       const p = prospects.find(x => x.idClient === +b.dataset.ajout);
       tournee.enregistrer({
-        id: Date.now(), nom: p.nom, idClient: p.idClient, ville: p.ville, adresse: p.adresse,
+        id: Date.now(), origine: 'prospection', nom: p.nom, idClient: p.idClient, ville: p.ville, adresse: p.adresse,
         note: document.getElementById('t-date').value
           ? 'Tournée du ' + fmtD(new Date(document.getElementById('t-date').value + 'T12:00').getTime()) : 'Prospection',
         prochaine: document.getElementById('t-date').value || null,
@@ -1339,8 +1339,16 @@
   });
   document.getElementById('btn-plus').addEventListener('click', () => { limite += 50; rendreListe(); });
   document.getElementById('t-ville').addEventListener('change', rendreTournees);
+  // La sélection partage sa liste avec la page Y aller : « Vider » ne retire que
+  // les prospects ajoutés depuis cet onglet (marqués, ou reconnaissables à leur
+  // commune pour les plus anciens), jamais les visites de clients de Y aller.
+  const ajoutesIci = () => tournee.tout().filter(s => s.origine === 'prospection' || (s.origine === undefined && 'ville' in s));
   document.getElementById('t-vider').addEventListener('click', () => {
-    if (confirm('Vider la sélection de tournée ?')) tournee.tout().slice().forEach(s => tournee.supprimer(s.id));
+    const l = ajoutesIci();
+    const autres = tournee.tout().length - l.length;
+    const garde = autres ? `\nLes ${autres} autre(s) visite(s) de la page Y aller sont conservées.` : '';
+    if (!l.length) { alert('Aucun prospect ajouté depuis cet onglet.' + garde); return; }
+    if (confirm(`Retirer de la sélection ${l.length} prospect(s) ajouté(s) depuis cet onglet ?${garde}`)) l.forEach(s => tournee.supprimer(s.id));
   });
 
   document.addEventListener('DOMContentLoaded', () => {
