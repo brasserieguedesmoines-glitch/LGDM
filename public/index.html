@@ -32,6 +32,8 @@
         <label for="champ-client">Rechercher un client</label>
         <!-- le champ est inséré ici par app.js -->
       </div>
+      <!-- chargement, panne ou liste incomplète des clients (app.js) -->
+      <div id="etat-clients" aria-live="polite"></div>
       <p id="msg-statut-client" role="status" aria-live="polite"></p>
       <button id="btn-derniere-commande" class="secondary" style="display:none">
         <svg class="ico" aria-hidden="true"><use href="#i-horloge"/></svg>

@@ -184,7 +184,8 @@
         if (d.error) throw new Error(d.error);
         B = d; rendre();
       } catch (e) {
-        $('portee').innerHTML = `<span style="color:var(--danger)">Bilan indisponible : ${echap(e.message)}</span>`;
+        $('portee').textContent = '';
+        $('contenu').replaceChildren(blocErreur('Bilan indisponible', e.message, { reessayer: () => charger(frais) }));
       } finally { $('b-actualiser').disabled = false; }
     }
 
@@ -454,7 +455,10 @@
       $('portee').textContent = 'Chargement du bilan produits… (synthèse des ventes EasyBeer)';
       const q = new URLSearchParams(parametres()); if (frais) q.set('frais', Date.now());
       try { P = await lireJSON('/api/bilan/produits?' + q); clePv = JSON.stringify(parametres()); rendreProduits(); }
-      catch (e) { $('portee').innerHTML = `<span style="color:var(--danger)">Bilan produits indisponible : ${echap(e.message)}</span>`; $('vue-produits').innerHTML = ''; }
+      catch (e) {
+        $('portee').textContent = '';
+        $('vue-produits').replaceChildren(blocErreur('Bilan produits indisponible', e.message, { reessayer: () => chargerProduits(frais) }));
+      }
       finally { $('b-actualiser').disabled = false; }
     }
 
@@ -573,7 +577,7 @@
       $('fiche-contenu').innerHTML = '<div class="vide"><span class="loader"></span> Bilan du client en cours…</div>';
       const q = new URLSearchParams({ id, ...parametres() }); if (frais) q.set('frais', Date.now());
       try { F = await lireJSON('/api/bilan/client?' + q); rendreFiche(); }
-      catch (e) { $('fiche-contenu').innerHTML = `<div class="vide" style="color:var(--danger)">Bilan indisponible : ${echap(e.message)}</div>`; }
+      catch (e) { $('fiche-contenu').replaceChildren(blocErreur('Bilan du client indisponible', e.message, { reessayer: () => chargerFiche(id, frais) })); }
       finally { $('b-actualiser').disabled = false; $('b-csv').hidden = !F; }
     }
 

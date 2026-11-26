@@ -522,9 +522,11 @@
         }
       })
       .catch(err => {
-        document.getElementById('meta').innerHTML =
-          `<span class="error">Analyse indisponible : ${err.message}</span>`
-          + ' — l\'API EasyBeer est momentanément saturée, réessayez dans quelques minutes.';
+        // La cause vient du serveur (saturation, délai, aucune commande) :
+        // on ne suppose plus une saturation quand ce n'en est pas une.
+        const meta = document.getElementById('meta');
+        meta.textContent = '';
+        meta.after(blocErreur('Analyse des relances indisponible', err.message, { reessayer: () => location.reload() }));
       });
   </script>
 </body>

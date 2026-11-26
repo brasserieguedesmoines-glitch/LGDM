@@ -121,9 +121,23 @@ window.selectionnerClient = async (id) => {
 };
 
 // ---- Chargement initial des clients ----
+// La panne s'affiche dans la carte Client : la zone d'envoi, où partait le
+// message auparavant, est masquée tant qu'aucun client n'est choisi.
+const etatClients = document.getElementById('etat-clients');
 async function chargerClients() {
+  etatClients.innerHTML = '<p class="carte-soustitre"><span class="loader"></span> Chargement des clients…</p>';
   try {
-    const clients = await apiFetch('/api/clients');
+    const rep = await fetch('/api/clients');
+    const clients = await rep.json().catch(() => ({}));
+    if (!rep.ok || !Array.isArray(clients)) throw new Error(clients.error ?? `HTTP ${rep.status}`);
+    etatClients.replaceChildren();
+    // Une grille tarifaire illisible retire tout un canal de la liste : on le dit.
+    const incomplets = rep.headers.get('X-Clients-Incomplets');
+    if (incomplets) {
+      etatClients.append(blocErreur('Liste des clients incomplète',
+        `Clients non chargés pour : ${decodeURIComponent(incomplets)}. Les autres clients sont disponibles.`,
+        { niveau: 'alerte', conseil: 'Rechargez la page dans quelques minutes pour les retrouver.' }));
+    }
     const clientTypeIndex = {};
     const clientCanalIndex = {};
     clients.forEach(c => {
@@ -139,6 +153,7 @@ async function chargerClients() {
       for (let i = options.length - 1; i >= 0; i--) if (inactifs.has(options[i].value)) options.splice(i, 1);
     }).catch(() => {});
 
+    clientSearchSelect?.remove();   // nouvel essai après une panne : pas de second champ
     clientSearchSelect = createSearchSelect('Nom du client…', options, async (value) => {
       currentIdClient = value;
       currentIdClientType = clientTypeIndex[value] ?? null;
@@ -165,7 +180,7 @@ async function chargerClients() {
       }
     }
   } catch (err) {
-    setStatut('Impossible de charger les clients : ' + err.message, true);
+    etatClients.replaceChildren(blocErreur('Liste des clients indisponible', err.message, { reessayer: chargerClients }));
   }
 }
 

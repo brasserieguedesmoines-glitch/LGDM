@@ -55,9 +55,12 @@ function easybeerHeaders() {
 // Disjoncteur : après un ban EasyBeer (5 min), on cesse tout appel pendant 6 min.
 // Sans lui, chaque nouvelle tentative pendant le ban le prolongeait indéfiniment.
 let banniJusqua = 0;
+// Le message donne l'heure de fin du blocage : recharger avant ne sert à rien.
 function erreurBan() {
+  const fin = new Date(Math.max(banniJusqua, Date.now() + 60 * 1000))
+    .toLocaleTimeString('fr-FR', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit' });
   return Object.assign(
-    new Error('API EasyBeer temporairement saturée. Réessayez dans 5 minutes.'),
+    new Error(`API EasyBeer temporairement saturée. Réessayez vers ${fin}.`),
     { status: 503 }
   );
 }
@@ -1382,13 +1385,14 @@ async function chargerCommandes(req, budgetMs = 150 * 1000, maxPages = 60, frais
   const t0 = Date.now();
   const LOT = 8;
   const toutes = [];
+  let erreur = null;
   for (let debut = 1; debut <= maxPages; debut += LOT) {
     const pages = Array.from({ length: Math.min(LOT, maxPages - debut + 1) }, (_, k) => debut + k);
     const lots = await enParallele(pages, LOT, p =>
       fetchInterne(req, `/api/cache/commandes/p/${p}${frais && p <= 2 ? `?frais=${Date.now()}` : ''}`));
     let fini = false;
     for (const r of lots) {
-      if (!r || r.erreur || !r.commandes) { fini = true; break; }
+      if (!r || r.erreur || !r.commandes) { erreur ??= r?.erreur ?? null; fini = true; break; }
       toutes.push(...r.commandes);
       if (!r.complete) { fini = true; break; }
     }
@@ -1397,6 +1401,12 @@ async function chargerCommandes(req, budgetMs = 150 * 1000, maxPages = 60, frais
       console.warn(`chargerCommandes: budget atteint (${toutes.length} commandes)`);
       break;
     }
+  }
+  // Rien de chargé à cause d'une erreur : on transmet la vraie cause (EasyBeer
+  // saturé, délai dépassé) au lieu de laisser croire qu'il n'y a aucune commande.
+  if (!toutes.length && erreur) {
+    if (erreur.status === 504) erreur.message = 'EasyBeer met trop de temps à répondre (délai dépassé). Réessayez dans une minute.';
+    throw erreur;
   }
   return toutes;
 }

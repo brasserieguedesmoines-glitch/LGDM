@@ -159,7 +159,9 @@
 
     /* --- Cartes sous 768px : un défilement latéral est impraticable au doigt --- */
     @media (max-width: 767px) {
-      .table-wrap, #wrap-clients { background: none; border: none;
+      /* Seul le tableau des clients passe en cartes : les autres tableaux
+         gardent leur défilement, sinon toute la page déborde sur le côté. */
+      #wrap-clients { background: none; border: none;
         max-height: none; overflow: visible; }
       .arrets, .arrets tbody, .arrets tr, .arrets td,
       #tbl-clients, #tbl-clients tbody, #tbl-clients tr, #tbl-clients td { display: block; width: 100%; }
@@ -493,7 +495,10 @@
       document.getElementById('squelette-chargement')?.remove();
       const m = document.getElementById('meta-pilotage');
       m.removeAttribute('aria-busy');
-      m.innerHTML = `<span class="error">${ico('alerte')} ${e.message}</span>`;
+      m.textContent = '';
+      // Pas de titres de sections vides sous l'erreur
+      document.querySelectorAll('.vue').forEach(v => v.classList.remove('active'));
+      m.after(blocErreur('Tableau de bord indisponible', e.message, { reessayer: () => location.reload() }));
     });
 
     // Onglets

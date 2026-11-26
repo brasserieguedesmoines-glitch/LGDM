@@ -697,6 +697,20 @@ select, .search-select input[type="text"] { padding-right: 32px; }
 }
 #msg-statut { justify-content: center; }
 .error { color: var(--danger); }
+/* Bloc d'état commun (ui.js, blocErreur) : chargement en échec ou incomplet */
+.bloc-erreur {
+  display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--e2) var(--e3);
+  padding: var(--e3) var(--e4); border: 1px solid var(--danger); border-left-width: 3px;
+  border-radius: var(--r-md); background: var(--danger-doux); color: var(--texte);
+  font-size: var(--t-sm); margin-bottom: var(--e4);
+}
+.bloc-erreur > .ico { color: var(--danger); flex: none; margin-top: 2px; }
+.bloc-erreur .texte { flex: 1 1 240px; min-width: 0; display: grid; gap: 2px; }
+.bloc-erreur b { color: var(--danger); font-weight: 600; }
+.bloc-erreur .conseil { color: var(--texte-2); }
+.bloc-erreur > button { margin-left: auto; align-self: center; width: auto; flex: none; }
+.bloc-erreur.alerte { border-color: var(--alerte); background: var(--alerte-doux); }
+.bloc-erreur.alerte > .ico, .bloc-erreur.alerte b { color: var(--alerte); }
 .succes { color: var(--ok); }
 .vide { display: flex; align-items: center; gap: var(--e2); color: var(--texte-2); font-size: var(--t-sm); }
 .avertissement { display: inline-flex; align-items: center; gap: var(--e1); font-size: var(--t-xs); color: var(--danger); }
