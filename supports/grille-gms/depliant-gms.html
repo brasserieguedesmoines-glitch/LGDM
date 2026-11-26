@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dépliant GMS</title>
+<style>
+/* =====================================================================
+   Dépliant 3 volets GMS — Le Gué des Moines
+   A4 paysage (297 × 210 mm), pli roulé : le volet de 97 mm se replie
+   à l'intérieur, puis la couverture se rabat dessus.
+
+   Extérieur (page 1)          Intérieur (page 2)
+   ┌───────┬────────┬────────┐  ┌────────┬────────┬───────┐
+   │ rabat │  dos   │ couver-│  │ gamme  │ gamme  │ grille│
+   │histoire│commander│ ture  │  │  1/2   │  2/2   │tarifs │
+   │ 97 mm │ 100 mm │ 100 mm │  │ 100 mm │ 100 mm │ 97 mm │
+   └───────┴────────┴────────┘  └────────┴────────┴───────┘
+   À l'ouverture : couverture → histoire + gamme 1/2 → tout l'intérieur
+   (la gamme et la grille côte à côte).
+   Données : donnees.js (communes avec la grille A4 et le flyer).
+   ===================================================================== */
+@font-face{ font-family:'Anton'; src:url(assets/fonts/Anton-latin.woff2) format('woff2'); font-weight:400 }
+@font-face{ font-family:'Inter'; src:url(assets/fonts/Inter-Regular.woff2) format('woff2'); font-weight:400 }
+@font-face{ font-family:'Inter'; src:url(assets/fonts/Inter-Medium.woff2) format('woff2'); font-weight:500 }
+@font-face{ font-family:'Inter'; src:url(assets/fonts/Inter-SemiBold.woff2) format('woff2'); font-weight:600 }
+@font-face{ font-family:'Inter'; src:url(assets/fonts/Inter-Bold.woff2) format('woff2'); font-weight:700 }
+:root{
+  --noir:#0D0D0D; --ligne-sombre:#3A332B; --ambre:#F0921E;
+  --blanc:#FFFFFF; --gris:#A8A39A; --gris-clair:#D9D3C8;
+  --encre:#1A1714; --encre2:#5E584F; --filet:#E3DDD3; --fond-doux:#F7F4EF;
+  --display:'Anton', Impact, sans-serif; --texte:'Inter', system-ui, sans-serif;
+}
+@page{ size:A4 landscape; margin:0 }
+*{ box-sizing:border-box; margin:0; padding:0 }
+html,body{ background:#8a857d }
+body{ font-family:var(--texte); color:var(--encre); -webkit-print-color-adjust:exact; print-color-adjust:exact }
+.feuille{ width:297mm; height:210mm; margin:10mm auto; display:grid; overflow:hidden; break-after:page; background:var(--blanc) }
+.feuille.exterieur{ grid-template-columns:97mm 100mm 100mm; background:var(--noir); color:var(--gris-clair) }
+.feuille.interieur{ grid-template-columns:100mm 100mm 97mm }
+@media print{ html,body{ background:none } .feuille{ margin:0 } }
+/* À l'écran seulement : les plis en pointillés, pour se repérer */
+@media screen{ .volet + .volet{ box-shadow:inset 0.3mm 0 0 rgba(128,128,128,.35) } }
+.volet{ position:relative; overflow:hidden; padding:10mm 8mm; display:flex; flex-direction:column; min-width:0 }
+.display{ font-family:var(--display); font-weight:400; text-transform:uppercase; letter-spacing:.01em; line-height:1.08 }
+.num{ font-variant-numeric:tabular-nums lining-nums }
+.pastille{ flex:none; display:inline-block; width:2.4mm; height:2.4mm; border-radius:0.4mm; background:var(--c); box-shadow:inset 0 0 0 0.2mm rgba(0,0,0,.2) }
+.trop-plein{ position:absolute; inset:auto 3mm 3mm; background:#B42318; color:#fff; font:700 7pt/1.3 var(--texte); padding:2mm; border-radius:1mm; z-index:5 }
+
+/* ---------------- COUVERTURE ---------------- */
+.couverture{ align-items:center; text-align:center; padding:11mm 8mm 9mm;
+  /* une seule lumière, celle du comptoir, derrière les bouteilles */
+  background:radial-gradient(ellipse 62% 30% at 50% 47%, rgba(240,146,30,.30), rgba(240,146,30,.08) 55%, transparent 75%), var(--noir) }
+.couverture .logo{ width:56mm }
+.groupe{ position:relative; width:100%; flex:1; margin:4mm 0 2mm }
+.groupe img{ position:absolute; bottom:0; filter:drop-shadow(0 1mm 1.6mm rgba(0,0,0,.55)) }
+.groupe .sol{ position:absolute; left:6%; right:6%; bottom:-2.5mm; height:6mm; border-radius:50%;
+  background:radial-gradient(ellipse at center, rgba(0,0,0,.65), transparent 70%) }
+.couverture h1{ font-size:25pt; line-height:1.02; color:var(--blanc); letter-spacing:.015em }
+.couverture .gamme-titre{ margin-top:2.6mm; font:400 11.5pt/1.2 var(--display); letter-spacing:.09em; text-transform:uppercase; color:var(--ambre) }
+.couverture .bas{ width:100%; margin-top:7mm; padding-top:4mm; border-top:0.3mm solid var(--ligne-sombre);
+  display:flex; align-items:center; gap:3mm; text-align:left; font:400 6.6pt/1.4 var(--texte); color:var(--gris) }
+.couverture .bas img{ width:13mm; height:13mm; border-radius:50% }
+.couverture .bas b{ display:block; font:400 9pt/1.1 var(--display); letter-spacing:.04em; color:var(--blanc) }
+.couverture .bas .lieu{ margin-left:auto; text-align:right }
+
+/* ---------------- RABAT : L'HISTOIRE ---------------- */
+.histoire h2{ font-size:19pt; color:var(--blanc); margin-top:2mm }
+.histoire h2 span{ color:var(--ambre) }
+.histoire p{ margin-top:3.6mm; font:400 9.4pt/1.62 var(--texte); color:var(--gris-clair) }
+.histoire p:first-of-type{ margin-top:5mm }
+.histoire strong{ color:var(--blanc); font-weight:600 }
+.histoire .sceau{ position:absolute; left:50%; bottom:-30mm; width:96mm; transform:translateX(-50%); opacity:.06 }
+.histoire .depuis{ margin-top:auto; font:400 10pt/1.2 var(--display); letter-spacing:.06em; text-transform:uppercase; color:var(--gris) }
+
+/* ---------------- DOS : POUR COMMANDER ---------------- */
+.dos h2{ font-size:14pt; color:var(--ambre); letter-spacing:.04em; margin-top:2mm }
+.dos .tel{ display:block; font:400 30pt/1.05 var(--display); color:var(--blanc); letter-spacing:.03em; margin:2.5mm 0 4mm }
+.dos .infos{ font:400 8.6pt/1.65 var(--texte) }
+.dos .infos strong{ color:var(--blanc); font-weight:600 }
+.dos .reseaux{ display:flex; gap:2mm; margin-top:5mm }
+.dos .reseaux img{ width:8mm; height:8mm; border-radius:1.4mm }
+.dos .legal{ margin-top:auto; padding-top:3mm; border-top:0.3mm solid var(--ligne-sombre); font:400 5.6pt/1.5 var(--texte); color:#8a847b }
+.dos .legal b{ display:block; margin-bottom:1mm; font-size:6.4pt; color:var(--gris-clair); font-weight:700 }
+
+/* ---------------- INTÉRIEUR : LA GAMME ---------------- */
+.interieur .volet{ padding:10mm 8mm 9mm }
+.volet-titre{ font-size:15pt; color:var(--encre); flex:none }
+.volet-titre span{ color:var(--ambre) }
+.sous-titre{ margin-top:1mm; font:500 7pt/1.3 var(--texte); color:var(--encre2); flex:none }
+.liste-gamme{ flex:1; display:flex; flex-direction:column; justify-content:space-between; margin-top:4mm; min-height:0 }
+.liste-gamme.sans-titre{ margin-top:var(--decalage-titre, 19mm) }   /* aligné sur le volet de gauche */
+.biere{ display:grid; grid-template-columns:var(--l-bouteille, 13mm) 1fr; gap:4mm; align-items:center; min-height:0 }
+.biere img, .biere .absent{ width:var(--l-bouteille, 13mm); height:auto; aspect-ratio:214/720; object-fit:contain }
+.biere .absent{ border:0.3mm dashed var(--filet); border-radius:1.2mm }
+.biere h3{ display:flex; align-items:center; gap:1.6mm; font:400 var(--t-nom, 14pt)/1.1 var(--display); letter-spacing:.02em; text-transform:uppercase }
+.biere .style{ margin-top:0.8mm; font:600 7pt/1.3 var(--texte) }
+.biere p{ margin-top:1.2mm; font:400 var(--t-desc, 7.4pt)/1.48 var(--texte); color:var(--encre2) }
+
+/* ---------------- INTÉRIEUR : LA GRILLE ---------------- */
+.grille{ background:var(--fond-doux) }
+table.tarif{ width:100%; border-collapse:collapse; margin-top:4mm; font-size:7.4pt }
+.tarif th{ font:700 5pt/1.2 var(--texte); letter-spacing:.07em; text-transform:uppercase; color:var(--encre2);
+  text-align:left; padding:0 1.2mm 1.4mm; border-bottom:0.4mm solid var(--encre); white-space:nowrap; vertical-align:bottom }
+.tarif td{ padding:0 1.2mm; height:var(--h-ligne, 5.2mm); white-space:nowrap; vertical-align:middle }
+.tarif .d{ text-align:right } .tarif .c{ text-align:center }
+.tarif tr.nom td{ height:auto; padding-top:var(--pad-nom, 2.6mm); padding-bottom:0.6mm }
+.tarif tr.nom .n{ display:flex; align-items:center; gap:1.5mm; font:400 9.5pt/1.1 var(--display); letter-spacing:.02em; text-transform:uppercase }
+.tarif tr.nom small{ font:500 5.8pt/1 var(--texte); color:var(--encre2); letter-spacing:0; text-transform:none; margin-left:auto }
+.tarif tr.fmt td{ border-top:0.2mm dotted #d6cfc3 }
+.tarif tr.fmt + tr.nom td{ border-top:0.3mm solid var(--filet) }
+.tarif .format{ font-weight:600 } .tarif .px{ font-weight:700 } .tarif .pvc{ color:var(--encre2) }
+.tarif .ean{ letter-spacing:.01em } .tarif .ean i{ font-style:normal; margin-left:0.5mm }
+.grille .conditions{ margin-top:3mm; font:500 6pt/1.45 var(--texte); color:var(--encre2) }
+.grille .conditions b{ color:var(--encre) }
+.grille .commander{ margin-top:auto; padding-top:3mm; border-top:0.3mm solid var(--filet); font:500 7pt/1.4 var(--texte); color:var(--encre2) }
+.grille .commander b{ display:block; font:400 15pt/1.1 var(--display); letter-spacing:.03em; color:var(--encre) }
+</style>
+</head>
+<body>
+
+<!-- ======================= EXTÉRIEUR ======================= -->
+<section class="feuille exterieur">
+  <div class="volet histoire">
+    <img class="sceau" src="assets/sceau_blanc.png" alt="">
+    <h2 class="display">L’histoire du<br><span>Gué des Moines</span></h2>
+    <p>C’est en <strong>2016</strong>, dans l’ancienne briqueterie de <strong>Bruguières</strong>, que les cuves du Gué des Moines ont pris place.</p>
+    <p>Le nom vient de l’avenue du <strong>Gamouna</strong>, qui signifie «&#8239;le gué des moines&#8239;» en languedocien. Cette avenue se trouve à Bruguières, la commune dont <strong>Martial</strong>, le brasseur et gérant, est originaire.</p>
+    <p>Nos bières sont aujourd’hui pensées, brassées et embouteillées sur cet <strong>ancien site industriel</strong>.</p>
+    <p>Venez nous voir&#8239;: des visites de la brasserie sont proposées une fois par mois, et notre <strong>espace dégustation</strong> vous accueille du mercredi au samedi.</p>
+    <div class="depuis">Brasserie artisanale · Bruguières · depuis 2016</div>
+  </div>
+
+  <div class="volet dos">
+    <h2 class="display">Pour commander</h2>
+    <span class="tel num" data-tel></span>
+    <div class="infos">
+      <span data-mail></span><br>
+      <strong>www.leguedesmoines.com</strong><br><br>
+      Le Gué des Moines<br>31, rue de la Briqueterie<br>31150 Bruguières
+    </div>
+    <div class="reseaux">
+      <img src="assets/icon_tiktok.png" alt="TikTok"><img src="assets/icon_facebook.png" alt="Facebook"><img src="assets/icon_instagram.png" alt="Instagram">
+    </div>
+    <p class="legal"><b>L’abus d’alcool est dangereux pour la santé. À consommer avec modération.</b><span data-societe></span></p>
+  </div>
+
+  <div class="volet couverture">
+    <img class="logo" src="assets/logo_cream.png" alt="Le Gué des Moines">
+    <div class="groupe" id="groupe"><span class="sol"></span></div>
+    <h1 class="display">Bières artisanales<br>&amp; locales</h1>
+    <div class="gamme-titre">La Bruguièroise · grille tarifaire GMS</div>
+    <div class="bas">
+      <img src="assets/houblon_or.png" alt="">
+      <div><b>Houblon d’Or 2023</b>parmi les meilleures<br>brasseries françaises</div>
+      <div class="lieu"><b>Bruguières (31150)</b><span data-edition></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= INTÉRIEUR ======================= -->
+<section class="feuille interieur">
+  <div class="volet">
+    <h2 class="volet-titre display">La gamme <span>La Bruguièroise</span></h2>
+    <p class="sous-titre" data-formats></p>
+    <div class="liste-gamme" id="gamme-1"></div>
+  </div>
+  <div class="volet">
+    <div class="liste-gamme sans-titre" id="gamme-2"></div>
+  </div>
+  <div class="volet grille" id="volet-grille">
+    <h2 class="volet-titre display">Grille tarifaire <span>GMS</span></h2>
+    <p class="sous-titre">Prix hors taxes par bouteille</p>
+    <table class="tarif" id="tarif"></table>
+    <p class="conditions" data-conditions></p>
+    <div class="commander">Commandes<b class="num" data-tel></b><span data-mail></span></div>
+  </div>
+</section>
+
+<script src="donnees.js"></script>
+<script>
+const echap = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" })[c]);
+const euro = n => n.toLocaleString("fr-FR", { minimumFractionDigits:2, maximumFractionDigits:2 }) + " €";
+const deg  = n => n.toLocaleString("fr-FR", { maximumFractionDigits:1 }) + " % vol.";
+const ean  = e => e ? `${e[0]}<i>${e.slice(1,7)}</i><i>${e.slice(7)}</i>` : "à venir";
+const formats = Object.keys(TARIFS);
+const photo = b => echap(b.photo ?? `assets/bottle_${b.id}.png`);
+const sansPhoto = `onerror="this.outerHTML='<span class=&quot;absent&quot;></span>'"`;
+
+// --- Couverture : les bouteilles en groupe, sur deux rangs décalés ---------
+// Une bière sur deux au premier rang, l'autre derrière, un peu plus petite et
+// plus haute : les couleurs d'étiquettes se répartissent sur tout le groupe.
+function composerGroupe() {
+  const g = document.getElementById("groupe");
+  const W = g.clientWidth, H = g.clientHeight, n = GAMME.length;
+  const devant = Math.ceil(n / 2), pas = W / (devant + (n % 2 ? 0 : 0.5));
+  // Le rang arrière est surélevé d'un tiers de bouteille : ses étiquettes
+  // apparaissent entre les goulots du premier rang au lieu d'être cachées.
+  const HAUSSE = 0.32, RATIO = 214 / 720;
+  const hDevant = Math.min(H / (1 + HAUSSE), pas * 0.96 / RATIO), lDevant = hDevant * RATIO, lDerriere = lDevant * 0.9;
+  const etendue = (n % 2 ? devant - 1 : devant - 0.5) * pas;
+  const x0 = (W - etendue) / 2;
+  g.insertAdjacentHTML("beforeend", GAMME.map((b, i) => {
+    const arriere = i % 2 === 1, rang = Math.floor(i / 2);
+    const cx = x0 + (arriere ? rang + 0.5 : rang) * pas, l = arriere ? lDerriere : lDevant;
+    return `<img src="${photo(b)}" alt="" style="left:${cx - l / 2}px;width:${l}px;bottom:${arriere ? hDevant * HAUSSE : 0}px;z-index:${arriere ? 1 : 2}">`;
+  }).join(""));
+}
+
+// --- Intérieur : la gamme sur deux volets ------------------------------------
+const moitie = Math.ceil(GAMME.length / 2);
+const fiche = b => `<article class="biere">
+  <img src="${photo(b)}" alt="Bouteille ${echap(b.nom)}" ${sansPhoto}>
+  <div><h3><i class="pastille" style="--c:${b.c}"></i>${echap(b.nom)}</h3>
+    <div class="style">${echap(b.style)} · ${deg(b.degre)}</div>
+    <p>${echap(b.desc)}</p></div></article>`;
+document.getElementById("gamme-1").innerHTML = GAMME.slice(0, moitie).map(fiche).join("");
+document.getElementById("gamme-2").innerHTML = GAMME.slice(moitie).map(fiche).join("");
+
+// --- Intérieur : la grille, une bière en titre et ses formats dessous -------
+document.getElementById("tarif").innerHTML =
+  `<thead><tr><th>Format</th><th class="d">Prix HT</th><th class="d">PVC conseillé</th><th class="c">Colisage</th><th>EAN-13</th></tr></thead><tbody>`
+  + GAMME.map(b => `<tr class="nom"><td colspan="5"><span class="n"><i class="pastille" style="--c:${b.c}"></i>${echap(b.nom)}<small>${echap(b.style)} · ${deg(b.degre)}</small></span></td></tr>`
+    + formats.map(k => { const f = TARIFS[k];
+      return `<tr class="fmt"><td class="format">${f.libelle}</td><td class="d px num">${euro(b.prix?.[k] ?? f.prixHT)}</td>
+        <td class="d pvc num">${euro(b.pvc?.[k] ?? f.pvc)}</td><td class="c num">${f.colis}</td><td class="ean num">${ean(b.ean?.[k])}</td></tr>`; }).join("")).join("")
+  + `</tbody>`;
+
+document.querySelectorAll("[data-tel]").forEach(e => e.textContent = CONTACT.tel);
+document.querySelectorAll("[data-mail]").forEach(e => e.textContent = CONTACT.mail);
+document.querySelectorAll("[data-societe]").forEach(e => e.textContent = SOCIETE);
+document.querySelectorAll("[data-formats]").forEach(e => e.textContent = "Toutes nos bières en " + formats.map(k => TARIFS[k].libelle).join(" et "));
+document.querySelectorAll("[data-conditions]").forEach(e => e.innerHTML = `<b>${CONDITIONS}</b> Colisage : nombre de bouteilles par carton.`);
+document.querySelectorAll("[data-edition]").forEach(e =>
+  e.textContent = "Tarif du " + new Date().toLocaleDateString("fr-FR", { day:"numeric", month:"long", year:"numeric" }));
+
+// --- Ajustements une fois les polices chargées ------------------------------
+document.fonts.ready.then(() => {
+  composerGroupe();
+  // Le second volet de la gamme s'aligne sur le premier, sous son titre
+  const l1 = document.getElementById("gamme-1"), l2 = document.getElementById("gamme-2");
+  l2.style.setProperty("--decalage-titre", (l1.offsetTop - l1.parentElement.querySelector(".volet-titre").offsetTop) + "px");
+  // Si la gamme s'allonge, bouteilles et textes se resserrent dans les volets
+  // Débordement = un élément du flux qui descend sous la marge basse du volet
+  // (le filigrane, positionné exprès hors cadre, ne compte pas).
+  const deborde = el => {
+    const haut = el.getBoundingClientRect().top;
+    const bas = el.clientHeight - parseFloat(getComputedStyle(el).paddingBottom) + 1;
+    return [...el.querySelectorAll("*")].some(c => !c.closest(".sceau, .trop-plein") && c.getBoundingClientRect().bottom - haut > bas);
+  };
+  const volets = [l1.parentElement, l2.parentElement];
+  for (let lb = 13, td = 7.4, tn = 14; volets.some(deborde) && td > 5.9; lb -= 0.5, td -= 0.1, tn -= 0.3)
+    volets.forEach(v => { v.style.setProperty("--l-bouteille", Math.max(8, lb) + "mm"); v.style.setProperty("--t-desc", td.toFixed(1) + "pt"); v.style.setProperty("--t-nom", Math.max(10, tn).toFixed(1) + "pt"); });
+  const grille = document.getElementById("volet-grille");
+  for (let h = 5.2, p = 2.6; deborde(grille) && h > 4; h -= 0.1, p = Math.max(1, p - 0.15)) {
+    grille.style.setProperty("--h-ligne", h.toFixed(1) + "mm");
+    grille.style.setProperty("--pad-nom", p.toFixed(2) + "mm");
+  }
+  // Dernier recours : le rappel « Commandes » s'efface (le numéro reste au dos)
+  if (deborde(grille)) grille.querySelector(".commander").style.display = "none";
+  document.querySelectorAll(".volet").forEach(v => { if (deborde(v)) v.insertAdjacentHTML("beforeend",
+    `<div class="trop-plein">Trop de contenu pour ce volet : retirez une référence ou utilisez la grille A4.</div>`); });
+});
+</script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 // Génère les PDF à partir des sources HTML (mêmes données : donnees.js).
 //   grille-gms.html → Grille-tarifaire-GMS-Le-Gue-des-Moines.pdf (A4 paysage, 3 pages)
 //   flyer-gms.html  → Flyer-GMS-Le-Gue-des-Moines.pdf (A5 recto-verso)
+//   depliant-gms.html → Depliant-3-volets-GMS-Le-Gue-des-Moines.pdf (A4 plié en 3, extérieur + intérieur)
 // Usage : node supports/grille-gms/generer-pdf.mjs [dossier-apercus-png]
 // Nécessite Playwright (npx playwright install chromium si absent).
 import { createRequire } from "node:module";
@@ -13,6 +14,7 @@ const { chromium } = createRequire(import.meta.url)("playwright");
 const DOCUMENTS = [
   { source: "grille-gms.html", sortie: "Grille-tarifaire-GMS-Le-Gue-des-Moines.pdf", pages: ".page" },
   { source: "flyer-gms.html", sortie: "Flyer-GMS-Le-Gue-des-Moines.pdf", pages: ".face" },
+  { source: "depliant-gms.html", sortie: "Depliant-3-volets-GMS-Le-Gue-des-Moines.pdf", pages: ".feuille" },
 ];
 const dossierApercus = process.argv[2];
 

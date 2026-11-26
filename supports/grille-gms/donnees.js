@@ -1,6 +1,7 @@
-// Données communes à la grille A4 (grille-gms.html) et au flyer (flyer-gms.html).
-// Changer un prix, un EAN ou un texte ici, puis relancer generer-pdf.mjs :
-// les deux PDF sont refaits avec les mêmes chiffres.
+// Données communes à la grille A4 (grille-gms.html), au flyer (flyer-gms.html)
+// et au dépliant 3 volets (depliant-gms.html). Changer un prix, un EAN ou un
+// texte ici, puis relancer generer-pdf.mjs : tous les PDF sont refaits avec
+// les mêmes chiffres.
 /* ======================== DONNÉES À METTRE À JOUR ======================== */
 const CONTACT = { tel: "09 67 48 99 63", mail: "brasserieguedesmoines@gmail.com" };
 const SOCIETE = "SAS Paille Freyburger au capital de 5 000 € · RCS Toulouse 809 295 553 · SIRET 809 295 553 00022 · APE 1105Z · N° TVA FR48 809 295 553";
